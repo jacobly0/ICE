@@ -1,5 +1,21 @@
+#Implemented Commands
 +
 -
 *
 /
 ^
+
+#Feature commands:
+If
+Else
+End
+While
+Repeat
+ElseIf
+++
+--
+Lbl
+Goto
+sin(
+cos(
+sqrt(
