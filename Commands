@@ -4,6 +4,16 @@
 *
 /
 ^
+!=
+=
+>
+<
+>=
+<=
+and
+or
+xor
+not(
 
 #Feature commands:
 If
@@ -19,3 +29,5 @@ Goto
 sin(
 cos(
 sqrt(
+min(
+max(
