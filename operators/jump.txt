@@ -1,0 +1,28 @@
+			cp tAdd									; 70h
+			call z, functionAdd 
+			cp tSub									; 71h
+			call z, functionSub
+			cp tMul									; 82h
+			call z, functionMul
+			cp tDiv									; 83h
+			call z, functionDiv
+			cp tNE									; 6Fh
+			call z, functionNE
+			cp tGE									; 6Eh
+			call z, functionGE
+			cp tLE									; 6Dh
+			call z, functionLE
+			cp tGT									; 6Ch
+			call z, functionGT
+			cp tLT									; 6Bh
+			call z, functionLT
+			cp tEQ									; 6Ah
+			call z, functionEQ
+			cp tOr									; 3Ch
+			call z, functionOr
+			cp tXor									; 3Dh
+			call z, functionXor
+			cp tAnd									; 40h
+			call z, functionAnd
+			cp tStore								; 04h
+			call z, functionSto
