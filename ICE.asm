@@ -1,52 +1,176 @@
-.nolist
 #include "ti84pce.inc"
 #include "defines.asm"
-.list
 
 .db tExtTok, tAsm84CeCmp
-.org saveSScreen-18
+.org UserMem
 
+DEBUGMODE = 0
 
 start:
-	ld de, saveSScreen
-	ld hl, UserMem+ICEStart-start
-	ld bc, ICEStop-ICEStart
-	ldir
-	jp saveSScreen
-ICEStart:
+	ld (backupSP), sp
+	ld hl, (curPC)
+	ld (backupCurPC), hl
+	ld hl, (endPC)
+	ld (backupEndPC), hl
 	call _RunIndicOff
-	call _AnsName
-	call _FindSym
-	ret c
-	ex de, hl
-	ld a, (hl)
-	cp 9
-	ret nc													; return if more than 8 characters
-	ld bc, 0
-	ld c, a
+	ld hl, offsets
+	ld de, stackPtr
+	ld bc, offset_end - offsets
+	ldir
+	call InstallHooks
+GUI:
+	ld a, lcdBpp8
+	ld (mpLcdCtrl), a
+SetPalette:
+	ld hl, mpLcdPalette
+	ld b, 0
+_:	ld d, b
+	ld a, b
+	and 011000000b
+	srl d
+	rra
+	ld e, a
+	ld a, 000011111b
+	and b
+	or e
+	ld (hl), a
 	inc hl
+	ld (hl), d
 	inc hl
-	ld de, OP1+1
-	push bc
-		ldir
-		ld hl, OP1
-		ld (hl), ProgObj									; OP1 = program name
-		call _ChkFindSym
-	pop bc
-	ret c
-	scf
-	sbc hl, hl
-	ld (hl), 2
-	call _ChkInRam
-	jr nc, InRam
-InArchive:
-	ld hl, 10
+	inc b
+	jr nz, -_
+	ld hl, vRAM
+	ld (hl), 189
+	push hl
+	pop de
+	inc de
+	ld bc, 320*10
+	ldir
+	ld (hl), 0
+	ld bc, 320
+	ldir
+	ld (hl), 255
+	ld bc, 320*229-1
+	ldir	
+	ld hl, ICEName
+	ld a, 1
+	ld (TextYPos_ASM), a
+	add a, 20
+	ld (TextXPos_ASM), a
+	call PrintString
+	ld hl, TextYPos_ASM
+	inc (hl)
+	inc (hl)
+	ld hl, (progPtr)
+FindPrograms:
+	call FindNextGoodVar
+	jr nz, StopFindingPrograms
+	push hl
+		ld a, (TextYPos_ASM)
+		add a, 10
+		jr c, +_
+		ld (TextYPos_ASM), a
+		ld hl, 10
+		ld (TextXPos_ASM), hl
+		ld hl, AmountOfPrograms
+		inc (hl)
+		call _ChkInRAM
+		ld a, '#'
+		call c, _PrintChar_ASM
+		ld hl, (ProgramNamesPtr)
+		ld de, -8
+		add hl, de
+		call PrintString
+_:	pop hl
+	jr FindPrograms
+StopFindingPrograms:
+	ld a, 13
+	ld (TextYPos_ASM), a
+	ld hl, 1
+	ld (TextXPos_ASM), hl
+	ld a, (AmountOfPrograms)
+	or a
+	jp z, NoProgramsError
+	ld (AmountPrograms), a
+	ld l, 1
+PrintCursor:
+	ld e, l
+	ld d, 10
+	mlt de
+	inc e
+	inc e
+	inc e
+	ld a, e
+	ld (TextYPos_ASM), a
+	xor a
+	ld (color), a
+	inc a
+	ld (TextXPos_ASM), a
+	ld a, '>'
+	call _PrintChar_ASM
+	ld a, 255
+	ld (color), a
+	ld a, 1
+	ld (TextXPos_ASM), a
+_:	push hl
+		call _GetCSC
+	pop hl
+	or a
+	jr z, -_
+	cp skUp
+	jr z, PressedUp
+	cp skDown
+	jr z, PressedDown
+	cp skClear
+	jp z, StopProgram
+	cp skEnter
+	jr nz, -_
+PressedEnter:
+	dec l
+	ld h, 8
+	mlt hl
+	ld de, ProgramNamesStack
 	add hl, de
-	add hl, bc
+	dec hl
+	call _Mov9ToOP1
+	jr StartParsing
+PressedUp:
+	ld a, l
+	dec a
+	jr z, -_
+	dec l
+	ld a, 23
+	call _PrintChar_ASM
+	jr PrintCursor
+PressedDown:
+	ld a, l
+AmountPrograms = $+1
+	cp a, 0
+	jr z, -_
+	inc l
+	ld a, 23
+	call _PrintChar_ASM
+	jr PrintCursor
+StartParsing:
+	ld a, ProgObj
+	ld (OP1), a
+_:	call _ChkFindSym
+	jr nc, +_
+	ld hl, OP1
+	inc (hl)
+	jr -_
+_:	call _ChkInRAM
+	jr nc, +_
 	ex de, hl
-InRam:
+	ld de, 9
+	add hl, de
+	ld e, (hl)
+	add hl, de
+	inc hl
 	ex de, hl
-	ld c, (hl)												; BC = program length
+_:	ld bc, 0
+	ex de, hl
+	ld c, (hl)																; BC = program length
 	inc hl
 	ld b, (hl)
 	inc hl
@@ -56,118 +180,163 @@ InRam:
 	add hl, bc
 	dec hl
 	ld (endPC), hl
-	ld hl, output
+	ld a, 0DDh
+	call InsertA															; ld ix, cursorImage
+	ld a, 021h
+	ld hl, cursorImage
+	call InsertAHL															; ld ix, cursorImage
+	ld hl, varname
+	ld e, 9
+GetProgramName:
+	push hl
+		call _IncFetch
+	pop hl
+	jp c, AddDataToProgramData
+	inc hl
+	cp tEnter
+	jr z, StartParse
+	cp tA
+	jp c, InvalidTokenError
+	cp ttheta+1
+	jp nc, InvalidTokenError
+	ld (hl), a
+	dec e
+	jr nz, GetProgramName
+	jp InvalidNameLength
+StartParse:
+	ld hl, OP1+1
+	ld de, varname+1
+	ld b, 8
+CheckNames:
+	ld a, (de)
+	or a
+	jr z, CheckNamesSameLength
+	cp (hl)
+	jr nz, GoodCompile
+	inc hl
+	inc de
+	djnz CheckNames
+CheckNamesSameLength:
+	cp (hl)
+	jp z, SameNameError
+GoodCompile:
+	ld hl, (endPC)
+	ld de, (curPC)
+	ld (begPC_), de
+	or a
+	sbc hl, de
+	inc hl
+	ld (programSize), hl
+	ld (iy+myFlags3), 0
+	set comp_with_libs, (iy+myFlags3)
+	ld hl, CData
+	ld de, (programPtr)
+	ld bc, CData2 - CData
+	ldir
+	ld (programPtr), de
+	call ScanForCFunctions
+	ld a, 0CDh
+	ld hl, _RunIndicOff
+	call InsertAHL															; call _RunIndicOff
+	ld hl, (programPtr)
+	ld de, 4+4+5+UserMem-program
+	add hl, de
+	call InsertAHL															; call *
+	ld de, 08021FDh
+	ld hl, 0C3D000h
+	call InsertDEHL															; ld iy, flags \ jp *
+	ld hl, _DrawStatusBar
+	call InsertHL															; jp _DrawStatusBar
+	ld a, (amountOfCRoutines)
+	or a
+	jr nz, StartCompiling
+	res comp_with_libs, (iy+myFlags3)
+	ld hl, program+5
+	ld (programPtr), hl
+StartCompiling:
+	call ClearScreen
+	ld hl, StartParseMessage
+	call PrintString
+	ld (iy+myFlags2), 0
+ParseProgramUntilEnd:
+	call _IncFetch
+CompileLoop:
+	ld (tempToken), a
+	ld (iy+myFlags), 0
+	ld (iy+myFlags4), 0
+	cp tEnd
+	jr nz, ++_
+_:	ld a, (amountOfEnds)
+	or a
+	jp z, EndError
+	dec a
+	ld (amountOfEnds), a
+	ld a, (tempToken)
+	ret
+_:	cp tElse
+	jr z, --_
+	call ParseExpression
+	ld hl, (curPC)
+begPC_ = $+1
+	ld de, 0
+	or a
+	sbc hl, de
+	ld bc, 320
+	call __imulu
+programSize = $+1
+	ld bc, 0
+	call __idivu
+	push hl
+	pop bc
+	ld hl, -1
+	add hl, bc
+	jr nc, +_
+	ld hl, vRAM+(320*25)
 	ld (hl), 0
 	push hl
 	pop de
 	inc de
-	ld bc, 7000
-	ldir													; clear some memory
-	ld hl, stack											; set all the stacks + pointers... :O
-	ld (stackPtr), hl
-	ld hl, output
-	ld (outputPtr), hl
-	ld hl, programData
-	ld (programPtr), hl
-	ld hl, labelStack
-	ld (labelPtr), hl
-	ld hl, gotoStack
-	ld (gotoPtr), hl
-	ld hl, programDataData
-	ld (programDataDataPtr), hl
-	ld hl, programDataOffsetStack
-	ld (programDataOffsetPtr), hl
-	ld a, 8
-	ld (programNameLength), a
-	ld hl, 00021DDh
-	call InsertHL											; ld ix, XX****
-	ld a, 008h
-	call InsertA											; ld ix, XXXX**
-	ld a, 0E3h
-	call InsertA											; ld ix, XXXXXX
-	call _CurFetch
-	cp tii
-	jr nz, standard_name
-	ld hl, varname2
-	ld (varname_offset), hl
-name_loop:
-	push hl
-		call _IncFetch
-	pop hl
-	jr c, StartParse
-	inc hl
-	cp 041h													; only A-Z allowed - will be changed soon
-	jr c, StartParse
-	cp 05Ch
-	jr nc, StartParse
-	ld (hl), a
-	ld a, (programNameLength)
-	dec a
-	ld (programNameLength), a								; (b is already used, can't use "djnz")
-	jr nz, name_loop
-	jr StartParse
-standard_name:
-	ld hl, varname
-	ld (varname_offset), hl
-StartParse:
-	res has_already_input, (iy+myFlags)						; only one times the Input routine in the program data
-ParseProgram:
-ParseToEnd:
-	call ParseLine
-	call _CurFetch
-	jp c, FindGotos
-	cp tEnd
-	jr nz, ParseProgram
-	ld a, (AmountOfEnds)
-	or a
-	jp z, EndError
-	ld hl, AmountOfEnds
-	dec (hl)
-	jp _IncFetch
-ParseLine:
-	call _CurFetch
-	cp tEnd
-	ret z
-	cp tEnter
-	jp z, _IncFetch
-	ld hl, functions
-	ld bc, functions_stop-functions
-	cpir													; check which function (Repeat, While, Disp, ClrHome...) it is...
-	jp nz, ParseExpression
-	ld b, 3
-	mlt bc
-	ld hl, functions_start
-	add hl, bc
-	ld hl, (hl)
-	jp (hl)													; jump to that function
+	dec bc
+	call _ChkBCIs0
+	jr z, +_
+	ldir
+_:	call _IncFetch
+	jr nc, CompileLoop
 FindGotos:
+	ld hl, amountOfEnds
+	ld a, (hl)
+	dec a
+	ld (hl), a
+	inc a
+	ret nz
+FindGotosLoop:
 	ld hl, (gotoPtr)
 	ld de, gotoStack
 	or a
 	sbc hl, de
-	jr z, AddDataToProgramData								; have we finished all the Goto's?
+	jr z, AddDataToProgramData												; have we finished all the Goto's?
 	add hl, de
 	dec hl
 	dec hl
 	dec hl
 	push hl
 		ld hl, (hl)
-		ex de, hl											; de = pointer to goto data
+		ex de, hl															; de = pointer to goto data
 		ld hl, (labelPtr)
 FindLabels:
 		ld bc, labelStack
 		or a
 		sbc hl, bc
-		jr z, StopFindLabels								; have we finished all the Lbl's?
+		jp z, LabelError													; have we finished all the Lbl's?
 		add hl, bc
 		dec hl
 		dec hl
-		dec hl												; hl = pointer to label
+		dec hl																; hl = pointer to label
 FindLabel:
 		push hl
 			push de
-				ld hl, (hl)
-				call CompareStrings							; is it the right label?
+				ld hl, (hl)													; hl = pointer to label data
+				call CompareStrings											; is it the right label?
 			pop de
 		pop hl
 		jr nz, LabelNotRightOne
@@ -176,18 +345,20 @@ RightLabel:
 		dec hl
 		dec hl
 		ld hl, (hl)
-		ex de, hl											; de = pointer to label memory
-	pop hl													; hl = pointer to goto
+		ld de, UserMem-program
+		add hl, de
+		ex de, hl															; de points to label memory
+	pop hl																	; hl = pointer to goto
 	dec hl
 	dec hl
 	dec hl
-	ld hl, (hl)												; hl = pointer to jump to
+	ld hl, (hl)																; hl = pointer to jump to
 	ld (hl), de
 	ld hl, (gotoPtr)
 	ld de, -6
-	add hl, de												; get next Goto
+	add hl, de																; get next Goto
 	ld (gotoPtr), hl
-	jr FindGotos
+	jr FindGotosLoop
 LabelNotRightOne:
 		dec hl
 		dec hl
@@ -196,112 +367,96 @@ LabelNotRightOne:
 StopFindLabels:
 	pop hl
 AddDataToProgramData:
+	bit last_token_is_ret, (iy+myFlags2)
+	jr nz, +_
 	ld a, 0C9h
-	call InsertA											; ret
-	ld hl, (programDataDataPtr)
+	call InsertA															; ret
+_:	ld hl, (programDataDataPtr)
 	ld bc, programDataData
 	or a
 	sbc hl, bc
 	push hl
-	pop bc													; bc = data length
-	jr z, CreateProgram										; check IF there is data
+	pop bc																	; bc = data length
+	jr z, CreateProgram														; check IF there is data
 	ld de, (programPtr)
 	ld hl, programDataData
 	or a
 	sbc hl, de
 	push hl
 		add hl, de
-		ldir												; move the data to the end of the program
+		ldir																; move the data to the end of the program
 		ld (programPtr), de
 	pop de
 	ld hl, (programDataOffsetPtr)
-AddDataLoop:												; update all the pointers pointing to data
+AddDataLoop:																; update all the pointers pointing to data
 	ld bc, programDataOffsetStack
 	or a
 	sbc hl, bc
-	jr z, CreateProgram										; no more pointers left
+	jr z, CreateProgram														; no more pointers left
 	add hl, bc
 	dec hl
 	dec hl
 	dec hl
 	push hl
-		ld hl, (hl)											; complicated stuff XD
-		ld (SMC3), hl
-		ld hl, (hl)
-		or a
-		sbc hl, de
-	pop bc
-SMC3 = $+1
-	.db 022h												; ld (******), hl
-	.dl 0													; ld (XXXXXX), hl
-	push bc
+		ld hl, (hl)															; complicated stuff XD
+		push hl
+			ld hl, (hl)
+			or a
+			sbc hl, de
+			ld bc, UserMem-program
+			add hl, bc
+			push hl
+			pop bc
+		pop hl
+		ld (hl), bc															; ld (XXXXXX), hl
 	pop hl
 	jr AddDataLoop
 CreateProgram:
-	ld hl, (varname_offset)
+	ld hl, varname
 	call _Mov9ToOP1
 	call _ChkFindSym
-	jr c, CreateFile
-NeedToDeleteFile:
-	call _DelVar
-CreateFile:
+	call nc, _DelVar
 	ld hl, (programPtr)
-	ld bc, programData
+	ld bc, program
 	or a
 	sbc hl, bc
 	push hl
-		inc hl
-		inc hl												; add header
+		ld bc, 17
+		add hl, bc
+		push hl
+			call _EnoughMem
+			ld hl, NotEnoughMem
+			jp c, DispFinalString
+		pop hl
+		ld bc, -15
+		add hl, bc
 		call _CreateProtProg
 	pop bc
 	inc de
 	inc de
-	ld hl, programData
+	ld hl, program
 	ex de, hl
-	ld (hl), 0EFh											; insert header
+	ld (hl), tExtTok														; insert header
 	inc hl
 	ld (hl), 07Bh
 	inc hl
 	ex de, hl
-	ldir													; insert the program data
-	call _DrawStatusBar
-	call _HomeUp
-	call _ClrLCDFull										; ready :) :) :)
+	ldir																	; insert the program data
 	ld hl, GoodCompileMessage
-	jp _PutS
+	set good_compilation, (iy+myFlags)
+	jp DispFinalString														; DONE :D :D :D
 	
 #include "functions.asm"
 #include "parse.asm"
+#include "putchar.asm"
+#include "programs.asm"
+#include "hooks.asm"
+#include "operators functions/functions.asm"
+#include "operators functions/operators.asm"
+#include "operators functions/function_for.asm"
+#include "operators functions/function_C.asm"
+#include "clibs/graphics.asm"
 #include "data.asm"
+;#include "editor2.asm"
 
-#include "operators/add.asm"
-#include "operators/sub.asm"
-#include "operators/mul.asm"
-#include "operators/div.asm"
-#include "operators/ge.asm"
-#include "operators/le.asm"
-#include "operators/gt.asm"
-#include "operators/lt.asm"
-#include "operators/eq.asm"
-#include "operators/ne2.asm"
-#include "operators/or.asm"
-#include "operators/xor.asm"
-#include "operators/and.asm"
-#include "operators/sto.asm"
-
-#include "functions/pause.asm"
-#include "functions/clrhome.asm"
-#include "functions/disp.asm"
-#include "functions/repeat.asm"
-#include "functions/while.asm"
-#include "functions/if.asm"
-#include "functions/asm.asm"
-#include "functions/inc.asm"
-#include "functions/dec.asm"
-#include "functions/label.asm"
-#include "functions/goto.asm"
-#include "functions/input.asm"
-
-ICEStop:
-
-.echo $-start
+.echo $-start+14

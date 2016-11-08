@@ -1,34 +1,40 @@
 	ld hl, (outputPtr)
 	bit prev_is_number, (iy+myFlags)
-	jr z, NewNumber
-LastEntryWasAlreadyNumber:
-	dec hl											; HL = pointer to previous value on output
-	ld a, (hl)
+	set prev_is_number, (iy+myFlags)
+	jr z, AddNumberToStack
+ChangeLastNumberFromStack:
+	dec hl
+	dec hl
+	dec hl
 	push hl
-		ld h, a
-		ld l, 10
-		mlt hl
+		ld hl, (hl)
+		add hl, hl											; HL * 10
 		push hl
-			call _CurFetch
-		pop hl
-		sub t0
-		add a, l
-	pop hl
-	ld (hl), a
-	jr StopNumber
-NewNumber:
-	ld a, typeNumber
-	add a, b
-	ld (hl), a
+		pop de
+		add hl, hl
+		add hl, hl
+		add hl, de
+		sub a, t0											; HL + <number>
+		ld de, 0
+		ld e, a
+		add hl, de
+	pop de
+	ex de, hl
+	ld (hl), de
+	jr NumberStop
+AddNumberToStack:
+	ld (hl), typeNumber
 	inc hl
-	push hl
-		call _CurFetch
-	pop hl
-	sub t0
-	ld (hl), a
-	ld hl, (outputPtr)
+	sub a, t0												; new number
+InsertAndUpdatePointer
+	ld de, 0
+	ld e, a
+	ld (hl), de
+UpdatePointer:
+	inc hl
 	inc hl
 	inc hl
 	ld (outputPtr), hl
-StopNumber:
-	set prev_is_number, (iy+myFlags)
+NumberStop:
+	call _IncFetch
+	jr MainLoop

@@ -1,14 +1,17 @@
-InsertA:
-	ld hl, (programPtr)
-	ld (hl), a
-	inc hl
-	ld (programPtr), hl
-	ret
-
+InsertBCDEAHL:
+	push hl
+		push bc
+		pop hl
+		call InsertHL
+		ex de, hl
+		call InsertHL
+	pop hl
+InsertAHL:
+	call InsertA
 InsertHL:
 	push de
-		ld de, (programPtr)
 		ex de, hl
+		ld hl, (programPtr)
 		ld (hl), de
 		inc hl
 		inc hl
@@ -17,70 +20,219 @@ InsertHL:
 	pop de
 	ret
 	
-InsertAIXC:
-	ld a, 079h
-	jr +_
-InsertAIXE:
-	ld a, 07Bh
-_:	ld (SMC2), a
-	ld a, 07Eh
-	ld (SMC1), a
-	jr Insert
-InsertLIXC:
-	ld a, 079h
-	jr +_
-InsertLIXE:
-	ld a, 07Bh
-_:	ld (SMC2), a
-	ld a, 06Eh
-	ld (SMC1), a
-Insert:
-	ld a, 0DDh
+InsertHIXC:
+	ld hl, 00027DDh
+	ld b, 3
+	mlt bc
+	ld a, c
+	call _SetHLUToA
+	jp InsertHL																; ld hl, (ix+*)
+InsertIXE:
+	ld hl, 00017DDh
+	ld d, 3
+	mlt de
+	ld a, e
+	call _SetHLUToA
+	jp InsertHL																; ld de, (ix+*)
+InsertIXC:
+	ld hl, 00007DDh
+	ld d, 3
+	mlt de
+	ld a, e
+	call _SetHLUToA
+	jp InsertHL																; ld bc, (ix+*)
+
+InsertBCDEHL:
+	push hl
+		push bc
+		pop hl
+		call InsertHL
+	pop hl
+	jr InsertDEHL
+InsertADEHL:
 	call InsertA
-SMC1 = $+1
-	ld a, 0
-	call InsertA
-SMC2:
-	.db 0
-	jp InsertA
+InsertDEHL:
+	ex de, hl
+	call InsertHL
+	ex de, hl
+	jr InsertHL
+
+InsertE:
+	ld a, e
+InsertA:
+	push hl
+		ld hl, (programPtr)
+		ld (hl), a
+		inc hl
+		ld (programPtr), hl
+	pop hl
+	ret
 	
 InsertProgramPtrToDataOffset:
-	ld hl, (programDataOffsetPtr)
-	ld bc, (programPtr)
-	ld (hl), bc
-	inc hl
-	inc hl
-	inc hl
-	ld (programDataOffsetPtr), hl
+	push de
+		ld hl, (programDataOffsetPtr)
+		ld de, (programPtr)
+		ld (hl), de
+		inc hl
+		inc hl
+		inc hl
+		ld (programDataOffsetPtr), hl
+	pop de
 	ret
-
-EndError:
-	ld hl, EndErrorMessage
-DisplayErrorMessage:
-	push hl
-		call _ClrLCDFull
-		call _DrawStatusBar
-		call _HomeUp
-	pop hl
-	jp _PutS
 	
 GetFunction:
+	push bc
+		push de
+			call GetRightFunction
+		pop de
+	pop bc
+	ret
+	
+GetRightFunction:
+	ld h, a
+	ld a, b
+	or a
+	jp z, GetFunctionBC
+	dec a
+	jp z, GetFunctionDE
+GetFunctionHL:
+	ld a, h
 	cp tGetKey
 	jr nz, +_
 	ld a, 0CDh
-	call InsertA							; call ******
 	ld hl, _GetCSC
-	jp InsertHL								; call _GetCSC
+	call InsertAHL															; call _GetCSC
+	ld a, 0B7h
+	ld hl, 06F62EDh
+	jp InsertAHL															; or a \ sbc hl, hl \ ld l, a
 _:	cp trand
-	ret nz
-	ld hl, 04F5FEDh
-	call InsertHL							; ld a, r \ ld c, a
-	ld hl, 0878187h
-	call InsertHL							; add a, a \ add a, c \ add a, a
-	ld a, 087h
-	call InsertA							; add a, a
-	ld a, 081h
-	jp InsertA								; add a, c
+	jp nz, InvalidTokenError
+	bit need_push, (iy+myFlags)
+	jr z, $+8
+	ld a, 0D5h
+	call InsertA															; push de
+	ld a, 0CDh
+	call InsertA															; call *
+	call InsertProgramPtrToDataOffset
+	bit has_already_rand, (iy+myFlags2)
+	jr nz, +_
+	ld hl, (programDataDataPtr)
+	push hl
+	pop de
+	ld (RandStartData), hl
+	call InsertHL															; call XXXXXX
+	ld hl, RandRoutine
+	ld bc, RandRoutineEnd - RandRoutine
+	ldir
+	ld (programDataDataPtr), de
+	set has_already_rand, (iy+myFlags2)
+	bit need_push, (iy+myFlags)
+	ret z
+	ld a, 0D1h
+	jp InsertA																; pop de
+_:	ld hl, (RandStartData)
+	call InsertHL															; call XXXXXX
+	bit need_push, (iy+myFlags)
+	ret z
+	ld a, 0D1h
+	jp InsertA																; pop de
+GetFunctionDE:
+	ld a, h
+	cp tGetKey
+	jr nz, +_
+	ld a, 0E5h
+	bit need_push, (iy+myFlags)
+	call nz, InsertA														; push hl
+	ld a, 0CDh
+	ld hl, _GetCSC
+	call InsertAHL															; call _GetCSC
+	bit need_push, (iy+myFlags)
+	jr z, $+8
+	ld a, 0E1h
+	call InsertA															; pop hl
+	ld a, 011h
+	call InsertA															; ld de, *
+	xor a
+	ld hl, 05F0000h
+	jp InsertAHL															; ld de, 0 \ ld e, a
+_:	cp trand
+	jp nz, InvalidTokenError
+	ld a, 0E5h
+	bit need_push, (iy+myFlags)
+	call nz, InsertA														; push hl
+	ld a, 0CDh
+	call InsertA															; call *
+	call InsertProgramPtrToDataOffset
+	bit has_already_rand, (iy+myFlags2)
+	jr nz, +_
+	ld hl, (programDataDataPtr)
+	ld (RandStartData), hl
+	push hl
+	pop de
+	call InsertHL															; call XXXXXX
+	ld hl, RandRoutine
+	ld bc, RandRoutineEnd - RandRoutine
+	ldir
+	ld (programDataDataPtr), de
+	set has_already_rand, (iy+myFlags2)
+	jr ++_
+_:	ld hl, (RandStartData)
+	call InsertHL															; call XXXXXX
+_:	ld a, 0EBh
+	call InsertA															; ex de, hl
+	bit need_push, (iy+myFlags)
+	ret z
+	ld a, 0E1h
+	jp InsertA																; pop hl
+GetFunctionBC:
+	ld a, h
+	cp tGetKey
+	jr nz, +_
+	ld a, 0E5h
+	bit need_push, (iy+myFlags)
+	call nz, InsertA														; push hl
+	ld a, 0CDh
+	ld hl, _GetCSC
+	call InsertAHL															; call _GetCSC
+	ld a, 0E1h
+	bit need_push, (iy+myFlags)
+	call nz, InsertA														; pop hl
+	ld a, 001h
+	call InsertA															; ld bc, *
+	xor a
+	ld hl, 05F0000h
+	jp InsertAHL															; ld bc, 0 \ ld e, a
+_:	cp trand
+	jp nz, InvalidTokenError
+	ld a, 0E5h
+	bit need_push, (iy+myFlags)
+	call nz, InsertA														; push hl
+	ld a, 0CDh
+	call InsertA															; call *
+	call InsertProgramPtrToDataOffset
+	bit has_already_rand, (iy+myFlags2)
+	jr nz, +_
+	ld hl, (programDataDataPtr)
+	ld (RandStartData), hl
+	push hl
+	pop de
+	call InsertHL															; call XXXXXX
+	ld hl, RandRoutine
+	ld bc, RandRoutineEnd - RandRoutine
+	ldir
+	ld (programDataDataPtr), de
+	set has_already_rand, (iy+myFlags2)
+	jr ++_
+_:	ld hl, (RandStartData)
+	call InsertHL															; call XXXXXX
+_:	ld a, 0E5h
+	call InsertA															; push hl
+	ld a, 0C1h
+	call InsertA															; pop bc
+	bit need_push, (iy+myFlags)
+	ret z
+	ld a, 0E1h
+	jp InsertA																; pop hl
 	
 CompareStrings:
 	ld a, (de)
@@ -89,5 +241,321 @@ CompareStrings:
 	inc de
 	ret nz
 	cp tEnter
+	jr nz, CompareStrings
+	ret	
+	
+SubError:
+	ld a, '-'
+	jr DispOperatorErrorString
+AddError:
+	ld a, '+'
+	jr DispOperatorErrorString
+DivError:
+	ld a, '/'
+	jr DispOperatorErrorString
+MulError:
+	ld a, '*'
+	jr DispOperatorErrorString
+	
+GLETError:
+	ld a, (tempToken2)
+	ld c, a
+	cp tGE
+	ld a, 019h
+	jr z, DispOperatorErrorString
+	ld a, c
+	cp tLE
+	ld a, 017h
+	jr z, DispOperatorErrorString
+	ld a, c
+	cp tGT
+	ld a, '>'
+	jr z, DispOperatorErrorString
+	ld a, '<'
+	jr DispOperatorErrorString
+
+NEQError:
+	ld a, (tempToken2)
+	cp tEq
+	ld a, '='
+	jr z, DispOperatorErrorString
+	ld a, 018h
+	jr DispOperatorErrorString
+XORANDError:
+	ld a, (tempToken2)
+	ld c, a
+	cp tOr
+	ld a, '|'
+	jr z, DispOperatorErrorString
+	ld a, c
+	cp tXor
+	ld a, '^'
+	jr z, DispOperatorErrorString
+	ld a, '&'
+	jr DispOperatorErrorString
+StoError:
+	ld a, 01Ch
+	jr DispOperatorErrorString
+	
+DispOperatorErrorString:
+	push af
+		call ClearScreen
+		ld hl, ErrorMessageStandard
+		call PrintString
+	pop af
+	call _PrintChar_ASM
+	ld a, '\''
+	call _PrintChar_ASM
+	jr ReturnToOS
+	
+ErrorSyntax:
+	ld hl, SyntaxErrorMessage
+	jr DispFinalString
+MismatchError:
+	ld hl, MismatchErrorMessage
+	jr DispFinalString
+NoProgramsError:
+	ld hl, NoProgramsMessage
+	set good_compilation, (iy+myFlags)
+	jr DispFinalString
+InvalidTokenError:
+	ld hl, InvalidTokenMessage
+	jr DispFinalString
+InvalidNameLength:
+	ld hl, InvalidNameLengthMessage
+	jr DispFinalString
+SameNameError:
+	ld hl, SameNameMessage
+	jr DispFinalString
+UnknownError:
+	ld hl, UnknownMessage
+	jr DispFinalString
+WrongSpriteDataError:
+	ld hl, WrongSpriteDataMessgae
+	jr DispFinalString
+ImplementError:
+	ld hl, ImplementMessage
+	jr DispFinalString
+EndError:
+	ld hl, EndErrorMessage
+	jr DispFinalString
+LabelError:
+	ld hl, LabelErrorMessage
+	
+DispFinalString:
+	push hl
+		call ClearScreen
+	pop hl
+	call PrintString
+ReturnToOS:
+	bit good_compilation, (iy+myFlags)
+	jr nz, SkipDisplayLineNumber
+	ld a, 21
+	ld (TextYPos_ASM), a
+	ld hl, 1
+	ld (TextXPos_ASM), hl
+	ld hl, LineNumber
+	call PrintString
+	ld hl, (curPC)
+	ld de, (begPC_)
+	or a
+	sbc hl, de
+	push hl
+	pop bc
+	sbc hl, hl
+	inc hl
+	ex de, hl
+GetAmountOfLines:
+	ld a, tEnter
+	cpir
+	jr nz, +_
+	inc de
+	jr GetAmountOfLines
+_:	ex de, hl
+	xor a
+	ld de, OP3+10
+	ld (de), a
+	dec de
+	ld b, 8
+	ld a, 10
+_:	call _DivHLByA
+	add a, t0
+	ld (de), a
+	dec de
+	add hl, de
+	or a
+	sbc hl, de
+	jr z, +_
+	djnz -_
+_:	ex de, hl
+	inc hl
+	call PrintString
+SkipDisplayLineNumber:
+	ld a, 230
+	ld (TextYPos_ASM), a
+	ld hl, 85
+	ld (TextXPos_ASM), hl
+	ld hl, PressKey
+	call PrintString
+_:	call _GetCSC
+	or a
+	jr z, -_
+StopProgram:
+	ld sp, (backupSP)
+	ld hl, (curPC)
+	push hl
+		ld hl, (backupCurPC)
+		ld (curPC), hl
+		ld hl, (backupEndPC)
+		ld (endPC), hl
+		ld a, lcdBpp16
+		ld (mpLcdCtrl), a
+		call _ClrWindow
+		call _DrawStatusBar
+	pop hl
+	;bit good_compilation, (iy+myFlags)
+	;ret nz
+	;jp OpenEditBuffer
+	ret
+	
+ClearScreen:
+	ld hl, vRAM+(320*12)
+	ld (hl), 255
+	push hl
+	pop de
+	inc de
+	ld bc, 320*228-1
+	ldir
+	ld hl, 1
+	ld (TextXPos_ASM), hl
+	ld a, 12
+	ld (TextYPos_ASM), a
+	xor a
+	ld (color), a
+	ret
+	
+PrintString:
+	ld a, (hl)
+	inc hl
+	or a
+	call nz, _PrintChar_ASM
+	jr nz, PrintString
+	ret
+
+ScanForCFunctions:
+	ld hl, (curPC)
+	ld bc, (programSize)
+CFunctionsLoop:
+	ld a, tDet
+	cpir
+	ret nz
+	dec hl
+	dec hl
+	ld a, (hl)
+	call _IsA2ByteTok
+	inc hl
+	inc hl
+	jr z, CFunctionsLoop
+	ld a, (hl)
+	sub t0
+	ret c
+	cp t7-t0+1
+	ret nc
+	ld de, 0
+	ld e, a
+	inc hl
+	dec bc
+	ld a, b
+	or c
+	jr z, FoundRightCFunction
+	ld a, (hl)
+	cp tComma
+	jr z, FoundRightCFunction
+	cp tEnter
+	jr z, FoundRightCFunction
+	sub t0
+	jr c, FoundRightCFunction
+	cp t9-t0+1
+	jr nc, FoundRightCFunction
+	push hl
+		ex de, hl
+		add hl, hl
+		push hl
+		pop de
+		add hl, hl
+		add hl, hl
+		add hl, de
+		ld de, 0
+		ld e, a
+		add hl, de
+		ex de, hl
+	pop hl
+FoundRightCFunction:
+	inc hl
+	push hl
+		ex de, hl
+		ld de, 75
+		or a
+		sbc hl, de
+		jr nc,  WrongCFunction
+		add hl, de
+		ex de, hl
+		ld hl, usedCroutines
+		add hl, de
+		ld a, (hl)
+		or a
+		jr nz, FunctionAlreadyInProgram
+AddCFunctionToProgram:
+		ld a, (amountOfCRoutines)
+		inc a
+		ld (hl), a
+		ld (amountOfCRoutines), a
+		ld a, 0C3h
+		push de
+		pop hl
+		add hl, hl
+		add hl, de
+		call InsertAHL																; jp *
+FunctionAlreadyInProgram:
+WrongCFunction:
+	pop hl
+	jr CFunctionsLoop
+
+GetSpriteData:
+	or a
+	sbc hl, de
 	ret z
-	jr CompareStrings
+	add hl, de
+	ld a, (de)
+	sub t0
+	jp c, WrongSpriteDataError
+	cp tA-t0
+	jr c, +_
+	sub tA-t0
+	cp tG-tA
+	jp nc, WrongSpriteDataError
+	add a, 10
+_:	add a, a
+	add a, a
+	add a, a
+	add a, a
+	ld ixh, a
+	inc de
+	or a
+	sbc hl, de
+	jp z, ErrorSyntax
+	add hl, de
+	ld a, (de)
+	sub t0
+	jp c, WrongSpriteDataError
+	cp tA-t0
+	jr c, +_
+	sub tA-t0
+	cp tG-tA
+	jp nc, WrongSpriteDataError
+	add a, 10
+_:	or a, ixh
+	ld (bc), a
+	inc bc
+	inc de
+	jr GetSpriteData
