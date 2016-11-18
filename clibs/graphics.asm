@@ -1,1 +1,83 @@
-a
+; Byte: . . . . . . . .
+;       <---> <------->
+;       Args  1 = that argument is small (0-255)
+;       1 1 1:
+;    	bit   1 set = special
+;    	bit   1 reset = not implemented
+
+CFunctionsArguments:
+Begin_:									.db %00000000
+End_:									.db %00000000
+SetColor_:								.db %00110000
+SetDefaultPalette_:						.db %00000000
+SetPalette_:							.db %11100000
+FillScreen_:							.db %00110000
+SetPixel_:								.db %01001000
+GetPixel_:								.db %11100000
+GetDraw_:								.db %11100000
+SetDraw_:								.db %00110000
+SwapDraw_:								.db %00000000
+Blit_:									.db %00110000
+BlitLines_:								.db %01111100
+BlitArea_:								.db %10110101
+PrintChar_:								.db %00110000
+PrintInt_:								.db %11100000
+PrintUInt_:								.db %01001000
+PrintString_:							.db %00100000
+PrintStringXY_:							.db %01100000
+SetTextXY_:								.db %01001000
+SetTextBGColor_:						.db %00110000
+SetTextFGColor_:						.db %00110000
+SetTextTransparentColor_:				.db %00110000
+SetCustomFontData_:						.db %11100000
+SetCustomFontSpacing_:					.db %11100000
+SetMonospaceFont_:						.db %00110000
+GetStringWidth_:						.db %11100000
+GetCharWidth_:							.db %11100000
+GetTextX_:								.db %11100000
+GetTextY_:								.db %11100000
+Line_:									.db %10000000
+HorizLine_:								.db %01100000
+VertLine_:								.db %01100000
+Circle_:								.db %01100000
+FillCircle_:							.db %01100000
+Rectangle_:								.db %10000000
+FillRectangle_:							.db %10000000
+LineNoClip_:							.db %10000000
+HorizLineNoClip_:						.db %01100000
+VertLineNoClip_:						.db %01100000
+FillCircleNoClip_:						.db %01100000
+RectangleNoClip_:						.db %10000000
+FillRectangleNoClip_:					.db %10000000
+SetClipRegion_:							.db %10000010
+GetClipRegion_:							.db %11100000
+ShiftDown_:								.db %00100000
+ShiftUp_:								.db %00100000
+ShiftLeft_:								.db %00100000
+ShiftRight_:							.db %00100000
+Tilemap_:								.db %11100000
+TilemapNoClip_:							.db %11100000
+TransparentTilemap_:					.db %11100000
+TransparentTilemapNoClip_:				.db %11100000
+TilePtr_:								.db %11100000
+TilePtrMapped_:							.db %11100000
+LZDecompress_:							.db %11100000
+AllocSprite_:							.db %11100000
+Sprite_:								.db %11100000
+TransparentSprite_:						.db %11100000
+SpriteNoClip_:							.db %11110000
+TransparentSpriteNoClip_:				.db %11110000
+GetSpriteNoClip_:						.db %11100000
+ScaledSpriteNoClip_:					.db %11110000
+ScaledTransparentSpriteNoClip_:			.db %11110000
+FlipSpriteY_:							.db %11100000
+FlipSpriteX_:							.db %11100000
+RotateSpriteC_:							.db %11100000
+RotateSpriteCC_:						.db %11100000
+RotateSpriteHalf_:						.db %11100000
+Polygon_:								.db %11100000
+PolygonNoClip_:							.db %11100000
+FillTriangle_:							.db %11000000
+FillTriangleNoClip_:					.db %11000000
+LZDecompressSprite_:					.db %11100000
+SetTextScale_:							.db %01011000
