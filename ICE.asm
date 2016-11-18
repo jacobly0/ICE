@@ -4,8 +4,6 @@
 .db tExtTok, tAsm84CeCmp
 .org UserMem
 
-DEBUGMODE = 0
-
 start:
 	ld (backupSP), sp
 	ld hl, (curPC)
@@ -180,11 +178,6 @@ _:	ld bc, 0
 	add hl, bc
 	dec hl
 	ld (endPC), hl
-	ld a, 0DDh
-	call InsertA															; ld ix, cursorImage
-	ld a, 021h
-	ld hl, cursorImage
-	call InsertAHL															; ld ix, cursorImage
 	ld hl, varname
 	ld e, 9
 GetProgramName:
@@ -228,13 +221,14 @@ GoodCompile:
 	inc hl
 	ld (programSize), hl
 	ld (iy+myFlags3), 0
+	ld (iy+myFlags5), 0
 	set comp_with_libs, (iy+myFlags3)
 	ld hl, CData
 	ld de, (programPtr)
 	ld bc, CData2 - CData
 	ldir
 	ld (programPtr), de
-	call ScanForCFunctions
+	call PreScanProgram
 	ld a, 0CDh
 	ld hl, _RunIndicOff
 	call InsertAHL															; call _RunIndicOff
@@ -242,11 +236,10 @@ GoodCompile:
 	ld de, 4+4+5+UserMem-program
 	add hl, de
 	call InsertAHL															; call *
-	ld de, 08021FDh
-	ld hl, 0C3D000h
-	call InsertDEHL															; ld iy, flags \ jp *
+	ld bc, 08021FDh
+	ld de, 0C3D000h
 	ld hl, _DrawStatusBar
-	call InsertHL															; jp _DrawStatusBar
+	call InsertBCDEHL														; ld iy, flags \ jp _DrawStatusBar
 	ld a, (amountOfCRoutines)
 	or a
 	jr nz, StartCompiling
@@ -262,8 +255,13 @@ ParseProgramUntilEnd:
 	call _IncFetch
 CompileLoop:
 	ld (tempToken), a
-	ld (iy+myFlags), 0
-	ld (iy+myFlags4), 0
+	ld b, a
+	xor a
+	ld (iy+myFlags), a
+	ld (iy+myFlags4), a
+	ld (openedParensE), a
+	ld (openedParensF), a
+	ld a, b
 	cp tEnd
 	jr nz, ++_
 _:	ld a, (amountOfEnds)
@@ -415,8 +413,14 @@ CreateProgram:
 	ld hl, varname
 	call _Mov9ToOP1
 	call _ChkFindSym
-	call nc, _DelVar
-	ld hl, (programPtr)
+	jr c, ++_
+	call _ChkInRAM
+	jr nc, +_
+	call _Arc_Unarc
+	ld bc, 5
+	add hl, bc
+_:	call _DelVar
+_:	ld hl, (programPtr)
 	ld bc, program
 	or a
 	sbc hl, bc
@@ -438,7 +442,7 @@ CreateProgram:
 	ex de, hl
 	ld (hl), tExtTok														; insert header
 	inc hl
-	ld (hl), 07Bh
+	ld (hl), tAsm84CeCmp
 	inc hl
 	ex de, hl
 	ldir																	; insert the program data
@@ -457,6 +461,5 @@ CreateProgram:
 #include "operators functions/function_C.asm"
 #include "clibs/graphics.asm"
 #include "data.asm"
-;#include "editor2.asm"
 
 .echo $-start+14

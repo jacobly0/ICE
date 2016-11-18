@@ -8,24 +8,25 @@ programDataOffsetPtr	.equ saveSScreen+0018
 tempStringsPtr			.equ saveSScreen+0021
 tempListsPtr			.equ saveSScreen+0024
 programDataDataPtr		.equ saveSScreen+0027
+
 amountOfPrograms		.equ saveSScreen+0030
-openedParens			.equ saveSScreen+0031
-amountOfArguments		.equ saveSScreen+0032
-amountOfCRoutines		.equ saveSScreen+0033
-amountOfEnds			.equ saveSScreen+0034
+openedParensE			.equ saveSScreen+0031
+openedParensF			.equ saveSScreen+0032
+amountOfArguments		.equ saveSScreen+0033
+amountOfCRoutines		.equ saveSScreen+0034
+amountOfEnds			.equ saveSScreen+0035
+amountOfInput			.equ saveSScreen+0036
+amountOfPause			.equ saveSScreen+0037
 
 tempToken				.equ saveSScreen+0059
 tempToken2				.equ saveSScreen+0060
 InputStartData			.equ saveSScreen+0061
 RandStartData			.equ saveSScreen+0064
-backupSP				.equ saveSScreen+0067
-backupCurPC				.equ saveSScreen+0070
-backupEndPC				.equ saveSScreen+0073
-
-arg1					.equ saveSScreen+0079
-arg2					.equ saveSScreen+0082
-arg3					.equ saveSScreen+0085
-arg4					.equ saveSScreen+0088
+PauseStartData			.equ saveSScreen+0067
+MeanStartData			.equ saveSScreen+0070
+backupSP				.equ saveSScreen+0073
+backupCurPC				.equ saveSScreen+0076
+backupEndPC				.equ saveSScreen+0079
 
 stack					.equ saveSScreen+0100
 output					.equ saveSScreen+0400
@@ -53,15 +54,12 @@ myFlags					.equ -30h
 prev_is_number			.equ 0										; used if a number consists of more digits
 chain_operators			.equ 1										; used if the calculation is needed for another calculation
 triggered_a_comma		.equ 2										; used if a comma is entered outside parens, so only useful for "Disp"
-multiple_arguments		.equ 3										; "Disp" can display more than one number/string
 output_is_number		.equ 4										; used if the calculation is only a single number, loop-statements can be 
 ans_set_z_flag			.equ 5										; used if the previous calculation (re)sets the zero flag, useful for loop/conditions
 need_push				.equ 6										; used if Ans may not be overwritten
 good_compilation		.equ 7										; used if compilation is succesfull
 
 myFlags2				.equ -31h
-has_already_input		.equ 0										; only once time "Input" routine
-has_already_rand		.equ 1										; only once time "rand" routine
 output_is_string		.equ 2										; used for strings
 negative_for_step		.equ 3										; used for the step in a For loop
 for_step_is_number		.equ 4										; used for the step in a For loop
@@ -71,6 +69,8 @@ last_token_is_ret		.equ 6										; used if last token is "Return"
 myFlags3				.equ -32h
 comp_with_libs			.equ 0										; used if compile with C libs
 displayed_det			.equ 1										; used if the text of a det( function is displayed in the statusbar
+op_is_last_one			.equ 2										; used if the operator is the last of that line
+use_mean_routine		.equ 3										; used if the function is mean()
 
 myFlags4				.equ -33h
 arg1_is_small			.equ 4										; used in C functions
@@ -79,6 +79,12 @@ arg2_is_small			.equ 3										; used in C functions
 arg3_is_small			.equ 2										; used in C functions
 arg4_is_small			.equ 1										; used in C functions
 arg5_is_small			.equ 0										; used in C functions
+
+myFlags5				.equ -34h
+has_already_input		.equ 0										; only once time "Input" routine
+has_already_rand		.equ 1										; only once time "rand" routine
+has_already_pause		.equ 2										; only once time "Pause" routine
+has_already_mean		.equ 3										; only once time "mean()" routine
 
 typeNumber				.equ 0
 typeVariable			.equ 1

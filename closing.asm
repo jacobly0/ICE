@@ -1,4 +1,4 @@
-	ld hl, openedParens
+	ld hl, openedParensE
 	ld b, a
 	ld a, (hl)
 	or a
@@ -56,10 +56,11 @@ StopMovingForArgument2:
 	call _IncFetch
 	jp MainLoop
 MismatchedParens:
-	ld a, (tempToken)
-	cp tRParen
+	ld a, (openedParensF)
+	or a
 	jp z, MismatchError
-	bit multiple_arguments, (iy+myFlags)
-	jp z, ErrorSyntax
+	ld a, (tempToken)
+	cp tComma
+	jr nz, +_
 	set triggered_a_comma, (iy+myFlags)
-	jp StopParsing
+_:	jp StopParsing

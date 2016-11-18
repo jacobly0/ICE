@@ -3,8 +3,8 @@ ParseExpression:
 	ld (stackPtr), hl
 	ld hl, output
 	ld (outputPtr), hl
-	ld hl, openedParens
-	ld (hl), 0
+	xor a
+	ld (openedParensE), a
 	res output_is_string, (iy+myFlags2)
 	res triggered_a_comma, (iy+myFlags)
 	call _CurFetch
@@ -90,7 +90,7 @@ AnOSList:
 	call _IncFetch
 	cp tLParen
 	jr nz, +_
-	ld hl, openedParens
+	ld hl, openedParensE
 	inc (hl)
 	ld hl, (stackPtr)
 	ld (hl), typeOperator
@@ -171,7 +171,7 @@ AddFunctionToOutput:
 	ld (outputPtr), hl
 	jp ReturnToLoop
 AddFunctionToStack:
-	ld hl, openedParens
+	ld hl, openedParensE
 	inc (hl)
 	call _IsA2ByteTok
 	call z, _IncFetch
@@ -206,6 +206,8 @@ StopParsing:																; move stack to output
 Loop:
 	res output_is_number, (iy+myFlags)
 	res ans_set_z_flag, (iy+myFlags)
+	res op_is_last_one, (iy+myFlags3)
+	res use_mean_routine, (iy+myFlags3)
 	or a
 	sbc hl, bc
 	ld de, output
@@ -213,6 +215,13 @@ Loop:
 	jp z, ErrorSyntax
 	add hl, de
 	add hl, bc
+	push hl
+		ld hl, 12
+		or a
+		sbc hl, bc
+		jr nz, +_
+		set op_is_last_one, (iy+myFlags3)
+_:	pop hl
 	ld a, b
 	or a, c
 	cp 4
@@ -316,6 +325,8 @@ _:	inc bc
 AddChain:
 	ld e, typeChainAns
 	ld a, (hl)
+	cp typeOperator
+	jr nc, ChainAns2
 	inc hl
 	inc hl
 	inc hl
@@ -350,21 +361,20 @@ ParseSingleArgument:
 ParseSingleArgument2:
 	ld hl, (hl)
 	ld a, 021h
-	jp InsertAHL														; ld hl, *
+	jp InsertAHL															; ld hl, *
 _:	dec a
 	jr nz, +_
 	inc hl
 	ld c, (hl)
 	jp InsertHIXC
-_:	dec a
-	dec a
+_:	sub a, 3
 	jr nz, +_
 	inc hl
 	ld a, (hl)
 	ld b, OutputInHL
 	res need_push, (iy+myFlags)
 	jp GetFunction
-_:	sub a, 4
+_:	sub a, 3
 	jp nz, ErrorSyntax
 	set output_is_string, (iy+myFlags2)
 	push hl

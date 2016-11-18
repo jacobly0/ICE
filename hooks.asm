@@ -4,7 +4,7 @@ InstallHooks:
 	call _ChkFindSym
 	jr c, +_
 	call _Arc_Unarc
-	ld bc, 5														; weird TI; it points HL to the address locating the memory, in the VAT, not the file type :/
+	ld bc, 5
 	add hl, bc
 	call _DelVar
 _:	ld hl, Hooks_end - KeyHook_start
@@ -19,7 +19,7 @@ _:	ld hl, Hooks_end - KeyHook_start
 	call _ChkFindSym
 	ld hl, 19														; archived program header+VAT entry
 	add hl, de
-	call _SetGetCSCHook
+	call _SetGetKeyHook
 	
 	ld de, KeyHook_end - KeyHook_start
 	add hl, de
@@ -31,22 +31,18 @@ _:	ld hl, Hooks_end - KeyHook_start
 	
 KeyHook_start:
 	.db 83h
-	cp 01Bh
-	ret nz
+	or a
+	ret z
+	ld b, a
 	ld a, (cxCurApp)
 	cp cxPrgmEdit
 	ld a, b
 	ret nz
-	or a
-	jr nz, +_
-	inc a
-	ld a, 0
-	ret
-_:	push af
+	push af
 		call _os_ClearStatusBarLow
 		res displayed_det, (iy+myFlags3)
 	pop af
-	cp skTrace
+	cp kTrace
 	ret nz
 DisplayCustomTokensAndCFunctions:
 	call _CursorOff
@@ -65,7 +61,7 @@ DisplayTabWithTokens:
 	mlt de
 	ld hl, TabData - KeyHook_start
 	add hl, de
-	ld de, (getKeyHookPtr)
+	ld de, (rawKeyHookPtr)
 	add hl, de
 	ld hl, (hl)
 	add hl, de
@@ -243,15 +239,21 @@ BufferFound:
 		call _ClrLCDFull
 		call _ClrTxtShd
 		ld de, CustomTokensProgramText - KeyHook_start
-		ld hl, (getKeyHookPtr)
+		ld hl, (rawKeyHookPtr)
 		add hl, de
 		xor a
 		ld (curCol), a
 		ld (curRow), a
 		call _PutS
 		ld hl, progToEdit
-		call _PutS
-		call _NewLine
+		ld b, 8
+_:		ld a, (hl)
+		or a
+		jr z, +_
+		call _PutC
+		inc hl
+		djnz -_
+_:		call _NewLine
 		ld a, ':'
 		call _PutC
 		call _DispEOW
@@ -352,8 +354,8 @@ C77:	.db "FillTriangle", 0
 C78:	.db "FillTriangle_NoClip", 0
 C79:	.db "LZDecompressSprite", 0
 C80:	.db "SetTextScale", 0
-		.db "Not Used", 0
-		.db "Not Used", 0
+		.db "Not used", 0
+		.db "Not used", 0
 		.db 0
 TabData:
 	.dl Tab1 - KeyHook_start
@@ -456,7 +458,7 @@ TokenHook_start:
 	cp 5+3+(AMOUNT_OF_CUSTOM_TOKENS*3)
 	ret nc
 	sub 5
-	ld de, (getKeyHookPtr)
+	ld de, (rawKeyHookPtr)
 	ld hl, TokenHook_data - KeyHook_start
 	add hl, de
 	ld bc, 0
@@ -539,7 +541,7 @@ GetDetValueStop:
 	mlt hl
 	ld de, CData5 - KeyHook_start
 	add hl, de
-	ld de, (getKeyHookPtr)
+	ld de, (rawKeyHookPtr)
 	add hl, de
 	ld hl, (hl)
 	add hl, de

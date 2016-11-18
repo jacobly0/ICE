@@ -114,7 +114,7 @@ _:	cp trand
 	ld a, 0CDh
 	call InsertA															; call *
 	call InsertProgramPtrToDataOffset
-	bit has_already_rand, (iy+myFlags2)
+	bit has_already_rand, (iy+myFlags5)
 	jr nz, +_
 	ld hl, (programDataDataPtr)
 	push hl
@@ -125,7 +125,7 @@ _:	cp trand
 	ld bc, RandRoutineEnd - RandRoutine
 	ldir
 	ld (programDataDataPtr), de
-	set has_already_rand, (iy+myFlags2)
+	set has_already_rand, (iy+myFlags5)
 	bit need_push, (iy+myFlags)
 	ret z
 	ld a, 0D1h
@@ -163,7 +163,7 @@ _:	cp trand
 	ld a, 0CDh
 	call InsertA															; call *
 	call InsertProgramPtrToDataOffset
-	bit has_already_rand, (iy+myFlags2)
+	bit has_already_rand, (iy+myFlags5)
 	jr nz, +_
 	ld hl, (programDataDataPtr)
 	ld (RandStartData), hl
@@ -174,7 +174,7 @@ _:	cp trand
 	ld bc, RandRoutineEnd - RandRoutine
 	ldir
 	ld (programDataDataPtr), de
-	set has_already_rand, (iy+myFlags2)
+	set has_already_rand, (iy+myFlags5)
 	jr ++_
 _:	ld hl, (RandStartData)
 	call InsertHL															; call XXXXXX
@@ -210,7 +210,7 @@ _:	cp trand
 	ld a, 0CDh
 	call InsertA															; call *
 	call InsertProgramPtrToDataOffset
-	bit has_already_rand, (iy+myFlags2)
+	bit has_already_rand, (iy+myFlags5)
 	jr nz, +_
 	ld hl, (programDataDataPtr)
 	ld (RandStartData), hl
@@ -221,7 +221,7 @@ _:	cp trand
 	ld bc, RandRoutineEnd - RandRoutine
 	ldir
 	ld (programDataDataPtr), de
-	set has_already_rand, (iy+myFlags2)
+	set has_already_rand, (iy+myFlags5)
 	jr ++_
 _:	ld hl, (RandStartData)
 	call InsertHL															; call XXXXXX
@@ -242,7 +242,7 @@ CompareStrings:
 	ret nz
 	cp tEnter
 	jr nz, CompareStrings
-	ret	
+	ret
 	
 SubError:
 	ld a, '-'
@@ -339,6 +339,9 @@ ImplementError:
 EndError:
 	ld hl, EndErrorMessage
 	jr DispFinalString
+ErrorTooLargeLoop:
+	ld hl, TooLargeLoopMessage
+	jr DispFinalString
 LabelError:
 	ld hl, LabelErrorMessage
 	
@@ -366,6 +369,9 @@ ReturnToOS:
 	inc hl
 	ex de, hl
 GetAmountOfLines:
+	ld a, b
+	or c
+	jr z, +_
 	ld a, tEnter
 	cpir
 	jr nz, +_
@@ -402,21 +408,14 @@ _:	call _GetCSC
 	jr z, -_
 StopProgram:
 	ld sp, (backupSP)
-	ld hl, (curPC)
-	push hl
-		ld hl, (backupCurPC)
-		ld (curPC), hl
-		ld hl, (backupEndPC)
-		ld (endPC), hl
-		ld a, lcdBpp16
-		ld (mpLcdCtrl), a
-		call _ClrWindow
-		call _DrawStatusBar
-	pop hl
-	;bit good_compilation, (iy+myFlags)
-	;ret nz
-	;jp OpenEditBuffer
-	ret
+	ld hl, (backupCurPC)
+	ld (curPC), hl
+	ld hl, (backupEndPC)
+	ld (endPC), hl
+	ld a, lcdBpp16
+	ld (mpLcdCtrl), a
+	call _ClrWindow
+	jp _DrawStatusBar
 	
 ClearScreen:
 	ld hl, vRAM+(320*12)
@@ -441,26 +440,39 @@ PrintString:
 	call nz, _PrintChar_ASM
 	jr nz, PrintString
 	ret
-
-ScanForCFunctions:
+	
+PreScanProgram:
 	ld hl, (curPC)
 	ld bc, (programSize)
-CFunctionsLoop:
-	ld a, tDet
+ScanLoop:
+	ld a, tEnter
 	cpir
 	ret nz
-	dec hl
-	dec hl
 	ld a, (hl)
-	call _IsA2ByteTok
+	cp tDet
+	jr z, ScanFoundDet
+	cp tPause
+	jr z, ScanFoundPause
+	cp tInput
+	jr z, ScanFoundInput
+	jr ScanLoop
+ScanFoundInput:
+	ld a, (amountOfInput)
+	inc a
+	ld (amountOfInput), a
+	jr ScanLoop
+ScanFoundPause:
+	ld a, (amountOfPause)
+	inc a
+	ld (amountOfPause), a
+	jr ScanLoop
+ScanFoundDet:
 	inc hl
-	inc hl
-	jr z, CFunctionsLoop
 	ld a, (hl)
 	sub t0
-	ret c
-	cp t7-t0+1
-	ret nc
+	jr c, ScanLoop
+	cp t9-t0+1
+	jr nc, ScanLoop
 	ld de, 0
 	ld e, a
 	inc hl
@@ -491,10 +503,9 @@ CFunctionsLoop:
 		ex de, hl
 	pop hl
 FoundRightCFunction:
-	inc hl
 	push hl
 		ex de, hl
-		ld de, 75
+		ld de, 77
 		or a
 		sbc hl, de
 		jr nc,  WrongCFunction
@@ -519,7 +530,7 @@ AddCFunctionToProgram:
 FunctionAlreadyInProgram:
 WrongCFunction:
 	pop hl
-	jr CFunctionsLoop
+	jp ScanLoop
 
 GetSpriteData:
 	or a

@@ -7,11 +7,11 @@ operators_special:
 FunctionsWithReturnValue:
 	.db tGetKey, trand, tLParen
 FunctionsWithReturnValueArguments:
-	.db tMin, tMax, tNot, tExtTok
+	.db tMean, tMin, tMax, tNot, tExtTok
 FunctionsWithReturnValueEnd:
 
 FunctionsWithReturnValueStart:
-	.dl functionCE, functionNot, functionMax, functionMin
+	.dl functionCE, functionNot, functionMax, functionMin, functionMean
 
 FunctionsSingle:
 	.db tInput, tClLCD, tPause, tIf, tWhile, tRepeat, tDisp, tFor, tReturn, tVarOut, tLbl, tGoto, tii, tDet
@@ -40,7 +40,7 @@ CSpecialFunctionsStart:
 	
 CArguments:
 	.dl CFunction0Args, CFunction1Arg, CFunction2Args, CFunction3Args, CFunction4Args, CFunction5Args, CFunction6Args
-	.dl CFunction0ArgsSMC, CFunction1ArgSMC, CFunction2ArgsSMC, CFunction3ArgsSMC, CFunction4ArgsSMC, CFunction5ArgsSMC, CFunction6ArgsSMC
+	.dl CFunction0ArgsSMC, CFunction1ArgSMC, CFunction2ArgsSMC, CFunction3ArgsSMC, CFunction4ArgsSMC, CFunction5ArgsSMC, CFunction5ArgsSMC
 	
 functionCustomStart:
 	.dl functionExecHex, functionDefineSprite, functionCall
@@ -51,7 +51,7 @@ precedence2: .db 0, 4,4,5,5,3,3,3,3,3,3,2, 2,  1,  6
 	
 offsets:
 	.dl stack, output, program, programNamesStack, labelStack, gotoStack, programDataOffsetStack, tempStringsStack, tempListsStack, programDataData
-	.db 0, 0, 0, 0, 0
+	.fill 8, 0
 offset_end:
 
 lists:
@@ -93,6 +93,8 @@ ImplementMessage:
 	.db "This function has not been implemented yet!", 0
 SyntaxErrorMessage:
 	.db "Invalid arguments entered!", 0
+TooLargeLoopMessage:
+	.db "Too large anonymous loop!", 0
 LineNumber:
 	.db "Error on line ", 0
 MismatchErrorMessage:
@@ -162,29 +164,41 @@ _:	push bc
 	pop bc
 	djnz -_
 InputOffset = $+2
-	ld (ix+5), hl
+	ld (ix+0), hl
 	jp _DeleteTempEditEqu
 InputRoutineEnd:
 
 RandRoutine:
-	ld de,(ix+rand1)
-	or a
-	sbc hl,hl
-	add hl,de
-	add hl,hl
-	add hl,hl
+	ld hl, (ix+rand1)
+	ld de, (ix+rand1+3)
+	ld b, h
+	ld c, l
+	add hl, hl
+	rl e
+	rl d
+	add hl, hl
+	rl e
+	rl d
 	inc l
-	add hl,de
-	ld (ix+rand1),hl
-	ld hl,(ix+rand2)
-	add hl,hl
-	sbc a,a
-	and 000011011b
+	add hl, bc
+	ld (ix+rand1), hl
+	adc hl, de
+	ld (ix+rand1+3), hl
+	ex de, hl
+	ld hl, (ix+rand1+6)
+	ld bc, (ix+rand1+9)
+	add hl, hl
+	rl c
+	rl b
+	ld (ix+rand1+9), bc
+	sbc a, a
+	and %11000101
 	xor l
-	ld l,a
-	ld (ix+rand2),hl
-	add hl,de
-    ret
+	ld l, a
+	ld (ix+rand1+6), hl
+	ex de, hl
+	add hl, bc
+	ret
 RandRoutineEnd:
 
 DispNumberRoutine:
@@ -214,6 +228,19 @@ _:	ld b, 32
 	ret
 PauseRoutineEnd:
 
+MeanRoutine:
+	ld ix, 0
+	add ix, sp
+	add hl, de
+	push hl
+		rr (ix-1)
+	pop hl
+	rr h
+	rr l
+	ld ix, cursorImage
+	ret
+MeanRoutineEnd:
+
 XORANDData:
 	ld bc, -1
 	add hl, bc
@@ -239,6 +266,7 @@ BackgroundData:
 	ldir
 
 CData:
+	ld ix, cursorImage
 	ld hl, 0D1A8DEh						; LibLoadAppVar
 	call _Mov9ToOP1
 	ld a, AppVarObj
