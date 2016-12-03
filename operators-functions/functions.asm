@@ -65,7 +65,7 @@ functionCall:
 functionReturn:
 	call _NxtFetch
 	jr nc, +_
-	set last_token_is_ret, (iy+myFlags2)
+	set last_token_is_ret, (iy+fExpression1)
 _:	ld a, 0C9h
 	jp InsertA																; ret
 	
@@ -76,7 +76,7 @@ functionDisp:
 	call ParseExpression
 	ld de, (programPtr)
 	ld bc, 14
-	bit output_is_string, (iy+myFlags2)
+	bit output_is_string, (iy+fExpression1)
 	jr nz, DispString
 	ld hl, DispNumberRoutine
 	jr +_
@@ -85,7 +85,7 @@ DispString:
 	dec bc
 _:	ldir
 	ld (programPtr), de
-	bit triggered_a_comma, (iy+myFlags)
+	bit triggered_a_comma, (iy+fExpression2)
 	ret z
 	jr functionDisp
 		
@@ -113,7 +113,9 @@ _:			call _IncFetch
 			call ParseExpression
 		pop de
 		ld (curPC), de
-		bit ans_set_z_flag, (iy+myFlags)
+		bit output_is_number, (iy+fExpression1)
+		jr nz, functionRepeatInfinite
+		bit ans_set_z_flag, (iy+fExpression1)
 		jr z, +_
 		ld hl, (programPtr)
 		dec hl
@@ -146,7 +148,7 @@ _:		ld bc, UserMem - program
 functionRepeatSmall:
 	ld b, a
 	ld a, 028h
-	bit ans_set_z_flag, (iy+myFlags)
+	bit ans_set_z_flag, (iy+fExpression1)
 	jr z, +_
 	ld a, ixh
 _:	call InsertA															; jr [n]z, *
@@ -154,20 +156,58 @@ _:	call InsertA															; jr [n]z, *
 	jp InsertA																; jr [n]z, *
 functionRepeatLarge:
 	ex de, hl
-	bit ans_set_z_flag, (iy+myFlags)
+	bit ans_set_z_flag, (iy+fExpression1)
 	jr z, +_
 	ld a, ixh
 	add a, 0A2h
 	jr ++_
 _:	ld a, 0CAh
 _:	jp InsertAHL															; jp [n]z, XXXXXX
+functionRepeatInfinite:
+		ld hl, (programPtr)
+		dec hl
+		dec hl
+		dec hl
+		dec hl
+		ld (programPtr), hl
+		push hl
+			inc hl
+			ld hl, (hl)
+			add hl, de
+			or a
+			sbc hl, de
+		pop hl
+		ret nz
+		ld de, UserMem - program
+		add hl, de
+	pop de
+	or a
+	sbc hl, de
+	ld a, h
+	or a
+	jr nz, functionRepeatInfiniteLarge
+	ld a, l
+	cpl
+	dec a
+	cp %10000000
+	jr c, functionRepeatInfiniteLarge
+functionRepeatInfiniteSmall:
+	ld b, a
+	ld a, 018h
+	call InsertA															; jr *
+	ld a, b
+	jp InsertA																; jr *
+functionRepeatInfiniteLarge:
+	ex de, hl
+	ld a, 0C3h
+	jp InsertAHL															; jp XXXXXX
 
 functionIf:
 	ld hl, amountOfEnds
 	inc (hl)
 	call _IncFetch
 	call ParseExpression
-	bit ans_set_z_flag, (iy+myFlags)
+	bit ans_set_z_flag, (iy+fExpression1)
 	jr z, +_
 	ld hl, (programPtr)
 	dec hl
@@ -226,7 +266,9 @@ functionWhile:
 	ld hl, (programPtr)
 	push hl
 		call ParseExpression
-		bit ans_set_z_flag, (iy+myFlags)
+		bit output_is_number, (iy+fExpression1)
+		jr z, functionWhileInfinite
+		bit ans_set_z_flag, (iy+fExpression1)
 		jr z, +_
 		ld hl, (programPtr)
 		dec hl
@@ -261,30 +303,54 @@ _:		call InsertA														; jp z, ******
 	ex de, hl
 	ld (hl), de
 	ret
-	ex de, hl
-	jp InsertHL																; jp z, XXXXXX
+functionWhileInfinite:
+		ld hl, (programPtr)
+		dec hl
+		dec hl
+		dec hl
+		dec hl
+		ld (programPtr), hl
+		inc hl
+		ld hl, (hl)
+		add hl, de
+		or a
+		sbc hl, de
+		jr nz, +_
+		call ParseProgramUntilEnd
+		cp tElse
+		jp z, ErrorSyntax
+		ld a, 0C3h
+	pop hl
+	ld bc, UserMem - program
+	add hl, de
+	jp InsertAHL															; jp XXXXXX
+_:		call ParseProgramUntilEnd
+		cp tElse
+		jp z, ErrorSyntax
+	pop hl
+	ld (programPtr), hl
+	ret
 	
 functionClrHome:
 	call _NxtFetch
 	jr c, +_
 	cp tEnter
 	jp nz, ErrorSyntax
-_:	ld a, 0CDh
-	ld hl, _HomeUp
-	call InsertAHL															; call _HomeUp
+_:	ld hl, _HomeUp
+	call InsertCallHL														; call _HomeUp
 	ld hl, _ClrLCDFull
 	jp InsertAHL															; call _ClrLCDFull
 	
 functionPause:
 	call _IncFetch
-	jr c, +_
+	jr c, ++_
 	cp tEnter
-	jr z, +_
+	jr z, ++_
 	call ParseExpression
 	ld a, (amountOfPause)
 	dec a
-	jr z, functionPauseOnce
-	bit has_already_pause, (iy+myFlags5)
+	jp z, functionPauseOnce
+	bit has_already_pause, (iy+fProgram1)
 	jr nz, AddPause
 	ld a, 0CDh
 	call InsertA															; call *
@@ -293,16 +359,28 @@ functionPause:
 	ld (PauseStartData), hl
 	push hl
 	pop de
-	call InsertHL															; call *
+	bit output_is_number, (iy+fExpression1)
+	jr z, +_
+	push hl
+	ld hl, (programPtr)
+		dec hl
+		dec hl
+		dec hl
+		dec hl
+		ld bc, (hl)
+		dec bc
+		ld (hl), bc
+	pop hl
+	inc hl
+_:	call InsertHL															; call *
 	ld hl, PauseRoutine
 	ld bc, PauseRoutineEnd - PauseRoutine
 	ldir
 	ld (programDataDataPtr), de
-	set has_already_pause, (iy+myFlags5)
+	set has_already_pause, (iy+fProgram1)
 	ret
-_:	ld a, 0CDh
-	ld hl, _GetCSC
-	call InsertAHL															; call _GetCSC
+_:	ld hl, _GetCSC
+	call InsertCallHL														; call _GetCSC
 	ld a, 0FEh
 	ld hl, 0F82009h
 	jp InsertAHL															; cp tEnter \ jr nz, $-9
@@ -311,12 +389,25 @@ AddPause:
 	call InsertA															; call ******
 	call InsertProgramPtrToDataOffset
 	ld hl, (PauseStartData)
-	jp InsertHL																; call XXXXXX
+	bit output_is_number, (iy+fExpression1)
+	jr z, +_
+	push hl
+		ld hl, (programPtr)
+		dec hl
+		dec hl
+		dec hl
+		dec hl
+		ld de, (hl)
+		dec de
+		ld (hl), de
+	pop hl
+	inc hl
+_:	jp InsertHL																; call XXXXXX
 functionPauseOnce:
 	ld de, (programPtr)
 	ld hl, PauseRoutine
 	ld bc, PauseRoutineEnd - PauseRoutine
-	bit output_is_number, (iy+myFlags)
+	bit output_is_number, (iy+fExpression1)
 	jr z, +_
 	ld ix, (programPtr)
 	ld de, (ix-3)
@@ -354,7 +445,7 @@ _:	ld a, (amountOfInput)
 	ld a, 032h
 	call InsertA															; ld (******), a
 	call InsertProgramPtrToDataOffset
-	bit has_already_input, (iy+myFlags5)
+	bit has_already_input, (iy+fProgram1)
 	jr nz, AddPointerToInput
 	ld hl, (programDataDataPtr)
 	ld (InputStartData), hl
@@ -372,7 +463,7 @@ _:	ld hl, InputRoutine
 	ld bc, InputRoutineEnd-InputRoutine
 	ldir
 	ld (programDataDataPtr), de
-	set has_already_input, (iy+myFlags5)
+	set has_already_input, (iy+fProgram1)
 	ret
 AddPointerToInput:
 	ld hl, (InputStartData)
@@ -420,7 +511,7 @@ functionNot:
 	jr z, NotFunction
 	jp ErrorSyntax
 NotNumber:
-	set output_is_number, (iy+myFlags)
+	set output_is_number, (iy+fExpression1)
 	ld hl, (ix-3)
 	add hl, de
 	or a
@@ -505,7 +596,7 @@ RemainderNumberXXX:
 	jr z, RemainderNumberFunction
 	jp ErrorSyntax
 RemainderNumberNumber:
-	set output_is_number, (iy+myFlags)
+	set output_is_number, (iy+fExpression1)
 	push hl
 		push bc
 		pop hl
@@ -529,9 +620,8 @@ RemainderNumberChainAns:
 	push bc
 	pop hl
 	call InsertDEHL															; push hl \ pop bc \ ld hl, *
-	ld a, 0CDh
 	ld hl, __idvrmu
-	jp InsertAHL															; call __idvrmu
+	jp InsertCallHL															; call __idvrmu
 RemainderNumberFunction:
 	ld a, e
 	push bc
@@ -540,9 +630,8 @@ RemainderNumberFunction:
 	pop hl
 	ld a, 021h
 	call InsertAHL															; ld hl, *
-	ld a, 0CDh
 	ld hl, __idvrmu
-	jp InsertAHL															; call __idvrmu
+	jp InsertCallHL															; call __idvrmu
 RemainderVariableXXX:
 	ld a, ixl
 	or a
@@ -570,9 +659,8 @@ RemainderVariableChainAns:
 	ld a, 0C1h
 	call InsertA															; pop bc
 _:	call InsertHIXC															; ld hl, (ix+*)
-	ld a, 0CDh
 	ld hl, __idvrmu
-	jp InsertAHL															; call __idvrmu
+	jp InsertCallHL															; call __idvrmu
 RemainderVariableFunction:
 	ld a, e
 	ld b, OutputInBC
@@ -602,9 +690,8 @@ RemainderChainAnsNumber:
 	ex de, hl
 	ld a, 001h
 	call InsertAHL															; ld bc, *
-_:	ld a, 0CDh
-	ld hl, __idvrmu
-	jp InsertAHL															; call __idvrmu
+_:	ld hl, __idvrmu
+	jp InsertCallHL															; call __idvrmu
 RemainderChainAnsVariable:
 	call InsertIXC															; ld bc, (ix+*)
 	jr -_
@@ -615,7 +702,7 @@ RemainderChainAnsChainAns:
 RemainderChainAnsFunction:
 	ld a, e
 	ld b, OutputInBC
-	set need_push, (iy+myFlags)
+	set need_push, (iy+fExpression1)
 	call GetFunction
 	jr -_
 RemainderFunctionXXX:
@@ -662,7 +749,7 @@ RemainderFunctionFunction:
 	jr -_
 	
 functionMean:
-	set use_mean_routine, (iy+myFlags3)
+	set use_mean_routine, (iy+fExpression2)
 functionMax:
 	ld a, 030h
 	jr +_
@@ -710,9 +797,9 @@ MaxMinMeanNumberXXX:
 	jr z, MaxMinMeanNumberFunction
 	jp ErrorSyntax
 MaxMinMeanNumberNumber:
-	set output_is_number, (iy+myFlags)
+	set output_is_number, (iy+fExpression1)
 	push hl
-		bit use_mean_routine, (iy+myFlags3)
+		bit use_mean_routine, (iy+fExpression2)
 		jr nz, ++_
 		ld a, (MaxMinMeanInsertSMC)
 		push bc
@@ -806,7 +893,7 @@ MaxMinMeanChainPushXXX:
 	ld a, ixl
 	cp typeChainAns
 	jp nz, UnknownError
-	bit use_mean_routine, (iy+myFlags3)
+	bit use_mean_routine, (iy+fExpression2)
 	jr nz, +_
 	ld a, 0EDh
 	call InsertA															; ex de, hl
@@ -834,7 +921,7 @@ MaxMinMeanChainAnsNumber:
 	ld a, 011h
 	call InsertAHL															; ld de, *
 MaxMinMeanInsert:
-	bit use_mean_routine, (iy+myFlags3)
+	bit use_mean_routine, (iy+fExpression2)
 	jp nz, MeanInsert
 	ld a, 0B7h
 	ld de, 01952EDh
@@ -851,7 +938,7 @@ MaxMinMeanChainAnsChainAns:
 MaxMinMeanChainAnsFunction:
 	ld a, e
 	ld b, OutputInDE
-	set need_push, (iy+myFlags)
+	set need_push, (iy+fExpression1)
 	call GetFunction
 _:	jr MaxMinMeanInsert
 MaxMinMeanFunctionXXX:
@@ -880,13 +967,13 @@ MaxMinMeanFunctionVariable:
 MaxMinMeanFunctionChainPush:
 	jp UnknownError
 MaxMinMeanFunctionChainAns:
-	bit use_mean_routine, (iy+myFlags3)
+	bit use_mean_routine, (iy+fExpression2)
 	jr nz, ++_
 	ld a, 0EBh
-	call InsertA														; ex de, hl
+	call InsertA															; ex de, hl
 	ld a, c
 	ld b, OutputInHL
-_:	set need_push, (iy+myFlags)
+_:	set need_push, (iy+fExpression1)
 	call GetFunction
 	jr MaxMinMeanInsert
 _:	ld a, c
@@ -898,11 +985,11 @@ MaxMinMeanFunctionFunction:
 	call GetFunction
 	ld a, c
 	ld b, OutputInHL
-	set need_push, (iy+myFlags)
+	set need_push, (iy+fExpression1)
 	call GetFunction
 	jp MaxMinMeanInsert
 MeanInsert:
-	bit has_already_mean, (iy+myFlags5)
+	bit has_already_mean, (iy+fProgram1)
 	jr nz, +_
 	ld a, 0CDh
 	call InsertA															; call *
@@ -916,7 +1003,7 @@ MeanInsert:
 	ld bc, MeanRoutineEnd - MeanRoutine
 	ldir
 	ld (programDataDataPtr), de
-	set has_already_mean, (iy+myFlags5)
+	set has_already_mean, (iy+fProgram1)
 	ret
 _:	ld a, 0CDh
 	call InsertA															; call ******
@@ -929,7 +1016,7 @@ functionC:
 	ld (openedParensF), a
 	call _IncFetch
 	call ParseExpression
-	bit output_is_number, (iy+myFlags)
+	bit output_is_number, (iy+fExpression1)
 	jp z, ErrorSyntax
 	ld hl, (programPtr)
 	dec hl
@@ -939,7 +1026,7 @@ functionC:
 	ld (programPtr), hl
 	inc hl
 	ld hl, (hl)
-	ld de, 75
+	ld de, AMOUNT_OF_C_FUNCTIONS
 	or a
 	sbc hl, de
 	jp nc, ErrorSyntax
@@ -954,7 +1041,7 @@ functionC:
 	ld a, (hl)
 	cp %11100000
 	jp z, ImplementError
-	ld (iy+myFlags4), a
+	ld (iy+fFunction1), a
 	rlca
 	rlca
 	rlca
@@ -1027,9 +1114,9 @@ functionDefineSprite:
 	ld (openedParensF), a
 	call _IncFetch
 	call ParseExpression
-	bit output_is_number, (iy+myFlags)
+	bit output_is_number, (iy+fExpression1)
 	jp z, ErrorSyntax
-	bit triggered_a_comma, (iy+myFlags)
+	bit triggered_a_comma, (iy+fExpression2)
 	jp z, ErrorSyntax
 	ld hl, (programPtr)
 	dec hl
@@ -1052,9 +1139,9 @@ _:	push de
 		push bc
 			call _IncFetch
 			call ParseExpression
-			bit output_is_number, (iy+myFlags)
+			bit output_is_number, (iy+fExpression1)
 			jp z, ErrorSyntax
-			bit triggered_a_comma, (iy+myFlags)
+			bit triggered_a_comma, (iy+fExpression2)
 			jp z, ErrorSyntax
 			ld hl, (programPtr)
 			dec hl
@@ -1085,3 +1172,72 @@ _:	push de
 	pop hl
 	ld (programPtr), hl
 	ret
+	
+functionCompilePrgm:
+	ld hl, OP1
+	ld e, 9
+GetSubProgramName:
+	push hl
+		call _IncFetch
+	pop hl
+	inc hl
+	jr c, +_
+	cp tEnter
+	jr z, +_
+	cp tA
+	jp c, InvalidTokenError
+	cp ttheta+1
+	jp nc, InvalidTokenError
+	ld (hl), a
+	dec e
+	jr nz, GetSubProgramName
+	jp InvalidNameLength
+_:	ld a, ProgObj
+	ld (OP1), a
+	ld (hl), 0
+	call _ChkFindSym
+	jr nc, +_
+	ld hl, OP1
+	inc (hl)
+	call _ChkFindSym
+	jp c, ErrorNotFound
+_:	ld hl, (OP1)
+	push hl
+		ld hl, (OP1+3)
+		push hl
+			ld hl, (OP1+6)
+			push hl
+				ld hl, (begPC)
+				push hl
+					ld hl, (curPC)
+					push hl
+						ld hl, (endPC)
+						push hl
+							ex de, hl
+							ld bc, 0
+							ld c, (hl)
+							inc hl
+							ld (curPC), hl
+							ld b, (hl)
+							inc hl
+							ld (begPC), hl
+							add hl, bc
+							dec hl
+							ld (endPC), hl
+							call PrintCompilingProgram
+							ld hl, AmountOfSubPrograms
+							inc (hl)
+							call CompileProgramFull
+						pop hl
+						ld (endPC), hl
+					pop hl
+					ld (curPC), hl
+				pop hl
+				ld (begPC), hl
+			pop hl
+			ld (OP1+6), hl
+		pop hl
+		ld (OP1+3), hl
+	pop hl
+	ld (OP1), hl
+	jp PrintCompilingProgram
