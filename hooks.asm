@@ -40,7 +40,7 @@ KeyHook_start:
 	ret nz
 	push af
 		call _os_ClearStatusBarLow
-		res displayed_det, (iy+myFlags3)
+		res displayed_det, (iy+fAlways1)
 	pop af
 	cp kTrace
 	ret nz
@@ -76,7 +76,7 @@ KeyIsLeft:
 	jr DisplayTabWithTokens
 KeyIsRight:
 	ld a, d
-	cp 4
+	cp 5
 	jr z, KeyLoop
 	inc d
 	jr DisplayTabWithTokens
@@ -148,7 +148,13 @@ EraseCursor:
 KeyNotUp:
 	cp skDown
 	jr nz, KeyNotDown
+	ld a, d
+	cp 5
 	ld a, e
+	jr nz, +_
+	cp (AMOUNT_OF_C_FUNCTIONS + AMOUNT_OF_CUSTOM_TOKENS)%16 - 1
+	jr z, KeyLoop
+_:	ld a, e
 	cp 16-1
 	jr z, KeyLoop
 	inc e
@@ -274,7 +280,11 @@ CustomTokensData:
 Tab1:
 C1:		.db "ExecHex(", 0
 C2:		.db "DefineSprite(", 0
-C5:		.db "Call ", 0
+C3:		.db "Call ", 0
+C4:		.db "CompilePrgm(", 0
+
+#define AMOUNT_OF_C_FUNCTIONS 79
+
 C6:		.db "Begin", 0
 C7:		.db "End", 0
 C8:		.db "SetColor", 0
@@ -287,8 +297,8 @@ C14:	.db "GetDraw", 0
 C15:	.db "SetDraw", 0
 C16:	.db "SwapDraw", 0
 C17:	.db "Blit", 0
-C18:	.db "BlitLines", 0
 Tab2:
+C18:	.db "BlitLines", 0
 C19:	.db "BlitArea", 0
 C20:	.db "PrintChar", 0
 C21:	.db "PrintInt", 0
@@ -304,8 +314,8 @@ C30:	.db "SetCustomFontSpacing", 0
 C31:	.db "SetMonospaceFont", 0
 C32:	.db "GetStringWidth", 0
 C33:	.db "GetCharWidth", 0
-C34:	.db "GetTextX", 0
 Tab3:
+C34:	.db "GetTextX", 0
 C35:	.db "GetTextY", 0
 C36:	.db "Line", 0
 C37:	.db "HorizLine", 0
@@ -321,8 +331,8 @@ C46:	.db "FillCircle_NoClip", 0
 C47:	.db "Rectangle_NoClip", 0
 C48:	.db "FillRectangle_NoClip", 0
 C49:	.db "SetClipRegion", 0
-C50:	.db "GetClipRegion", 0
 Tab4:
+C50:	.db "GetClipRegion", 0
 C51:	.db "ShiftDown", 0
 C52:	.db "ShiftUp", 0
 C53:	.db "ShiftLeft", 0
@@ -338,8 +348,8 @@ C62:	.db "AllocSprite", 0
 C63:	.db "Sprite", 0
 C64:	.db "TransparentSprite", 0
 C65:	.db "Sprite_NoClip", 0
-C66:	.db "TransparentSprite_NoClip", 0
 Tab5:
+C66:	.db "TransparentSprite_NoClip", 0
 C67:	.db "GetSprite_NoClip", 0
 C68:	.db "ScaledSprite_NoClip", 0
 C69:	.db "ScaledTransparentSprite_NoClip", 0
@@ -354,8 +364,11 @@ C77:	.db "FillTriangle", 0
 C78:	.db "FillTriangle_NoClip", 0
 C79:	.db "LZDecompressSprite", 0
 C80:	.db "SetTextScale", 0
-		.db "Not used", 0
-		.db "Not used", 0
+C81:	.db "SetTransparentColor", 0
+Tab6:
+C82:	.db "ZeroScreen", 0
+C83:	.db "SetTextConfig", 0
+C84:	.db "GetSpriteChar", 0
 		.db 0
 TabData:
 	.dl Tab1 - KeyHook_start
@@ -363,6 +376,7 @@ TabData:
 	.dl Tab3 - KeyHook_start
 	.dl Tab4 - KeyHook_start
 	.dl Tab5 - KeyHook_start
+	.dl Tab6 - KeyHook_start
 	
 CData5:
 	.dl C6 - KeyHook_start
@@ -440,11 +454,16 @@ CData5:
 	.dl C78 - KeyHook_start
 	.dl C79 - KeyHook_start
 	.dl C80 - KeyHook_start
+	.dl C81 - KeyHook_start
+	.dl C82 - KeyHook_start
+	.dl C83 - KeyHook_start
+	.dl C84 - KeyHook_start
 	
-#define AMOUNT_OF_CUSTOM_TOKENS 3
+#define AMOUNT_OF_CUSTOM_TOKENS 4
 Token1: .db 8,  "ExecHex(", 0
 Token2: .db 13, "DefineSprite(", 0
 Token3: .db 5,  "Call ", 0
+Token4: .db 12, "CompilePrgm(", 0
 CustomTokensProgramText:
 	.db "PROGRAM:", 0
 KeyHook_end:
@@ -471,13 +490,14 @@ TokenHook_data:
 	.dl Token1 - KeyHook_start - 1
 	.dl Token2 - KeyHook_start - 1
 	.dl Token3 - KeyHook_start - 1
+	.dl Token4 - KeyHook_start - 1
 TokenHook_end:
 
 CursorHook_start:
 	.db 83h
 	cp 24h
 	jr nz, +_
-	or 1
+	inc a
 	ld a, (curUnder)
 	ret
 _:	cp 22h
@@ -490,7 +510,7 @@ _:	cp 22h
 	cp tDet
 	ret nz
 DrawDetText:
-	bit displayed_det, (iy+myFlags3)
+	bit displayed_det, (iy+fAlways1)
 	ret nz
 	ld hl, (editTail)
 	inc hl
@@ -532,7 +552,7 @@ GetDetValueLoop:
 	jr GetDetValueLoop
 GetDetValueStop:
 	ex de, hl
-	ld de, 75
+	ld de, AMOUNT_OF_C_FUNCTIONS
 	or a
 	sbc hl, de
 	jr nc, WrongDetValue
@@ -556,7 +576,7 @@ GetDetValueStop:
 	call _VPutS
 	ld de, $FFFF
 	ld.sis (drawBGColor - 0D00000h), de
-	set displayed_det, (iy+myFlags3)
+	set displayed_det, (iy+fAlways1)
 	ret
 CursorHook_end:
 

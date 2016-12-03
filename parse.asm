@@ -5,19 +5,25 @@ ParseExpression:
 	ld (outputPtr), hl
 	xor a
 	ld (openedParensE), a
-	res output_is_string, (iy+myFlags2)
-	res triggered_a_comma, (iy+myFlags)
+	ld (iy+fExpression1), a
+	ld (iy+fExpression2), a
 	call _CurFetch
 	ld hl, FunctionsSingle
 	ld bc, FunctionsSingleEnd - FunctionsSingle
 	cpir
 	jr nz, MainLoop
+	ld a, (openedParensF)
+	or a
+	jp nz, FunctionError
+	ld (iy+fFunction1), a
+	ld (iy+fFunction2), a
 	ld b, 3
 	mlt bc
 	ld hl, FunctionsSingleStart
 	add hl, bc
 	ld hl, (hl)
 	jp (hl)
+	
 MainLoop:
 	ld (tempToken), a
 	jp c, StopParsing
@@ -29,7 +35,7 @@ ANumber:
 #include "number.asm"
 
 NotANumber:
-	res prev_is_number, (iy+myFlags)
+	res prev_is_number, (iy+fExpression1)
 	cp tA
 	jr c, NotAVariable
 	cp ttheta+1
@@ -144,10 +150,9 @@ StringStop2:
 	inc hl
 	ld (tempStringsPtr), hl
 	jp MainLoop
-	
 NotAString:
 	cp tEnter
-	jr z, StopParsing
+	jp z, StopParsing
 	ld hl, FunctionsWithReturnValue
 	ld bc, FunctionsWithReturnValueEnd - FunctionsWithReturnValue
 	cpir
@@ -157,11 +162,7 @@ NotAString:
 	cp trand
 	jr nz, AddFunctionToStack
 AddFunctionToOutput:
-	call _IsA2ByteTok
-	call z, _IncFetch
-	ld b, a
 	ld hl, (outputPtr)
-	ld a, (tempToken)
 	ld (hl), typeReturnValue
 	inc hl
 	ld (hl), a
@@ -169,7 +170,53 @@ AddFunctionToOutput:
 	inc hl
 	inc hl
 	ld (outputPtr), hl
-	jp ReturnToLoop
+	cp tGetKey
+	jp nz, ReturnToLoop
+	call _IncFetch	
+	cp tLParen
+	jp nz, MainLoop
+	call _IncFetch
+_:	jp c, ErrorSyntax
+	cp tEnter
+	jp z, ErrorSyntax
+	sub t0
+	jr c, -_
+	cp t9-t0+1
+_:	jp nc, ErrorSyntax
+	ld de, 0
+	ld e, a
+	call _IncFetch
+	jr c, ++_
+	cp tEnter
+	jr z, ++_
+	cp tRParen
+	jr z, +_
+	sub t0
+	jr c, --_
+	cp t9-t0+1
+	jr nc, -_
+	push de
+	pop hl
+	add hl, hl
+	add hl, hl
+	add hl, de
+	add hl, hl
+	ld e, a
+	add hl, de
+	ex de, hl
+	call _IncFetch
+	jr c, ++_
+	cp tEnter
+	jr z, ++_
+	cp tRParen
+	jp nz, ErrorSyntax
+_:	call _IncFetch
+_:	ld hl, (outputPtr)
+	dec hl
+	dec hl
+	dec hl
+	ld (hl), e
+	jp MainLoop
 AddFunctionToStack:
 	ld hl, openedParensE
 	inc (hl)
@@ -189,7 +236,6 @@ AddFunctionToStack:
 	jp ReturnToLoop
 StopParsing:																; move stack to output
 	call MoveStackEntryToOutput
-	res output_is_number, (iy+myFlags)
 	ld hl, (outputPtr)
 	ld de, output
 	or a
@@ -203,11 +249,12 @@ StopParsing:																; move stack to output
 	cp 4
 	ret c
 	jp z, ParseSingleArgument
+	ld a, OutputIsInHL
+	ld (ExprOutput), a
+	ld (ExprOutput2), a
 Loop:
-	res output_is_number, (iy+myFlags)
-	res ans_set_z_flag, (iy+myFlags)
-	res op_is_last_one, (iy+myFlags3)
-	res use_mean_routine, (iy+myFlags3)
+	ld (iy+fExpression1), 0
+	ld (iy+fExpression1), 0
 	or a
 	sbc hl, bc
 	ld de, output
@@ -220,12 +267,12 @@ Loop:
 		or a
 		sbc hl, bc
 		jr nz, +_
-		set op_is_last_one, (iy+myFlags3)
+		set op_is_last_one, (iy+fExpression1)
 _:	pop hl
 	ld a, b
 	or a, c
 	cp 4
-	ret z
+	jp z, MaybeChangeDEToHL
 	ld a, (hl)
 	cp typeOperator
 	jr z, ExpressOperator
@@ -310,7 +357,7 @@ ExpressOperator:
 		pop bc
 	pop hl
 	jr nz, +_
-	bit output_is_number, (iy+myFlags)
+	bit output_is_number, (iy+fExpression1)
 	ret z
 	dec hl
 	dec hl
@@ -320,7 +367,7 @@ _:	inc bc
 	inc bc
 	inc bc
 	inc bc
-	bit output_is_number, (iy+myFlags)
+	bit output_is_number, (iy+fExpression1)
 	jp nz, Loop
 AddChain:
 	ld e, typeChainAns
@@ -339,8 +386,13 @@ AddChain:
 	cp typeOperator
 	jr z, ChainAns2
 ChainPush2:
-	ld a, 0E5h
-	call InsertA															; push hl
+	ld a, (ExprOutput2)
+	add a, a
+	add a, a
+	add a, a
+	add a, a
+	add a, 0D5h
+	call InsertA															; push hl/de
 	ld e, typeChainPush
 ChainAns2:
 	push hl
@@ -355,28 +407,31 @@ ChainAns2:
 ParseSingleArgument:
 	ld a, (hl)
 	or a
-	jr nz, +_
-	set output_is_number, (iy+myFlags)
+	jr nz, ParseSingleNotNumber
+	set output_is_number, (iy+fExpression1)
 	inc hl
 ParseSingleArgument2:
 	ld hl, (hl)
 	ld a, 021h
 	jp InsertAHL															; ld hl, *
-_:	dec a
-	jr nz, +_
+ParseSingleNotNumber:
+	dec a
+	jr nz, ParseSingleNotVariable
 	inc hl
 	ld c, (hl)
 	jp InsertHIXC
-_:	sub a, 3
-	jr nz, +_
+ParseSingleNotVariable:
+	sub a, 3
+	jr nz, ParseSingleNotFunction
 	inc hl
 	ld a, (hl)
 	ld b, OutputInHL
-	res need_push, (iy+myFlags)
+	res need_push, (iy+fExpression1)
 	jp GetFunction
-_:	sub a, 3
+ParseSingleNotFunction:
+	sub a, 3
 	jp nz, ErrorSyntax
-	set output_is_string, (iy+myFlags2)
+	set output_is_string, (iy+fExpression1)
 	push hl
 		ld a, 021h
 		call InsertA														; ld hl, *

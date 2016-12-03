@@ -1,6 +1,6 @@
 	ld hl, (outputPtr)
-	bit prev_is_number, (iy+myFlags)
-	set prev_is_number, (iy+myFlags)
+	bit prev_is_number, (iy+fExpression1)
+	set prev_is_number, (iy+fExpression1)
 	jr z, AddNumberToStack
 ChangeLastNumberFromStack:
 	dec hl

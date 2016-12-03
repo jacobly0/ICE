@@ -32,18 +32,18 @@ operator_start:
 	.dl StoNumberXXX, StoVariableXXX, StoChainPushXXX, StoChainAnsXXX, StoFunctionXXX, StoListXXX
 	
 CSpecialFunctions:
-	.db 63, 62, 60, 59
+	.db 63, 62, 60, 59, 0
 CSpecialFunctionsEnd:
 
 CSpecialFunctionsStart:
-	.dl CSpriteNoClip, CTransparentSpriteNoClip, CScaledSpriteNoClip, CTransparentScaledSpriteNoClip
+	.dl CBegin, CSpriteNoClip, CTransparentSpriteNoClip, CScaledSpriteNoClip, CTransparentScaledSpriteNoClip
 	
 CArguments:
 	.dl CFunction0Args, CFunction1Arg, CFunction2Args, CFunction3Args, CFunction4Args, CFunction5Args, CFunction6Args
 	.dl CFunction0ArgsSMC, CFunction1ArgSMC, CFunction2ArgsSMC, CFunction3ArgsSMC, CFunction4ArgsSMC, CFunction5ArgsSMC, CFunction5ArgsSMC
 	
 functionCustomStart:
-	.dl functionExecHex, functionDefineSprite, functionCall
+	.dl functionExecHex, functionDefineSprite, functionCall, functionCompilePrgm
 	
 precedence:	 .db 7, 4,4,5,5,3,3,3,3,3,3,2, 2,  1,  0
 	         ;   t+ - + / * ≠ ≥ ≤ > < = or xor and →
@@ -59,12 +59,34 @@ lists:
 	
 hexadecimals:
 	.db tF, tE, tD, tC, tB, tA, t9, t8, t7, t6, t5, t4, t3, t2, t1, t0
+	
+stackPtr:				.dl stack
+outputPtr:				.dl output
+programPtr:				.dl program
+programNamesPtr:		.dl programNamesStack
+labelPtr:				.dl labelStack
+gotoPtr:				.dl gotoStack
+programDataOffsetPtr:	.dl programDataOffsetStack
+tempStringsPtr:			.dl tempStringsStack
+tempListsPtr:			.dl tempListsStack
+programDataDataPtr:		.dl programDataData
+amountOfPrograms		.db 0
+openedParensE			.db 0
+openedParensF			.db 0
+amountOfArguments		.db 0
+amountOfCRoutines		.db 0
+amountOfEnds			.db 0
+amountOfInput			.db 0
+amountOfPause			.db 0
+ExprOutput				.db 0
+ExprOutput2				.db 0
+AmountOfSubPrograms		.db 0
 
 varname:
 	.db ProtProgObj, 0,0,0,0,0,0,0,0
 	
 usedCroutines:
-.fill 75, 0
+.fill AMOUNT_OF_C_FUNCTIONS, 0
 
 ICEAppvar:
 	.db AppVarObj, "ICEAPPV", 0
@@ -89,6 +111,10 @@ SameNameMessage:
 	.db "Output name is the same as input name!", 0
 WrongSpriteDataMessgae:
 	.db "Invalid sprite data!", 0
+FunctionFunctionMessage:
+	.db "You can't use a function in a function!", 0
+NotFoundMessage:
+	.db "Program not found!", 0
 ImplementMessage:
 	.db "This function has not been implemented yet!", 0
 SyntaxErrorMessage:
@@ -106,7 +132,7 @@ NotEnoughMem:
 LabelErrorMessage:
 	.db "Can't find specific label!", 0
 StartParseMessage:
-	.db "Compiling...", 0
+	.db "Compiling program ", 0
 ICEName:
 	.db "ICE Compiler v1.2 - By Peter \"PT_\" Tillema", 0
 PressKey:
@@ -240,6 +266,23 @@ MeanRoutine:
 	ld ix, cursorImage
 	ret
 MeanRoutineEnd:
+
+KeypadRoutine:
+	di
+	ld hl, 0F50000h
+	ld (hl), 2
+	xor a
+_:	cp a, (hl)
+	jr nz, -_
+	ei
+	ld l, b
+	ld a, (hl)
+	sbc hl, hl
+	and c
+	ret z
+	inc l
+	ret
+KeypadRoutineEnd:
 
 XORANDData:
 	ld bc, -1

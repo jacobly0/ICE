@@ -6,15 +6,13 @@
 
 start:
 	ld (backupSP), sp
+	ld hl, (begPC)
+	ld (backupBegPC), hl
 	ld hl, (curPC)
 	ld (backupCurPC), hl
 	ld hl, (endPC)
 	ld (backupEndPC), hl
 	call _RunIndicOff
-	ld hl, offsets
-	ld de, stackPtr
-	ld bc, offset_end - offsets
-	ldir
 	call InstallHooks
 GUI:
 	ld a, lcdBpp8
@@ -49,7 +47,7 @@ _:	ld d, b
 	ldir
 	ld (hl), 255
 	ld bc, 320*229-1
-	ldir	
+	ldir
 	ld hl, ICEName
 	ld a, 1
 	ld (TextYPos_ASM), a
@@ -127,9 +125,8 @@ PressedEnter:
 	dec l
 	ld h, 8
 	mlt hl
-	ld de, ProgramNamesStack
+	ld de, ProgramNamesStack-1
 	add hl, de
-	dec hl
 	call _Mov9ToOP1
 	jr StartParsing
 PressedUp:
@@ -173,62 +170,20 @@ _:	ld bc, 0
 	ld b, (hl)
 	inc hl
 	ld (curPC), hl
-	push hl
-	pop de
+	ld (begPC), hl
 	add hl, bc
 	dec hl
 	ld (endPC), hl
-	ld hl, varname
-	ld e, 9
-GetProgramName:
-	push hl
-		call _IncFetch
-	pop hl
-	jp c, AddDataToProgramData
-	inc hl
-	cp tEnter
-	jr z, StartParse
-	cp tA
-	jp c, InvalidTokenError
-	cp ttheta+1
-	jp nc, InvalidTokenError
-	ld (hl), a
-	dec e
-	jr nz, GetProgramName
-	jp InvalidNameLength
-StartParse:
-	ld hl, OP1+1
-	ld de, varname+1
-	ld b, 8
-CheckNames:
-	ld a, (de)
-	or a
-	jr z, CheckNamesSameLength
-	cp (hl)
-	jr nz, GoodCompile
-	inc hl
-	inc de
-	djnz CheckNames
-CheckNamesSameLength:
-	cp (hl)
-	jp z, SameNameError
-GoodCompile:
-	ld hl, (endPC)
-	ld de, (curPC)
-	ld (begPC_), de
-	or a
-	sbc hl, de
-	inc hl
-	ld (programSize), hl
-	ld (iy+myFlags3), 0
-	ld (iy+myFlags5), 0
-	set comp_with_libs, (iy+myFlags3)
+	call PrintCompilingProgram
+	; can be optimized!
+	ld (iy+fProgram1), 0
+	set comp_with_libs, (iy+fProgram1)
 	ld hl, CData
 	ld de, (programPtr)
 	ld bc, CData2 - CData
 	ldir
 	ld (programPtr), de
-	call PreScanProgram
+	call PreScanPrograms
 	ld a, 0CDh
 	ld hl, _RunIndicOff
 	call InsertAHL															; call _RunIndicOff
@@ -242,53 +197,96 @@ GoodCompile:
 	call InsertBCDEHL														; ld iy, flags \ jp _DrawStatusBar
 	ld a, (amountOfCRoutines)
 	or a
-	jr nz, StartCompiling
-	res comp_with_libs, (iy+myFlags3)
+	jr nz, CompileProgramFull
+	res comp_with_libs, (iy+fProgram1)
 	ld hl, program+5
 	ld (programPtr), hl
-StartCompiling:
-	call ClearScreen
-	ld hl, StartParseMessage
-	call PrintString
-	ld (iy+myFlags2), 0
+CompileProgramFull:
+	ld a, (AmountOfSubPrograms)
+	or a
+	jr nz, SkipGetProgramName
+	ld hl, varname
+	ld e, 9
+GetProgramName:
+	push hl
+		call _IncFetch
+	pop hl
+	jp c, +_
+	inc hl
+	cp tEnter
+	jr z, +_
+	cp tA
+	jp c, InvalidTokenError
+	cp ttheta+1
+	jp nc, InvalidTokenError
+	ld (hl), a
+	dec e
+	jr nz, GetProgramName
+	jp InvalidNameLength
+_:	ld hl, OP1+1
+	ld de, varname+1
+	ld b, 8
+CheckNames:
+	ld a, (de)
+	or a
+	jr z, CheckNamesSameLength
+	cp (hl)
+	jr nz, GoodProgramName
+	inc hl
+	inc de
+	djnz CheckNames
+CheckNamesSameLength:
+	cp (hl)
+	jp z, SameNameError
+GoodProgramName:
+SkipGetProgramName:
+
 ParseProgramUntilEnd:
 	call _IncFetch
 CompileLoop:
 	ld (tempToken), a
 	ld b, a
 	xor a
-	ld (iy+myFlags), a
-	ld (iy+myFlags4), a
+	ld (iy+fExpression1), a
+	ld (iy+fExpression2), a
+	ld (iy+fFunction1), a
+	ld (iy+fFunction2), a
 	ld (openedParensE), a
 	ld (openedParensF), a
 	ld a, b
 	cp tEnd
 	jr nz, ++_
-_:	ld a, (amountOfEnds)
+_:	ld hl, amountOfEnds
+	ld a, (hl)
+	dec (hl)
 	or a
 	jp z, EndError
-	dec a
-	ld (amountOfEnds), a
 	ld a, (tempToken)
 	ret
 _:	cp tElse
 	jr z, --_
 	call ParseExpression
 	ld hl, (curPC)
-begPC_ = $+1
-	ld de, 0
+	ld de, (begPC)
 	or a
 	sbc hl, de
 	ld bc, 320
 	call __imulu
-programSize = $+1
-	ld bc, 0
+	push hl
+		ld hl, (endPC)
+		or a
+		sbc hl, de
+		inc hl
+		push hl
+		pop bc
+	pop hl
 	call __idivu
 	push hl
 	pop bc
-	ld hl, -1
-	add hl, bc
-	jr nc, +_
+	add hl, de
+	or a
+	sbc hl, de
+	jr z, +_
 	ld hl, vRAM+(320*25)
 	ld (hl), 0
 	push hl
@@ -303,10 +301,15 @@ _:	call _IncFetch
 FindGotos:
 	ld hl, amountOfEnds
 	ld a, (hl)
-	dec a
-	ld (hl), a
-	inc a
-	ret nz
+	or a
+	jr z, +_
+	dec (hl)
+	ret
+_:	ld hl, AmountOfSubPrograms
+	ld a, (hl)
+	dec (hl)
+	or a
+	ret nz	
 FindGotosLoop:
 	ld hl, (gotoPtr)
 	ld de, gotoStack
@@ -365,7 +368,7 @@ LabelNotRightOne:
 StopFindLabels:
 	pop hl
 AddDataToProgramData:
-	bit last_token_is_ret, (iy+myFlags2)
+	bit last_token_is_ret, (iy+fExpression1)
 	jr nz, +_
 	ld a, 0C9h
 	call InsertA															; ret
@@ -447,10 +450,10 @@ _:	ld hl, (programPtr)
 	ex de, hl
 	ldir																	; insert the program data
 	ld hl, GoodCompileMessage
-	set good_compilation, (iy+myFlags)
+	set good_compilation, (iy+fProgram1)
 	jp DispFinalString														; DONE :D :D :D
 	
-#include "functions.asm"
+#include "routines.asm"
 #include "parse.asm"
 #include "putchar.asm"
 #include "programs.asm"
