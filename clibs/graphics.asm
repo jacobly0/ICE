@@ -6,7 +6,7 @@
 ;    	bit   1 reset = not implemented
 
 CFunctionsArguments:
-Begin_:									.db %00000000
+Begin_:									.db %11110000
 End_:									.db %00000000
 SetColor_:								.db %00110000
 SetDefaultPalette_:						.db %00000000
@@ -81,3 +81,7 @@ FillTriangle_:							.db %11000000
 FillTriangleNoClip_:					.db %11000000
 LZDecompressSprite_:					.db %11100000
 SetTextScale_:							.db %01011000
+SetTransparentColor:					.db %00110000
+ZeroScreen:								.db %00000000
+SetTextConfig:							.db %00110000
+GetSpriteChar:							.db %11100000
