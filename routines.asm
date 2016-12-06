@@ -420,8 +420,8 @@ _:	ex de, hl
 	ld (de), a
 	dec de
 	ld b, 8
-	ld a, 10
-_:	call _DivHLByA
+_:	ld a, 10
+	call _DivHLByA
 	add a, t0
 	ld (de), a
 	dec de
