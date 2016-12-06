@@ -175,9 +175,7 @@ _:	ld bc, 0
 	dec hl
 	ld (endPC), hl
 	call PrintCompilingProgram
-	; can be optimized!
-	ld (iy+fProgram1), 0
-	set comp_with_libs, (iy+fProgram1)
+	ld (iy+fProgram1), 1
 	ld hl, CData
 	ld de, (programPtr)
 	ld bc, CData2 - CData
@@ -265,7 +263,7 @@ _:	ld hl, amountOfEnds
 	ret
 _:	cp tElse
 	jr z, --_
-	call ParseExpression
+	call ParseLine
 	ld hl, (curPC)
 	ld de, (begPC)
 	or a

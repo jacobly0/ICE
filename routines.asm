@@ -81,6 +81,23 @@ MaybeChangeDEToHL:
 	ret nz
 	jr -_
 	
+MaybeChangeDEToHL2:
+	ld a, (ExprOutput2)
+	or a
+	ret nz
+	jr -_
+	
+InsertPushHLDE:
+	ld a, (ExprOutput2)
+	add a, a
+	add a, a
+	add a, a
+	add a, a
+	add a, 0D5h
+	call InsertA															; push hl/de
+	ld hl, (programPtr)
+	ret
+	
 InsertProgramPtrToDataOffset:
 	push de
 		ld hl, (programDataOffsetPtr)
@@ -133,7 +150,7 @@ GetFunctionDE:
 	ld a, 0E5h
 	bit need_push, (iy+fExpression1)
 	call nz, InsertA														; push hl
-		ld hl, _GetCSC
+	ld hl, _GetCSC
 	call InsertCallHL														; call _GetCSC
 	bit need_push, (iy+fExpression1)
 	jr z, $+8
@@ -338,6 +355,9 @@ InvalidNameLength:
 ErrorNotFound:
 	ld hl, NotFoundMessage
 	jr DispFinalString
+ErrorUsedCode:
+	ld hl, UsedCodeMessage
+	jr DispFinalString
 SameNameError:
 	ld hl, SameNameMessage
 	jr DispFinalString
@@ -441,13 +461,6 @@ backupEndPC = $+1
 	call _HomeUp
 	jp _DrawStatusBar
 	
-PrintCompilingProgram:
-	call ClearScreen
-	ld hl, StartParseMessage
-	call PrintString
-	ld hl, OP1+1
-	jp PrintString
-	
 ClearScreen:
 	ld hl, vRAM+(320*12)
 	ld (hl), 255
@@ -463,6 +476,14 @@ ClearScreen:
 	xor a
 	ld (color), a
 	ret
+	
+PrintCompilingProgram:
+	xor a
+	ld (OP1+9), a
+	call ClearScreen
+	ld hl, StartParseMessage
+	call PrintString
+	ld hl, OP1+1
 	
 PrintString:
 	ld a, (hl)
@@ -482,6 +503,9 @@ PreScanPrograms:
 	pop bc
 	ld hl, (curPC)
 ScanLoop:
+	ld a, b
+	or c
+	ret z
 	ld a, tEnter
 	cpir
 	ret nz
@@ -607,3 +631,73 @@ _:	or a, ixh
 	inc bc
 	inc de
 	jr GetSpriteData
+	
+UpdateSpritePointers:
+	ld hl, (tempListsPtr)
+	ld de, tempListsStack
+	or a
+	sbc hl, de
+	ld (UpdateOffset), hl
+	ex de, hl
+	push de
+	pop bc
+_:	ld a, b
+	or c
+	jr z, +_
+	push hl
+		ld hl, (hl)
+UpdateOffset = $+1
+		ld de, 0
+		add hl, de
+		ex de, hl
+	pop hl
+	ld (hl), de
+	inc hl
+	inc hl
+	inc hl
+	dec bc
+	dec bc
+	dec bc
+	jr -_
+_:	ld hl, spriteStack
+	ld bc, (UpdateOffset)
+_:	ld a, b
+	or c
+	jr z, +_
+	push hl
+		ld hl, (hl)
+		ld de, (UpdateOffset)
+		add hl, de
+		ex de, hl
+	pop hl
+	ld (hl), de
+	inc hl
+	inc hl
+	inc hl
+	dec bc
+	dec bc
+	dec bc
+	jr -_
+_:	ld hl, (programDataDataPtr)
+	push hl
+		ld de, programDataData
+		sbc hl, de
+		push hl
+		pop bc
+	pop hl
+	push hl
+		ld de, (UpdateOffset)
+		add hl, de
+		ld (programDataDataPtr), hl
+	pop de
+	dec hl
+	ex de, hl
+	dec hl
+	lddr
+	ld bc, (UpdateOffset)
+	ld hl, (tempListsPtr)
+	dec hl
+	lddr
+	ld hl, tempListsStack
+	ld (tempListsPtr), hl
+	ret

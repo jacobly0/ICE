@@ -121,6 +121,8 @@ SyntaxErrorMessage:
 	.db "Invalid arguments entered!", 0
 TooLargeLoopMessage:
 	.db "Too large anonymous loop!", 0
+UsedCodeMessage:
+	.db "You can't use code before DefineSprite()!", 0
 LineNumber:
 	.db "Error on line ", 0
 MismatchErrorMessage:

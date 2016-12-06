@@ -29,13 +29,14 @@ startTab				.equ saveSScreen
 program					.equ vRAM+(320*240)
 
 fProgram1				.equ -30h
-good_compilation		.equ 0										; used if compilation is succesfull
-comp_with_libs			.equ 1										; used if compile with C libs
+comp_with_libs			.equ 0										; used if compile with C libs
+good_compilation		.equ 1										; used if compilation is succesfull
 has_already_input		.equ 2										; only once time "Input" routine
 has_already_rand		.equ 3										; only once time "rand" routine
 has_already_pause		.equ 4										; only once time "Pause" routine
 has_already_mean		.equ 5										; only once time "mean()" routine
 has_already_keypad		.equ 6										; only once time scanning the keypad
+used_code				.equ 7										; DefineSprite( must be in front of all the code
 
 fExpression1			.equ -40h
 prev_is_number			.equ 0										; used if a number consists of more digits

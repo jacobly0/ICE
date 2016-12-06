@@ -1,18 +1,19 @@
-ParseExpression:
-	ld hl, stack
-	ld (stackPtr), hl
-	ld hl, output
-	ld (outputPtr), hl
-	xor a
-	ld (openedParensE), a
-	ld (iy+fExpression1), a
-	ld (iy+fExpression2), a
+ParseLine:
 	call _CurFetch
+	cp tEnter
+	ret z
 	ld hl, FunctionsSingle
 	ld bc, FunctionsSingleEnd - FunctionsSingle
 	cpir
-	jr nz, MainLoop
-	ld a, (openedParensF)
+	jr nz, ParseExpression2
+	cp tVarOut
+	jr z, +_
+	cp tii
+	jr z, +_
+	bit used_code, (iy+fProgram1)
+	set used_code, (iy+fProgram1)
+	call z, UpdateSpritePointers
+_:	ld a, (openedParensF)
 	or a
 	jp nz, FunctionError
 	ld (iy+fFunction1), a
@@ -24,6 +25,23 @@ ParseExpression:
 	ld hl, (hl)
 	jp (hl)
 	
+ParseExpression2:
+	bit used_code, (iy+fProgram1)
+	set used_code, (iy+fProgram1)
+	push af
+		call z, UpdateSpritePointers
+	pop af
+ParseExpression:
+	ld hl, stack
+	ld (stackPtr), hl
+	ld hl, output
+	ld (outputPtr), hl
+	ld hl, openedParensE
+	ld (hl), 0
+	ld (iy+fExpression1), 0
+	ld (iy+fExpression2), 0
+MainLoopResCarryFlag:
+	or a	
 MainLoop:
 	ld (tempToken), a
 	jp c, StopParsing
@@ -95,7 +113,7 @@ AnOSList:
 	ld (outputPtr), hl
 	call _IncFetch
 	cp tLParen
-	jr nz, +_
+	jp nz, MainLoopResCarryFlag
 	ld hl, openedParensE
 	inc (hl)
 	ld hl, (stackPtr)
@@ -107,7 +125,7 @@ AnOSList:
 	inc hl
 	ld (stackPtr), hl
 	call _IncFetch
-_:	jp MainLoop
+	jp MainLoop
 NotAnOSList:
 	cp tString
 	jr nz, NotAString
@@ -172,9 +190,10 @@ AddFunctionToOutput:
 	ld (outputPtr), hl
 	cp tGetKey
 	jp nz, ReturnToLoop
-	call _IncFetch	
+	call _IncFetch
+	jp c, MainLoop
 	cp tLParen
-	jp nz, MainLoop
+	jp nz, MainLoopResCarryFlag
 	call _IncFetch
 _:	jp c, ErrorSyntax
 	cp tEnter
@@ -244,18 +263,18 @@ StopParsing:																; move stack to output
 	pop bc																	; BC / 4 is amount of elements in the stack
 	push de
 	pop hl
+	ld a, OutputIsInHL
+	ld (ExprOutput), a
+	ld (ExprOutput2), a
 	ld a, b
 	or a, c
 	cp 4
 	ret c
 	jp z, ParseSingleArgument
-	ld a, OutputIsInHL
-	ld (ExprOutput), a
-	ld (ExprOutput2), a
 Loop:
-	ld (iy+fExpression1), 0
-	ld (iy+fExpression1), 0
-	or a
+	xor a
+	ld (iy+fExpression1), a
+	res use_mean_routine, (iy+fExpression2)
 	sbc hl, bc
 	ld de, output
 	sbc hl, de
@@ -384,15 +403,11 @@ AddChain:
 	dec hl
 	dec hl
 	cp typeOperator
-	jr z, ChainAns2
+	jr nc, ChainAns2
 ChainPush2:
-	ld a, (ExprOutput2)
-	add a, a
-	add a, a
-	add a, a
-	add a, a
-	add a, 0D5h
-	call InsertA															; push hl/de
+	push hl
+		call InsertPushHLDE
+	pop hl
 	ld e, typeChainPush
 ChainAns2:
 	push hl
