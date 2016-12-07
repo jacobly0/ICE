@@ -28,10 +28,9 @@ _:	ld a, (openedParensF)
 ParseExpression2:
 	bit used_code, (iy+fProgram1)
 	set used_code, (iy+fProgram1)
-	push af
-		call z, UpdateSpritePointers
-	pop af
+	call z, UpdateSpritePointers
 ParseExpression:
+	call _CurFetch
 	ld hl, stack
 	ld (stackPtr), hl
 	ld hl, output

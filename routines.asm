@@ -444,6 +444,11 @@ _:	call _GetCSC
 	or a
 	jr z, -_
 StopProgram:
+	ld hl, (curPC)
+	ld de, (begPC)
+	scf
+	sbc hl, de
+	ld.sis (errOffset - 0D00000h), hl
 backupSP = $+1
 	ld sp, 0
 backupBegPC = $+1
@@ -455,11 +460,14 @@ backupCurPC = $+1
 backupEndPC = $+1
 	ld hl, 0
 	ld (endPC), hl
-	ld a, lcdBpp16
-	ld (mpLcdCtrl), a
 	call _ClrLCDFull
 	call _HomeUp
-	jp _DrawStatusBar
+	ld a, lcdBpp16
+	ld (mpLcdCtrl), a
+	call _DrawStatusBar
+	bit good_compilation, (iy+fProgram1)
+	ret nz
+	jp OpenEditBuffer
 	
 ClearScreen:
 	ld hl, vRAM+(320*12)
@@ -678,7 +686,11 @@ _:	ld a, b
 	dec bc
 	dec bc
 	jr -_
-_:	ld hl, (programDataDataPtr)
+_:	ld hl, (UpdateOffset)
+	ld a, h
+	or l
+	ret z
+	ld hl, (programDataDataPtr)
 	push hl
 		ld de, programDataData
 		sbc hl, de

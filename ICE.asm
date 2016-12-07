@@ -48,6 +48,7 @@ _:	ld d, b
 	ld (hl), 255
 	ld bc, 320*229-1
 	ldir
+	set good_compilation, (iy+fProgram1)
 	ld hl, ICEName
 	ld a, 1
 	ld (TextYPos_ASM), a
@@ -455,6 +456,7 @@ _:	ld hl, (programPtr)
 #include "parse.asm"
 #include "putchar.asm"
 #include "programs.asm"
+#include "editor.asm"
 #include "hooks.asm"
 #include "operators functions/functions.asm"
 #include "operators functions/operators.asm"

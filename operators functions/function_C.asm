@@ -734,7 +734,7 @@ CSpriteNoClip:
 _:	ld (iy+fFunction1), %00000100
 	scf
 	sbc hl, hl
-	ld (hl), 2
+	;ld (hl), 2
 	ld (CFunction3ArgsSMC), a
 	call CFunction3Args
 	jr z, +_

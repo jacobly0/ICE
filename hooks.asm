@@ -2,11 +2,13 @@ InstallHooks:
 	ld hl, ICEAppvar
 	call _Mov9ToOP1
 	call _ChkFindSym
-	jr c, +_
+	jr c, ++_
+	call _ChkInRAM
+	jr nc, +_
 	call _Arc_Unarc
 	ld bc, 5
 	add hl, bc
-	call _DelVar
+_:	call _DelVar
 _:	ld hl, Hooks_end - KeyHook_start
 	call _CreateAppVar
 	inc de

@@ -1,77 +1,46 @@
 OpenEditBuffer:
-	push hl
-		ld de, saveSScreen
-		ld hl, EditBufferStart
-		ld bc, EditBufferStop - EditBufferStart2
-		ldir
-		jp saveSScreen
-EditBufferStart:
-.org saveSScreen
-EditBufferStart2:
-		ld hl, OP1+1
-		ld de, progToEdit
-		call _Mov8b
-		scf
-		sbc hl, hl
-		ld (hl), 2
-		ld hl, UserMem
-		ld de, EditBufferStart-start+EditBufferStop-EditBufferStart2
-		call _DelMem
-		ld a, cxPrgmEdit
-		call _NewContext
-	pop hl
-EditBufferSMC = $+1
-	ld de, 0
-	or a
-	sbc hl, de
-	push hl
-	pop bc
-	ld de, (editTop)
-	ld hl, (editTail)
-	jr z, +_
+	ld hl, OP1+1
+	ld de, progToEdit
+	ld bc, 8
 	ldir
-	ld (editCursor), de
+	ld de, saveSScreen
+	ld hl, +_
+	ld bc, StopProgramEditor - +_
+	ldir
+	jp saveSScreen
+_:	ld hl, UserMem
+	ld de, (asm_prgm_size)
+	call _DelMem
+	ld a, kPrgmEd
+	call _NewContext
+	ld.sis bc, (errOffset - 0D00000h)
+	ld hl, (editTail)
+	ld de, (editCursor)
+	ldir
 	ld (editTail), hl
-_:	push bc
-	pop hl
-	push hl
-EditorLoop:
-		ld de, (editTop)
-		or a
-		sbc hl, de
-		jr z, EditorFound
-		call _BufLeft
-		ld hl, (editCursor)
-		ld a, (hl)
-		cp tEnter
-		jr z, EditorFound
-	pop hl
-	inc hl
-	push hl
-		jr EditorLoop
-EditorFound:
-		call _BufRight
+	ld (editCursor), de
+	ld bc, 0
+_:	call _BufLeft
+	jr z, AtTopOfProgram
+	ld a, e
+	cp tEnter
+	jr z, +_
+	inc bc
+	jr -_
+_:	call _BufRight
+AtTopOfProgram:
+	push bc
+		call _ClrWindow
+		ld hl, 0000001h
+		ld (curRow), hl
+		ld a, ':'
+		call _PutC
 		call _DispEOW
-	pop hl
-	call _SetAToHLU
-	or a, h
-	or a, l
-	jr z, EditorMon
-EditorScroll:
-	dec hl
-	call _SetAToHLU
-	or a, h
-	or a, l
-	jr z, EditorMon
-	push hl
-		call _CursorRight
-	pop hl
-	jr EditorScroll
-EditorMon:
-	set 2, (iy+1)
-	res 2, (iy+50)
-	res 7, (iy+20)
-	res 3, (iy+5)
-	jp _Mon
-	;ret
-EditBufferStop:
+	pop bc
+_:	ld a, b
+	or c
+	jp z, _Mon
+	call _CursorRight
+	dec bc
+	jr -_
+StopProgramEditor:
