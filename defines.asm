@@ -5,6 +5,7 @@ RandStartData			.equ saveSScreen+05
 PauseStartData			.equ saveSScreen+08
 MeanStartData			.equ saveSScreen+11
 KeypadStartData			.equ saveSScreen+14
+PrevProgramPtr			.equ saveSScreen+17
 
 stack					.equ saveSScreen+00100
 output					.equ saveSScreen+01100
@@ -14,8 +15,7 @@ gotoStack				.equ saveSScreen+04000
 programDataOffsetStack	.equ saveSScreen+05000
 tempStringsStack		.equ saveSScreen+06500
 tempListsStack			.equ saveSScreen+08000
-spriteStack				.equ saveSScreen+10000
-programDataData			.equ saveSScreen+12000
+programDataData			.equ saveSScreen+11000
 
 tempArg1				.equ pixelShadow2+0000
 tempArg2				.equ pixelShadow2+1000

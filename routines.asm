@@ -523,8 +523,7 @@ ScanLoop:
 	cp tPause
 	jr z, ScanFoundPause
 	cp tInput
-	jr z, ScanFoundInput
-	jr ScanLoop
+	jr nz, ScanLoop
 ScanFoundInput:
 	ld a, (amountOfInput)
 	inc a
@@ -641,75 +640,19 @@ _:	or a, ixh
 	jr GetSpriteData
 	
 UpdateSpritePointers:
-	ld hl, (tempListsPtr)
-	ld de, tempListsStack
-	or a
-	sbc hl, de
-	ld (UpdateOffset), hl
-	ex de, hl
-	push de
-	pop bc
-_:	ld a, b
-	or c
-	jr z, +_
-	push hl
-		ld hl, (hl)
-UpdateOffset = $+1
-		ld de, 0
-		add hl, de
-		ex de, hl
-	pop hl
-	ld (hl), de
-	inc hl
-	inc hl
-	inc hl
-	dec bc
-	dec bc
-	dec bc
-	jr -_
-_:	ld hl, spriteStack
-	ld bc, (UpdateOffset)
-_:	ld a, b
-	or c
-	jr z, +_
-	push hl
-		ld hl, (hl)
-		ld de, (UpdateOffset)
-		add hl, de
-		ex de, hl
-	pop hl
-	ld (hl), de
-	inc hl
-	inc hl
-	inc hl
-	dec bc
-	dec bc
-	dec bc
-	jr -_
-_:	ld hl, (UpdateOffset)
-	ld a, h
-	or l
-	ret z
-	ld hl, (programDataDataPtr)
-	push hl
-		ld de, programDataData
+	push bc
+		ld hl, (programPtr)
+		ld de, (PrevProgramPtr)
+		or a
 		sbc hl, de
+		ex de, hl
+		ld bc, -12
+		add hl, bc
 		push hl
-		pop bc
-	pop hl
-	push hl
-		ld de, (UpdateOffset)
-		add hl, de
-		ld (programDataDataPtr), hl
-	pop de
-	dec hl
-	ex de, hl
-	dec hl
-	lddr
-	ld bc, (UpdateOffset)
-	ld hl, (tempListsPtr)
-	dec hl
-	lddr
-	ld hl, tempListsStack
-	ld (tempListsPtr), hl
+			ld hl, (hl)
+			add hl, de
+			ex de, hl
+		pop hl
+		ld (hl), de
+	pop bc
 	ret

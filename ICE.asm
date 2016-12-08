@@ -194,6 +194,8 @@ _:	ld bc, 0
 	ld de, 0C3D000h
 	ld hl, _DrawStatusBar
 	call InsertBCDEHL														; ld iy, flags \ jp _DrawStatusBar
+	ld hl, (programPtr)
+	ld (PrevProgramPtr), hl
 	ld a, (amountOfCRoutines)
 	or a
 	jr nz, CompileProgramFull
