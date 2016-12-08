@@ -312,7 +312,7 @@ BackgroundData:
 
 CData:
 	ld ix, cursorImage
-	ld hl, 0D1A8DEh						; LibLoadAppVar
+	ld hl, LibLoadAppVar - CData + UserMem
 	call _Mov9ToOP1
 	ld a, AppVarObj
 	ld (OP1), a
@@ -333,12 +333,12 @@ InArc:
 	inc hl
 	inc hl
 	inc hl
-	ld de, 0D1A8FCh						; RelocationStart
+	ld de, RelocationStart - CData + UserMem
 	jp (hl)
 NotFound:
 	call _ClrScrn
 	call _HomeUp
-	ld hl, 0D1A8DAh						; MissingAppVar
+	ld hl, MissingAppVar - CData + UserMem
 	call _PutS
 	call _NewLine
 	call _PutS

@@ -310,7 +310,7 @@ _:	ld hl, AmountOfSubPrograms
 	ld a, (hl)
 	dec (hl)
 	or a
-	ret nz	
+	ret nz
 FindGotosLoop:
 	ld hl, (gotoPtr)
 	ld de, gotoStack
@@ -453,7 +453,7 @@ _:	ld hl, (programPtr)
 	ld hl, GoodCompileMessage
 	set good_compilation, (iy+fProgram1)
 	jp DispFinalString														; DONE :D :D :D
-	
+
 #include "routines.asm"
 #include "parse.asm"
 #include "putchar.asm"
