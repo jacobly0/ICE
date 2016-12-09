@@ -6105,5 +6105,9 @@ putMapUseColor		equ 4		;1 = use custom color
 graphDispFlags		equ 4Bh
 backgroundValid		equ 4		;1 = items in graph background are still valid
 ;----------------------------------------------------------------------
+
+__SetBlackDrawFGColor		equ 008D34Ch
+__SavePrevCXMain		equ 002431Ah
+__UpdateRunIndicator		equ 008D82Bh
 #endif
 .list
