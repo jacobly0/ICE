@@ -45,33 +45,34 @@ CFunction1ArgSMC = $+1
 CFunction2Args:
 	bit triggered_a_comma, (iy+fExpression2)
 	jp z, ErrorSyntax
-	call _IncFetch
 	ld hl, (programPtr)
-	push hl
-		ld hl, tempArg1
-		ld (programPtr), hl
-		call ParseExpression
-		bit triggered_a_comma, (iy+fExpression2)
-		jp z, ErrorSyntax
-		bit arg1_is_small, (iy+fFunction1)
-		jr z, +_
-		bit output_is_number, (iy+fExpression1)
-		jr z, +_
-		ld hl, (programPtr)
-		dec hl
-		dec hl
-		ld (programPtr), hl
-		dec hl
-		dec hl
-		ld (hl), 02Eh														; ld l, *
-		inc hl
-		ld de, (hl)
-		ld (hl), e
-_:		call InsertPushHLDE
-	pop hl
-	ld de, (programPtr)
+	ld (CFunction2ArgsSMC2), hl
+	ld hl, tempArg1
 	ld (programPtr), hl
-	push de
+	call _IncFetch
+	call ParseExpression
+	bit triggered_a_comma, (iy+fExpression2)
+	jp z, ErrorSyntax
+	ld hl, (programPtr)
+	bit arg1_is_small, (iy+fFunction1)
+	jr z, +_
+	bit output_is_number, (iy+fExpression1)
+	jr z, +_
+	dec hl
+	dec hl
+	ld (programPtr), hl
+	dec hl
+	dec hl
+	ld (hl), 02Eh															; ld l, *
+	inc hl
+	ld de, (hl)
+	ld (hl), e
+	inc hl
+_:	call InsertPushHLDE
+	push hl
+CFunction2ArgsSMC2 = $+1
+		ld hl, 0
+		ld (programPtr), hl
 		call _IncFetch
 		call ParseExpression
 		bit triggered_a_comma, (iy+fExpression2)
@@ -86,20 +87,21 @@ _:		call InsertPushHLDE
 		ld (programPtr), hl
 		dec hl
 		dec hl
-		ld (hl), 02Eh														; ld l, *
+		ld (hl), 02Eh												; ld l, *
 		inc hl
 		ld de, (hl)
 		ld (hl), e
 _:		call InsertPushHLDE
+		ld de, (programPtr)
 	pop hl
-	ld de, tempArg1
+	ld bc, tempArg1
 	or a
-	sbc hl, de
+	sbc hl, bc
 	push hl
 	pop bc
-	ld hl, (programPtr)
-	ex de, hl
+	ld hl, tempArg1
 	ldir
+	ld (programPtr), de
 	ld hl, usedCroutines
 CFunction2ArgsSMC = $+1
 	ld de, 0
@@ -732,9 +734,6 @@ CTransparentSpriteNoClip:
 CSpriteNoClip:
 	ld a, 59
 _:	ld (iy+fFunction1), %00000100
-	scf
-	sbc hl, hl
-	;ld (hl), 2
 	ld (CFunction3ArgsSMC), a
 	call CFunction3Args
 	jr z, +_
@@ -747,18 +746,15 @@ _:	ld (iy+fFunction1), %00000100
 		pop de
 		add hl, hl
 		add hl, de
-		ld de, spriteStack
+		ld de, (PrevProgramPtr)
+		ld bc, UserMem - program
+		add hl, bc
 		add hl, de
-		ld bc, (hl)
-	pop de
-	ld hl, (programDataOffsetPtr)
+		ex de, hl
+	pop hl
 	ld (hl), de
-	inc hl
-	inc hl
-	inc hl
-	ld (programDataOffsetPtr), hl
-	ex de, hl
-	ld (hl), bc
+	dec hl
+	ld (hl), 02Ah																; ld hl, (XXXXXX)
 	ret
 _:	ld hl, (programPtr)
 	ld de, -8
@@ -768,26 +764,33 @@ _:	ld hl, (programPtr)
 	inc hl
 	ld hl, (hl)
 	push hl
-		ld a, 011h
-		call InsertA															; ld de, *
-		call InsertProgramPtrToDataOffset
-		ld hl, programDataData
-		call InsertHL															; ld de, RANDOM
-		ld hl, 027ED19h
-		call InsertHL															; add hl, de \ ld hl, (hl)
 		ld a, 0E5h
 		call InsertA															; push hl
+		ld a, 0D1h
+		ld hl, 0111929h
+		call InsertAHL															; pop de \ add hl, hl \ add hl, de \ ld de, ******
+		ld hl, (PrevProgramPtr)
+		ld de, UserMem - program
+		add hl, de
+		call InsertHL															; ld de, XXXXXX
+		ld a, 019h
+		ld hl, 0E527EDh
+		call InsertAHL															; add hl, de \ ld hl, (hl) \ push hl
 	pop hl
 	call InsertCallHL															; call ******
 	ld hl, 0E1E1E1h
 	jp InsertHL																	; pop hl \ pop hl \ pop hl
+	
+CTransparentScaledSpriteNoClip:
+	ld a, 63
+	jr +_
 	
 CScaledSpriteNoClip:
 	ld a, 62
 _:	ld (CFunction5ArgsSMC), a
 	ld (iy+fFunction1), %00000111
 	call CFunction5Args
-	jp z, ErrorSyntax
+	jr z, +_
 	ld hl, (programPtr)
 	ld de, -13
 	add hl, de
@@ -797,23 +800,42 @@ _:	ld (CFunction5ArgsSMC), a
 		pop de
 		add hl, hl
 		add hl, de
-		ld de, spriteStack
+		ld de, (PrevProgramPtr)
+		ld bc, UserMem - program
+		add hl, bc
 		add hl, de
-		ld bc, (hl)
-	pop de
-	ld hl, (programDataOffsetPtr)
+		ex de, hl
+	pop hl
 	ld (hl), de
-	inc hl
-	inc hl
-	inc hl
-	ld (programDataOffsetPtr), hl
-	ex de, hl
-	ld (hl), bc
+	dec hl
+	ld (hl), 02Ah																; ld hl, (XXXXXX)
 	ret
-
-CTransparentScaledSpriteNoClip:
-	ld a, 63
-	jr -_
+_:	ld hl, (programPtr)
+	ld de, -10
+	add hl, de
+	ld (programPtr), hl
+	inc hl
+	inc hl
+	ld hl, (hl)
+	push hl
+		ld a, 0E5h
+		call InsertA															; push hl
+		ld a, 0D1h
+		ld hl, 0111929h
+		call InsertAHL															; pop de \ add hl, hl \ add hl, de \ ld de, ******
+		ld hl, (PrevProgramPtr)
+		ld de, UserMem - program
+		add hl, de
+		call InsertHL															; ld de, XXXXXX
+		ld a, 019h
+		ld hl, 0E527EDh
+		call InsertAHL															; add hl, de \ ld hl, (hl) \ push hl
+	pop hl
+	call InsertCallHL															; call ******
+	ld a, 0E1h
+	call InsertA																; pop hl
+	ld hl, 0E1E1E1h
+	jp InsertAHL																; pop hl \ pop hl \ pop hl \ pop hl
 	
 CBegin:
 	bit triggered_a_comma, (iy+fExpression2)

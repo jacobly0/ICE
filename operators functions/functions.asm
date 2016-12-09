@@ -1107,34 +1107,11 @@ functionDefineSprite:
 	jp nz, ErrorUsedCode
 	ld a, 1
 	ld (openedParensF), a
-	call _IncFetch
-	call ParseExpression
-	bit output_is_number, (iy+fExpression1)
-	jp z, ErrorSyntax
-	bit triggered_a_comma, (iy+fExpression2)
-	jp z, ErrorSyntax
-	ld hl, (programPtr)
-	dec hl
-	dec hl
-	dec hl
-	dec hl
-	ld (programPtr), hl
-	inc hl
-	ld hl, (hl)
+	call InsertProgramPtrToDataOffset
+	ld hl, (programDataDataPtr)
 	push hl
-	pop bc
-	add hl, hl
-	add hl, bc
-	ld de, (programDataDataPtr)
-	ld bc, spriteStack
-	add hl, bc
-	ld (hl), de
-	ld hl, (tempListsPtr)
-	ld (hl), de
-	inc hl
-	inc hl
-	inc hl
-	ld (tempListsPtr), hl
+	pop de
+	call InsertHL
 	ld b, 2
 _:	push de
 		push bc
