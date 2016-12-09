@@ -656,3 +656,6 @@ UpdateSpritePointers:
 		ld (hl), de
 	pop bc
 	ret
+	
+GetProgramName:
+; TODO
