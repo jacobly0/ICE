@@ -659,4 +659,5 @@ UpdateSpritePointers:
 	
 GetProgramName:
 ; TODO
+; etest
 	ret
