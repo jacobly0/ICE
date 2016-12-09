@@ -21,7 +21,7 @@ Blit_:									.db %00110000
 BlitLines_:								.db %01111100
 BlitArea_:								.db %10110101
 PrintChar_:								.db %00110000
-PrintInt_:								.db %11100000
+PrintInt_:								.db %01001000
 PrintUInt_:								.db %01001000
 PrintString_:							.db %00100000
 PrintStringXY_:							.db %01100000
