@@ -658,5 +658,36 @@ UpdateSpritePointers:
 	ret
 	
 GetProgramName:
-; TODO
-	ret
+	push hl
+		call _IncFetch
+	pop hl
+	jp c, InvalidNameLength
+	inc hl
+	cp tEnter
+	jp z, InvalidNameLength
+	cp tA
+	jp c, InvalidTokenError
+	cp ttheta+1
+	jp nc, InvalidTokenError
+	ld (hl), a
+	ld e, 8
+_:	push hl
+		call _IncFetch
+	pop hl
+	inc hl
+	ld (hl), 0
+	ret c
+	cp tEnter
+	ret z
+	cp t0
+	jp c, InvalidTokenError
+	cp t9+1
+	jr c, +_
+	cp tA
+	jp c, InvalidTokenError
+	cp ttheta+1
+	jp nc, InvalidTokenError
+_:	ld (hl), a
+	dec e
+	jr nz, --_
+	jp InvalidNameLength

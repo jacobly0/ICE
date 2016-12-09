@@ -207,24 +207,8 @@ CompileProgramFull:
 	or a
 	jr nz, SkipGetProgramName
 	ld hl, varname
-	ld e, 9
-GetProgramName:
-	push hl
-		call _IncFetch
-	pop hl
-	jp c, +_
-	inc hl
-	cp tEnter
-	jr z, +_
-	cp tA
-	jp c, InvalidTokenError
-	cp ttheta+1
-	jp nc, InvalidTokenError
-	ld (hl), a
-	dec e
-	jr nz, GetProgramName
-	jp InvalidNameLength
-_:	ld hl, OP1+1
+	call GetProgramName
+	ld hl, OP1+1
 	ld de, varname+1
 	ld b, 8
 CheckNames:

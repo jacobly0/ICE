@@ -83,7 +83,7 @@ ExprOutput2				.db 0
 AmountOfSubPrograms		.db 0
 
 varname:
-	.db ProtProgObj, 0,0,0,0,0,0,0,0
+	.db ProtProgObj, 0,0,0,0,0,0,0,0,0
 	
 usedCroutines:
 .fill AMOUNT_OF_C_FUNCTIONS, 0
@@ -349,5 +349,5 @@ LibLoadAppVar:
 	.db " LibLoad", 0
 	.db "http://tiny.cc/clibs", 0
 RelocationStart:
-	.db 0C0h, "GRAPHX", 0, 2
+	.db 0C0h, "GRAPHX", 0, 3
 CData2:

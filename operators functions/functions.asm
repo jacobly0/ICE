@@ -1153,26 +1153,9 @@ _:	push de
 	
 functionCompilePrgm:
 	ld hl, OP1
-	ld e, 9
-GetSubProgramName:
-	push hl
-		call _IncFetch
-	pop hl
-	inc hl
-	jr c, +_
-	cp tEnter
-	jr z, +_
-	cp tA
-	jp c, InvalidTokenError
-	cp ttheta+1
-	jp nc, InvalidTokenError
-	ld (hl), a
-	dec e
-	jr nz, GetSubProgramName
-	jp InvalidNameLength
-_:	ld a, ProgObj
+	call GetProgramName
+	ld a, ProgObj
 	ld (OP1), a
-	ld (hl), 0
 	call _ChkFindSym
 	jr nc, +_
 	ld hl, OP1
