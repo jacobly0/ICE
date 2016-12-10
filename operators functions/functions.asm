@@ -59,6 +59,16 @@ functionReturn:
 	call _NxtFetch
 	jr nc, +_
 	set last_token_is_ret, (iy+fExpression1)
+_:	cp tIf
+	jr nz, +_
+	call _IncFetch
+	call _IncFetch
+	call ParseExpression
+	ld a, 019h
+	call InsertA															; add hl, de
+	ld a, 0B7h
+	ld hl, 0C052EDh
+	jp InsertAHL															; or a \ sbc hl, de \ ret nz
 _:	ld a, 0C9h
 	jp InsertA																; ret
 	
@@ -78,7 +88,7 @@ DispString:
 	dec bc
 _:	ldir
 	ld (programPtr), de
-	bit triggered_a_comma, (iy+fExpression2)
+	bit triggered_a_comma, (iy+fExpression3)
 	ret z
 	jr functionDisp
 		
@@ -107,7 +117,7 @@ _:			call _IncFetch
 		pop de
 		ld (curPC), de
 		bit output_is_number, (iy+fExpression1)
-		jr nz, functionRepeatInfinite
+		jp nz, functionRepeatInfinite
 		bit ans_set_z_flag, (iy+fExpression1)
 		jr z, +_
 		ld hl, (programPtr)
@@ -121,11 +131,19 @@ _:			call _IncFetch
 		dec hl
 		dec hl
 		ld (programPtr), hl
-		jr ++_
-_:		ld a, 019h
+		jr functionRepeatInsert
+_:		bit last_token_was_not, (iy+fExpression2)
+		jr z, InsertNormalRepeat2
+		ld hl, (programPtr)
+		ld de, -8
+		add hl, de
+		ld (programPtr), hl
+InsertNormalRepeat2:
+		ld a, 019h
 		ld hl, 052EDB7h
 		call InsertAHL														; add hl, de \ or a \ sbc hl, de
-_:		ld bc, UserMem - program
+functionRepeatInsert:
+		ld bc, UserMem - program
 		add hl, bc
 	pop de
 	or a
@@ -144,7 +162,10 @@ functionRepeatSmall:
 	bit ans_set_z_flag, (iy+fExpression1)
 	jr z, +_
 	ld a, ixh
-_:	call InsertA															; jr [n]z, *
+_:	bit last_token_was_not, (iy+fExpression2)
+	jr z, $+4
+	xor 8
+	call InsertA															; jr [n]z, *
 	ld a, b
 	jp InsertA																; jr [n]z, *
 functionRepeatLarge:
@@ -155,7 +176,10 @@ functionRepeatLarge:
 	add a, 0A2h
 	jr ++_
 _:	ld a, 0CAh
-_:	jp InsertAHL															; jp [n]z, XXXXXX
+_:	bit last_token_was_not, (iy+fExpression2)
+	jr z, $+4
+	xor 8
+	jp InsertAHL															; jp [n]z, XXXXXX
 functionRepeatInfinite:
 		ld hl, (programPtr)
 		dec hl
@@ -200,8 +224,10 @@ functionIf:
 	inc (hl)
 	call _IncFetch
 	call ParseExpression
+	bit output_is_number, (iy+fExpression1)
+	jp nz, functionIfInfinite
 	bit ans_set_z_flag, (iy+fExpression1)
-	jr z, +_
+	jr z, InsertNormalIf
 	ld hl, (programPtr)
 	dec hl
 	dec hl
@@ -213,12 +239,24 @@ functionIf:
 	dec hl
 	dec hl
 	ld (programPtr), hl
-	jr ++_
-_:	ld a, 019h
+	jr InsertIf
+InsertNormalIf:
+	bit last_token_was_not, (iy+fExpression2)
+	jr z, InsertNormalIf2
+	ld hl, (programPtr)
+	ld de, -8
+	add hl, de
+	ld (programPtr), hl
+InsertNormalIf2:
+	ld a, 019h
 	ld hl, 052EDB7h
 	call InsertAHL															; add hl, de \ or a \ sbc hl, de
 	ld a, 0CAh
-_:	call InsertA															; jp z, ******
+	bit last_token_was_not, (iy+fExpression2)
+	jr z, InsertIf
+	ld a, 0C2h
+InsertIf:
+	call InsertA															; jp z, ******
 	ld hl, (programPtr)
 	push hl
 		call InsertHL														; jp z, XXXXXX
@@ -248,6 +286,42 @@ _:		ld hl, (programPtr)
 	pop hl
 	ld (hl), de
 	ret
+functionIfInfinite:
+	ld hl, (programPtr)
+	dec hl
+	dec hl
+	dec hl
+	dec hl
+	ld (programPtr), hl
+	inc hl
+	ld hl, (hl)
+	add hl, de
+	or a
+	sbc hl, de
+	jr z, functionIfInfiniteFalse
+	call ParseProgramUntilEnd
+	cp tElse
+	ret nz
+	ld hl, (programPtr)
+	push hl
+		call ParseProgramUntilEnd
+		cp tElse
+		jp z, ErrorSyntax
+	pop hl
+	ld (programPtr), hl
+	ret
+functionIfInfiniteFalse:
+	ld hl, (programPtr)
+	push hl
+		call ParseProgramUntilEnd
+	pop hl
+	ld (programPtr), hl
+	cp tElse
+	ret nz
+	call ParseProgramUntilEnd
+	cp tElse
+	jp z, ErrorSyntax
+	ret
 	
 functionWhile:
 	ld hl, amountOfEnds
@@ -274,12 +348,23 @@ functionWhile:
 		dec hl
 		dec hl
 		ld (programPtr), hl
-		jr ++_
-_:		ld a, 019h
+		jr InsertNormalWhile
+_:		bit last_token_was_not, (iy+fExpression2)
+		jr z, InsertNormalWhile2
+		ld hl, (programPtr)
+		ld de, -8
+		add hl, de
+		ld (programPtr), hl
+InsertNormalWhile2:
+		ld a, 019h
 		ld hl, 052EDB7h
 		call InsertAHL														; add hl, de \ or a \ sbc hl, de
 		ld a, 0CAh
-_:		call InsertA														; jp z, ******
+InsertNormalWhile:
+		bit last_token_was_not, (iy+fExpression2)
+		jr z, $+4
+		xor 8
+		call InsertA														; jp z, ******
 		ld hl, (programPtr)
 		push hl
 			call InsertHL													; jp z, ******
@@ -489,6 +574,7 @@ functionInputOnce:
 functionNot:
 	ld a, 1
 	ld (amountOfArguments), a
+	set last_token_was_not, (iy+fExpression2)
 	push hl
 	pop ix
 	ld a, (ix-4)
@@ -1119,7 +1205,7 @@ _:	push de
 			call ParseExpression
 			bit output_is_number, (iy+fExpression1)
 			jp z, ErrorSyntax
-			bit triggered_a_comma, (iy+fExpression2)
+			bit triggered_a_comma, (iy+fExpression3)
 			jp z, ErrorSyntax
 			ld hl, (programPtr)
 			dec hl
