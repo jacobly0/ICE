@@ -1,5 +1,5 @@
 CFunction0Args:
-	bit triggered_a_comma, (iy+fExpression2)
+	bit triggered_a_comma, (iy+fExpression3)
 	jp nz, ErrorSyntax
 	ld hl, usedCroutines
 CFunction0ArgsSMC = $+1
@@ -13,7 +13,7 @@ CFunction0ArgsSMC = $+1
 	jp InsertCallHL															; call *
 	
 CFunction1Arg:
-	bit triggered_a_comma, (iy+fExpression2)
+	bit triggered_a_comma, (iy+fExpression3)
 	jp z, ErrorSyntax
 	call _IncFetch
 	call ParseExpression
@@ -43,7 +43,7 @@ CFunction1ArgSMC = $+1
 	jp InsertA																; pop hl
 		
 CFunction2Args:
-	bit triggered_a_comma, (iy+fExpression2)
+	bit triggered_a_comma, (iy+fExpression3)
 	jp z, ErrorSyntax
 	ld hl, (programPtr)
 	ld (CFunction2ArgsSMC2), hl
@@ -51,7 +51,7 @@ CFunction2Args:
 	ld (programPtr), hl
 	call _IncFetch
 	call ParseExpression
-	bit triggered_a_comma, (iy+fExpression2)
+	bit triggered_a_comma, (iy+fExpression3)
 	jp z, ErrorSyntax
 	ld hl, (programPtr)
 	bit arg1_is_small, (iy+fFunction1)
@@ -75,7 +75,7 @@ CFunction2ArgsSMC2 = $+1
 		ld (programPtr), hl
 		call _IncFetch
 		call ParseExpression
-		bit triggered_a_comma, (iy+fExpression2)
+		bit triggered_a_comma, (iy+fExpression3)
 		jp nz, ErrorSyntax
 		bit arg2_is_small, (iy+fFunction1)
 		jr z, +_
@@ -117,7 +117,7 @@ CFunction2ArgsSMC = $+1
 	jp InsertA																; pop hl
 	
 CFunction3Args:
-	bit triggered_a_comma, (iy+fExpression2)
+	bit triggered_a_comma, (iy+fExpression3)
 	jp z, ErrorSyntax
 	ld hl, (programPtr)
 	ld (CFunction3ArgsSMC2), hl
@@ -125,7 +125,7 @@ CFunction3Args:
 	ld (programPtr), hl
 	call _IncFetch
 	call ParseExpression
-	bit triggered_a_comma, (iy+fExpression2)
+	bit triggered_a_comma, (iy+fExpression3)
 	jp z, ErrorSyntax
 	ld hl, (programPtr)
 	bit arg1_is_small, (iy+fFunction1)
@@ -152,7 +152,7 @@ _:	call InsertPushHLDE
 				ld (programPtr), hl
 				call _IncFetch
 				call ParseExpression
-				bit triggered_a_comma, (iy+fExpression2)
+				bit triggered_a_comma, (iy+fExpression3)
 				jp z, ErrorSyntax
 				ld hl, (programPtr)
 				bit arg2_is_small, (iy+fFunction1)
@@ -176,7 +176,7 @@ CFunction3ArgsSMC2 = $+1
 					ld (programPtr), hl
 					call _IncFetch
 					call ParseExpression
-					bit triggered_a_comma, (iy+fExpression2)
+					bit triggered_a_comma, (iy+fExpression3)
 					jp nz, ErrorSyntax
 					bit arg3_is_small, (iy+fFunction1)
 					jr z, +_
@@ -236,7 +236,7 @@ CFunction3ArgsSMC = $+1
 	jp InsertHL																; pop hl \ pop hl \ pop hl
 	
 CFunction4Args:
-	bit triggered_a_comma, (iy+fExpression2)
+	bit triggered_a_comma, (iy+fExpression3)
 	jp z, ErrorSyntax
 	ld hl, (programPtr)
 	ld (CFunction4ArgsSMC2), hl
@@ -244,7 +244,7 @@ CFunction4Args:
 	ld (programPtr), hl
 	call _IncFetch
 	call ParseExpression
-	bit triggered_a_comma, (iy+fExpression2)
+	bit triggered_a_comma, (iy+fExpression3)
 	jp z, ErrorSyntax
 	ld hl, (programPtr)
 	bit arg1_is_small, (iy+fFunction1)
@@ -267,7 +267,7 @@ _:	call InsertPushHLDE
 		ld (programPtr), hl
 		call _IncFetch
 		call ParseExpression
-		bit triggered_a_comma, (iy+fExpression2)
+		bit triggered_a_comma, (iy+fExpression3)
 		jp z, ErrorSyntax
 		ld hl, (programPtr)
 		bit arg2_is_small, (iy+fFunction1)
@@ -290,7 +290,7 @@ _:		call InsertPushHLDE
 			ld (programPtr), hl
 			call _IncFetch
 			call ParseExpression
-			bit triggered_a_comma, (iy+fExpression2)
+			bit triggered_a_comma, (iy+fExpression3)
 			jp z, ErrorSyntax
 			ld hl, (programPtr)
 			bit arg3_is_small, (iy+fFunction1)
@@ -314,7 +314,7 @@ CFunction4ArgsSMC2 = $+1
 				ld (programPtr), hl
 				call _IncFetch
 				call ParseExpression
-				bit triggered_a_comma, (iy+fExpression2)
+				bit triggered_a_comma, (iy+fExpression3)
 				jp nz, ErrorSyntax
 				bit arg4_is_small, (iy+fFunction1)
 				jr z, +_
@@ -372,7 +372,7 @@ CFunction4ArgsSMC = $+1
 	jp InsertAHL															; pop hl \ pop hl \ pop hl \ pop hl
 	
 CFunction5Args:
-	bit triggered_a_comma, (iy+fExpression2)
+	bit triggered_a_comma, (iy+fExpression3)
 	jp z, ErrorSyntax
 	ld hl, (programPtr)
 	ld (CFunction5ArgsSMC2), hl
@@ -380,7 +380,7 @@ CFunction5Args:
 	ld (programPtr), hl
 	call _IncFetch
 	call ParseExpression
-	bit triggered_a_comma, (iy+fExpression2)
+	bit triggered_a_comma, (iy+fExpression3)
 	jp z, ErrorSyntax
 	ld hl, (programPtr)
 	bit arg1_is_small, (iy+fFunction1)
@@ -405,7 +405,7 @@ _:	call InsertPushHLDE
 			ld (programPtr), hl
 			call _IncFetch
 			call ParseExpression
-			bit triggered_a_comma, (iy+fExpression2)
+			bit triggered_a_comma, (iy+fExpression3)
 			jp z, ErrorSyntax
 			ld hl, (programPtr)
 			bit arg2_is_small, (iy+fFunction1)
@@ -428,7 +428,7 @@ _:			call InsertPushHLDE
 				ld (programPtr), hl
 				call _IncFetch
 				call ParseExpression
-				bit triggered_a_comma, (iy+fExpression2)
+				bit triggered_a_comma, (iy+fExpression3)
 				jp z, ErrorSyntax
 				ld hl, (programPtr)
 				bit arg3_is_small, (iy+fFunction1)
@@ -451,7 +451,7 @@ _:				call InsertPushHLDE
 					ld (programPtr), hl
 					call _IncFetch
 					call ParseExpression
-					bit triggered_a_comma, (iy+fExpression2)
+					bit triggered_a_comma, (iy+fExpression3)
 					jp z, ErrorSyntax
 					ld hl, (programPtr)
 					bit arg4_is_small, (iy+fFunction1)
@@ -475,7 +475,7 @@ CFunction5ArgsSMC2 = $+1
 						ld (programPtr), hl
 						call _IncFetch
 						call ParseExpression
-						bit triggered_a_comma, (iy+fExpression2)
+						bit triggered_a_comma, (iy+fExpression3)
 						jp nz, ErrorSyntax
 						bit arg5_is_small, (iy+fFunction1)
 						jr z, +_
@@ -544,7 +544,7 @@ CFunction5ArgsSMC = $+1
 	jp InsertAHL															; pop hl \ pop hl \ pop hl \ pop hl
 	
 CFunction6Args:
-	bit triggered_a_comma, (iy+fExpression2)
+	bit triggered_a_comma, (iy+fExpression3)
 	jp z, ErrorSyntax
 	ld hl, (programPtr)
 	ld (CFunction6ArgsSMC2), hl
@@ -552,7 +552,7 @@ CFunction6Args:
 	ld (programPtr), hl
 	call _IncFetch
 	call ParseExpression
-	bit triggered_a_comma, (iy+fExpression2)
+	bit triggered_a_comma, (iy+fExpression3)
 	jp z, ErrorSyntax
 	ld hl, (programPtr)
 	bit arg1_is_small, (iy+fFunction1)
@@ -575,7 +575,7 @@ _:	call InsertPushHLDE
 		ld (programPtr), hl
 		call _IncFetch
 		call ParseExpression
-		bit triggered_a_comma, (iy+fExpression2)
+		bit triggered_a_comma, (iy+fExpression3)
 		jp z, ErrorSyntax
 		ld hl, (programPtr)
 		bit arg2_is_small, (iy+fFunction1)
@@ -598,7 +598,7 @@ _:		call InsertPushHLDE
 			ld (programPtr), hl
 			call _IncFetch
 			call ParseExpression
-			bit triggered_a_comma, (iy+fExpression2)
+			bit triggered_a_comma, (iy+fExpression3)
 			jp z, ErrorSyntax
 			ld hl, (programPtr)
 			bit arg3_is_small, (iy+fFunction1)
@@ -621,7 +621,7 @@ _:			call InsertPushHLDE
 				ld (programPtr), hl
 				call _IncFetch
 				call ParseExpression
-				bit triggered_a_comma, (iy+fExpression2)
+				bit triggered_a_comma, (iy+fExpression3)
 				jp z, ErrorSyntax
 				ld hl, (programPtr)
 				bit arg4_is_small, (iy+fFunction1)
@@ -644,7 +644,7 @@ _:				call InsertPushHLDE
 					ld (programPtr), hl
 					call _IncFetch
 					call ParseExpression
-					bit triggered_a_comma, (iy+fExpression2)
+					bit triggered_a_comma, (iy+fExpression3)
 					jp z, ErrorSyntax
 					ld hl, (programPtr)
 					bit arg5_is_small, (iy+fFunction1)
@@ -668,7 +668,7 @@ CFunction6ArgsSMC2 = $+1
 						ld (programPtr), hl
 						call _IncFetch
 						call ParseExpression
-						bit triggered_a_comma, (iy+fExpression2)
+						bit triggered_a_comma, (iy+fExpression3)
 						jp nz, ErrorSyntax
 						call InsertPushHLDE
 						ld de, (programPtr)
@@ -838,7 +838,7 @@ _:	ld hl, (programPtr)
 	jp InsertAHL																; pop hl \ pop hl \ pop hl \ pop hl
 	
 CBegin:
-	bit triggered_a_comma, (iy+fExpression2)
+	bit triggered_a_comma, (iy+fExpression3)
 	jp nz, ErrorSyntax
 	ld hl, 0E5272Eh
 	call InsertHL															; ld l, lcdBpp8 \ push hl

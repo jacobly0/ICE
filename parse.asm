@@ -30,15 +30,16 @@ ParseExpression2:
 	set used_code, (iy+fProgram1)
 	call z, UpdateSpritePointers
 ParseExpression:
-	call _CurFetch
 	ld hl, stack
 	ld (stackPtr), hl
 	ld hl, output
 	ld (outputPtr), hl
-	ld hl, openedParensE
-	ld (hl), 0
-	ld (iy+fExpression1), 0
-	ld (iy+fExpression2), 0
+	xor a
+	ld (openedParensE), a
+	ld (iy+fExpression1), a
+	ld (iy+fExpression2), a
+	ld (iy+fExpression3), a
+	call _CurFetch
 MainLoopResCarryFlag:
 	or a	
 MainLoop:
@@ -177,7 +178,7 @@ NotAString:
 	cp tGetKey
 	jr z, AddFunctionToOutput
 	cp trand
-	jr nz, AddFunctionToStack
+	jp nz, AddFunctionToStack
 AddFunctionToOutput:
 	ld hl, (outputPtr)
 	ld (hl), typeReturnValue
@@ -204,11 +205,13 @@ _:	jp nc, ErrorSyntax
 	ld de, 0
 	ld e, a
 	call _IncFetch
-	jr c, ++_
+	jr c, AddGetKeyDirect
 	cp tEnter
-	jr z, ++_
+	jr z, AddGetKeyDirect
 	cp tRParen
 	jr z, +_
+	cp tStore
+	jr z, AddGetKeyDirect
 	sub t0
 	jr c, --_
 	cp t9-t0+1
@@ -223,13 +226,16 @@ _:	jp nc, ErrorSyntax
 	add hl, de
 	ex de, hl
 	call _IncFetch
-	jr c, ++_
+	jr c, AddGetKeyDirect
 	cp tEnter
-	jr z, ++_
+	jr z, AddGetKeyDirect
+	cp tStore
+	jr z, AddGetKeyDirect
 	cp tRParen
 	jp nz, ErrorSyntax
 _:	call _IncFetch
-_:	ld hl, (outputPtr)
+AddGetKeyDirect:
+	ld hl, (outputPtr)
 	dec hl
 	dec hl
 	dec hl
@@ -273,7 +279,7 @@ StopParsing:																; move stack to output
 Loop:
 	xor a
 	ld (iy+fExpression1), a
-	res use_mean_routine, (iy+fExpression2)
+	ld (iy+fExpression2), a
 	sbc hl, bc
 	ld de, output
 	sbc hl, de
@@ -310,8 +316,11 @@ ExpressFunction:
 			call ExecuteFunction
 		pop de
 		push de
-		pop ix
-		lea hl, ix+4
+		pop hl
+		inc hl
+		inc hl
+		inc hl
+		inc hl
 		ld a, (amountOfArguments)
 		dec a
 		jr z, ++_
@@ -338,8 +347,12 @@ _:	pop bc
 	ld a, b
 	or c
 	cp 4
-	ret z
-	ex de, hl
+	jr nz, +_
+	bit output_is_number, (iy+fExpression1)
+	jp z, MaybeChangeDEToHL
+	ld hl, (ix-3)
+	jp ParseSingleArgument2
+_:	ex de, hl
 	ld a, (amountOfArguments)
 	ld b, a
 _:	dec hl
@@ -358,6 +371,8 @@ ExpressOperator:
 		ld de, (ix-3)
 		ld bc, (ix-7)
 		call ExecuteOperator
+		ld a, (ExprOutput2)
+		ld (ExprOutput), a
 		lea de, ix-4
 	pop bc
 	ld hl, 8
@@ -376,10 +391,8 @@ ExpressOperator:
 	pop hl
 	jr nz, +_
 	bit output_is_number, (iy+fExpression1)
-	ret z
-	dec hl
-	dec hl
-	dec hl
+	jp z, MaybeChangeDEToHL
+	ld hl, (ix-7)
 	jr ParseSingleArgument2
 _:	inc bc
 	inc bc
@@ -424,8 +437,8 @@ ParseSingleArgument:
 	jr nz, ParseSingleNotNumber
 	set output_is_number, (iy+fExpression1)
 	inc hl
-ParseSingleArgument2:
 	ld hl, (hl)
+ParseSingleArgument2:
 	ld a, 021h
 	jp InsertAHL															; ld hl, *
 ParseSingleNotNumber:

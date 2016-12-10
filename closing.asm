@@ -62,5 +62,5 @@ MismatchedParens:
 	ld a, (tempToken)
 	cp tComma
 	jr nz, +_
-	set triggered_a_comma, (iy+fExpression2)
+	set triggered_a_comma, (iy+fExpression3)
 _:	jp StopParsing

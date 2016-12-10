@@ -28,10 +28,10 @@ _:		ld b, 18
 		jp nc, ErrorSyntax
 		push hl
 			ld hl, ExprOutput2
-			ld a, (hl)
+			;ld a, (hl)
 			ld (hl), OutputIsInHL
-			dec hl
-			ld (hl), a
+			;dec hl
+			;ld (hl), a
 		pop hl
 		ld b, 3
 		mlt bc

@@ -50,7 +50,10 @@ output_is_string		.equ 7										; used for strings
 
 fExpression2			.equ -41h
 use_mean_routine		.equ 0										; used if the function is mean()
-triggered_a_comma		.equ 1										; used if a comma is entered outside parens, used by functions
+last_token_was_not		.equ 1										; used if the last token is "not(", which can be optimized at If/Repeat/While
+
+fExpression3			.equ -42h
+triggered_a_comma		.equ 0										; used if a comma is entered outside parens, used by functions
 
 fFunction1				.equ -50h
 arg1_is_small			.equ 4										; used in C functions

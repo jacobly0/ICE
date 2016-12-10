@@ -57,8 +57,6 @@ InsertDEHL:
 	ex de, hl
 	jr InsertHL
 
-InsertE:
-	ld a, e
 InsertA:
 	push hl
 		ld hl, (programPtr)
@@ -73,16 +71,10 @@ MaybeChangeHLToDE:
 	or a
 	ret z
 _:	ld a, 0EBh
-	jp InsertA																; ex de, hl
+	jr InsertA																; ex de, hl
 	
 MaybeChangeDEToHL:
 	ld a, (ExprOutput)
-	or a
-	ret nz
-	jr -_
-	
-MaybeChangeDEToHL2:
-	ld a, (ExprOutput2)
 	or a
 	ret nz
 	jr -_
@@ -440,9 +432,7 @@ SkipDisplayLineNumber:
 	ld (TextXPos_ASM), hl
 	ld hl, PressKey
 	call PrintString
-_:	call _GetCSC
-	or a
-	jr z, -_
+	call _GetKey
 StopProgram:
 	ld hl, (curPC)
 	ld de, (begPC)
@@ -467,7 +457,7 @@ backupEndPC = $+1
 	call _DrawStatusBar
 	bit good_compilation, (iy+fProgram1)
 	ret nz
-	jp OpenEditBuffer
+#include "editor.asm"
 	
 ClearScreen:
 	ld hl, vRAM+(320*12)

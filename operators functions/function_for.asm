@@ -27,8 +27,8 @@ _:		jp c, ErrorSyntax
 			ld hl, tempArg1
 			ld (programPtr), hl
 			call ParseExpression
-			bit triggered_a_comma, (iy+fExpression2)
-			res triggered_a_comma, (iy+fExpression2)
+			bit triggered_a_comma, (iy+fExpression3)
+			res triggered_a_comma, (iy+fExpression3)
 			jp z, ErrorSyntax
 ForVariable1 = $+3
 			ld hl, 0002FDDh
@@ -65,8 +65,8 @@ ForEndPointIsNumber:
 			ld (programPtr), hl
 			ld (ForFixedEndPoint), de
 ForGetStep:
-			bit triggered_a_comma, (iy+fExpression2)
-			res triggered_a_comma, (iy+fExpression2)
+			bit triggered_a_comma, (iy+fExpression3)
+			res triggered_a_comma, (iy+fExpression3)
 			jr nz, +_
 			; loop step
 			set for_step_is_number, (iy+fFunction2)
@@ -103,7 +103,7 @@ ForGetStepVariable:
 ForGetStepNumber:
 			set for_step_is_number, (iy+fFunction2)
 			call ParseExpression
-			bit triggered_a_comma, (iy+fExpression2)
+			bit triggered_a_comma, (iy+fExpression3)
 			jr nz, -_
 			bit output_is_number, (iy+fExpression1)
 			jp z, ErrorSyntax

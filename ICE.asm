@@ -227,18 +227,18 @@ GoodProgramName:
 SkipGetProgramName:
 
 ParseProgramUntilEnd:
-	call _IncFetch
 CompileLoop:
-	ld (tempToken), a
-	ld b, a
 	xor a
 	ld (iy+fExpression1), a
 	ld (iy+fExpression2), a
+	ld (iy+fExpression3), a
 	ld (iy+fFunction1), a
 	ld (iy+fFunction2), a
 	ld (openedParensE), a
 	ld (openedParensF), a
-	ld a, b
+	call _IncFetch
+	ld (tempToken), a
+	jr c, FindGotos
 	cp tEnd
 	jr nz, ++_
 _:	ld hl, amountOfEnds
@@ -268,9 +268,8 @@ _:	cp tElse
 	call __idivu
 	push hl
 	pop bc
-	add hl, de
-	or a
-	sbc hl, de
+	ld a, b
+	or c
 	jr z, +_
 	ld hl, vRAM+(320*25)
 	ld (hl), 0
@@ -278,11 +277,11 @@ _:	cp tElse
 	pop de
 	inc de
 	dec bc
-	call _ChkBCIs0
-	jr z, +_
+	ld a, b
+	or c
+	jr z, CompileLoop
 	ldir
-_:	call _IncFetch
-	jr nc, CompileLoop
+_:	jr CompileLoop
 FindGotos:
 	ld hl, amountOfEnds
 	ld a, (hl)
@@ -442,7 +441,6 @@ _:	ld hl, (programPtr)
 #include "parse.asm"
 #include "putchar.asm"
 #include "programs.asm"
-#include "editor.asm"
 #include "hooks.asm"
 #include "operators functions/functions.asm"
 #include "operators functions/operators.asm"
