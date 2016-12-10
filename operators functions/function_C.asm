@@ -1,46 +1,36 @@
 CFunction0Args:
 	bit triggered_a_comma, (iy+fExpression3)
 	jp nz, ErrorSyntax
+	ld b, 0
+CInsertCallPops:
 	ld hl, usedCroutines
-CFunction0ArgsSMC = $+1
+CFunctionArgsSMC = $+1
 	ld de, 0
-	add hl, de
-	ld c, (hl)
-	ld b, 4
-	mlt bc
-	ld hl, CData2-CData+UserMem-4
-	add hl, bc
-	jp InsertCallHL															; call *
+	push bc
+		add hl, de
+		ld c, (hl)
+		ld b, 4
+		mlt bc
+		ld hl, CData2-CData+UserMem-4
+		add hl, bc
+		call InsertCallHL													; call *
+	pop bc
+	ld a, b
+	or a
+	ret z
+	ld a, 0E1h
+_:	call InsertA
+	djnz -_
+	ret																		; pop hl
 	
 CFunction1Arg:
 	bit triggered_a_comma, (iy+fExpression3)
 	jp z, ErrorSyntax
-	call _IncFetch
-	call ParseExpression
-	bit arg1_is_small, (iy+fFunction1)
-	jr z, +_
-	bit output_is_number, (iy+fExpression1)
-	jr z, +_
 	ld hl, (programPtr)
-	dec hl
-	dec hl
-	ld (programPtr), hl
-	dec hl
-	dec hl
-	ld (hl), 02Eh															; ld l, *
-_:	call InsertPushHLDE
-	ld hl, usedCroutines
-CFunction1ArgSMC = $+1
-	ld de, 0
-	add hl, de
-	ld c, (hl)
-	ld b, 4
-	mlt bc
-	ld hl, CData2-CData+UserMem-4
-	add hl, bc
-	call InsertCallHL														; call *
-	ld a, 0E1h
-	jp InsertA																; pop hl
+	bit arg1_is_small, (iy+fFunction1)
+	call CGetArgumentLast
+	ld b, 1
+	jr CInsertCallPops
 		
 CFunction2Args:
 	bit triggered_a_comma, (iy+fExpression3)
@@ -48,73 +38,20 @@ CFunction2Args:
 	ld hl, (programPtr)
 	ld (CFunction2ArgsSMC2), hl
 	ld hl, tempArg1
-	ld (programPtr), hl
-	call _IncFetch
-	call ParseExpression
-	bit triggered_a_comma, (iy+fExpression3)
-	jp z, ErrorSyntax
-	ld hl, (programPtr)
 	bit arg1_is_small, (iy+fFunction1)
-	jr z, +_
-	bit output_is_number, (iy+fExpression1)
-	jr z, +_
-	dec hl
-	dec hl
-	ld (programPtr), hl
-	dec hl
-	dec hl
-	ld (hl), 02Eh															; ld l, *
-	inc hl
-	ld de, (hl)
-	ld (hl), e
-	inc hl
-_:	call InsertPushHLDE
+	call CGetArgument
 	push hl
 CFunction2ArgsSMC2 = $+1
 		ld hl, 0
-		ld (programPtr), hl
-		call _IncFetch
-		call ParseExpression
-		bit triggered_a_comma, (iy+fExpression3)
-		jp nz, ErrorSyntax
 		bit arg2_is_small, (iy+fFunction1)
-		jr z, +_
-		bit output_is_number, (iy+fExpression1)
-		jr z, +_
-		ld hl, (programPtr)
-		dec hl
-		dec hl
-		ld (programPtr), hl
-		dec hl
-		dec hl
-		ld (hl), 02Eh												; ld l, *
-		inc hl
-		ld de, (hl)
-		ld (hl), e
-_:		call InsertPushHLDE
+		call CGetArgumentLast
 		ld de, (programPtr)
 	pop hl
 	ld bc, tempArg1
-	or a
-	sbc hl, bc
-	push hl
-	pop bc
-	ld hl, tempArg1
-	ldir
+	call CAddArgument
 	ld (programPtr), de
-	ld hl, usedCroutines
-CFunction2ArgsSMC = $+1
-	ld de, 0
-	add hl, de
-	ld c, (hl)
-	ld b, 4
-	mlt bc
-	ld hl, CData2-CData+UserMem-4
-	add hl, bc
-	call InsertCallHL														; call *
-	ld a, 0E1h
-	call InsertA															; pop hl
-	jp InsertA																; pop hl
+	ld b, 2
+	jp CInsertCallPops
 	
 CFunction3Args:
 	bit triggered_a_comma, (iy+fExpression3)
@@ -122,86 +59,25 @@ CFunction3Args:
 	ld hl, (programPtr)
 	ld (CFunction3ArgsSMC2), hl
 	ld hl, tempArg1
-	ld (programPtr), hl
-	call _IncFetch
-	call ParseExpression
-	bit triggered_a_comma, (iy+fExpression3)
-	jp z, ErrorSyntax
-	ld hl, (programPtr)
 	bit arg1_is_small, (iy+fFunction1)
-	jr z, +_
-	bit output_is_number, (iy+fExpression1)
-	jr z, +_
-	dec hl
-	dec hl
-	ld (programPtr), hl
-	dec hl
-	dec hl
-	ld (hl), 02Eh															; ld l, *
-	inc hl
-	ld de, (hl)
-	ld (hl), e
-	inc hl
-_:	call InsertPushHLDE
+	call CGetArgument
 	bit output_is_number, (iy+fExpression1)
 	push af
 		bit output_is_string, (iy+fExpression1)
 		push af
 			push hl
 				ld hl, tempArg2
-				ld (programPtr), hl
-				call _IncFetch
-				call ParseExpression
-				bit triggered_a_comma, (iy+fExpression3)
-				jp z, ErrorSyntax
-				ld hl, (programPtr)
 				bit arg2_is_small, (iy+fFunction1)
-				jr z, +_
-				bit output_is_number, (iy+fExpression1)
-				jr z, +_
-				dec hl
-				dec hl
-				ld (programPtr), hl
-				dec hl
-				dec hl
-				ld (hl), 02Eh												; ld l, *
-				inc hl
-				ld de, (hl)
-				ld (hl), e
-				inc hl
-_:				call InsertPushHLDE
+				call CGetArgument
 				push hl
 CFunction3ArgsSMC2 = $+1
 					ld hl, 0
-					ld (programPtr), hl
-					call _IncFetch
-					call ParseExpression
-					bit triggered_a_comma, (iy+fExpression3)
-					jp nz, ErrorSyntax
 					bit arg3_is_small, (iy+fFunction1)
-					jr z, +_
-					bit output_is_number, (iy+fExpression1)
-					jr z, +_
-					ld hl, (programPtr)
-					dec hl
-					dec hl
-					ld (programPtr), hl
-					dec hl
-					dec hl
-					ld (hl), 02Eh											; ld l, *
-					inc hl
-					ld de, (hl)
-					ld (hl), e
-_:					call InsertPushHLDE
+					call CGetArgumentLast
 					ld de, (programPtr)
 				pop hl
 				ld bc, tempArg2
-				or a
-				sbc hl, bc
-				push hl
-				pop bc
-				ld hl, tempArg2
-				ldir
+				call CAddArgument
 			pop hl
 			ld bc, tempArg1
 			or a
@@ -221,19 +97,10 @@ _:					call InsertPushHLDE
 		pop hl
 _:		ldir
 		ld (programPtr), de
-		ld hl, usedCroutines
-CFunction3ArgsSMC = $+1
-		ld de, 0
-		add hl, de
-		ld c, (hl)
-		ld b, 4
-		mlt bc
-		ld hl, CData2-CData+UserMem-4
-		add hl, bc
-		call InsertCallHL													; call *
-		ld hl, 0E1E1E1h
+		ld b, 3
+		call CInsertCallPops
 	pop af
-	jp InsertHL																; pop hl \ pop hl \ pop hl
+	ret
 	
 CFunction4Args:
 	bit triggered_a_comma, (iy+fExpression3)
@@ -241,135 +108,34 @@ CFunction4Args:
 	ld hl, (programPtr)
 	ld (CFunction4ArgsSMC2), hl
 	ld hl, tempArg1
-	ld (programPtr), hl
-	call _IncFetch
-	call ParseExpression
-	bit triggered_a_comma, (iy+fExpression3)
-	jp z, ErrorSyntax
-	ld hl, (programPtr)
 	bit arg1_is_small, (iy+fFunction1)
-	jr z, +_
-	bit output_is_number, (iy+fExpression1)
-	jr z, +_
-	dec hl
-	dec hl
-	ld (programPtr), hl
-	dec hl
-	dec hl
-	ld (hl), 02Eh															; ld l, *
-	inc hl
-	ld de, (hl)
-	ld (hl), e
-	inc hl
-_:	call InsertPushHLDE
+	call CGetArgument
 	push hl
 		ld hl, tempArg2
-		ld (programPtr), hl
-		call _IncFetch
-		call ParseExpression
-		bit triggered_a_comma, (iy+fExpression3)
-		jp z, ErrorSyntax
-		ld hl, (programPtr)
 		bit arg2_is_small, (iy+fFunction1)
-		jr z, +_
-		bit output_is_number, (iy+fExpression1)
-		jr z, +_
-		dec hl
-		dec hl
-		ld (programPtr), hl
-		dec hl
-		dec hl
-		ld (hl), 02Eh														; ld l, *
-		inc hl
-		ld de, (hl)
-		ld (hl), e
-		inc hl
-_:		call InsertPushHLDE
+		call CGetArgument
 		push hl
 			ld hl, tempArg3
-			ld (programPtr), hl
-			call _IncFetch
-			call ParseExpression
-			bit triggered_a_comma, (iy+fExpression3)
-			jp z, ErrorSyntax
-			ld hl, (programPtr)
 			bit arg3_is_small, (iy+fFunction1)
-			jr z, +_
-			bit output_is_number, (iy+fExpression1)
-			jr z, +_
-			dec hl
-			dec hl
-			ld (programPtr), hl
-			dec hl
-			dec hl
-			ld (hl), 02Eh													; ld l, *
-			inc hl
-			ld de, (hl)
-			ld (hl), e
-			inc hl
-_:			call InsertPushHLDE
+			call CGetArgument
 			push hl
 CFunction4ArgsSMC2 = $+1
 				ld hl, 0
-				ld (programPtr), hl
-				call _IncFetch
-				call ParseExpression
-				bit triggered_a_comma, (iy+fExpression3)
-				jp nz, ErrorSyntax
 				bit arg4_is_small, (iy+fFunction1)
-				jr z, +_
-				bit output_is_number, (iy+fExpression1)
-				jr z, +_
-				ld hl, (programPtr)
-				dec hl
-				dec hl
-				ld (programPtr), hl
-				dec hl
-				dec hl
-				ld (hl), 02Eh												; ld l, *
-				inc hl
-				ld de, (hl)
-				ld (hl), e
-_:				call InsertPushHLDE
+				call CGetArgumentLast
 				ld de, (programPtr)
 			pop hl
 			ld bc, tempArg3
-			or a
-			sbc hl, bc
-			push hl
-			pop bc
-			ld hl, tempArg3
-			ldir
+			call CAddArgument
 		pop hl
 		ld bc, tempArg2
-		or a
-		sbc hl, bc
-		push hl
-		pop bc
-		ld hl, tempArg2
-		ldir
+		call CAddArgument
 	pop hl
 	ld bc, tempArg1
-	or a
-	sbc hl, bc
-	push hl
-	pop bc
-	ld hl, tempArg1
-	ldir
+	call CAddArgument
 	ld (programPtr), de
-	ld hl, usedCroutines
-CFunction4ArgsSMC = $+1
-	ld de, 0
-	add hl, de
-	ld c, (hl)
 	ld b, 4
-	mlt bc
-	ld hl, CData2-CData+UserMem-4
-	add hl, bc
-	call InsertCallHL														; call *
-	ld a, 0E1h
-	ld hl, 0E1E1E1h
-	jp InsertAHL															; pop hl \ pop hl \ pop hl \ pop hl
+	jp CInsertCallPops
 	
 CFunction5Args:
 	bit triggered_a_comma, (iy+fExpression3)
@@ -377,171 +143,45 @@ CFunction5Args:
 	ld hl, (programPtr)
 	ld (CFunction5ArgsSMC2), hl
 	ld hl, tempArg1
-	ld (programPtr), hl
-	call _IncFetch
-	call ParseExpression
-	bit triggered_a_comma, (iy+fExpression3)
-	jp z, ErrorSyntax
-	ld hl, (programPtr)
 	bit arg1_is_small, (iy+fFunction1)
-	jr z, +_
-	bit output_is_number, (iy+fExpression1)
-	jr z, +_
-	dec hl
-	dec hl
-	ld (programPtr), hl
-	dec hl
-	dec hl
-	ld (hl), 02Eh															; ld l, *
-	inc hl
-	ld de, (hl)
-	ld (hl), e
-	inc hl
-_:	call InsertPushHLDE
+	call CGetArgument
 	bit output_is_number, (iy+fExpression1)
 	push af
 		push hl
 			ld hl, tempArg2
-			ld (programPtr), hl
-			call _IncFetch
-			call ParseExpression
-			bit triggered_a_comma, (iy+fExpression3)
-			jp z, ErrorSyntax
-			ld hl, (programPtr)
 			bit arg2_is_small, (iy+fFunction1)
-			jr z, +_
-			bit output_is_number, (iy+fExpression1)
-			jr z, +_
-			dec hl
-			dec hl
-			ld (programPtr), hl
-			dec hl
-			dec hl
-			ld (hl), 02Eh													; ld l, *
-			inc hl
-			ld de, (hl)
-			ld (hl), e
-			inc hl
-_:			call InsertPushHLDE
+			call CGetArgument
 			push hl
 				ld hl, tempArg3
-				ld (programPtr), hl
-				call _IncFetch
-				call ParseExpression
-				bit triggered_a_comma, (iy+fExpression3)
-				jp z, ErrorSyntax
-				ld hl, (programPtr)
 				bit arg3_is_small, (iy+fFunction1)
-				jr z, +_
-				bit output_is_number, (iy+fExpression1)
-				jr z, +_
-				dec hl
-				dec hl
-				ld (programPtr), hl
-				dec hl
-				dec hl
-				ld (hl), 02Eh												; ld l, *
-				inc hl
-				ld de, (hl)
-				ld (hl), e
-				inc hl
-_:				call InsertPushHLDE
+				call CGetArgument
 				push hl
 					ld hl, tempArg4
-					ld (programPtr), hl
-					call _IncFetch
-					call ParseExpression
-					bit triggered_a_comma, (iy+fExpression3)
-					jp z, ErrorSyntax
-					ld hl, (programPtr)
 					bit arg4_is_small, (iy+fFunction1)
-					jr z, +_
-					bit output_is_number, (iy+fExpression1)
-					jr z, +_
-					dec hl
-					dec hl
-					ld (programPtr), hl
-					dec hl
-					dec hl
-					ld (hl), 02Eh											; ld l, *
-					inc hl
-					ld de, (hl)
-					ld (hl), e
-					inc hl
-_:					call InsertPushHLDE
+					call CGetArgument
 					push hl
 CFunction5ArgsSMC2 = $+1
 						ld hl, 0
-						ld (programPtr), hl
-						call _IncFetch
-						call ParseExpression
-						bit triggered_a_comma, (iy+fExpression3)
-						jp nz, ErrorSyntax
 						bit arg5_is_small, (iy+fFunction1)
-						jr z, +_
-						bit output_is_number, (iy+fExpression1)
-						jr z, +_
-						ld hl, (programPtr)
-						dec hl
-						dec hl
-						ld (programPtr), hl
-						dec hl
-						dec hl
-						ld (hl), 02Eh										; ld l, *
-						inc hl
-						ld de, (hl)
-						ld (hl), e
-_:						call InsertPushHLDE
+						call CGetArgumentLast
 						ld de, (programPtr)
 					pop hl
 					ld bc, tempArg4
-					or a
-					sbc hl, bc
-					push hl
-					pop bc
-					ld hl, tempArg4
-					ldir
+					call CAddArgument
 				pop hl
 				ld bc, tempArg3
-				or a
-				sbc hl, bc
-				push hl
-				pop bc
-				ld hl, tempArg3
-				ldir
+				call CAddArgument
 			pop hl
 			ld bc, tempArg2
-			or a
-			sbc hl, bc
-			push hl
-			pop bc
-			ld hl, tempArg2
-			ldir
+			call CAddArgument
 		pop hl
 		ld bc, tempArg1
-		or a
-		sbc hl, bc
-		push hl
-		pop bc
-		ld hl, tempArg1
-		ldir
+		call CAddArgument
 		ld (programPtr), de
-		ld hl, usedCroutines
-CFunction5ArgsSMC = $+1
-		ld de, 0
-		add hl, de
-		ld c, (hl)
-		ld b, 4
-		mlt bc
-		ld hl, CData2-CData+UserMem-4
-		add hl, bc
-		call InsertCallHL													; call *
-		ld a, 0E1h
-		call InsertA														; pop hl
-		ld hl, 0E1E1E1h
+		ld b, 5
+		call CInsertCallPops
 	pop af
-	ld a, 0E1h
-	jp InsertAHL															; pop hl \ pop hl \ pop hl \ pop hl
+	ret
 	
 CFunction6Args:
 	bit triggered_a_comma, (iy+fExpression3)
@@ -549,13 +189,65 @@ CFunction6Args:
 	ld hl, (programPtr)
 	ld (CFunction6ArgsSMC2), hl
 	ld hl, tempArg1
-	ld (programPtr), hl
-	call _IncFetch
-	call ParseExpression
-	bit triggered_a_comma, (iy+fExpression3)
-	jp z, ErrorSyntax
-	ld hl, (programPtr)
 	bit arg1_is_small, (iy+fFunction1)
+	call CGetArgument
+	push hl
+		ld hl, tempArg2
+		bit arg2_is_small, (iy+fFunction1)
+		call CGetArgument
+		push hl
+			ld hl, tempArg3
+			bit arg3_is_small, (iy+fFunction1)
+			call CGetArgument
+			push hl
+				ld hl, tempArg4
+				bit arg4_is_small, (iy+fFunction1)
+				call CGetArgument
+				push hl
+					ld hl, tempArg5
+					bit arg5_is_small, (iy+fFunction1)
+					call CGetArgument
+					push hl
+CFunction6ArgsSMC2 = $+1
+						ld hl, 0
+						cp a												; reset zero flag
+						call CGetArgumentLast
+						ld de, (programPtr)
+					pop hl
+					ld bc, tempArg5
+					call CAddArgument
+				pop hl
+				ld bc, tempArg4
+				call CAddArgument
+			pop hl
+			ld bc, tempArg3
+			call CAddArgument
+		pop hl
+		ld bc, tempArg2
+		call CAddArgument
+	pop hl
+	ld bc, tempArg1
+	call CAddArgument
+	ld (programPtr), de
+	ld b, 6
+	jp CInsertCallPops
+	
+CGetArgumentLast:
+	ld a, 0C2h
+	ld (CGetArgumentLastOrNot), a
+	jr $+8
+CGetArgument:
+	ld a, 0CAh
+	ld (CGetArgumentLastOrNot), a
+	ld (programPtr), hl
+	push af
+		call _IncFetch
+		call ParseExpression
+		bit triggered_a_comma, (iy+fExpression3)
+CGetArgumentLastOrNot:
+		jp z, ErrorSyntax
+		ld hl, (programPtr)
+	pop af
 	jr z, +_
 	bit output_is_number, (iy+fExpression1)
 	jr z, +_
@@ -564,169 +256,22 @@ CFunction6Args:
 	ld (programPtr), hl
 	dec hl
 	dec hl
-	ld (hl), 02Eh															; ld l, *
+	ld (hl), 02Eh														; ld l, *
 	inc hl
 	ld de, (hl)
 	ld (hl), e
 	inc hl
-_:	call InsertPushHLDE
-	push hl
-		ld hl, tempArg2
-		ld (programPtr), hl
-		call _IncFetch
-		call ParseExpression
-		bit triggered_a_comma, (iy+fExpression3)
-		jp z, ErrorSyntax
-		ld hl, (programPtr)
-		bit arg2_is_small, (iy+fFunction1)
-		jr z, +_
-		bit output_is_number, (iy+fExpression1)
-		jr z, +_
-		dec hl
-		dec hl
-		ld (programPtr), hl
-		dec hl
-		dec hl
-		ld (hl), 02Eh														; ld l, *
-		inc hl
-		ld de, (hl)
-		ld (hl), e
-		inc hl
-_:		call InsertPushHLDE
-		push hl
-			ld hl, tempArg3
-			ld (programPtr), hl
-			call _IncFetch
-			call ParseExpression
-			bit triggered_a_comma, (iy+fExpression3)
-			jp z, ErrorSyntax
-			ld hl, (programPtr)
-			bit arg3_is_small, (iy+fFunction1)
-			jr z, +_
-			bit output_is_number, (iy+fExpression1)
-			jr z, +_
-			dec hl
-			dec hl
-			ld (programPtr), hl
-			dec hl
-			dec hl
-			ld (hl), 02Eh													; ld l, *
-			inc hl
-			ld de, (hl)
-			ld (hl), e
-			inc hl
-_:			call InsertPushHLDE
-			push hl
-				ld hl, tempArg4
-				ld (programPtr), hl
-				call _IncFetch
-				call ParseExpression
-				bit triggered_a_comma, (iy+fExpression3)
-				jp z, ErrorSyntax
-				ld hl, (programPtr)
-				bit arg4_is_small, (iy+fFunction1)
-				jr z, +_
-				bit output_is_number, (iy+fExpression1)
-				jr z, +_
-				dec hl
-				dec hl
-				ld (programPtr), hl
-				dec hl
-				dec hl
-				ld (hl), 02Eh												; ld l, *
-				inc hl
-				ld de, (hl)
-				ld (hl), e
-				inc hl
-_:				call InsertPushHLDE
-				push hl
-					ld hl, tempArg5
-					ld (programPtr), hl
-					call _IncFetch
-					call ParseExpression
-					bit triggered_a_comma, (iy+fExpression3)
-					jp z, ErrorSyntax
-					ld hl, (programPtr)
-					bit arg5_is_small, (iy+fFunction1)
-					jr z, +_
-					bit output_is_number, (iy+fExpression1)
-					jr z, +_
-					dec hl
-					dec hl
-					ld (programPtr), hl
-					dec hl
-					dec hl
-					ld (hl), 02Eh											; ld l, *
-					inc hl
-					ld de, (hl)
-					ld (hl), e
-					inc hl
-_:					call InsertPushHLDE
-					push hl
-CFunction6ArgsSMC2 = $+1
-						ld hl, 0
-						ld (programPtr), hl
-						call _IncFetch
-						call ParseExpression
-						bit triggered_a_comma, (iy+fExpression3)
-						jp nz, ErrorSyntax
-						call InsertPushHLDE
-						ld de, (programPtr)
-					pop hl
-					ld bc, tempArg5
-					or a
-					sbc hl, bc
-					push hl
-					pop bc
-					ld hl, tempArg5
-					ldir
-				pop hl
-				ld bc, tempArg4
-				or a
-				sbc hl, bc
-				push hl
-				pop bc
-				ld hl, tempArg4
-				ldir
-			pop hl
-			ld bc, tempArg3
-			or a
-			sbc hl, bc
-			push hl
-			pop bc
-			ld hl, tempArg3
-			ldir
-		pop hl
-		ld bc, tempArg2
+_:	jp InsertPushHLDE													; push de/hl
+
+CAddArgument:
+	push bc
 		or a
 		sbc hl, bc
 		push hl
 		pop bc
-		ld hl, tempArg2
-		ldir
 	pop hl
-	ld bc, tempArg1
-	or a
-	sbc hl, bc
-	push hl
-	pop bc
-	ld hl, tempArg1
 	ldir
-	ld (programPtr), de
-	ld hl, usedCroutines
-CFunction6ArgsSMC = $+1
-	ld de, 0
-	add hl, de
-	ld c, (hl)
-	ld b, 4
-	mlt bc
-	ld hl, CData2-CData+UserMem-4
-	add hl, bc
-	call InsertCallHL														; call *
-	ld hl, 0E1E1E1h
-	push hl
-	pop de
-	jp InsertDEHL															; pop hl (x6)
+	ret
 	
 CTransparentSpriteNoClip:
 	ld a, 60
@@ -734,7 +279,7 @@ CTransparentSpriteNoClip:
 CSpriteNoClip:
 	ld a, 59
 _:	ld (iy+fFunction1), %00000100
-	ld (CFunction3ArgsSMC), a
+	ld (CFunctionArgsSMC), a
 	call CFunction3Args
 	jr z, +_
 	ld hl, (programPtr)
@@ -787,7 +332,7 @@ CTransparentScaledSpriteNoClip:
 	
 CScaledSpriteNoClip:
 	ld a, 62
-_:	ld (CFunction5ArgsSMC), a
+_:	ld (CFunctionArgsSMC), a
 	ld (iy+fFunction1), %00000111
 	call CFunction5Args
 	jr z, +_

@@ -40,7 +40,6 @@ CSpecialFunctionsStart:
 	
 CArguments:
 	.dl CFunction0Args, CFunction1Arg, CFunction2Args, CFunction3Args, CFunction4Args, CFunction5Args, CFunction6Args
-	.dl CFunction0ArgsSMC, CFunction1ArgSMC, CFunction2ArgsSMC, CFunction3ArgsSMC, CFunction4ArgsSMC, CFunction5ArgsSMC, CFunction5ArgsSMC
 	
 functionCustomStart:
 	.dl functionExecHex, functionDefineSprite, functionCall, functionCompilePrgm
