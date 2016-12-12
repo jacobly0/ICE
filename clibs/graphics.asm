@@ -6,7 +6,7 @@
 ;    	bit   1 reset = not implemented
 
 CFunctionsArguments:
-Begin_:									.db %11110000
+Begin_:									.db %00000000
 End_:									.db %00000000
 SetColor_:								.db %00110000
 SetDefaultPalette_:						.db %00000000

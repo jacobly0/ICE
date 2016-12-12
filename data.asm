@@ -32,11 +32,11 @@ operator_start:
 	.dl StoNumberXXX, StoVariableXXX, StoChainPushXXX, StoChainAnsXXX, StoFunctionXXX, StoListXXX
 	
 CSpecialFunctions:
-	.db 63, 62, 60, 59, 0
+	.db 63, 62, 60, 59
 CSpecialFunctionsEnd:
 
 CSpecialFunctionsStart:
-	.dl CBegin, CSpriteNoClip, CTransparentSpriteNoClip, CScaledSpriteNoClip, CTransparentScaledSpriteNoClip
+	.dl CSpriteNoClip, CTransparentSpriteNoClip, CScaledSpriteNoClip, CTransparentScaledSpriteNoClip
 	
 CArguments:
 	.dl CFunction0Args, CFunction1Arg, CFunction2Args, CFunction3Args, CFunction4Args, CFunction5Args, CFunction6Args

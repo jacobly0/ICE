@@ -6,15 +6,19 @@ CInsertCallPops:
 	ld hl, usedCroutines
 CFunctionArgsSMC = $+1
 	ld de, 0
-	push bc
-		add hl, de
-		ld c, (hl)
-		ld b, 4
-		mlt bc
-		ld hl, CData2-CData+UserMem-4
-		add hl, bc
-		call InsertCallHL													; call *
-	pop bc
+	ld a, e
+	or a
+	jr nz, +_
+	ld hl, 0E5272Eh
+	call InsertHL															; ld l, lcdBpp8 \ push hl
+	inc b
+_:	add hl, de
+	ld e, (hl)
+	ld d, 4
+	mlt de
+	ld hl, CData2-CData+UserMem-4
+	add hl, de
+	call InsertCallHL														; call *
 	ld a, b
 	or a
 	ret z
@@ -232,47 +236,6 @@ CFunction6ArgsSMC2 = $+1
 	ld b, 6
 	jp CInsertCallPops
 	
-CGetArgumentLast:
-	ld a, 0C2h
-	ld (CGetArgumentLastOrNot), a
-	jr $+8
-CGetArgument:
-	ld a, 0CAh
-	ld (CGetArgumentLastOrNot), a
-	ld (programPtr), hl
-	push af
-		call _IncFetch
-		call ParseExpression
-		bit triggered_a_comma, (iy+fExpression3)
-CGetArgumentLastOrNot:
-		jp z, ErrorSyntax
-		ld hl, (programPtr)
-	pop af
-	jr z, +_
-	bit output_is_number, (iy+fExpression1)
-	jr z, +_
-	dec hl
-	dec hl
-	ld (programPtr), hl
-	dec hl
-	dec hl
-	ld (hl), 02Eh														; ld l, *
-	inc hl
-	ld de, (hl)
-	ld (hl), e
-	inc hl
-_:	jp InsertPushHLDE													; push de/hl
-
-CAddArgument:
-	push bc
-		or a
-		sbc hl, bc
-		push hl
-		pop bc
-	pop hl
-	ldir
-	ret
-	
 CTransparentSpriteNoClip:
 	ld a, 60
 	jr +_	
@@ -299,7 +262,7 @@ _:	ld (iy+fFunction1), %00000100
 	pop hl
 	ld (hl), de
 	dec hl
-	ld (hl), 02Ah																; ld hl, (XXXXXX)
+	ld (hl), 02Ah															; ld hl, (XXXXXX)
 	ret
 _:	ld hl, (programPtr)
 	ld de, -8
@@ -310,21 +273,21 @@ _:	ld hl, (programPtr)
 	ld hl, (hl)
 	push hl
 		ld a, 0E5h
-		call InsertA															; push hl
+		call InsertA														; push hl
 		ld a, 0D1h
 		ld hl, 0111929h
-		call InsertAHL															; pop de \ add hl, hl \ add hl, de \ ld de, ******
+		call InsertAHL														; pop de \ add hl, hl \ add hl, de \ ld de, ******
 		ld hl, (PrevProgramPtr)
 		ld de, UserMem - program
 		add hl, de
-		call InsertHL															; ld de, XXXXXX
+		call InsertHL														; ld de, XXXXXX
 		ld a, 019h
 		ld hl, 0E527EDh
-		call InsertAHL															; add hl, de \ ld hl, (hl) \ push hl
+		call InsertAHL														; add hl, de \ ld hl, (hl) \ push hl
 	pop hl
-	call InsertCallHL															; call ******
+	call InsertCallHL														; call ******
 	ld hl, 0E1E1E1h
-	jp InsertHL																	; pop hl \ pop hl \ pop hl
+	jp InsertHL																; pop hl \ pop hl \ pop hl
 	
 CTransparentScaledSpriteNoClip:
 	ld a, 63
@@ -353,7 +316,7 @@ _:	ld (CFunctionArgsSMC), a
 	pop hl
 	ld (hl), de
 	dec hl
-	ld (hl), 02Ah																; ld hl, (XXXXXX)
+	ld (hl), 02Ah															; ld hl, (XXXXXX)
 	ret
 _:	ld hl, (programPtr)
 	ld de, -10
@@ -364,35 +327,20 @@ _:	ld hl, (programPtr)
 	ld hl, (hl)
 	push hl
 		ld a, 0E5h
-		call InsertA															; push hl
+		call InsertA														; push hl
 		ld a, 0D1h
 		ld hl, 0111929h
-		call InsertAHL															; pop de \ add hl, hl \ add hl, de \ ld de, ******
+		call InsertAHL														; pop de \ add hl, hl \ add hl, de \ ld de, ******
 		ld hl, (PrevProgramPtr)
 		ld de, UserMem - program
 		add hl, de
-		call InsertHL															; ld de, XXXXXX
+		call InsertHL														; ld de, XXXXXX
 		ld a, 019h
 		ld hl, 0E527EDh
-		call InsertAHL															; add hl, de \ ld hl, (hl) \ push hl
+		call InsertAHL														; add hl, de \ ld hl, (hl) \ push hl
 	pop hl
-	call InsertCallHL															; call ******
+	call InsertCallHL														; call ******
 	ld a, 0E1h
-	call InsertA																; pop hl
+	call InsertA															; pop hl
 	ld hl, 0E1E1E1h
-	jp InsertAHL																; pop hl \ pop hl \ pop hl \ pop hl
-	
-CBegin:
-	bit triggered_a_comma, (iy+fExpression3)
-	jp nz, ErrorSyntax
-	ld hl, 0E5272Eh
-	call InsertHL															; ld l, lcdBpp8 \ push hl
-	ld hl, usedCroutines
-	ld c, (hl)
-	ld b, 4
-	mlt bc
-	ld hl, CData2-CData+UserMem-4
-	add hl, bc
-	call InsertCallHL														; call *
-	ld a, 0E1h
-	jp InsertA																; pop hl
+	jp InsertAHL															; pop hl \ pop hl \ pop hl \ pop hl

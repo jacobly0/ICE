@@ -1140,11 +1140,10 @@ functionC:
 _:	ld c, d
 	ld b, 3
 	mlt bc
-	ld ix, CArguments
-	add ix, bc
-	ld hl, (ix+21)
-	ld (hl), a
-	ld hl, (ix)
+	ld hl, CArguments
+	add hl, bc
+	ld hl, (hl)
+	ld (CFunctionArgsSMC), a
 	jp (hl)
 
 functionCustom:

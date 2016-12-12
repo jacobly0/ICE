@@ -56,7 +56,55 @@ InsertDEHL:
 	call InsertHL
 	ex de, hl
 	jr InsertHL
-
+	
+MaybeChangeHLToDE:
+	ld a, (ExprOutput)
+_:	or a
+	ret z
+	ld a, 0EBh
+	jr InsertA																; ex de, hl
+	
+MaybeChangeDEToHL:
+	ld a, (ExprOutput)
+	xor 1
+	jr -_
+	
+CGetArgumentLast:
+	ld a, 0C2h
+	jr $+4
+CGetArgument:
+	ld a, 0CAh
+	ld (CGetArgumentLastOrNot), a
+	ld (programPtr), hl
+	push af
+		call _IncFetch
+		call ParseExpression
+		bit triggered_a_comma, (iy+fExpression3)
+CGetArgumentLastOrNot:
+		jp z, ErrorSyntax
+		ld hl, (programPtr)
+	pop af
+	jr z, InsertPushHLDE
+	bit output_is_number, (iy+fExpression1)
+	jr z, InsertPushHLDE
+	dec hl
+	dec hl
+	ld (programPtr), hl
+	dec hl
+	dec hl
+	ld (hl), 02Eh															; ld l, *
+	inc hl
+	ld de, (hl)
+	ld (hl), e
+InsertPushHLDE:
+	ld a, (ExprOutput2)
+	add a, a
+	add a, a
+	add a, a
+	add a, a
+	add a, 0D5h
+	ld hl, (programPtr)
+	inc hl
 InsertA:
 	push hl
 		ld hl, (programPtr)
@@ -65,29 +113,15 @@ InsertA:
 		ld (programPtr), hl
 	pop hl
 	ret
-	
-MaybeChangeHLToDE:
-	ld a, (ExprOutput)
-	or a
-	ret z
-_:	ld a, 0EBh
-	jr InsertA																; ex de, hl
-	
-MaybeChangeDEToHL:
-	ld a, (ExprOutput)
-	or a
-	ret nz
-	jr -_
-	
-InsertPushHLDE:
-	ld a, (ExprOutput2)
-	add a, a
-	add a, a
-	add a, a
-	add a, a
-	add a, 0D5h
-	call InsertA															; push hl/de
-	ld hl, (programPtr)
+
+CAddArgument:
+	push bc
+		or a
+		sbc hl, bc
+		push hl
+		pop bc
+	pop hl
+	ldir
 	ret
 	
 InsertProgramPtrToDataOffset:
@@ -179,8 +213,8 @@ GetFunctionBC:
 	ld a, 001h
 	call InsertA															; ld bc, *
 	xor a
-	ld hl, 05F0000h
-	jp InsertAHL															; ld bc, 0 \ ld e, a
+	ld hl, 04F0000h
+	jp InsertAHL															; ld bc, 0 \ ld c, a
 _:	cp trand
 	jr nz, ++_
 	call InsertRandRoutine
