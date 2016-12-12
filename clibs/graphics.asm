@@ -65,11 +65,11 @@ LZDecompress_:							.db %11100000
 AllocSprite_:							.db %11100000
 Sprite_:								.db %11100000
 TransparentSprite_:						.db %11100000
-SpriteNoClip_:							.db %11110000
-TransparentSpriteNoClip_:				.db %11110000
+SpriteNoClip_:							.db %01100100
+TransparentSpriteNoClip_:				.db %01100100
 GetSpriteNoClip_:						.db %11100000
-ScaledSpriteNoClip_:					.db %11110000
-ScaledTransparentSpriteNoClip_:			.db %11110000
+ScaledSpriteNoClip_:					.db %10100111
+ScaledTransparentSpriteNoClip_:			.db %10100111
 FlipSpriteY_:							.db %11100000
 FlipSpriteX_:							.db %11100000
 RotateSpriteC_:							.db %11100000

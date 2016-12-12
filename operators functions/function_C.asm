@@ -103,6 +103,11 @@ _:		ldir
 		ld (programPtr), de
 		ld b, 3
 		call CInsertCallPops
+		ld a, (CFunctionArgsSMC)
+		cp 59
+		jr z, CInsertSprite
+		cp 60
+		jr z, CInsertSprite
 	pop af
 	ret
 	
@@ -140,6 +145,64 @@ CFunction4ArgsSMC2 = $+1
 	ld (programPtr), de
 	ld b, 4
 	jp CInsertCallPops
+	
+CInsertSprite:
+		ld bc, -11
+_:	pop af
+	ld hl, (programPtr)
+	jr z, +_
+	add hl, bc
+	push hl
+		ld hl, (hl)
+		push hl
+		pop de
+		add hl, hl
+		add hl, de
+		ld de, (PrevProgramPtr)
+		add hl, de
+		ld de, UserMem - program
+		add hl, de
+		ex de, hl
+	pop hl
+	ld (hl), de
+	dec hl
+	ld (hl), 02Ah															; ld hl, (XXXXXX)
+	ret
+_:	inc bc
+	inc bc
+	inc bc
+	add hl, bc
+	ld (programPtr), hl
+	inc hl
+	inc hl
+	ld hl, (hl)
+	push hl
+		ld a, 0E5h
+		call InsertA														; push hl
+		ld a, 0D1h
+		ld hl, 0111929h
+		call InsertAHL														; pop de \ add hl, hl \ add hl, de \ ld de, ******
+		ld hl, (PrevProgramPtr)
+		ld de, UserMem - program
+		add hl, de
+		call InsertHL														; ld de, XXXXXX
+		ld a, 019h
+		ld hl, 0E527EDh
+		call InsertAHL														; add hl, de \ ld hl, (hl) \ push hl
+	pop hl
+	call InsertCallHL														; call ******
+	ld hl, 0E1E1E1h
+	call InsertHL															; pop hl \ pop hl \ pop hl
+	ld a, (CFunctionArgsSMC)
+	cp 62
+	ret c
+	ld a, 0E1h
+	call InsertA															; pop hl
+	jp InsertA																; pop hl
+	
+CInsertSpriteScaled:
+		ld bc, -13
+		jr --_
 	
 CFunction5Args:
 	bit triggered_a_comma, (iy+fExpression3)
@@ -184,6 +247,11 @@ CFunction5ArgsSMC2 = $+1
 		ld (programPtr), de
 		ld b, 5
 		call CInsertCallPops
+		ld a, (CFunctionArgsSMC)
+		cp 62
+_:		jp z, CInsertSpriteScaled
+		cp 63
+		jr z, -_
 	pop af
 	ret
 	
@@ -235,112 +303,3 @@ CFunction6ArgsSMC2 = $+1
 	ld (programPtr), de
 	ld b, 6
 	jp CInsertCallPops
-	
-CTransparentSpriteNoClip:
-	ld a, 60
-	jr +_	
-CSpriteNoClip:
-	ld a, 59
-_:	ld (iy+fFunction1), %00000100
-	ld (CFunctionArgsSMC), a
-	call CFunction3Args
-	jr z, +_
-	ld hl, (programPtr)
-	ld de, -11
-	add hl, de
-	push hl
-		ld hl, (hl)
-		push hl
-		pop de
-		add hl, hl
-		add hl, de
-		ld de, (PrevProgramPtr)
-		ld bc, UserMem - program
-		add hl, bc
-		add hl, de
-		ex de, hl
-	pop hl
-	ld (hl), de
-	dec hl
-	ld (hl), 02Ah															; ld hl, (XXXXXX)
-	ret
-_:	ld hl, (programPtr)
-	ld de, -8
-	add hl, de
-	ld (programPtr), hl
-	inc hl
-	inc hl
-	ld hl, (hl)
-	push hl
-		ld a, 0E5h
-		call InsertA														; push hl
-		ld a, 0D1h
-		ld hl, 0111929h
-		call InsertAHL														; pop de \ add hl, hl \ add hl, de \ ld de, ******
-		ld hl, (PrevProgramPtr)
-		ld de, UserMem - program
-		add hl, de
-		call InsertHL														; ld de, XXXXXX
-		ld a, 019h
-		ld hl, 0E527EDh
-		call InsertAHL														; add hl, de \ ld hl, (hl) \ push hl
-	pop hl
-	call InsertCallHL														; call ******
-	ld hl, 0E1E1E1h
-	jp InsertHL																; pop hl \ pop hl \ pop hl
-	
-CTransparentScaledSpriteNoClip:
-	ld a, 63
-	jr +_
-	
-CScaledSpriteNoClip:
-	ld a, 62
-_:	ld (CFunctionArgsSMC), a
-	ld (iy+fFunction1), %00000111
-	call CFunction5Args
-	jr z, +_
-	ld hl, (programPtr)
-	ld de, -13
-	add hl, de
-	push hl
-		ld hl, (hl)
-		push hl
-		pop de
-		add hl, hl
-		add hl, de
-		ld de, (PrevProgramPtr)
-		ld bc, UserMem - program
-		add hl, bc
-		add hl, de
-		ex de, hl
-	pop hl
-	ld (hl), de
-	dec hl
-	ld (hl), 02Ah															; ld hl, (XXXXXX)
-	ret
-_:	ld hl, (programPtr)
-	ld de, -10
-	add hl, de
-	ld (programPtr), hl
-	inc hl
-	inc hl
-	ld hl, (hl)
-	push hl
-		ld a, 0E5h
-		call InsertA														; push hl
-		ld a, 0D1h
-		ld hl, 0111929h
-		call InsertAHL														; pop de \ add hl, hl \ add hl, de \ ld de, ******
-		ld hl, (PrevProgramPtr)
-		ld de, UserMem - program
-		add hl, de
-		call InsertHL														; ld de, XXXXXX
-		ld a, 019h
-		ld hl, 0E527EDh
-		call InsertAHL														; add hl, de \ ld hl, (hl) \ push hl
-	pop hl
-	call InsertCallHL														; call ******
-	ld a, 0E1h
-	call InsertA															; pop hl
-	ld hl, 0E1E1E1h
-	jp InsertAHL															; pop hl \ pop hl \ pop hl \ pop hl

@@ -1125,19 +1125,8 @@ functionC:
 	rlca
 	rlca
 	and 000000111b
-	ld d, a
+	ld c, a
 	ld a, b
-	ld hl, CSpecialFunctions
-	ld bc, CSpecialFunctionsEnd - CSpecialFunctions
-	cpir
-	jr nz, +_
-	ld b, 3
-	mlt bc
-	ld hl, CSpecialFunctionsStart
-	add hl, bc
-	ld hl, (hl)
-	jp (hl)
-_:	ld c, d
 	ld b, 3
 	mlt bc
 	ld hl, CArguments
