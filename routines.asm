@@ -98,7 +98,12 @@ CGetArgumentLastOrNot:
 	ld (hl), e
 InsertPushHLDE:
 	ld a, (ExprOutput2)
-	add a, a
+	or a
+	jr nz, +_
+	ld hl, (programPtr)
+	dec hl
+	ld (programPtr), hl
+_:	add a, a
 	add a, a
 	add a, a
 	add a, a
@@ -148,8 +153,7 @@ GetRightFunction:
 	dec b
 	jp z, GetFunctionDE
 	dec b
-	jr z, GetFunctionHL
-	jp GetFunctionBC
+	jp nz, GetFunctionBC
 GetFunctionHL:
 	cp tGetKey
 	jr nz, +_
@@ -233,7 +237,7 @@ InsertKeypadRoutine1:
 	dec a
 	rrca
 	rrca
-	and %0001110
+	and 00001110b
 	ld c, a
 	ld a, 01Eh
 	sub c
@@ -241,7 +245,7 @@ InsertKeypadRoutine1:
 	ld a, 00Eh
 	call InsertA															; ld c, *
 	ld a, b
-	and %00000111
+	and 000000111b
 	ld b, a
 	xor a
 	scf
@@ -290,13 +294,13 @@ InsertRandRoutine:
 	
 CompareStrings:
 	ld a, (de)
+	cp tEnter
+	ret z
 	cp a, (hl)
 	inc hl
 	inc de
 	ret nz
-	cp tEnter
-	jr nz, CompareStrings
-	ret
+	jr CompareStrings
 	
 SubError:
 	ld a, '-'
@@ -444,20 +448,16 @@ _:	ex de, hl
 	xor a
 	ld de, OP3+10
 	ld (de), a
-	dec de
-	ld b, 8
 _:	ld a, 10
 	call _DivHLByA
 	add a, t0
-	ld (de), a
 	dec de
+	ld (de), a
 	add hl, de
 	or a
 	sbc hl, de
-	jr z, +_
-	djnz -_
-_:	ex de, hl
-	inc hl
+	jr nz, -_
+	ex de, hl
 	call PrintString
 SkipDisplayLineNumber:
 	ld a, 230
@@ -489,6 +489,7 @@ backupEndPC = $+1
 	ld a, lcdBpp16
 	ld (mpLcdCtrl), a
 	call _DrawStatusBar
+	ret
 	bit good_compilation, (iy+fProgram1)
 	ret nz
 #include "editor.asm"
@@ -501,8 +502,8 @@ ClearScreen:
 	inc de
 	ld bc, 320*228-1
 	ldir
-	ld hl, 1
-	ld (TextXPos_ASM), hl
+	inc bc
+	ld (TextXPos_ASM), bc
 	ld a, 12
 	ld (TextYPos_ASM), a
 	xor a

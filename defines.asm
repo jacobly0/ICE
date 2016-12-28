@@ -113,7 +113,7 @@ L2						.equ cmdPixelShadow
 L3						.equ pixelShadow2
 L4						.equ plotSScreen
 L5						.equ pixelShadow
-L6						.equ cursorImage
+L6						.equ L1+10000
 
 ; IX offsets
 vA						.equ 0

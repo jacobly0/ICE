@@ -7,11 +7,11 @@ operators_special:
 FunctionsWithReturnValue:
 	.db tGetKey, trand, tLParen
 FunctionsWithReturnValueArguments:
-	.db tMean, tMin, tMax, tNot, tExtTok
+	.db tMean, tMin, tMax, tNot, tExtTok, tSqr
 FunctionsWithReturnValueEnd:
 
 FunctionsWithReturnValueStart:
-	.dl functionCE, functionNot, functionMax, functionMin, functionMean
+	.dl functionSqrt, functionCE, functionNot, functionMax, functionMin, functionMean
 
 FunctionsSingle:
 	.db tInput, tClLCD, tPause, tIf, tWhile, tRepeat, tDisp, tFor, tReturn, tVarOut, tLbl, tGoto, tii, tDet
@@ -40,11 +40,6 @@ functionCustomStart:
 precedence:	 .db 7, 4,4,5,5,3,3,3,3,3,3,2, 2,  1,  0
 	         ;   t+ - + / * ≠ ≥ ≤ > < = or xor and →
 precedence2: .db 0, 4,4,5,5,3,3,3,3,3,3,2, 2,  1,  6
-	
-offsets:
-	.dl stack, output, program, programNamesStack, labelStack, gotoStack, programDataOffsetStack, tempStringsStack, tempListsStack, programDataData
-	.fill 8, 0
-offset_end:
 
 lists:
 	.dl L1, L2, L3, L4, L5, L6
@@ -128,7 +123,7 @@ LabelErrorMessage:
 StartParseMessage:
 	.db "Compiling program ", 0
 ICEName:
-	.db "ICE Compiler v1.2 - By Peter \"PT_\" Tillema", 0
+	.db "ICE Compiler v1.5 - By Peter \"PT_\" Tillema", 0
 PressKey:
 	.db "[Press any key to exit]", 0
 	
@@ -257,7 +252,7 @@ MeanRoutine:
 	pop hl
 	rr h
 	rr l
-	ld ix, cursorImage
+	ld ix, L1+20000
 	ret
 MeanRoutineEnd:
 
@@ -291,19 +286,9 @@ XORANDSMC:
 	sbc hl, hl
 	and 1
 	ld l, a
-	
-BackgroundData:
-	ld a, l
-	ld hl, vRAM
-	ld (hl), a
-	push hl
-	pop de
-	inc de
-	ld bc, 320*240-1
-	ldir
 
 CData:
-	ld ix, cursorImage
+	ld ix, L1+20000
 	ld hl, LibLoadAppVar - CData + UserMem
 	call _Mov9ToOP1
 	ld a, AppVarObj
@@ -333,13 +318,12 @@ NotFound:
 	ld hl, MissingAppVar - CData + UserMem
 	call _PutS
 	call _NewLine
-	call _PutS
-	jp _GetKey
+	jp _PutS
 MissingAppVar:
 	.db "Need"
 LibLoadAppVar:
 	.db " LibLoad", 0
-	.db "http://tiny.cc/clibs", 0
+	.db "tiny.cc/clibs", 0
 RelocationStart:
-	.db 0C0h, "GRAPHX", 0, 3
+	.db 0C0h, "GRAPHX", 0, 4
 CData2:

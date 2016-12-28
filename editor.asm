@@ -19,14 +19,14 @@ _:	ld hl, UserMem
 	ldir
 	ld (editTail), hl
 	ld (editCursor), de
-	ld bc, 0
-_:	call _BufLeft
+FindPreviousEnter:
+	call _BufLeft
 	jr z, AtTopOfProgram
 	ld a, e
 	cp tEnter
 	jr z, +_
 	inc bc
-	jr -_
+	jr FindPreviousEnter
 _:	call _BufRight
 AtTopOfProgram:
 	push bc

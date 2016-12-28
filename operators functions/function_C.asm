@@ -9,9 +9,11 @@ CFunctionArgsSMC = $+1
 	ld a, e
 	or a
 	jr nz, +_
-	ld hl, 0E5272Eh
-	call InsertHL															; ld l, lcdBpp8 \ push hl
-	inc b
+	push hl
+		ld hl, 0E5272Eh
+		call InsertHL														; ld l, lcdBpp8 \ push hl
+		inc b
+	pop hl
 _:	add hl, de
 	ld e, (hl)
 	ld d, 4
@@ -23,9 +25,9 @@ _:	add hl, de
 	or a
 	ret z
 	ld a, 0E1h
-_:	call InsertA
+_:	call InsertA															; pop hl
 	djnz -_
-	ret																		; pop hl
+	ret
 	
 CFunction1Arg:
 	bit triggered_a_comma, (iy+fExpression3)
@@ -52,6 +54,7 @@ CFunction2ArgsSMC2 = $+1
 		ld de, (programPtr)
 	pop hl
 	ld bc, tempArg1
+	call CCheckIfPrevArgIsSame
 	call CAddArgument
 	ld (programPtr), de
 	ld b, 2
@@ -81,9 +84,11 @@ CFunction3ArgsSMC2 = $+1
 					ld de, (programPtr)
 				pop hl
 				ld bc, tempArg2
+				call CCheckIfPrevArgIsSame
 				call CAddArgument
 			pop hl
 			ld bc, tempArg1
+			call CCheckIfPrevArgIsSame
 			or a
 			sbc hl, bc
 			push hl
@@ -111,41 +116,9 @@ _:		ldir
 	pop af
 	ret
 	
-CFunction4Args:
-	bit triggered_a_comma, (iy+fExpression3)
-	jp z, ErrorSyntax
-	ld hl, (programPtr)
-	ld (CFunction4ArgsSMC2), hl
-	ld hl, tempArg1
-	bit arg1_is_small, (iy+fFunction1)
-	call CGetArgument
-	push hl
-		ld hl, tempArg2
-		bit arg2_is_small, (iy+fFunction1)
-		call CGetArgument
-		push hl
-			ld hl, tempArg3
-			bit arg3_is_small, (iy+fFunction1)
-			call CGetArgument
-			push hl
-CFunction4ArgsSMC2 = $+1
-				ld hl, 0
-				bit arg4_is_small, (iy+fFunction1)
-				call CGetArgumentLast
-				ld de, (programPtr)
-			pop hl
-			ld bc, tempArg3
-			call CAddArgument
-		pop hl
-		ld bc, tempArg2
-		call CAddArgument
-	pop hl
-	ld bc, tempArg1
-	call CAddArgument
-	ld (programPtr), de
-	ld b, 4
-	jp CInsertCallPops
-	
+CInsertSpriteScaled:
+		ld bc, -13
+		jr +_
 CInsertSprite:
 		ld bc, -11
 _:	pop af
@@ -200,9 +173,43 @@ _:	inc bc
 	call InsertA															; pop hl
 	jp InsertA																; pop hl
 	
-CInsertSpriteScaled:
-		ld bc, -13
-		jr --_
+CFunction4Args:
+	bit triggered_a_comma, (iy+fExpression3)
+	jp z, ErrorSyntax
+	ld hl, (programPtr)
+	ld (CFunction4ArgsSMC2), hl
+	ld hl, tempArg1
+	bit arg1_is_small, (iy+fFunction1)
+	call CGetArgument
+	push hl
+		ld hl, tempArg2
+		bit arg2_is_small, (iy+fFunction1)
+		call CGetArgument
+		push hl
+			ld hl, tempArg3
+			bit arg3_is_small, (iy+fFunction1)
+			call CGetArgument
+			push hl
+CFunction4ArgsSMC2 = $+1
+				ld hl, 0
+				bit arg4_is_small, (iy+fFunction1)
+				call CGetArgumentLast
+				ld de, (programPtr)
+			pop hl
+			ld bc, tempArg3
+			call CCheckIfPrevArgIsSame
+			call CAddArgument
+		pop hl
+		ld bc, tempArg2
+		call CCheckIfPrevArgIsSame
+		call CAddArgument
+	pop hl
+	ld bc, tempArg1
+	call CCheckIfPrevArgIsSame
+	call CAddArgument
+	ld (programPtr), de
+	ld b, 4
+	jp CInsertCallPops
 	
 CFunction5Args:
 	bit triggered_a_comma, (iy+fExpression3)
@@ -234,15 +241,19 @@ CFunction5ArgsSMC2 = $+1
 						ld de, (programPtr)
 					pop hl
 					ld bc, tempArg4
+					call CCheckIfPrevArgIsSame
 					call CAddArgument
 				pop hl
 				ld bc, tempArg3
+				call CCheckIfPrevArgIsSame
 				call CAddArgument
 			pop hl
 			ld bc, tempArg2
+			call CCheckIfPrevArgIsSame
 			call CAddArgument
 		pop hl
 		ld bc, tempArg1
+		call CCheckIfPrevArgIsSame
 		call CAddArgument
 		ld (programPtr), de
 		ld b, 5
@@ -287,19 +298,43 @@ CFunction6ArgsSMC2 = $+1
 						ld de, (programPtr)
 					pop hl
 					ld bc, tempArg5
+					call CCheckIfPrevArgIsSame
 					call CAddArgument
 				pop hl
 				ld bc, tempArg4
+				call CCheckIfPrevArgIsSame
 				call CAddArgument
 			pop hl
 			ld bc, tempArg3
+			call CCheckIfPrevArgIsSame
 			call CAddArgument
 		pop hl
 		ld bc, tempArg2
+		call CCheckIfPrevArgIsSame
 		call CAddArgument
 	pop hl
 	ld bc, tempArg1
+	call CCheckIfPrevArgIsSame
 	call CAddArgument
 	ld (programPtr), de
 	ld b, 6
 	jp CInsertCallPops
+	
+CCheckIfPrevArgIsSame:
+	push hl
+		push de
+			push bc
+				ld (hl), tEnter
+				or a
+				sbc hl, bc
+				ex de, hl
+				sbc hl, de
+			pop de
+			call CompareStrings
+		pop de
+	pop hl
+	ret nz
+	push hl
+	pop bc
+	dec bc
+	ret

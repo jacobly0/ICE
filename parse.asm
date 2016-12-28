@@ -177,11 +177,17 @@ NotAString:
 	jp nz, InvalidTokenError
 	cp tGetKey
 	jr z, AddFunctionToOutput
+	cp tSqr
+	jr z, AddFunctionToOutput
 	cp trand
 	jp nz, AddFunctionToStack
 AddFunctionToOutput:
 	ld hl, (outputPtr)
-	ld (hl), typeReturnValue
+	ld e, typeReturnValue
+	cp tSqr
+	jr nz, +_
+	ld e, typeFunction
+_:	ld (hl), e
 	inc hl
 	ld (hl), a
 	inc hl
@@ -415,7 +421,7 @@ AddChain:
 	dec hl
 	dec hl
 	cp typeOperator
-	jr nc, ChainAns2
+	jr z, ChainAns2
 ChainPush2:
 	push hl
 		call InsertPushHLDE

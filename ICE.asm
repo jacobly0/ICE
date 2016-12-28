@@ -17,7 +17,6 @@ start:
 GUI:
 	ld a, lcdBpp8
 	ld (mpLcdCtrl), a
-SetPalette:
 	ld hl, mpLcdPalette
 	ld b, 0
 _:	ld d, b
@@ -449,4 +448,6 @@ _:	ld hl, (programPtr)
 #include "clibs/graphics.asm"
 #include "data.asm"
 
-.echo $-start+14
+stop:
+
+.echo stop-start+14

@@ -1,8 +1,7 @@
 functionFor:
 	ld hl, amountOfEnds
 	inc (hl)
-	ld a, 1
-	ld (openedParensF), a
+	set in_function, (iy+fFunction2)
 	ld (iy+fFunction2), 0
 	call _IncFetch
 	sub tA
@@ -223,9 +222,11 @@ InsertStop:
 	ld hl, 0002FDDh
 	call _SetHLUToA
 	call InsertHL													; ld (ix+*), hl
-	ld hl, (programPtr)
 	or a
 	sbc hl, de
+	ld a, h
+	or a
+	jr nz, ForBigLoop
 	ld a, l
 	cpl
 	dec a

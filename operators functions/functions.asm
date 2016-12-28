@@ -3,7 +3,11 @@ ExecuteFunction:
 		ld hl, FunctionsWithReturnValueArguments
 		ld bc, FunctionsWithReturnValueEnd - FunctionsWithReturnValueArguments
 		cpir
-		ld b, 3
+		ld a, c
+		or a
+		jr nz, +_
+		res last_op_was_pointer, (iy+fExpression3)
+_:		ld b, 3
 		mlt bc
 		ld hl, FunctionsWithReturnValueStart
 		add hl, bc
@@ -73,8 +77,7 @@ _:	ld a, 0C9h
 	jp InsertA																; ret
 	
 functionDisp:
-	ld a, 1
-	ld (openedParensF), a
+	set in_function, (iy+fFunction2)
 	call _IncFetch
 	call ParseExpression
 	ld de, (programPtr)
@@ -974,7 +977,7 @@ MaxMinMeanChainPushXXX:
 	jp nz, UnknownError
 	bit use_mean_routine, (iy+fExpression2)
 	jr nz, +_
-	ld a, 0EDh
+	ld a, 0EBh
 	call InsertA															; ex de, hl
 	ld a, 0E1h
 	call InsertA															; pop hl
@@ -1090,9 +1093,97 @@ _:	ld a, 0CDh
 	ld hl, (MeanStartData)
 	jp InsertHL																; call XXXXXX
 	
-functionC:
+functionSqrt:
 	ld a, 1
-	ld (openedParensF), a
+	ld (amountOfArguments), a
+	set last_token_was_not, (iy+fExpression2)
+	push hl
+	pop ix
+	ld a, (ix-4)
+	dec a
+	jr z, SqrtVariable
+	dec a
+	jr z, SqrtChainPush
+	dec a
+	jr z, SqrtChainAns
+	dec a
+	jr z, SqrtFunction
+SqrtNumber:
+	set output_is_number, (iy+fExpression1)
+	ld hl, (ix-3)
+	push hl
+	pop bc
+	call __imulu
+	ld (ix-3), hl
+	ret
+SqrtVariable:
+	ld c, (ix-3)
+	ld b, 3
+	mlt bc
+	ld a, c
+	ld hl, 00027DDh
+	call _SetHLUToA
+	call InsertHL															; ld hl, (ix+*)
+	jr SqrtChainAns2
+SqrtChainPush:
+	jp UnknownError
+SqrtChainAns:
+	call MaybeChangeDEToHL
+SqrtChainAns2:
+	ld de, 0CDC1E5h
+	ld hl, __imuls
+	jp InsertDEHL															; push hl \ pop bc \ call __imuls
+SqrtFunction:
+	ld a, (ix-3)
+	ld b, OutputInHL
+	call GetFunction
+	jr SqrtChainAns2
+	
+functionPointer:
+	set last_op_was_pointer, (iy+fExpression3)
+	ld a, 1
+	ld (AmountOfArguments), a
+	push hl
+	pop ix
+	ld a, (ix-4)
+	dec a
+	jr z, PointerVariable
+	dec a
+	jr z, PointerChainPush
+	dec a
+	jr z, PointerChainAns
+	dec a
+	jr z, PointerFunction
+PointerNumber:
+	ld a, 02Ah
+	ld hl, (ix-3)
+	jp InsertAHL															; ld hl, (XXXXXX)
+PointerVariable:
+	ld c, (ix-3)
+	ld b, 3
+	mlt bc
+	ld a, c
+	ld hl, 00027DDh
+	call _SetHLUToA
+	call InsertHL															; ld hl, (ix+*)
+	jr PointerChainAns2
+PointerChainPush:
+	jp UnknownError
+PointerChainAns:
+	call MaybeChangeDEToHL
+PointerChainAns2:
+	ld a, 0EDh
+	call InsertA															; ld hl, (hl)
+	ld a, 027h
+	jp InsertA																; ld hl, (hl)
+PointerFunction:
+	ld a, (ix-3)
+	ld b, OutputInHL
+	call GetFunction
+	jr PointerChainAns2
+	
+functionC:
+	set in_function, (iy+fFunction2)
 	call _IncFetch
 	call ParseExpression
 	bit output_is_number, (iy+fExpression1)
@@ -1179,8 +1270,7 @@ _:	jp nz, ErrorSyntax
 functionDefineSprite:
 	bit used_code, (iy+fProgram1)
 	jp nz, ErrorUsedCode
-	ld a, 1
-	ld (openedParensF), a
+	set in_function, (iy+fFunction2)
 	call InsertProgramPtrToDataOffset
 	ld hl, (programDataDataPtr)
 	push hl
@@ -1285,3 +1375,58 @@ _:	ld hl, (OP1)
 	pop hl
 	ld (OP1), hl
 	jp PrintCompilingProgram
+	
+functionInitVar:
+	set in_function, (iy+fFunction2)
+	call _IncFetch
+	call ParseExpression
+	bit triggered_a_comma, (iy+fExpression3)
+	jp z, ErrorSyntax
+	bit output_is_number, (iy+fExpression1)
+	jr z, +_
+	ld hl, (programPtr)
+	dec hl
+	dec hl
+	dec hl
+	ld a, (hl)
+	dec hl
+	ld (programPtr), hl
+	jr ++_
+_:	ld a, 07Dh
+	call InsertA																; ld a, l
+_:	push af
+		ld a, 021h
+		call InsertA															; ld hl, ******
+		call InsertProgramPtrToDataOffset
+		ld hl, (programDataDataPtr)
+		bit output_is_number, (iy+fExpression1)
+		jr nz, $+3
+		dec hl
+		push hl
+			call InsertA														; ld hl, XXXXXX
+		pop hl
+	pop af
+	bit output_is_number, (iy+fExpression1)
+	jr z, +_
+	ld (hl), a
+_:	inc hl
+	ld e, 9
+	push hl
+		call _IncFeth
+	pop hl
+	jr c, +_
+	cp tEnter
+	jr z, +_
+	ld (hl), a
+	inc hl
+	dec e
+	jr nz, -_
+	jp InvalidNameLength
+_:	ld (hl), 0
+	inc hl
+	ld (programDataDataPtr), hl
+	ld hl, _Mov9ToOP1
+	call InsertCallHL															; call _Mov9ToOP1
+	ld hl, _ChkFindSym
+	call InsertCallHL															; call _ChkFindSym
+functionDeleteVar:
