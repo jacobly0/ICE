@@ -57,6 +57,16 @@ InsertDEHL:
 	ex de, hl
 	jr InsertHL
 	
+MaybeInsertIYFlags:
+	bit modified_iy, (iy+fAlways1)
+	ret z
+	res modified_iy, (iy+fAlways1)
+	ld a, 0FDh
+	call InsertA															; ld iy, flags
+	ld a, 021h
+	ld hl, flags
+	jp InsertAHL															; ld iy, flags
+	
 MaybeChangeHLToDE:
 	ld a, (ExprOutput)
 _:	or a
@@ -100,9 +110,9 @@ InsertPushHLDE:
 	ld a, (ExprOutput2)
 	or a
 	jr nz, +_
-	ld hl, (programPtr)
-	dec hl
-	ld (programPtr), hl
+	;ld hl, (programPtr)
+	;dec hl
+	;ld (programPtr), hl
 _:	add a, a
 	add a, a
 	add a, a
@@ -317,18 +327,15 @@ MulError:
 	
 GLETError:
 	ld a, (tempToken2)
-	ld c, a
 	cp tGE
-	ld a, 019h
-	jr z, DispOperatorErrorString
-	ld a, c
+	ld c, 019h
+	jr z, DispOperatorErrorString2
 	cp tLE
-	ld a, 017h
-	jr z, DispOperatorErrorString
-	ld a, c
+	ld c, 017h
+	jr z, DispOperatorErrorString2
 	cp tGT
-	ld a, '>'
-	jr z, DispOperatorErrorString
+	ld c, '>'
+	jr z, DispOperatorErrorString2
 	ld a, '<'
 	jr DispOperatorErrorString
 
@@ -341,20 +348,20 @@ NEQError:
 	jr DispOperatorErrorString
 XORANDError:
 	ld a, (tempToken2)
-	ld c, a
 	cp tOr
-	ld a, '|'
-	jr z, DispOperatorErrorString
-	ld a, c
+	ld c, '|'
+	jr z, DispOperatorErrorString2
 	cp tXor
-	ld a, '^'
-	jr z, DispOperatorErrorString
+	ld c, '^'
+	jr z, DispOperatorErrorString2
 	ld a, '&'
 	jr DispOperatorErrorString
 StoError:
 	ld a, 01Ch
 	jr DispOperatorErrorString
 	
+DispOperatorErrorString2:
+	ld a, c
 DispOperatorErrorString:
 	push af
 		call ClearScreen
@@ -438,17 +445,19 @@ ReturnToOS:
 GetAmountOfLines:
 	ld a, b
 	or c
-	jr z, +_
+	jr z, GetAmountOfLinesStop
 	ld a, tEnter
 	cpir
-	jr nz, +_
+	jr nz, GetAmountOfLinesStop
 	inc de
 	jr GetAmountOfLines
-_:	ex de, hl
+GetAmountOfLinesStop:
+	ex de, hl
 	xor a
 	ld de, OP3+10
 	ld (de), a
-_:	ld a, 10
+NumberToStringLoop:
+	ld a, 10
 	call _DivHLByA
 	add a, t0
 	dec de
@@ -456,7 +465,7 @@ _:	ld a, 10
 	add hl, de
 	or a
 	sbc hl, de
-	jr nz, -_
+	jr nz, NumberToStringLoop
 	ex de, hl
 	call PrintString
 SkipDisplayLineNumber:
@@ -696,7 +705,8 @@ GetProgramName:
 	jp nc, InvalidTokenError
 	ld (hl), a
 	ld e, 8
-_:	push hl
+GetProgramNameLoop:
+	push hl
 		call _IncFetch
 	pop hl
 	inc hl
@@ -705,14 +715,14 @@ _:	push hl
 	cp tEnter
 	ret z
 	cp t0
-	jp c, InvalidTokenError
+_:	jp c, InvalidTokenError
 	cp t9+1
 	jr c, +_
 	cp tA
-	jp c, InvalidTokenError
+	jr c, -_
 	cp ttheta+1
 	jp nc, InvalidTokenError
 _:	ld (hl), a
 	dec e
-	jr nz, --_
+	jr nz, GetProgramNameLoop
 	jp InvalidNameLength

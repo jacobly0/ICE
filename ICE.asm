@@ -48,6 +48,7 @@ _:	ld d, b
 	ld bc, 320*229-1
 	ldir
 	set good_compilation, (iy+fProgram1)
+	res modified_iy, (iy+fAlways1)
 	ld hl, ICEName
 	ld a, 1
 	ld (TextYPos_ASM), a

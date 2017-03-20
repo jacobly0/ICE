@@ -70,6 +70,7 @@ end_point_is_number		.equ 2										; used for the end point in a For loop
 
 fAlways1				.equ -50h
 displayed_det			.equ 0										; used if the text of a det( function is displayed in the statusbar
+modified_iy				.equ 1										; used if iy is modified by a C routine
 
 typeNumber				.equ 0
 typeVariable			.equ 1

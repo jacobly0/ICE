@@ -3,11 +3,7 @@ ExecuteFunction:
 		ld hl, FunctionsWithReturnValueArguments
 		ld bc, FunctionsWithReturnValueEnd - FunctionsWithReturnValueArguments
 		cpir
-		ld a, c
-		or a
-		jr nz, +_
-		res last_op_was_pointer, (iy+fExpression3)
-_:		ld b, 3
+		ld b, 3
 		mlt bc
 		ld hl, FunctionsWithReturnValueStart
 		add hl, bc
@@ -16,6 +12,122 @@ _:		ld b, 3
 	pop hl
 JumpFunction = $+1
 	jp 0
+	
+functionPrgm:
+	call MaybeInsertIYFlags
+	ld a, 021h
+	call InsertA															; ld hl, *
+	call InsertProgramPtrToDataOffset
+	ld hl, (programDataDataPtr)
+	push hl
+		call InsertHL														; ld hl, programname
+	pop hl
+	ld (hl), ProgObj
+	call GetProgramName
+	inc hl
+	ld (programDataDataPtr), hl
+	ld a, 0CDh
+	ld hl, _Mov9ToOP1
+	call InsertAHL															; call _Mov9ToOP1
+	ld a, 0FDh
+	ld hl, 0CE08CBh
+	call InsertAHL															; set 1, (iy+8)
+	ld a, 0CDh
+	ld hl, _ParseInp
+	call InsertAHL															; call _ParseInp
+	ld a, 0FDh
+	ld hl, 08E08CBh
+	jp InsertAHL															; res 1, (iy+8)
+	
+
+functionOutput:
+	call MaybeInsertIYFlags
+	ld a, 1
+	ld (openedParensF), a
+	call _IncFetch
+	call ParseExpression
+	bit triggered_a_comma, (iy+fExpression3)
+	res triggered_a_comma, (iy+fExpression3)
+	jp z, ErrorSyntax
+	bit output_is_number, (iy+fExpression1)
+	jr nz, OutputRowIsNumber
+OutputRowIsVariable:
+	ld a, 07Dh
+	call InsertA															; ld a, l
+	jr +_
+OutputRowIsNumber:
+	ld hl, (programPtr)
+	dec hl
+	dec hl
+	ld (programPtr), hl
+	dec hl
+	dec hl
+	ld (hl), 03Eh															; ld a, *
+_:	ld a, 032h
+	ld hl, curRow
+	call InsertAHL															; ld (curRow), a
+	call _IncFetch
+	call ParseExpression
+	bit triggered_a_comma, (iy+fExpression3)
+	res triggered_a_comma, (iy+fExpression3)
+	jp z, ErrorSyntax
+	bit output_is_number, (iy+fExpression1)
+	jr nz, OutputColumnIsNumber
+OutputColumnIsVariable:
+	ld a, 07Dh
+	call InsertA															; ld a, l
+	jr +_
+OutputColumnIsNumber:
+	ld hl, (programPtr)
+	dec hl
+	dec hl
+	ld (programPtr), hl
+	dec hl
+	dec hl
+	ld (hl), 03Eh															; ld a, *
+_:	ld a, 032h
+	ld hl, curCol
+	call InsertAHL															; ld (curCol), a
+	or a, 1																	; rest zero flag
+	call DisplayNumberOrString
+	jp nz, ErrorSyntax
+	ret
+	
+functionDisp:
+	call MaybeInsertIYFlags
+	ld a, 1
+	ld (openedParensF), a
+	dec a																	; set zero flag
+	call DisplayNumberOrString
+	ret z
+	jr functionDisp
+	
+DisplayNumberOrString:
+	push af
+		call _IncFetch
+		call ParseExpression
+		ld de, (programPtr)
+		ld bc, 14
+		bit output_is_string, (iy+fExpression1)
+		jr nz, DispString
+		ld hl, DispNumberRoutine
+	pop af
+	jr z, +_
+	ld hl, DispNumberRoutine-6
+	ld c, 8
+	jr +_
+DispString:
+		ld hl, DispStringRoutine
+		dec bc
+	pop af
+	jr z, +_
+	ld hl, DispStringRoutine+5
+	ld c, 8
+_:	ldir
+	ld (programPtr), de
+	bit triggered_a_comma, (iy+fExpression3)
+	ret
+	
 	
 functionLbl:
 	ld ix, (labelPtr)
@@ -75,25 +187,6 @@ _:	cp tIf
 	jp InsertAHL															; or a \ sbc hl, de \ ret nz
 _:	ld a, 0C9h
 	jp InsertA																; ret
-	
-functionDisp:
-	set in_function, (iy+fFunction2)
-	call _IncFetch
-	call ParseExpression
-	ld de, (programPtr)
-	ld bc, 14
-	bit output_is_string, (iy+fExpression1)
-	jr nz, DispString
-	ld hl, DispNumberRoutine
-	jr +_
-DispString:
-	ld hl, DispStringRoutine
-	dec bc
-_:	ldir
-	ld (programPtr), de
-	bit triggered_a_comma, (iy+fExpression3)
-	ret z
-	jr functionDisp
 		
 functionRepeat:
 	ld hl, amountOfEnds
@@ -443,7 +536,7 @@ functionPause:
 	bit output_is_number, (iy+fExpression1)
 	jr z, +_
 	push hl
-	ld hl, (programPtr)
+		ld hl, (programPtr)
 		dec hl
 		dec hl
 		dec hl
@@ -503,6 +596,7 @@ _:	ldir
 	ret
 	
 functionInput:
+	call MaybeInsertIYFlags
 	call _IncFetch
 	cp tA
 	jp c, ErrorSyntax
@@ -1100,6 +1194,8 @@ functionSqrt:
 	push hl
 	pop ix
 	ld a, (ix-4)
+	or a
+	jr z, SqrtNumber
 	dec a
 	jr z, SqrtVariable
 	dec a
@@ -1108,6 +1204,7 @@ functionSqrt:
 	jr z, SqrtChainAns
 	dec a
 	jr z, SqrtFunction
+	jp ErrorSyntax
 SqrtNumber:
 	set output_is_number, (iy+fExpression1)
 	ld hl, (ix-3)
@@ -1139,51 +1236,9 @@ SqrtFunction:
 	call GetFunction
 	jr SqrtChainAns2
 	
-functionPointer:
-	set last_op_was_pointer, (iy+fExpression3)
-	ld a, 1
-	ld (AmountOfArguments), a
-	push hl
-	pop ix
-	ld a, (ix-4)
-	dec a
-	jr z, PointerVariable
-	dec a
-	jr z, PointerChainPush
-	dec a
-	jr z, PointerChainAns
-	dec a
-	jr z, PointerFunction
-PointerNumber:
-	ld a, 02Ah
-	ld hl, (ix-3)
-	jp InsertAHL															; ld hl, (XXXXXX)
-PointerVariable:
-	ld c, (ix-3)
-	ld b, 3
-	mlt bc
-	ld a, c
-	ld hl, 00027DDh
-	call _SetHLUToA
-	call InsertHL															; ld hl, (ix+*)
-	jr PointerChainAns2
-PointerChainPush:
-	jp UnknownError
-PointerChainAns:
-	call MaybeChangeDEToHL
-PointerChainAns2:
-	ld a, 0EDh
-	call InsertA															; ld hl, (hl)
-	ld a, 027h
-	jp InsertA																; ld hl, (hl)
-PointerFunction:
-	ld a, (ix-3)
-	ld b, OutputInHL
-	call GetFunction
-	jr PointerChainAns2
-	
 functionC:
-	set in_function, (iy+fFunction2)
+	ld a, 1
+	ld (openedParensF), a
 	call _IncFetch
 	call ParseExpression
 	bit output_is_number, (iy+fExpression1)
@@ -1270,7 +1325,8 @@ _:	jp nz, ErrorSyntax
 functionDefineSprite:
 	bit used_code, (iy+fProgram1)
 	jp nz, ErrorUsedCode
-	set in_function, (iy+fFunction2)
+	ld a, 1
+	ld (openedParensF), a
 	call InsertProgramPtrToDataOffset
 	ld hl, (programDataDataPtr)
 	push hl
@@ -1375,58 +1431,3 @@ _:	ld hl, (OP1)
 	pop hl
 	ld (OP1), hl
 	jp PrintCompilingProgram
-	
-functionInitVar:
-	set in_function, (iy+fFunction2)
-	call _IncFetch
-	call ParseExpression
-	bit triggered_a_comma, (iy+fExpression3)
-	jp z, ErrorSyntax
-	bit output_is_number, (iy+fExpression1)
-	jr z, +_
-	ld hl, (programPtr)
-	dec hl
-	dec hl
-	dec hl
-	ld a, (hl)
-	dec hl
-	ld (programPtr), hl
-	jr ++_
-_:	ld a, 07Dh
-	call InsertA																; ld a, l
-_:	push af
-		ld a, 021h
-		call InsertA															; ld hl, ******
-		call InsertProgramPtrToDataOffset
-		ld hl, (programDataDataPtr)
-		bit output_is_number, (iy+fExpression1)
-		jr nz, $+3
-		dec hl
-		push hl
-			call InsertA														; ld hl, XXXXXX
-		pop hl
-	pop af
-	bit output_is_number, (iy+fExpression1)
-	jr z, +_
-	ld (hl), a
-_:	inc hl
-	ld e, 9
-	push hl
-		call _IncFeth
-	pop hl
-	jr c, +_
-	cp tEnter
-	jr z, +_
-	ld (hl), a
-	inc hl
-	dec e
-	jr nz, -_
-	jp InvalidNameLength
-_:	ld (hl), 0
-	inc hl
-	ld (programDataDataPtr), hl
-	ld hl, _Mov9ToOP1
-	call InsertCallHL															; call _Mov9ToOP1
-	ld hl, _ChkFindSym
-	call InsertCallHL															; call _ChkFindSym
-functionDeleteVar:

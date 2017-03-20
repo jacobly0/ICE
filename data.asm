@@ -14,12 +14,12 @@ FunctionsWithReturnValueStart:
 	.dl functionSqrt, functionCE, functionNot, functionMax, functionMin, functionMean
 
 FunctionsSingle:
-	.db tInput, tClLCD, tPause, tIf, tWhile, tRepeat, tDisp, tFor, tReturn, tVarOut, tLbl, tGoto, tii, tDet
+	.db tOutput, tInput, tClLCD, tPause, tIf, tWhile, tRepeat, tDisp, tFor, tReturn, tVarOut, tLbl, tGoto, tii, tDet, tProg
 FunctionsSingleEnd:
 
 FunctionsSingleStart:
-	.dl functionC, functionSkipLine, functionGoto, functionLbl, functionCustom, functionReturn, functionFor, functionDisp
-	.dl functionRepeat, functionWhile, functionIf, functionPause, functionClrHome, functionInput
+	.dl functionPrgm, functionC, functionSkipLine, functionGoto, functionLbl, functionCustom, functionReturn, functionFor
+	.dl functionDisp, functionRepeat, functionWhile, functionIf, functionPause, functionClrHome, functionInput, functionOutput
 	
 operator_start:
 	.dl SubNumberXXX, SubVariableXXX, SubChainPushXXX, SubChainAnsXXX, SubFunctionXXX, SubError

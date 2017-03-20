@@ -302,7 +302,7 @@ _:	pop hl
 	ld a, b
 	or a, c
 	cp 4
-	jp z, MaybeChangeDEToHL
+	jp z, StopParseExpression
 	ld a, (hl)
 	cp typeOperator
 	jr z, ExpressOperator
@@ -355,7 +355,7 @@ _:	pop bc
 	cp 4
 	jr nz, +_
 	bit output_is_number, (iy+fExpression1)
-	jp z, MaybeChangeDEToHL
+	jp z, StopParseExpression
 	ld hl, (ix-3)
 	jp ParseSingleArgument2
 _:	ex de, hl
@@ -397,7 +397,7 @@ ExpressOperator:
 	pop hl
 	jr nz, +_
 	bit output_is_number, (iy+fExpression1)
-	jp z, MaybeChangeDEToHL
+	jp z, StopParseExpression
 	ld hl, (ix-7)
 	jr ParseSingleArgument2
 _:	inc bc
@@ -436,6 +436,12 @@ ChainAns2:
 		ld (hl), e
 	pop hl
 	jp Loop
+	
+StopParseExpression:
+	ld a, (openedParensF)
+	or a
+	jp nz, MaybeChangeDEToHL
+	ret
 	
 ParseSingleArgument:
 	ld a, (hl)

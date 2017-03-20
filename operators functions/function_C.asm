@@ -3,6 +3,7 @@ CFunction0Args:
 	jp nz, ErrorSyntax
 	ld b, 0
 CInsertCallPops:
+	set modified_iy, (iy+fAlways1)
 	ld hl, usedCroutines
 CFunctionArgsSMC = $+1
 	ld de, 0
@@ -25,9 +26,9 @@ _:	add hl, de
 	or a
 	ret z
 	ld a, 0E1h
-_:	call InsertA															; pop hl
+_:	call InsertA
 	djnz -_
-	ret
+	ret																		; pop hl
 	
 CFunction1Arg:
 	bit triggered_a_comma, (iy+fExpression3)
@@ -324,13 +325,16 @@ CCheckIfPrevArgIsSame:
 	push hl
 		push de
 			push bc
-				ld (hl), tEnter
 				or a
 				sbc hl, bc
 				ex de, hl
 				sbc hl, de
 			pop de
-			call CompareStrings
+_:			ld a, (de)
+			cp a, (hl)
+			inc hl
+			inc de
+			jr z, -_
 		pop de
 	pop hl
 	ret nz

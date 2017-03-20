@@ -1,7 +1,8 @@
 functionFor:
 	ld hl, amountOfEnds
 	inc (hl)
-	set in_function, (iy+fFunction2)
+	ld a, 1
+	ld (openedParensF), a
 	ld (iy+fFunction2), 0
 	call _IncFetch
 	sub tA
