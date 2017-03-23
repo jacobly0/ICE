@@ -7,11 +7,11 @@ operators_special:
 FunctionsWithReturnValue:
 	.db tGetKey, trand, tLParen
 FunctionsWithReturnValueArguments:
-	.db tMean, tMin, tMax, tNot, tExtTok, tSqr
+	.db tMean, tMin, tMax, tNot, tExtTok, tSqr, tSqrt
 FunctionsWithReturnValueEnd:
 
 FunctionsWithReturnValueStart:
-	.dl functionSqrt, functionCE, functionNot, functionMax, functionMin, functionMean
+	.dl functionRoot, functionSqrt, functionCE, functionNot, functionMax, functionMin, functionMean
 
 FunctionsSingle:
 	.db tOutput, tInput, tClLCD, tPause, tIf, tWhile, tRepeat, tDisp, tFor, tReturn, tVarOut, tLbl, tGoto, tii, tDet, tProg
@@ -65,6 +65,7 @@ amountOfCRoutines		.db 0
 amountOfEnds			.db 0
 amountOfInput			.db 0
 amountOfPause			.db 0
+amountOfRoot			.db 0
 ExprOutput				.db 0
 ExprOutput2				.db 0
 AmountOfSubPrograms		.db 0
@@ -272,6 +273,40 @@ _:	cp a, (hl)
 	inc l
 	ret
 KeypadRoutineEnd:
+
+RootRoutine:
+	di
+    dec sp      ; (sp) = ?
+    push hl      ; (sp) = ?uhl
+    dec sp      ; (sp) = ?uhl?
+    pop iy      ; (sp) = ?u, uix = hl?
+    dec sp      ; (sp) = ?u?
+    pop af      ; af = u?
+    or  a,a
+    sbc hl,hl
+    ex  de,hl   ; de = 0
+    sbc hl,hl   ; hl = 0
+    ld  bc,$C40 ; b = 12, c = 0x40
+Sqrt24Loop:
+    sub     a,c
+    sbc     hl,de
+    jr      nc,Sqrt24Skip
+    add     a,c
+    adc     hl,de
+Sqrt24Skip:
+    ccf
+    rl   e
+    rl   d
+    add  iy,iy
+    rla
+    adc  hl,hl
+    add  iy,iy
+    rla
+    adc  hl,hl
+    djnz Sqrt24Loop
+    ex   de,hl
+    ret
+RootRoutineEnd:
 
 XORANDData:
 	ld bc, -1

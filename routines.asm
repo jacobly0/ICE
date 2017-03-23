@@ -546,16 +546,21 @@ PreScanPrograms:
 	ld hl, (curPC)
 ScanLoop:
 	ld a, b
-	or c
+	or a, c
 	ret z
-	ld a, tEnter
-	cpir
-	ret nz
 	ld a, (hl)
+	call _IsA2ByteTok
+	jr nz, +_
+	inc hl
+	dec bc
+_:	inc hl
+	dec bc
 	cp tDet
 	jr z, ScanFoundDet
 	cp tPause
 	jr z, ScanFoundPause
+	cp tSqrt
+	jr z, ScanFoundRoot
 	cp tInput
 	jr nz, ScanLoop
 ScanFoundInput:
@@ -568,6 +573,10 @@ ScanFoundPause:
 	inc a
 	ld (amountOfPause), a
 	jr ScanLoop
+ScanFoundRoot:
+	ld a, (amountOfRoot)
+	inc a
+	ld (amountOfRoot), a
 ScanFoundDet:
 	inc hl
 	ld a, (hl)

@@ -5,7 +5,8 @@ RandStartData			.equ saveSScreen+05
 PauseStartData			.equ saveSScreen+08
 MeanStartData			.equ saveSScreen+11
 KeypadStartData			.equ saveSScreen+14
-PrevProgramPtr			.equ saveSScreen+17
+RootStartData			.equ saveSScreen+17
+PrevProgramPtr			.equ saveSScreen+20
 
 stack					.equ saveSScreen+00100
 output					.equ saveSScreen+01100
@@ -31,12 +32,15 @@ program					.equ vRAM+(320*240)
 fProgram1				.equ -30h
 comp_with_libs			.equ 0										; used if compile with C libs
 good_compilation		.equ 1										; used if compilation is succesfull
-has_already_input		.equ 2										; only once time "Input" routine
-has_already_rand		.equ 3										; only once time "rand" routine
-has_already_pause		.equ 4										; only once time "Pause" routine
-has_already_mean		.equ 5										; only once time "mean()" routine
-has_already_keypad		.equ 6										; only once time scanning the keypad
+has_already_input		.equ 2										; only once the "Input" routine
+has_already_rand		.equ 3										; only once the "rand" routine
+has_already_pause		.equ 4										; only once the "Pause" routine
+has_already_mean		.equ 5										; only once the "mean()" routine
+has_already_keypad		.equ 6										; only once the scanning the keypad
 used_code				.equ 7										; DefineSprite( must be in front of all the code
+
+fProgram2				.equ -31h
+has_already_root		.equ 0										; only once the "Sqrt(" routine
 
 fExpression1			.equ -40h
 prev_is_number			.equ 0										; used if a number consists of more digits

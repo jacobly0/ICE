@@ -1322,6 +1322,72 @@ _:	jp nz, ErrorSyntax
 	call InsertA
 	jr functionExecHex
 	
+functionRoot:
+	ld a, 1
+	ld (amountOfArguments), a
+	push hl
+	pop ix
+	ld a, (ix-4)
+	or a
+	jr z, RootNumber
+	dec a
+	jr z, RootVariable
+	dec a
+	jr z, RootChainPush
+	dec a
+	jr z, RootChainAns
+	dec a
+	jr z, RootFunction
+	jp ErrorSyntax
+RootNumber:
+	set output_is_number, (iy+fExpression1)
+	ld hl, (ix-3)
+	push iy
+		call RootRoutine
+	pop iy
+	ld (ix-3), hl
+	ret
+RootVariable:
+	ld c, (ix-3)
+	ld b, 3
+	mlt bc
+	ld a, c
+	ld hl, 00027DDh
+	call _SetHLUToA
+	call InsertHL															; ld hl, (ix+*)
+	jr RootChainAns
+RootChainPush:
+	jp UnknownError
+RootChainAns:
+	bit has_already_root, (iy+fProgram2)
+	set has_already_root, (iy+fProgram2)
+	jr nz, RootChainAnsRecallRoutine
+RootChainAnsAddRoutine:
+	set modified_iy, (iy+fAlways1)
+	ld de, (programDataDataPtr)
+	ld (RootStartData), de
+	ld hl, RootRoutine
+	ld bc, RootRoutineEnd - RootRoutine
+	ldir
+	ld (programDataDataPtr), de
+RootChainAnsRecallRoutine:
+	ld a, 0CDh
+	call InsertA															; call *
+	call InsertProgramPtrToDataOffset
+	ld hl, (RootStartData)
+	jp InsertHL																; call *
+RootFunction:
+	ld a, (ix-3)
+	ld b, OutputInHL
+	call GetFunction
+	jr RootChainAns
+	
+	
+	
+	
+	
+	
+	
 functionDefineSprite:
 	bit used_code, (iy+fProgram1)
 	jp nz, ErrorUsedCode

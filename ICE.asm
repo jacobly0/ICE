@@ -177,6 +177,7 @@ _:	ld bc, 0
 	ld (endPC), hl
 	call PrintCompilingProgram
 	ld (iy+fProgram1), 1
+	ld (iy+fProgram2), 0
 	ld hl, CData
 	ld de, (programPtr)
 	ld bc, CData2 - CData
