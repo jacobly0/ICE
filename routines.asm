@@ -577,10 +577,10 @@ ScanFoundRoot:
 	ld a, (amountOfRoot)
 	inc a
 	ld (amountOfRoot), a
+	jr ScanLoop
 ScanFoundDet:
-	inc hl
 	ld a, (hl)
-	sub t0
+	sub a, t0
 	jr c, ScanLoop
 	cp t9-t0+1
 	jr nc, ScanLoop
