@@ -85,3 +85,5 @@ SetTransparentColor:					.db 000110000b
 ZeroScreen:								.db 000000000b
 SetTextConfig:							.db 000110000b
 GetSpriteChar:							.db 011100000b
+Lighten:								.db 011100000b
+Darken:									.db 011100000b

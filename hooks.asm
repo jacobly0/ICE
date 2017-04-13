@@ -33,18 +33,18 @@ _:	ld hl, Hooks_end - KeyHook_start
 	
 KeyHook_start:
 	.db 83h
-	or a
+	or a, a
 	ret z
 	ld b, a
 	ld a, (cxCurApp)
-	cp cxPrgmEdit
+	cp a, cxPrgmEdit
 	ld a, b
 	ret nz
 	push af
 		call _os_ClearStatusBarLow
 		res displayed_det, (iy+fAlways1)
 	pop af
-	cp kTrace
+	cp a, kTrace
 	ret nz
 DisplayCustomTokensAndCFunctions:
 	call _CursorOff
@@ -72,19 +72,19 @@ DisplayTabWithTokens:
 	jr DisplayTokensLoop
 KeyIsLeft:
 	ld a, d
-	or a
+	or a, a
 	jr z, KeyLoop
 	dec d
 	jr DisplayTabWithTokens
 KeyIsRight:
 	ld a, d
-	cp 5
+	cp a, 5
 	jr z, KeyLoop
 	inc d
 	jr DisplayTabWithTokens
 DisplayTokensLoop:
 	ld a, b
-	cp 16
+	cp a, 16
 	jr z, StopDisplayingTokens
 	inc b
 	call _VPutS
@@ -99,7 +99,7 @@ DisplayTokensLoop:
 		pop de
 	pop hl
 	ld a, (hl)
-	or a
+	or a, a
 	jr nz, DisplayTokensLoop
 StopDisplayingTokens:
 	ld hl, 1
@@ -125,16 +125,16 @@ GetRightCustomToken:
 	ld (penCol), hl
 KeyLoop:
 	call _GetCSC
-	or a
+	or a, a
 	jr z, KeyLoop
-	cp skLeft
+	cp a, skLeft
 	jr z, KeyIsLeft
-	cp skRight
+	cp a, skRight
 	jr z, KeyIsRight
-	cp skUp
+	cp a, skUp
 	jr nz, KeyNotUp
 	ld a, e
-	or a
+	or a, a
 	jr z, KeyLoop
 	dec e
 EraseCursor:
@@ -148,43 +148,43 @@ EraseCursor:
 	pop de
 	jr GetRightCustomToken
 KeyNotUp:
-	cp skDown
+	cp a, skDown
 	jr nz, KeyNotDown
 	ld a, d
-	cp 5
+	cp a, 5
 	ld a, e
 	jr nz, +_
 	cp (AMOUNT_OF_C_FUNCTIONS + AMOUNT_OF_CUSTOM_TOKENS)%16 - 1
 	jr z, KeyLoop
 _:	ld a, e
-	cp 16-1
+	cp a, 16-1
 	jr z, KeyLoop
 	inc e
 	jr EraseCursor
 KeyNotDown:
-	cp skClear
+	cp a, skClear
 	jr z, KeyIsClear
-	cp skEnter
+	cp a, skEnter
 	jr nz, KeyLoop
 	ld a, e
 	ld e, 16
 	mlt de
 	add a, e
-	sub AMOUNT_OF_CUSTOM_TOKENS
+	sub a, AMOUNT_OF_CUSTOM_TOKENS
 	jr c, InsertCustomToken
 	ld hl, saveSScreen
 	ld (hl), tDet
 	inc hl
-	cp 10
+	cp a, 10
 	jr c, +_
 	ld d, a
 	ld e, 10
-	xor a
+	xor a, a
 	ld b, 8
 _loop:
 	sla d
 	rla
-	cp e
+	cp a, e
 	jr c, $+4
 	sub e
 	inc d
@@ -202,11 +202,11 @@ _:	add a, t0
 	ld hl, saveSScreen
 InsertCFunctionLoop:
 	ld a, (hl)
-	or a
+	or a, a
 	jr z, BufferSearch
 	ld de, (editTail)
 	ld a, (de)
-	cp tEnter
+	cp a, tEnter
 	ld d, 0
 	ld e, (hl)
 	jr z, +_
@@ -226,7 +226,7 @@ InsertCustomToken:
 	ld d, tVarOut
 	ld hl, (editCursor)
 	ld a, (hl)
-	cp tEnter
+	cp a, tEnter
 	jr z, +_
 	call _BufReplace
 	jr BufferSearch
@@ -237,7 +237,7 @@ BufferSearch:
 _:	call _BufLeft
 	jr z, BufferFound
 	ld a, e
-	cp tEnter
+	cp a, tEnter
 	jr z, +_
 	inc bc
 	jr -_
@@ -249,14 +249,14 @@ BufferFound:
 		ld de, CustomTokensProgramText - KeyHook_start
 		ld hl, (rawKeyHookPtr)
 		add hl, de
-		xor a
+		xor a, a
 		ld (curCol), a
 		ld (curRow), a
 		call _PutS
 		ld hl, progToEdit
 		ld b, 8
 _:		ld a, (hl)
-		or a
+		or a, a
 		jr z, +_
 		call _PutC
 		inc hl
@@ -268,7 +268,7 @@ _:		call _NewLine
 	pop bc
 MoveCursorOnce:
 	ld a, b
-	or c
+	or a, c
 	jr z, ReturnToEditor
 	call _CursorRight
 	dec bc
@@ -285,7 +285,7 @@ C2:		.db "DefineSprite(", 0
 C3:		.db "Call ", 0
 C4:		.db "CompilePrgm(", 0
 
-#define AMOUNT_OF_C_FUNCTIONS 79
+#define AMOUNT_OF_C_FUNCTIONS 81
 
 C6:		.db "Begin", 0
 C7:		.db "End", 0
@@ -371,6 +371,8 @@ Tab6:
 C82:	.db "ZeroScreen", 0
 C83:	.db "SetTextConfig", 0
 C84:	.db "GetSpriteChar", 0
+C85:	.db "Lighten", 0
+C86		.db "Darken", 0
 		.db 0
 TabData:
 	.dl Tab1 - KeyHook_start
@@ -460,6 +462,8 @@ CData5:
 	.dl C82 - KeyHook_start
 	.dl C83 - KeyHook_start
 	.dl C84 - KeyHook_start
+	.dl C85 - KeyHook_start
+	.dl C86 - KeyHook_start
 	
 #define AMOUNT_OF_CUSTOM_TOKENS 4
 Token1: .db 8,  "ExecHex(", 0
@@ -473,12 +477,12 @@ KeyHook_end:
 TokenHook_start:
 	.db 83h
 	ld a, d
-	cp 4
+	cp a, 4
 	ret nz
 	ld a, e
-	cp 5+3+(AMOUNT_OF_CUSTOM_TOKENS*3)
+	cp a, 5+3+(AMOUNT_OF_CUSTOM_TOKENS*3)
 	ret nc
-	sub 5
+	sub a, 5
 	ld de, (rawKeyHookPtr)
 	ld hl, TokenHook_data - KeyHook_start
 	add hl, de
@@ -497,7 +501,7 @@ TokenHook_end:
 
 CursorHook_start:
 	.db 83h
-	cp 24h
+	cp a, 24h
 	jr nz, +_
 	inc a
 	ld a, (curUnder)
@@ -505,11 +509,11 @@ CursorHook_start:
 _:	cp 22h
 	ret nz
 	ld a, (cxCurApp)
-	cp cxPrgmEdit
+	cp a, cxPrgmEdit
 	ret nz
 	ld hl, (editCursor)
 	ld a, (hl)
-	cp tDet
+	cp a, tDet
 	ret nz
 DrawDetText:
 	bit displayed_det, (iy+fAlways1)
@@ -517,9 +521,9 @@ DrawDetText:
 	ld hl, (editTail)
 	inc hl
 	ld a, (hl)
-	sub t0
+	sub a, t0
 	ret c
-	cp t9-t0+1
+	cp a, t9-t0+1
 	ld bc, (editBtm)
 	ld de, 0
 	ld e, a
@@ -534,9 +538,9 @@ GetDetValueLoop:
 	jr z, GetDetValueStop
 	add hl, bc
 	ld a, (hl)
-	sub t0
+	sub a, t0
 	jr c, GetDetValueStop
-	cp t9-t0+1
+	cp a, t9-t0+1
 	jr nc, GetDetValueStop
 	push hl
 		ex de, hl
