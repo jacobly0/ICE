@@ -9,9 +9,9 @@ FindContinue:
 	dec hl
 	dec hl
 	dec hl
-	cp ProgObj
+	cp a, ProgObj
 	jr z, FindGoodProgram
-	cp ProtProgObj
+	cp a, ProtProgObj
 	jr nz, FindWrongProgram
 FindGoodProgram:
 	ld e, (hl)
@@ -20,7 +20,7 @@ FindGoodProgram:
 	dec hl
 	ld a, (hl)
 	call _SetDEUToA
-	cp 0D0h
+	cp a, 0D0h
 	jr nc, +_
 	push hl
 		ex de, hl
@@ -34,7 +34,7 @@ FindGoodProgram:
 _:	inc de
 	inc de
 	ld a, (de)
-	cp tii
+	cp a, tii
 	jr nz, FindWrongProgram2
 	dec hl
 	push de
@@ -43,7 +43,7 @@ _:	inc de
 			ld de, 8
 			add hl, de
 			ld (ProgramNamesPtr), hl
-			or a
+			or a, a
 			sbc hl, de
 			ex de, hl
 		pop hl
@@ -56,10 +56,10 @@ FindCopyProgName:
 		dec hl
 		inc de
 		djnz FindCopyProgName
-		xor a
+		xor a, a
 		ld (de), a
 	pop de
-	cp a
+	cp a, a
 	ret
 FindWrongProgram:
 	dec hl

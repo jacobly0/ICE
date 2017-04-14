@@ -14,17 +14,17 @@
 	inc hl
 	ld (tempListsPtr), hl
 ListStart:
-	or a
+	or a, a
 	sbc hl, hl
 ListLoop:
 	push hl
 		call _IncFetch
 	pop hl
-	cp t0
+	cp a, t0
 	jr c, ListNotNumber
-	cp t9+1
+	cp a, t9+1
 	jr nc, ListNotNumber
-	sub t0
+	sub a, t0
 	add hl, hl
 	push hl
 	pop de
@@ -36,7 +36,7 @@ ListLoop:
 	add hl, de
 	jr ListLoop
 ListNotNumber:
-	cp tComma
+	cp a, tComma
 	jr nz, ListNotNumberOrComma
 	ex de, hl
 	ld hl, (tempListsPtr)
@@ -47,9 +47,9 @@ ListNotNumber:
 	ld (tempListsPtr), hl
 	jr ListStart
 ListNotNumberOrComma:
-	cp tRBrace
+	cp a, tRBrace
 	jr z, ListStop
-	cp tStore
+	cp a, tStore
 	jr nz, ListError
 ListStop:
 	ex de, hl
@@ -64,11 +64,11 @@ ListLengthSMC = $+1
 	dec hl
 	dec hl
 	dec hl
-	or a
+	or a, a
 	sbc hl, de
 	ex de, hl
 	ld (hl), de
-	cp tStore
+	cp a, tStore
 	call nz, _IncFetch
 	jp MainLoop
 ListError:

@@ -23,7 +23,7 @@ FindPreviousEnter:
 	call _BufLeft
 	jr z, AtTopOfProgram
 	ld a, e
-	cp tEnter
+	cp a, tEnter
 	jr z, +_
 	inc bc
 	jr FindPreviousEnter
@@ -38,7 +38,7 @@ AtTopOfProgram:
 		call _DispEOW
 	pop bc
 _:	ld a, b
-	or c
+	or a, c
 	jp z, _Mon
 	call _CursorRight
 	dec bc

@@ -154,7 +154,7 @@ KeyNotUp:
 	cp a, 5
 	ld a, e
 	jr nz, +_
-	cp (AMOUNT_OF_C_FUNCTIONS + AMOUNT_OF_CUSTOM_TOKENS)%16 - 1
+	cp a, (AMOUNT_OF_C_FUNCTIONS + AMOUNT_OF_CUSTOM_TOKENS)%16 - 1
 	jr z, KeyLoop
 _:	ld a, e
 	cp a, 16-1
@@ -186,7 +186,7 @@ _loop:
 	rla
 	cp a, e
 	jr c, $+4
-	sub e
+	sub a, e
 	inc d
 	djnz _loop
 	ld e, a
@@ -506,7 +506,7 @@ CursorHook_start:
 	inc a
 	ld a, (curUnder)
 	ret
-_:	cp 22h
+_:	cp a, 22h
 	ret nz
 	ld a, (cxCurApp)
 	cp a, cxPrgmEdit
@@ -533,7 +533,7 @@ WrongDetValue:
 	ret
 GetDetValueLoop:
 	inc hl
-	or a
+	or a, a
 	sbc hl, bc
 	jr z, GetDetValueStop
 	add hl, bc
@@ -559,7 +559,7 @@ GetDetValueLoop:
 GetDetValueStop:
 	ex de, hl
 	ld de, AMOUNT_OF_C_FUNCTIONS
-	or a
+	or a, a
 	sbc hl, de
 	jr nc, WrongDetValue
 	add hl, de

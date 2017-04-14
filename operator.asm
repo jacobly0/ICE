@@ -1,12 +1,12 @@
 	ld hl, precedence
 	add hl, bc
 	ld e, (hl)										; e = precedence of current token
-	cp tStore
+	cp a, tStore
 	call z, MoveStackEntryToOutput
 CheckOperator:
 	ld hl, (stackPtr)
 	ld bc, stack
-	or a
+	or a, a
 	sbc hl, bc
 	jr z, InsertBoolean
 	add hl, bc
@@ -15,7 +15,7 @@ CheckOperator:
 	dec hl
 	dec hl
 	ld a, (hl)
-	cp typeOperator
+	cp a, typeOperator
 	jr nz, InsertBoolean
 	inc hl
 	ld a, (hl)

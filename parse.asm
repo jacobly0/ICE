@@ -1,20 +1,20 @@
 ParseLine:
 	call _CurFetch
-	cp tEnter
+	cp a, tEnter
 	ret z
 	ld hl, FunctionsSingle
 	ld bc, FunctionsSingleEnd - FunctionsSingle
 	cpir
 	jr nz, ParseExpression2
-	cp tVarOut
+	cp a, tVarOut
 	jr z, +_
-	cp tii
+	cp a, tii
 	jr z, +_
 	bit used_code, (iy+fProgram1)
 	set used_code, (iy+fProgram1)
 	call z, UpdateSpritePointers
 _:	ld a, (openedParensF)
-	or a
+	or a, a
 	jp nz, FunctionError
 	ld (iy+fFunction1), a
 	ld (iy+fFunction2), a
@@ -34,29 +34,29 @@ ParseExpression:
 	ld (stackPtr), hl
 	ld hl, output
 	ld (outputPtr), hl
-	xor a
+	xor a, a
 	ld (openedParensE), a
 	ld (iy+fExpression1), a
 	ld (iy+fExpression2), a
 	ld (iy+fExpression3), a
 	call _CurFetch
 MainLoopResCarryFlag:
-	or a	
+	or a, a	
 MainLoop:
 	ld (tempToken), a
 	jp c, StopParsing
-	cp t0
+	cp a, t0
 	jr c, NotANumber
-	cp t9+1
+	cp a, t9+1
 	jr nc, NotANumber
 ANumber:
 #include "number.asm"
 
 NotANumber:
 	res prev_is_number, (iy+fExpression1)
-	cp tA
+	cp a, tA
 	jr c, NotAVariable
-	cp ttheta+1
+	cp a, ttheta+1
 	jr nc, NotAVariable
 AVariable:
 	ld hl, (outputPtr)
@@ -76,25 +76,25 @@ ReturnToLoop:
 	call _IncFetch
 	jp MainLoop
 NotABoolean:
-	cp tComma
+	cp a, tComma
 	jr z, CloseArgument
-	cp tRParen
+	cp a, tRParen
 	jp nz, NotACommaOrRParen
 CloseArgument:
 #include "closing.asm"
 
 NotACommaOrRParen:
-	cp tLBrace
+	cp a, tLBrace
 	jp nz, NotAList
 AList:
 #include "list.asm"
 
 NotAList:
-	cp tVarLst
+	cp a, tVarLst
 	jr nz, NotAnOSList
 AnOSList:
 	call _IncFetch
-	cp 6
+	cp a, 6
 	jp nc, InvalidTokenError
 	ld c, a
 	ld b, 3
@@ -112,7 +112,7 @@ AnOSList:
 	inc hl
 	ld (outputPtr), hl
 	call _IncFetch
-	cp tLParen
+	cp a, tLParen
 	jp nz, MainLoopResCarryFlag
 	ld hl, openedParensE
 	inc (hl)
@@ -127,7 +127,7 @@ AnOSList:
 	call _IncFetch
 	jp MainLoop
 NotAnOSList:
-	cp tString
+	cp a, tString
 	jr nz, NotAString
 AString:
 	ld hl, (outputPtr)
@@ -142,11 +142,11 @@ AString:
 StringLoop:
 	call _IncFetch
 	jr c, StringStop2
-	cp tEnter
+	cp a, tEnter
 	jr z, StringStop2
-	cp tString
+	cp a, tString
 	jr z, StringStop
-	cp tStore
+	cp a, tStore
 	jr z, StringStop
 	call _IsA2ByteTok
 	jr nz, +_
@@ -160,7 +160,7 @@ _:	push de
 	ldir
 	jr StringLoop
 StringStop:
-	cp tEnter
+	cp a, tEnter
 	call nz, _IncFetch
 StringStop2:
 	ex de, hl
@@ -169,22 +169,22 @@ StringStop2:
 	ld (tempStringsPtr), hl
 	jp MainLoop
 NotAString:
-	cp tEnter
+	cp a, tEnter
 	jp z, StopParsing
 	ld hl, FunctionsWithReturnValue
 	ld bc, FunctionsWithReturnValueEnd - FunctionsWithReturnValue
 	cpir
 	jp nz, InvalidTokenError
-	cp tGetKey
+	cp a, tGetKey
 	jr z, AddFunctionToOutput
-	cp tSqr
+	cp a, tSqr
 	jr z, AddFunctionToOutput
-	cp trand
+	cp a, trand
 	jp nz, AddFunctionToStack
 AddFunctionToOutput:
 	ld hl, (outputPtr)
 	ld e, typeReturnValue
-	cp tSqr
+	cp a, tSqr
 	jr nz, +_
 	ld e, typeFunction
 _:	ld (hl), e
@@ -194,33 +194,33 @@ _:	ld (hl), e
 	inc hl
 	inc hl
 	ld (outputPtr), hl
-	cp tGetKey
+	cp a, tGetKey
 	jp nz, ReturnToLoop
 	call _IncFetch
 	jp c, MainLoop
-	cp tLParen
+	cp a, tLParen
 	jp nz, MainLoopResCarryFlag
 	call _IncFetch
 _:	jp c, ErrorSyntax
-	cp tEnter
+	cp a, tEnter
 	jp z, ErrorSyntax
-	sub t0
+	sub a, t0
 	jr c, -_
-	cp t9-t0+1
+	cp a, t9-t0+1
 _:	jp nc, ErrorSyntax
 	ld de, 0
 	ld e, a
 	call _IncFetch
 	jr c, AddGetKeyDirect
-	cp tEnter
+	cp a, tEnter
 	jr z, AddGetKeyDirect
-	cp tRParen
+	cp a, tRParen
 	jr z, +_
-	cp tStore
+	cp a, tStore
 	jr z, AddGetKeyDirect
-	sub t0
+	sub a, t0
 	jr c, --_
-	cp t9-t0+1
+	cp a, t9-t0+1
 	jr nc, -_
 	push de
 	pop hl
@@ -233,11 +233,11 @@ _:	jp nc, ErrorSyntax
 	ex de, hl
 	call _IncFetch
 	jr c, AddGetKeyDirect
-	cp tEnter
+	cp a, tEnter
 	jr z, AddGetKeyDirect
-	cp tStore
+	cp a, tStore
 	jr z, AddGetKeyDirect
-	cp tRParen
+	cp a, tRParen
 	jp nz, ErrorSyntax
 _:	call _IncFetch
 AddGetKeyDirect:
@@ -268,7 +268,7 @@ StopParsing:																; move stack to output
 	call MoveStackEntryToOutput
 	ld hl, (outputPtr)
 	ld de, output
-	or a
+	or a, a
 	sbc hl, de
 	push hl
 	pop bc																	; BC / 4 is amount of elements in the stack
@@ -279,11 +279,11 @@ StopParsing:																; move stack to output
 	ld (ExprOutput2), a
 	ld a, b
 	or a, c
-	cp 4
+	cp a, 4
 	ret c
 	jp z, ParseSingleArgument
 Loop:
-	xor a
+	xor a, a
 	ld (iy+fExpression1), a
 	ld (iy+fExpression2), a
 	sbc hl, bc
@@ -294,19 +294,19 @@ Loop:
 	add hl, bc
 	push hl
 		ld hl, 12
-		or a
+		or a, a
 		sbc hl, bc
 		jr nz, +_
 		set op_is_last_one, (iy+fExpression1)
 _:	pop hl
 	ld a, b
 	or a, c
-	cp 4
+	cp a, 4
 	jp z, StopParseExpression
 	ld a, (hl)
-	cp typeOperator
+	cp a, typeOperator
 	jr z, ExpressOperator
-	cp typeFunction
+	cp a, typeFunction
 	jr z, ExpressFunction
 	inc hl
 	inc hl
@@ -346,13 +346,13 @@ _:	pop bc
 	pop de
 	ex de, hl
 	add hl, bc
-	or a
+	or a, a
 	sbc hl, de
 	push hl
 	pop bc																	; BC = BC+DE-HL
 	ld a, b
-	or c
-	cp 4
+	or a, c
+	cp a, 4
 	jr nz, +_
 	bit output_is_number, (iy+fExpression1)
 	jp z, StopParseExpression
@@ -409,7 +409,7 @@ _:	inc bc
 AddChain:
 	ld e, typeChainAns
 	ld a, (hl)
-	cp typeOperator
+	cp a, typeOperator
 	jr nc, ChainAns2
 	inc hl
 	inc hl
@@ -420,7 +420,7 @@ AddChain:
 	dec hl
 	dec hl
 	dec hl
-	cp typeOperator
+	cp a, typeOperator
 	jr z, ChainAns2
 ChainPush2:
 	push hl
@@ -439,13 +439,13 @@ ChainAns2:
 	
 StopParseExpression:
 	ld a, (openedParensF)
-	or a
+	or a, a
 	jp nz, MaybeChangeDEToHL
 	ret
 	
 ParseSingleArgument:
 	ld a, (hl)
-	or a
+	or a, a
 	jr nz, ParseSingleNotNumber
 	set output_is_number, (iy+fExpression1)
 	inc hl
@@ -482,7 +482,7 @@ ParseSingleNotFunction:
 	ld de, (hl)																; hl points to string in string stack
 	ld hl, (hl)
 	ld bc, -1
-	xor a
+	xor a, a
 	cpir
 	sbc hl, de
 	push hl
@@ -498,7 +498,7 @@ ParseSingleNotFunction:
 MoveStackEntryToOutput:
 	ld hl, (stackPtr)
 	ld de, stack
-	or a
+	or a, a
 	sbc hl, de
 	ret z
 	add hl, de
@@ -509,12 +509,12 @@ MoveStackEntryToOutput:
 	ld (stackPtr), hl
 	ld de, (outputPtr)
 	ld a, (hl)
-	cp typeFunction
+	cp a, typeFunction
 	jr nz, +_
 	inc hl
 	ld a, (hl)
 	dec hl
-	cp tLParen
+	cp a, tLParen
 	jr z, MoveStackEntryToOutput
 _:	ldi
 	ldi

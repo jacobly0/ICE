@@ -27,7 +27,7 @@ _:	ld d, b
 	ld e, a
 	ld a, 000011111b
 	and b
-	or e
+	or a, e
 	ld (hl), a
 	inc hl
 	ld (hl), d
@@ -86,7 +86,7 @@ StopFindingPrograms:
 	ld hl, 1
 	ld (TextXPos_ASM), hl
 	ld a, (AmountOfPrograms)
-	or a
+	or a, a
 	jp z, NoProgramsError
 	ld (AmountPrograms), a
 	ld l, 1
@@ -99,7 +99,7 @@ PrintCursor:
 	inc e
 	ld a, e
 	ld (TextYPos_ASM), a
-	xor a
+	xor a, a
 	ld (color), a
 	inc a
 	ld (TextXPos_ASM), a
@@ -112,15 +112,15 @@ PrintCursor:
 _:	push hl
 		call _GetCSC
 	pop hl
-	or a
+	or a, a
 	jr z, -_
-	cp skUp
+	cp a, skUp
 	jr z, PressedUp
-	cp skDown
+	cp a, skDown
 	jr z, PressedDown
-	cp skClear
+	cp a, skClear
 	jp z, StopProgram
-	cp skEnter
+	cp a, skEnter
 	jr nz, -_
 PressedEnter:
 	dec l
@@ -198,14 +198,14 @@ _:	ld bc, 0
 	ld hl, (programPtr)
 	ld (PrevProgramPtr), hl
 	ld a, (amountOfCRoutines)
-	or a
+	or a, a
 	jr nz, CompileProgramFull
 	res comp_with_libs, (iy+fProgram1)
 	ld hl, program+5
 	ld (programPtr), hl
 CompileProgramFull:
 	ld a, (AmountOfSubPrograms)
-	or a
+	or a, a
 	jr nz, SkipGetProgramName
 	ld hl, varname
 	call GetProgramName
@@ -214,22 +214,22 @@ CompileProgramFull:
 	ld b, 8
 CheckNames:
 	ld a, (de)
-	or a
+	or a, a
 	jr z, CheckNamesSameLength
-	cp (hl)
+	cp a, (hl)
 	jr nz, GoodProgramName
 	inc hl
 	inc de
 	djnz CheckNames
 CheckNamesSameLength:
-	cp (hl)
+	cp a, (hl)
 	jp z, SameNameError
 GoodProgramName:
 SkipGetProgramName:
 
 ParseProgramUntilEnd:
 CompileLoop:
-	xor a
+	xor a, a
 	ld (iy+fExpression1), a
 	ld (iy+fExpression2), a
 	ld (iy+fExpression3), a
@@ -240,27 +240,27 @@ CompileLoop:
 	call _IncFetch
 	ld (tempToken), a
 	jr c, FindGotos
-	cp tEnd
+	cp a, tEnd
 	jr nz, ++_
 _:	ld hl, amountOfEnds
 	ld a, (hl)
 	dec (hl)
-	or a
+	or a, a
 	jp z, EndError
 	ld a, (tempToken)
 	ret
-_:	cp tElse
+_:	cp a, tElse
 	jr z, --_
 	call ParseLine
 	ld hl, (curPC)
 	ld de, (begPC)
-	or a
+	or a, a
 	sbc hl, de
 	ld bc, 320
 	call __imulu
 	push hl
 		ld hl, (endPC)
-		or a
+		or a, a
 		sbc hl, de
 		inc hl
 		push hl
@@ -270,7 +270,7 @@ _:	cp tElse
 	push hl
 	pop bc
 	ld a, b
-	or c
+	or a, c
 	jr z, +_
 	ld hl, vRAM+(320*25)
 	ld (hl), 0
@@ -279,26 +279,26 @@ _:	cp tElse
 	inc de
 	dec bc
 	ld a, b
-	or c
+	or a, c
 	jr z, CompileLoop
 	ldir
 _:	jr CompileLoop
 FindGotos:
 	ld hl, amountOfEnds
 	ld a, (hl)
-	or a
+	or a, a
 	jr z, +_
 	dec (hl)
 	ret
 _:	ld hl, AmountOfSubPrograms
 	ld a, (hl)
 	dec (hl)
-	or a
+	or a, a
 	ret nz
 FindGotosLoop:
 	ld hl, (gotoPtr)
 	ld de, gotoStack
-	or a
+	or a, a
 	sbc hl, de
 	jr z, AddDataToProgramData												; have we finished all the Goto's?
 	add hl, de
@@ -311,7 +311,7 @@ FindGotosLoop:
 		ld hl, (labelPtr)
 FindLabels:
 		ld bc, labelStack
-		or a
+		or a, a
 		sbc hl, bc
 		jp z, LabelError													; have we finished all the Lbl's?
 		add hl, bc
@@ -359,14 +359,14 @@ AddDataToProgramData:
 	call InsertA															; ret
 _:	ld hl, (programDataDataPtr)
 	ld bc, programDataData
-	or a
+	or a, a
 	sbc hl, bc
 	push hl
 	pop bc																	; bc = data length
 	jr z, CreateProgram														; check IF there is data
 	ld de, (programPtr)
 	ld hl, programDataData
-	or a
+	or a, a
 	sbc hl, de
 	push hl
 		add hl, de
@@ -376,7 +376,7 @@ _:	ld hl, (programDataDataPtr)
 	ld hl, (programDataOffsetPtr)
 AddDataLoop:																; update all the pointers pointing to data
 	ld bc, programDataOffsetStack
-	or a
+	or a, a
 	sbc hl, bc
 	jr z, CreateProgram														; no more pointers left
 	add hl, bc
@@ -387,7 +387,7 @@ AddDataLoop:																; update all the pointers pointing to data
 		ld hl, (hl)															; complicated stuff XD
 		push hl
 			ld hl, (hl)
-			or a
+			or a, a
 			sbc hl, de
 			ld bc, UserMem-program
 			add hl, bc
@@ -410,7 +410,7 @@ CreateProgram:
 _:	call _DelVar
 _:	ld hl, (programPtr)
 	ld bc, program
-	or a
+	or a, a
 	sbc hl, bc
 	push hl
 		ld bc, 17

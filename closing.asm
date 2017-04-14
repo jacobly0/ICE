@@ -1,15 +1,15 @@
 	ld hl, openedParensE
 	ld b, a
 	ld a, (hl)
-	or a
+	or a, a
 	jr z, MismatchedParens
 	ld a, b
-	cp tComma
+	cp a, tComma
 	jr z, +_
 	dec (hl)
 _:	ld hl, (stackPtr)
 	ld bc, stack
-	or a
+	or a, a
 	sbc hl, bc
 	jr z, StopMovingForArgument2
 	add hl, bc
@@ -18,14 +18,14 @@ _:	ld hl, (stackPtr)
 	dec hl
 	dec hl
 	ld a, (hl)
-	cp typeFunction
+	cp a, typeFunction
 	jr z, StopMovingForArgument
-	cp typeOperator
+	cp a, typeOperator
 	jr nz, +_
 	inc hl
 	ld a, (hl)
 	dec hl
-	or a
+	or a, a
 	jr z, StopMovingForArgument
 _:	ld (stackPtr), hl
 	ld de, (outputPtr)
@@ -38,12 +38,12 @@ _:	ld (stackPtr), hl
 _:	add hl, bc
 StopMovingForArgument:
 	ld a, (tempToken)
-	cp tComma
+	cp a, tComma
 	jr z, StopMovingForArgument2
 	ld (stackPtr), hl
 	inc hl
 	ld a, (hl)
-	cp tLParen
+	cp a, tLParen
 	jr z, StopMovingForArgument2
 	dec hl
 	ld de, (outputPtr)
@@ -57,10 +57,10 @@ StopMovingForArgument2:
 	jp MainLoop
 MismatchedParens:
 	ld a, (openedParensF)
-	or a
+	or a, a
 	jp z, MismatchError
 	ld a, (tempToken)
-	cp tComma
+	cp a, tComma
 	jr nz, +_
 	set triggered_a_comma, (iy+fExpression3)
 _:	jp StopParsing

@@ -69,14 +69,14 @@ MaybeInsertIYFlags:
 	
 MaybeChangeHLToDE:
 	ld a, (ExprOutput)
-_:	or a
+_:	or a, a
 	ret z
 	ld a, 0EBh
 	jr InsertA																; ex de, hl
 	
 MaybeChangeDEToHL:
 	ld a, (ExprOutput)
-	xor 1
+	xor a, 1
 	jr -_
 	
 CGetArgumentLast:
@@ -131,7 +131,7 @@ InsertA:
 
 CAddArgument:
 	push bc
-		or a
+		or a, a
 		sbc hl, bc
 		push hl
 		pop bc
@@ -165,14 +165,14 @@ GetRightFunction:
 	dec b
 	jp nz, GetFunctionBC
 GetFunctionHL:
-	cp tGetKey
+	cp a, tGetKey
 	jr nz, +_
 	ld hl, _GetCSC
 	call InsertCallHL														; call _GetCSC
 	ld a, 0B7h
 	ld hl, 06F62EDh
 	jp InsertAHL															; or a \ sbc hl, hl \ ld l, a
-_:	cp trand
+_:	cp a, trand
 	jr nz, +_
 	ld a, 0D5h
 	bit need_push, (iy+fExpression1)
@@ -185,7 +185,7 @@ _:	cp trand
 _:	call InsertKeypadRoutine1
 	jp InsertKeypadRoutine2
 GetFunctionDE:
-	cp tGetKey
+	cp a, tGetKey
 	jr nz, +_
 	ld a, 0E5h
 	bit need_push, (iy+fExpression1)
@@ -198,10 +198,10 @@ GetFunctionDE:
 	call InsertA															; pop hl
 	ld a, 011h
 	call InsertA															; ld de, *
-	xor a
+	xor a, a
 	ld hl, 05F0000h
 	jp InsertAHL															; ld de, 0 \ ld e, a
-_:	cp trand
+_:	cp a, trand
 	jr nz, ++_
 	ld a, 0E5h
 	bit need_push, (iy+fExpression1)
@@ -220,16 +220,16 @@ _:	call InsertKeypadRoutine1
 	call InsertKeypadRoutine2
 	jr --_
 GetFunctionBC:
-	cp tGetKey
+	cp a, tGetKey
 	jr nz, +_
 	ld hl, _GetCSC
 	call InsertCallHL														; call _GetCSC
 	ld a, 001h
 	call InsertA															; ld bc, *
-	xor a
+	xor a, a
 	ld hl, 04F0000h
 	jp InsertAHL															; ld bc, 0 \ ld c, a
-_:	cp trand
+_:	cp a, trand
 	jr nz, ++_
 	call InsertRandRoutine
 _:	ld a, 0E5h
@@ -304,7 +304,7 @@ InsertRandRoutine:
 	
 CompareStrings:
 	ld a, (de)
-	cp tEnter
+	cp a, tEnter
 	ret z
 	cp a, (hl)
 	inc hl
@@ -327,13 +327,13 @@ MulError:
 	
 GLETError:
 	ld a, (tempToken2)
-	cp tGE
+	cp a, tGE
 	ld c, 019h
 	jr z, DispOperatorErrorString2
-	cp tLE
+	cp a, tLE
 	ld c, 017h
 	jr z, DispOperatorErrorString2
-	cp tGT
+	cp a, tGT
 	ld c, '>'
 	jr z, DispOperatorErrorString2
 	ld a, '<'
@@ -341,17 +341,17 @@ GLETError:
 
 NEQError:
 	ld a, (tempToken2)
-	cp tEq
+	cp a, tEq
 	ld a, '='
 	jr z, DispOperatorErrorString
 	ld a, 018h
 	jr DispOperatorErrorString
 XORANDError:
 	ld a, (tempToken2)
-	cp tOr
+	cp a, tOr
 	ld c, '|'
 	jr z, DispOperatorErrorString2
-	cp tXor
+	cp a, tXor
 	ld c, '^'
 	jr z, DispOperatorErrorString2
 	ld a, '&'
@@ -555,13 +555,13 @@ ScanLoop:
 	dec bc
 _:	inc hl
 	dec bc
-	cp tDet
+	cp a, tDet
 	jr z, ScanFoundDet
-	cp tPause
+	cp a, tPause
 	jr z, ScanFoundPause
-	cp tSqrt
+	cp a, tSqrt
 	jr z, ScanFoundRoot
-	cp tInput
+	cp a, tInput
 	jr nz, ScanLoop
 ScanFoundInput:
 	ld a, (amountOfInput)
@@ -582,7 +582,7 @@ ScanFoundDet:
 	ld a, (hl)
 	sub a, t0
 	jr c, ScanLoop
-	cp t9-t0+1
+	cp a, t9-t0+1
 	jr nc, ScanLoop
 	ld de, 0
 	ld e, a
@@ -592,13 +592,13 @@ ScanFoundDet:
 	or c
 	jr z, FoundRightCFunction
 	ld a, (hl)
-	cp tComma
+	cp a, tComma
 	jr z, FoundRightCFunction
-	cp tEnter
+	cp a, tEnter
 	jr z, FoundRightCFunction
 	sub t0
 	jr c, FoundRightCFunction
-	cp t9-t0+1
+	cp a, t9-t0+1
 	jr nc, FoundRightCFunction
 	push hl
 		ex de, hl
@@ -651,10 +651,10 @@ GetSpriteData:
 	ld a, (de)
 	sub t0
 	jp c, WrongSpriteDataError
-	cp tA-t0
+	cp a, tA-t0
 	jr c, +_
 	sub tA-t0
-	cp tG-tA
+	cp a, tG-tA
 	jp nc, WrongSpriteDataError
 	add a, 10
 _:	add a, a
@@ -670,10 +670,10 @@ _:	add a, a
 	ld a, (de)
 	sub t0
 	jp c, WrongSpriteDataError
-	cp tA-t0
+	cp a, tA-t0
 	jr c, +_
 	sub tA-t0
-	cp tG-tA
+	cp a, tG-tA
 	jp nc, WrongSpriteDataError
 	add a, 10
 _:	or a, ixh
@@ -706,11 +706,11 @@ GetProgramName:
 	pop hl
 	jp c, InvalidNameLength
 	inc hl
-	cp tEnter
+	cp a, tEnter
 	jp z, InvalidNameLength
-	cp tA
+	cp a, tA
 	jp c, InvalidTokenError
-	cp ttheta+1
+	cp a, ttheta+1
 	jp nc, InvalidTokenError
 	ld (hl), a
 	ld e, 8
@@ -721,15 +721,15 @@ GetProgramNameLoop:
 	inc hl
 	ld (hl), 0
 	ret c
-	cp tEnter
+	cp a, tEnter
 	ret z
-	cp t0
+	cp a, t0
 _:	jp c, InvalidTokenError
-	cp t9+1
+	cp a, t9+1
 	jr c, +_
-	cp tA
+	cp a, tA
 	jr c, -_
-	cp ttheta+1
+	cp a, ttheta+1
 	jp nc, InvalidTokenError
 _:	ld (hl), a
 	dec e
