@@ -250,14 +250,14 @@ InsertKeypadRoutine1:
 	and 00001110b
 	ld c, a
 	ld a, 01Eh
-	sub c
+	sub a, c
 	call InsertA															; ld b, X
 	ld a, 00Eh
 	call InsertA															; ld c, *
 	ld a, b
 	and 000000111b
 	ld b, a
-	xor a
+	xor a, a
 	scf
 _:	rla
 	djnz -_
@@ -435,7 +435,7 @@ ReturnToOS:
 	call PrintString
 	ld hl, (curPC)
 	ld de, (begPC)
-	or a
+	or a, a
 	sbc hl, de
 	push hl
 	pop bc
@@ -444,7 +444,7 @@ ReturnToOS:
 	ex de, hl
 GetAmountOfLines:
 	ld a, b
-	or c
+	or a, c
 	jr z, GetAmountOfLinesStop
 	ld a, tEnter
 	cpir
@@ -463,7 +463,7 @@ NumberToStringLoop:
 	dec de
 	ld (de), a
 	add hl, de
-	or a
+	or a, a
 	sbc hl, de
 	jr nz, NumberToStringLoop
 	ex de, hl
