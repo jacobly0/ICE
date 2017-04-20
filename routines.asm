@@ -20,6 +20,15 @@ InsertHL:
 	pop	de
 	ret
 	
+InsertBC:
+	ld hl, (programPtr)
+	ld (hl), b
+	inc hl
+	ld (hl), c
+	inc hl
+	ld (programPtr), hl
+	ret
+	
 InsertCallHL:
 	ld	a, 0CDh
 	jr	InsertAHL
@@ -29,18 +38,20 @@ InsertHIXC:
 	ld	b, 3
 	mlt	bc
 	ld	a, c
-	jr	++_
+	jr	InsertFinalIX
 InsertIXE:
 	ld	h, 017h
-_:	ld	d, 3
+InsertIX:
+	ld	d, 3
 	mlt	de
 	ld	a, e
-_:	ld	l, 0DDh
+InsertFinalIX:
+	ld	l, 0DDh
 	call	_SetHLUToA
-	jr	InsertHL																;	ld hl/de/bc, (ix+*)
+	jr	InsertHL								; ld hl/de/bc, (ix+*)
 InsertIXC:
 	ld	h, 007h
-	jr	--_
+	jr	InsertIX
 
 InsertBCDEHL:
 	push	hl
@@ -62,17 +73,17 @@ MaybeInsertIYFlags:
 	ret	z
 	res	modified_iy, (iy+fAlways1)
 	ld	a, 0FDh
-	call	InsertA															;	ld iy, flags
+	call	InsertA									; ld iy, flags
 	ld	a, 021h
 	ld	hl, flags
-	jp	InsertAHL															;	ld iy, flags
+	jp	InsertAHL								; ld iy, flags
 	
 MaybeChangeHLToDE:
 	ld	a, (ExprOutput)
 _:	or	a, a
 	ret	z
 	ld	a, 0EBh
-	jr	InsertA																;	ex de, hl
+	jr	InsertA									; ex de, hl
 	
 MaybeChangeDEToHL:
 	ld	a, (ExprOutput)
@@ -81,10 +92,10 @@ MaybeChangeDEToHL:
 	
 CGetArgumentLast:
 	ld	a, 0C2h
-	jr	$+4
+	jr	+_
 CGetArgument:
 	ld	a, 0CAh
-	ld	(CGetArgumentLastOrNot), a
+_:	ld	(CGetArgumentLastOrNot), a
 	ld	(programPtr), hl
 	push	af
 		call	_IncFetch
@@ -102,14 +113,14 @@ CGetArgumentLastOrNot:
 	ld	(programPtr), hl
 	dec	hl
 	dec	hl
-	ld	(hl), 02Eh															;	ld l, *
+	ld	(hl), 02Eh								; ld l, *
 	inc	hl
 	ld	de, (hl)
 	ld	(hl), e
 InsertPushHLDE:
 	ld	a, (ExprOutput2)
-	or	a
-	jr	nz, +_
+	;or	a, a
+	;jr	nz, +_
 	;ld	hl, (programPtr)
 	;dec	hl
 	;ld	(programPtr), hl
@@ -161,121 +172,128 @@ GetFunction:
 	
 GetRightFunction:
 	dec	b
-	jp	z, GetFunctionDE
+	jp	z, GetFunctionWithOutputInDE
 	dec	b
-	jp	nz, GetFunctionBC
-GetFunctionHL:
+	jp	nz, GetFunctionWithOutputInBC
+GetFunctionWithOutputInHL:
 	cp	a, tGetKey
-	jr	nz, +_
+	jr	nz, FunctionHLNotGetKey
 	ld	hl, _GetCSC
-	call	InsertCallHL														;	call _GetCSC
+	call	InsertCallHL								; call _GetCSC
 	ld	a, 0B7h
 	ld	hl, 06F62EDh
-	jp	InsertAHL															;	or a \ sbc hl, hl \ ld l, a
-_:	cp	a, trand
-	jr	nz, +_
+	jp	InsertAHL								; or a \ sbc hl, hl \ ld l, a
+FunctionHLNotGetKey:
+	cp	a, trand
+	jr	nz, FunctionHLGetKeyFast
 	ld	a, 0D5h
 	bit	need_push, (iy+fExpression1)
-	call	nz, InsertA														;	push de
+	call	nz, InsertA								; push de
 	call	InsertRandRoutine
 	bit	need_push, (iy+fExpression1)
 	ret	z
 	ld	a, 0D1h
-	jp	InsertA																;	pop de
-_:	call	InsertKeypadRoutine1
+	jp	InsertA									; pop de
+FunctionHLGetKeyFast:
+	call	InsertKeypadRoutine1
 	jp	InsertKeypadRoutine2
-GetFunctionDE:
+GetFunctionWithOutputInDE:
 	cp	a, tGetKey
-	jr	nz, +_
+	jr	nz, FunctionDENotGetKey
 	ld	a, 0E5h
 	bit	need_push, (iy+fExpression1)
-	call	nz, InsertA														;	push hl
+	call	nz, InsertA								; push hl
 	ld	hl, _GetCSC
-	call	InsertCallHL														;	call _GetCSC
+	call	InsertCallHL								; call _GetCSC
 	bit	need_push, (iy+fExpression1)
 	jr	z, $+8
 	ld	a, 0E1h
-	call	InsertA															;	pop hl
+	call	InsertA									; pop hl
 	ld	a, 011h
-	call	InsertA															;	ld de, *
+	call	InsertA									; ld de, *
 	xor	a, a
 	ld	hl, 05F0000h
-	jp	InsertAHL															;	ld de, 0 \ ld e, a
-_:	cp	a, trand
-	jr	nz, ++_
+	jp	InsertAHL								; ld de, 0 \ ld e, a
+FunctionDENotGetKey:
+	cp	a, trand
+	jr	nz, FunctionDEGetKeyFast
 	ld	a, 0E5h
 	bit	need_push, (iy+fExpression1)
-	call	nz, InsertA														;	push hl
+	call	nz, InsertA								; push hl
 	call	InsertRandRoutine
-_:	ld	a, 0EBh
-	call	InsertA															;	ex de, hl
+FunctionDEGetKeyEnd:
+	ld	a, 0EBh
+	call	InsertA									; ex de, hl
 	bit	need_push, (iy+fExpression1)
 	ret	z
 	ld	a, 0E1h
-	jp	InsertA																;	pop hl
-_:	call	InsertKeypadRoutine1
+	jp	InsertA									; pop hl
+FunctionDEGetKeyFast:
+	call	InsertKeypadRoutine1
 	ld	a, 0E5h
 	bit	need_push, (iy+fExpression1)
-	call	nz, InsertA														;	push hl
+	call	nz, InsertA								; push hl
 	call	InsertKeypadRoutine2
-	jr	--_
-GetFunctionBC:
+	jr	FunctionDEGetKeyEnd
+GetFunctionWithOutputInBC:
 	cp	a, tGetKey
-	jr	nz, +_
+	jr	nz, FunctionBCNotGetKey
 	ld	hl, _GetCSC
-	call	InsertCallHL														;	call _GetCSC
+	call	InsertCallHL								; call _GetCSC
 	ld	a, 001h
-	call	InsertA															;	ld bc, *
+	call	InsertA									; ld bc, *
 	xor	a, a
 	ld	hl, 04F0000h
-	jp	InsertAHL															;	ld bc, 0 \ ld c, a
-_:	cp	a, trand
-	jr	nz, ++_
+	jp	InsertAHL								; ld bc, 0 \ ld c, a
+FunctionBCNotGetKey:
+	cp	a, trand
+	jr	nz, FunctionBCGetKeyFast
 	call	InsertRandRoutine
-_:	ld	a, 0E5h
-	call	InsertA															;	push hl
-	ld	a, 0C1h
-	jp	InsertA																;	pop bc
-_:	call	InsertKeypadRoutine1
+FunctionBCHLToBC:
+	ld	b, 0E5h
+	ld	c, 0C1h
+	jp	InsertBC								; push hl \ pop bc
+FunctionBCGetKeyFast:
+	call	InsertKeypadRoutine1
 	call	InsertKeypadRoutine2
-	jr	--_
+	jr	FunctionBCHLToBC
+	
 InsertKeypadRoutine1:
 	ld	b, a
 	ld	a, 006h
-	call	InsertA															;	ld b, *
-	ld	a, b
-	dec	a
+	call	InsertA									; ld b, *
+	ld	a, b									; A = ((A >> 3) & 7) << 1
+	dec	a									; A = (A >> 2) & 7 << 1
+	rrca										; A = (A >> 2) & 14
 	rrca
-	rrca
-	and	00001110b
+	and	a, 00001110b
 	ld	c, a
-	ld	a, 01Eh
+	ld	a, (keyData + 14) & 0FFh
 	sub	a, c
-	call	InsertA															;	ld b, X
-	ld	a, 00Eh
-	call	InsertA															;	ld c, *
+	ld	b, a
+	ld	c, 00Eh
+	call	InsertBC								; ld b, X \ ld c, *
 	ld	a, b
-	and	000000111b
+	and	a, 000000111b
 	ld	b, a
 	xor	a, a
 	scf
 _:	rla
 	djnz	-_
-	jp	InsertA																;	ld c, X
+	jp	InsertA									; ld c, X
 	
 InsertKeypadRoutine2:
 	ld	a, 0CDh
-	call	InsertA															;	call *
+	call	InsertA									; call *
 	call	InsertProgramPtrToDataOffset
 	ld	hl, (KeypadStartData)
 	bit	has_already_keypad, (iy+fProgram1)
-	jp	nz, InsertHL															;	call XXXXXX
+	jp	nz, InsertHL								; call XXXXXX
 	ld	hl, (programDataDataPtr)
 	ld	(KeypadStartData), hl
 	push	hl
 	pop	de
-	bit	output_is_number, (iy+fExpression1)
-	call	InsertHL															;	call *
+	call	InsertHL								; call *
 	ld	hl, KeypadRoutine
 	ld	bc, KeypadRoutineEnd - KeypadRoutine
 	ldir
@@ -285,16 +303,16 @@ InsertKeypadRoutine2:
 	
 InsertRandRoutine:
 	ld	a, 0CDh
-	call	InsertA															;	call *
+	call	InsertA									; call *
 	call	InsertProgramPtrToDataOffset
 	ld	hl, (RandStartData)
 	bit	has_already_rand, (iy+fProgram1)
-	jp	nz, InsertHL															;	call XXXXXX
+	jp	nz, InsertHL								; call XXXXXX
 	ld	hl, (programDataDataPtr)
 	ld	(RandStartData), hl
 	push	hl
 	pop	de
-	call	InsertHL															;	call XXXXXX
+	call	InsertHL								; call XXXXXX
 	ld	hl, RandRoutine
 	ld	bc, RandRoutineEnd - RandRoutine
 	ldir
@@ -418,7 +436,6 @@ ErrorTooLargeLoop:
 	jr	DispFinalString
 LabelError:
 	ld	hl, LabelErrorMessage
-	
 DispFinalString:
 	push	hl
 		call	ClearScreen
@@ -499,9 +516,9 @@ backupEndPC = $+1
 	ld	(mpLcdCtrl), a
 	call	_DrawStatusBar
 	ret
-	bit	good_compilation, (iy+fProgram1)
-	ret	nz
-#include "editor.asm"
+;	bit	good_compilation, (iy+fProgram1)
+;	ret	nz
+;#include "editor.asm"
 	
 ClearScreen:
 	ld	hl, vRAM+(320*12)
@@ -515,12 +532,12 @@ ClearScreen:
 	ld	(TextXPos_ASM), bc
 	ld	a, 12
 	ld	(TextYPos_ASM), a
-	xor	a
+	xor	a, a
 	ld	(color), a
 	ret
 	
 PrintCompilingProgram:
-	xor	a
+	xor	a, a
 	ld	(OP1+9), a
 	call	ClearScreen
 	ld	hl, StartParseMessage
@@ -530,7 +547,7 @@ PrintCompilingProgram:
 PrintString:
 	ld	a, (hl)
 	inc	hl
-	or	a
+	or	a, a
 	call	nz, _PrintChar_ASM
 	jr	nz, PrintString
 	ret
@@ -538,7 +555,7 @@ PrintString:
 PreScanPrograms:
 	ld	hl, (endPC)
 	ld	de, (begPC)
-	or	a
+	or	a, a
 	sbc	hl, de
 	inc	hl
 	push	hl
@@ -589,14 +606,14 @@ ScanFoundDet:
 	inc	hl
 	dec	bc
 	ld	a, b
-	or	c
+	or	a, c
 	jr	z, FoundRightCFunction
 	ld	a, (hl)
 	cp	a, tComma
 	jr	z, FoundRightCFunction
 	cp	a, tEnter
 	jr	z, FoundRightCFunction
-	sub	t0
+	sub	a, t0
 	jr	c, FoundRightCFunction
 	cp	a, t9-t0+1
 	jr	nc, FoundRightCFunction
@@ -617,7 +634,7 @@ FoundRightCFunction:
 	push	hl
 		ex	de, hl
 		ld	de, AMOUNT_OF_C_FUNCTIONS
-		or	a
+		or	a, a
 		sbc	hl, de
 		jr	nc,  WrongCFunction
 		add	hl, de
@@ -637,23 +654,23 @@ AddCFunctionToProgram:
 		pop	hl
 		add	hl, hl
 		add	hl, de
-		call	InsertAHL																;	jp *
+		call	InsertAHL																; jp *
 FunctionAlreadyInProgram:
 WrongCFunction:
 	pop	hl
 	jp	ScanLoop
 
 GetSpriteData:
-	or	a
+	or	a, a
 	sbc	hl, de
 	ret	z
 	add	hl, de
 	ld	a, (de)
-	sub	t0
+	sub	a, t0
 	jp	c, WrongSpriteDataError
 	cp	a, tA-t0
 	jr	c, +_
-	sub	tA-t0
+	sub	a, tA-t0
 	cp	a, tG-tA
 	jp	nc, WrongSpriteDataError
 	add	a, 10
@@ -672,7 +689,7 @@ _:	add	a, a
 	jp	c, WrongSpriteDataError
 	cp	a, tA-t0
 	jr	c, +_
-	sub	tA-t0
+	sub	a, tA-t0
 	cp	a, tG-tA
 	jp	nc, WrongSpriteDataError
 	add	a, 10
@@ -686,7 +703,7 @@ UpdateSpritePointers:
 	push	bc
 		ld	hl, (programPtr)
 		ld	de, (PrevProgramPtr)
-		or	a
+		or	a, a
 		sbc	hl, de
 		ex	de, hl
 		ld	bc, -12

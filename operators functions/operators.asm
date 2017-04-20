@@ -906,7 +906,7 @@ MulChainPushFunction:
 	jp	MulChainAnsFunction
 MulChainAnsXXX:
 	ld	a, (ix-4)
-	or	a
+	or	a, a
 	jr	z, MulChainAnsNumber
 	dec	a
 	jr	z, MulChainAnsVariable
@@ -921,49 +921,56 @@ MulChainAnsNumber:
 	call	_ChkDEIs0
 	jr	nz, +_
 	ld	hl, 062EDB7h
-	jp	InsertHL																;	or a \ sbc hl, hl
-_:	call	MaybeChangeDEToHL
-	dec	de
-	call	_ChkDEIs0
-	ret	z
-	inc	de
-	ex	de, hl
-	ld	de, 21
-	or	a
-	sbc	hl, de
-	jr	nc, ++_
+	jp	InsertHL
+_:	push	de
+	pop	hl
+	ld	b, 0
+	ld	a, 26
+_:	dec	a
+	add	hl, hl
+	jr	nc, -_
+_:	adc	a, b
+	adc	hl, hl
+	jr	nz, -_
+	rl	b
+	jr	nz, +_
+	sub	a, 3
+_:	cp	a, 10
+	jr	c, ++_
+	call	MaybeChangeDEToHL
+	ld	hl, -256
 	add	hl, de
-	dec	l
-	dec	l
-	ld	h, 10
-	mlt	hl
-	ld	de, MulTable
-	add	hl, de
-	ld	b, (hl)
-_:	inc	hl
-	ld	a, (hl)
-	call	InsertA
-	djnz	-_
-	ret
-_:	add	hl, de
-	ld	de, 256
-	or	a
-	sbc	hl, de
 	jr	c, +_
-	ld	a, 001h
-	call	InsertAHL															;	ld bc, *
-	ld	a, 0CDh
+	ld	hl, 0CD003Eh
+	ld	h, e
+	ld	de, __imul_b
+	jp	InsertHLDE
+_:	ld	a, 001h
+	ex	de, hl
+	call	InsertAHL
 	ld	hl, __imulu
-	jp	InsertAHL															;	call __imulu
-_:	add	hl, de
-	ld	c, l
-	ld	a, 03Eh
-	call	InsertA															;	ld a, *
-	ld	a, c
-	call	InsertA															;	ld a, *
-	ld	a, 0CDh
-	ld	hl, __imul_b
-	jp	InsertAHL															;	call __imul_b
+	jp	InsertCallHL
+_:	djnz	+_
+	ld	a, (ExprOutput)
+	rrca
+	sbc	a, a
+	and	a, 0D5h - 0E5h
+	add	a, 0E5h
+	call	InsertA
+	xor	a, 0E5h ^ 0D1h 											; == 0D5h ^ 0E1h
+	call	InsertA
+_:	ex	de, hl
+	scf
+_:	adc	hl, hl
+	jr	nc, -_
+_:	or	a, a
+	adc	hl, hl
+	ret	z
+	ld	a, 029h
+	call	InsertA
+	ld	a, 019h
+	call	c, InsertA
+	jr	-_
 MulChainAnsVariable:
 	call	MaybeChangeDEToHL
 	call	InsertIXC															;	ld bc, (ix+*)
