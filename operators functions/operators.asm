@@ -909,7 +909,7 @@ MulChainAnsXXX:
 	or	a, a
 	jr	z, MulChainAnsNumber
 	dec	a
-	jr	z, MulChainAnsVariable
+	jp	z, MulChainAnsVariable
 	dec	a
 	jp	z, MulChainAnsChainPush
 	dec	a
@@ -944,7 +944,8 @@ _:	cp	a, 10
 	ld	hl, 0CD003Eh
 	ld	h, e
 	ld	de, __imul_b
-	jp	InsertHLDE
+	ex	de, hl
+	jp	InsertDEHL
 _:	ld	a, 001h
 	ex	de, hl
 	call	InsertAHL
@@ -953,11 +954,12 @@ _:	ld	a, 001h
 _:	djnz	+_
 	ld	a, (ExprOutput)
 	rrca
+	ccf
 	sbc	a, a
 	and	a, 0D5h - 0E5h
 	add	a, 0E5h
 	call	InsertA
-	xor	a, 0E5h ^ 0D1h 											; == 0D5h ^ 0E1h
+	xor	a, 0E5h ^ 0D1h 										; == 0D5h ^ 0E1h
 	call	InsertA
 _:	ex	de, hl
 	scf

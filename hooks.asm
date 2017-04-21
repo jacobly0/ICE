@@ -285,7 +285,7 @@ C2:		.db	"DefineSprite(", 0
 C3:		.db	"Call ", 0
 C4:		.db	"CompilePrgm(", 0
 
-#define AMOUNT_OF_C_FUNCTIONS 81
+#define AMOUNT_OF_C_FUNCTIONS 84
 
 C6:		.db	"Begin", 0
 C7:		.db	"End", 0
@@ -372,8 +372,11 @@ C82:	.db	"ZeroScreen", 0
 C83:	.db	"SetTextConfig", 0
 C84:	.db	"GetSpriteChar", 0
 C85:	.db	"Lighten", 0
-C86		.db	"Darken", 0
-		.db	0
+C86	.db	"Darken", 0
+C87:	.db	"SetFontHeight", 0
+C88:	.db	"ScaledSprite", 0
+C89:	.db	"FloodFill", 0
+	.db	0
 TabData:
 	.dl	Tab1 - KeyHook_start
 	.dl	Tab2 - KeyHook_start
@@ -464,6 +467,9 @@ CData5:
 	.dl	C84 - KeyHook_start
 	.dl	C85 - KeyHook_start
 	.dl	C86 - KeyHook_start
+	.dl	C87 - KeyHook_start
+	.dl	C88 - KeyHook_start
+	.dl	C89 - KeyHook_start
 	
 #define	AMOUNT_OF_CUSTOM_TOKENS 4
 Token1: .db 8,  "ExecHex(", 0
