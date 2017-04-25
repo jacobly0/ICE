@@ -1,0 +1,201 @@
+
+IEEE 695 OMF Linker Version 6.25 (11121301)
+Copyright (C) 1999-2008 Zilog, Inc. All Rights Reserved
+
+LINK MAP:
+
+DATE:      Tue Apr 25 17:03:17 2017
+PROCESSOR: assembler
+FILES:     obj\cstartup.obj
+           obj\libheader.obj
+           obj\main.obj           
+           obj\parseProgram.obj
+           obj\fileioc_header.obj
+           C:\programming\CEdev\lib\cce.lib
+           C:\programming\CEdev\lib\cshared.lib
+           C:\programming\CEdev\lib\clinked.lib
+           C:\programming\CEdev\lib\fileioc.lib
+           
+
+
+COMMAND LIST:
+=============
+-FORMAT=INTEL32 -map -maxhexlen=64 -quiet -warnoverlap -xref -unresolved=fatal -sort ADDRESS=ascending -warn -NOdebug -NOigcase define __copy_code_to_ram = 0 range rom $000000 : $3FFFFF range ram $D00000 : $FFFFFF range bss $D031F6 : $D13FD6 change code is ram change data is ram change text is ram change strsect is text define __low_bss = base of bss define __len_bss = length of bss define __heaptop = (highaddr of bss) define __heapbot = (top of bss)+1 define __stack = $D1A87E locate .header at $D1A87F locate .icon at (top of .header)+1 locate .launcher at (top of .icon)+1 locate .libs at (top of .launcher)+1 locate .fileioc_header at (top of .libs)+1 locate .fileioc at (top of .fileioc_header)+1 locate .startup at (top of .fileioc)+1 locate code at (top of .startup)+1 locate data at (top of code)+1 locate text at (top of data)+1 bin/ICE.hex = obj\cstartup.obj,obj\libheader.obj,obj\main.obj,obj\parseProgram.obj,obj\fileioc_header.obj,C:\programming\CEdev\lib\cce.lib,C:\programming\CEdev\lib\cshared.lib,C:\programming\CEdev\lib\clinked.lib,C:\programming\CEdev\lib\fileioc.lib 
+
+SPACE ALLOCATION:
+=================
+
+Space                     Base         Top      Size      Used    Unused
+------------------ ----------- ----------- --------- --------- ---------
+RAM                   D:D031F6    D:D1AA50   300000H      1E0H   2FFE20H
+                                          (  3145728       480   3145248)
+
+
+SEGMENTS WITHIN SPACE:
+======================
+
+RAM                Type                Base        Top         Size
+------------------ ------------------- ----------- ----------- ---------
+.fileioc           normal data            D:D1A8DC    D:D1A8E7        ch
+.fileioc_header    normal data            D:D1A8D2    D:D1A8DB        ah
+.header            normal data            D:D1A87F    D:D1A881        3h
+.launcher          normal data            D:D1A882    D:D1A8D1       50h
+.startup           normal data            D:D1A8E8    D:D1A925       3eh
+BSS                normal data            D:D031F6    D:D03203        eh
+CODE               normal data            D:D1A926    D:D1AA26      101h
+DATA               normal data            D:D1AA27    D:D1AA48       22h
+TEXT               normal data            D:D1AA49    D:D1AA50        8h
+
+SEGMENTS WITHIN MODULES:
+========================
+
+Module: ..\SRC\MAIN.C (File: main.obj) Version: 1:0 04/25/2017 17:02:54
+
+    Name                                        Base        Top      Size
+    --------------------------------------- ----------- ----------- ---------
+    Segment: BSS                               D:D031F6    D:D03203        eh
+    Segment: CODE                              D:D1A926    D:D1A9F6       d1h
+    Segment: TEXT                              D:D1AA49    D:D1AA4C        4h
+    Segment: TEXT (was STRSECT)                D:D1AA4D    D:D1AA50        4h
+
+
+Module: ..\SRC\PARSEPROGRAM.C (File: parseProgram.obj) Version: 1:0 04/25/2017 17:03:17
+
+    Name                                        Base        Top      Size
+    --------------------------------------- ----------- ----------- ---------
+    Segment: CODE                              D:D1A9F7    D:D1A9F7        1h
+
+
+Module: C:\programming\CEdev\lib\asm\cstartup.asm (File: cstartup.obj) Version: 1:0 04/24/2017 23:58:58
+
+    Name                                        Base        Top      Size
+    --------------------------------------- ----------- ----------- ---------
+    Segment: .header                           D:D1A87F    D:D1A881        3h
+    Segment: .startup                          D:D1A8E8    D:D1A925       3eh
+
+
+Module: C:\programming\CEdev\lib\asm\fileioc_header.asm (File: fileioc_header.obj) Version: 1:0 04/25/2017 17:03:17
+
+    Name                                        Base        Top      Size
+    --------------------------------------- ----------- ----------- ---------
+    Segment: .fileioc_header                   D:D1A8D2    D:D1A8DB        ah
+
+
+Module: C:\programming\CEdev\lib\asm\libheader.asm (File: libheader.obj) Version: 1:0 04/25/2017 17:03:17
+
+    Name                                        Base        Top      Size
+    --------------------------------------- ----------- ----------- ---------
+    Segment: .launcher                         D:D1A882    D:D1A8D1       50h
+    Segment: DATA                              D:D1AA27    D:D1AA48       22h
+
+
+Module: frameset.src (Library: cshared.lib) Version: 1:0 04/06/2017 22:33:55
+
+    Name                                        Base        Top      Size
+    --------------------------------------- ----------- ----------- ---------
+    Segment: CODE                              D:D1A9F8    D:D1AA05        eh
+
+
+Module: prgmcleanup.src (Library: cce.lib) Version: 1:0 04/06/2017 22:33:26
+
+    Name                                        Base        Top      Size
+    --------------------------------------- ----------- ----------- ---------
+    Segment: CODE                              D:D1AA06    D:D1AA26       21h
+
+
+Module: ti_CloseAll.src (Library: fileioc.lib) Version: 1:0 04/06/2017 22:33:20
+
+    Name                                        Base        Top      Size
+    --------------------------------------- ----------- ----------- ---------
+    Segment: .fileioc                          D:D1A8E0    D:D1A8E3        4h
+
+
+Module: ti_GetC.src (Library: fileioc.lib) Version: 1:0 04/06/2017 22:33:15
+
+    Name                                        Base        Top      Size
+    --------------------------------------- ----------- ----------- ---------
+    Segment: .fileioc                          D:D1A8E4    D:D1A8E7        4h
+
+
+Module: ti_OpenVar.src (Library: fileioc.lib) Version: 1:0 04/06/2017 22:33:16
+
+    Name                                        Base        Top      Size
+    --------------------------------------- ----------- ----------- ---------
+    Segment: .fileioc                          D:D1A8DC    D:D1A8DF        4h
+
+EXTERNAL DEFINITIONS:
+=====================
+
+Symbol                             Address   Module          Segment
+-------------------------------- ----------- --------------- --------------------------------
+__copy_code_to_ram                  00000000 (User Defined)
+__len_bss                           0000000E (User Defined)
+__low_bss                           00D031F6 (User Defined)
+__heapbot                           00D03204 (User Defined)
+__heaptop                           00D13FD6 (User Defined)
+__stack                             00D1A87E (User Defined)
+_errno                              D:D008DC cstartup        CODE                            
+_outputName                         D:D031F6 MAIN            BSS                             
+_token                              D:D031FF MAIN            BSS                             
+_inputProgram                       D:D03202 MAIN            BSS                             
+_outputProgram                      D:D03203 MAIN            BSS                             
+_init                               D:D1A882 cstartup        .header                         
+_ti_OpenVar                         D:D1A8DC ti_OpenVar      .fileioc                        
+_ti_CloseAll                        D:D1A8E0 ti_CloseAll     .fileioc                        
+_ti_GetC                            D:D1A8E4 ti_GetC         .fileioc                        
+__exit                              D:D1A911 cstartup        .startup                        
+_exit                               D:D1A922 cstartup        .startup                        
+_parseProgram                       D:D1A926 MAIN            CODE                            
+_main                               D:D1A927 MAIN            CODE                            
+_parseProgram2                      D:D1A9F7 PARSEPROGRAM    CODE                            
+__frameset                          D:D1A9F8 frameset        CODE                            
+_prgm_CleanUp                       D:D1AA06 prgmcleanup     CODE                            
+_prgmName                           D:D1AA49 MAIN            TEXT                            
+
+23 external symbol(s).
+
+SYMBOL CROSS REFERENCE:
+=======================
+Name                              Use         Module
+--------------------------------- ----------- -------------------------
+__copy_code_to_ram                Defined     LINKER
+__len_bss                         Defined     LINKER
+__low_bss                         Defined     LINKER
+                                  Referenced  C:\programming\CEdev\lib\asm\cstartup.asm
+__heapbot                         Defined     LINKER
+__heaptop                         Defined     LINKER
+__stack                           Defined     LINKER
+_errno                            Defined     C:\programming\CEdev\lib\asm\cstartup.asm
+_outputName                       Defined     ..\SRC\MAIN.C
+_token                            Defined     ..\SRC\MAIN.C
+_inputProgram                     Defined     ..\SRC\MAIN.C
+_outputProgram                    Defined     ..\SRC\MAIN.C
+_init                             Defined     C:\programming\CEdev\lib\asm\cstartup.asm
+_ti_OpenVar                       Defined     ti_OpenVar.src
+                                  Referenced  ..\SRC\MAIN.C
+_ti_CloseAll                      Defined     ti_CloseAll.src
+                                  Referenced  ..\SRC\MAIN.C
+_ti_GetC                          Defined     ti_GetC.src
+                                  Referenced  ..\SRC\MAIN.C
+__exit                            Defined     C:\programming\CEdev\lib\asm\cstartup.asm
+_exit                             Defined     C:\programming\CEdev\lib\asm\cstartup.asm
+_parseProgram                     Defined     ..\SRC\MAIN.C
+_main                             Defined     ..\SRC\MAIN.C
+                                  Referenced  C:\programming\CEdev\lib\asm\cstartup.asm
+_parseProgram2                    Defined     ..\SRC\PARSEPROGRAM.C
+__frameset                        Defined     frameset.src
+                                  Referenced  ..\SRC\MAIN.C
+_prgm_CleanUp                     Defined     prgmcleanup.src
+                                  Referenced  ..\SRC\MAIN.C
+_prgmName                         Defined     ..\SRC\MAIN.C
+
+OUTPUT CHECKSUM
+===============
+bin/ICE.hex          00CBBC
+
+
+
+END OF LINK MAP:
+================
+0 Errors
+0 Warnings
