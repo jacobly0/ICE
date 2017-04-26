@@ -19,6 +19,8 @@ void main() {
     uint8_t a = 0;
     unsigned int token;
 
+    strcpy(ice.inName, "ABC");
+
     ti_CloseAll();
     ice.inPrgm = ti_OpenVar(ice.inName, "r", ti_Program);
     if (!ice.inPrgm)                                      goto err;
