@@ -1,0 +1,53 @@
+; Zilog eZ80 ANSI C Compiler Release 3.4
+; -nomodsect -optspeed -noreduceopt -peephole -globalopt
+; -localcse -const=ROM 
+	FILE	"..\SRC\ERRORS.C"
+	.assume ADL=1
+	SEGMENT CODE
+;    1	void nonExistingToken() {
+_nonExistingToken:
+;    2		displayError("This token is not implemented (yet)");
+	LD	BC,L__0
+	PUSH	BC
+	CALL	_displayError
+	POP	BC
+;    3	}
+	RET	
+
+
+;**************************** _nonExistingToken ***************************
+;Name                         Addr/Register   Size   Type
+;_displayError                       IMPORT  -----   function
+
+
+; Stack Frame Size: 6 (bytes)
+;       Spill Code: 0 (instruction)
+
+
+	SEGMENT STRSECT
+L__0:
+	DB	"This token is not implemented (yet)"
+	DB	0
+	SEGMENT CODE
+;    4	
+;    5	void displayError(char *string) {
+_displayError:
+	CALL	__frameset0
+	LD	SP,IX
+	POP	IX
+	RET	
+
+
+;**************************** _displayError ***************************
+;Name                         Addr/Register   Size   Type
+;string                                IX+6      3   parameter
+
+
+; Stack Frame Size: 9 (bytes)
+;       Spill Code: 0 (instruction)
+
+
+	XREF __frameset0:ROM
+	XDEF _displayError
+	XDEF _nonExistingToken
+	END
