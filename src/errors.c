@@ -1,6 +1,10 @@
-void nonExistingToken() {
-    displayError("This token is not implemented (yet)");
-}
+#include "errors.h"
+#include "main.h"
 
-void displayError(char *string) {
+static const char *errors[] = {
+    "This token is not implemented (yet)",
+};
+
+void displayError(unsigned int index) {
+    // display 'errors[index]';
 }
