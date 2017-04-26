@@ -87,7 +87,7 @@ const void (*functions[256])() = {
     nonExistingToken, //1
     nonExistingToken, //2
     nonExistingToken, //3
-    syntaxError,      //4
+    tokenWrongPlace,  //4
     nonExistingToken, //5
     nonExistingToken, //6
     nonExistingToken, //7
@@ -143,11 +143,11 @@ const void (*functions[256])() = {
     parseExpression,  //57
     nonExistingToken, //58
     nonExistingToken, //59
-    syntaxError,      //60
-    syntaxError,      //61
+    tokenWrongPlace,  //60
+    tokenWrongPlace,  //61
     nonExistingToken, //62
     dummyReturn,      //63
-    syntaxError,      //64
+    tokenWrongPlace,  //64
     parseExpression,  //65
     parseExpression,  //66
     parseExpression,  //67
@@ -189,14 +189,14 @@ const void (*functions[256])() = {
     nonExistingToken, //103
     nonExistingToken, //104
     nonExistingToken, //105
-    syntaxError,      //106
-    syntaxError,      //107
-    syntaxError,      //108
-    syntaxError,      //109
-    syntaxError,      //110
-    syntaxError,      //111
-    syntaxError,      //112
-    syntaxError,      //113
+    tokenWrongPlace,  //106
+    tokenWrongPlace,  //107
+    tokenWrongPlace,  //108
+    tokenWrongPlace,  //109
+    tokenWrongPlace,  //110
+    tokenWrongPlace,  //111
+    tokenWrongPlace,  //112
+    tokenWrongPlace,  //113
     nonExistingToken, //114
     nonExistingToken, //115
     nonExistingToken, //116
@@ -213,8 +213,8 @@ const void (*functions[256])() = {
     nonExistingToken, //127
     nonExistingToken, //128
     nonExistingToken, //129
-    syntaxError,      //130
-    syntaxError,      //131
+    tokenWrongPlace,  //130
+    tokenWrongPlace,  //131
     nonExistingToken, //132
     nonExistingToken, //133
     nonExistingToken, //134

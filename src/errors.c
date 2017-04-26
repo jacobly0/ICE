@@ -5,13 +5,13 @@ void nonExistingToken() {
     displayError(E_UNIMPLEMENTED);
 }
 
-void syntaxError() {
-	displayError(E_SYNTAX);
+void tokenWrongPlace() {
+	displayError(E_WRONG_PLACE);
 }
 
 static const char *errors[] = {
     "This token is not implemented (yet)",
-	"Syntax error"
+	"This token cannot be used at this place"
 };
 
 void displayError(unsigned int index) {

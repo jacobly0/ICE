@@ -2,11 +2,11 @@
 #define ERRORS_H
 
 #define E_UNIMPLEMENTED 0
-#define E_SYNTAX        1
+#define E_WRONG_PLACE   1
 
 void displayError(unsigned int index);
 void nonExistingToken();
-void syntaxError();
+void tokenWrongPlace();
 
 #endif
 
