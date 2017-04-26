@@ -26,7 +26,7 @@ void main() {
     if (!ice.inPrgm)                                      goto err;
     
     // Check if it's an ICE program
-    if (ti_GetC(ice.inPrgm) != 0x2C)                      goto err;
+    if (ti_GetC(ice.inPrgm) != tii)                       goto err;
     
     // Get the output 
     while ((token = ti_GetC(ice.inPrgm) != EOF) && token != tEnter && a < 8) {

@@ -38,7 +38,11 @@ static void functionCustom() {
 static void functionIf() {
 }
 
+static void functionElseEnd() {
+}
+
 static void dummyReturn() {
+	return;
 }
 
 static void functionWhile() {
@@ -53,7 +57,7 @@ static void functionFor() {
 static void functionReturn() {
 }
 
-static void funtionLbl() {
+static void functionLbl() {
 }
 
 static void functionGoto() {
@@ -77,29 +81,25 @@ static void functionClrHome() {
 static void parseExpression() {
 }
 
-static void nonExistingToken() {
-    displayError(E_UNIMPLEMENTED);
-}
-
 const void (*functions[256])() = {
     nonExistingToken, //0
     nonExistingToken, //1
     nonExistingToken, //2
     nonExistingToken, //3
-    nonExistingToken, //4
+    syntaxError,      //4
     nonExistingToken, //5
     nonExistingToken, //6
     nonExistingToken, //7
-    nonExistingToken, //8
-    nonExistingToken, //9
+    parseExpression,  //8
+    parseExpression,  //9
     nonExistingToken, //10
     nonExistingToken, //11
     nonExistingToken, //12
     nonExistingToken, //13
     nonExistingToken, //14
     nonExistingToken, //15
-    nonExistingToken, //16
-    nonExistingToken, //17
+    parseExpression,  //16
+    parseExpression,  //17
     nonExistingToken, //18
     nonExistingToken, //19
     nonExistingToken, //20
@@ -124,63 +124,63 @@ const void (*functions[256])() = {
     nonExistingToken, //39
     nonExistingToken, //40
     nonExistingToken, //41
-    nonExistingToken, //42
+    parseExpression,  //42
     nonExistingToken, //43
     functionI,        //44
     nonExistingToken, //45
     nonExistingToken, //46
     nonExistingToken, //47
-    nonExistingToken, //48
-    nonExistingToken, //49
-    nonExistingToken, //50
-    nonExistingToken, //51
-    nonExistingToken, //52
-    nonExistingToken, //53
-    nonExistingToken, //54
-    nonExistingToken, //55
-    nonExistingToken, //56
-    nonExistingToken, //57
+    parseExpression,  //48
+    parseExpression,  //49
+    parseExpression,  //50
+    parseExpression,  //51
+    parseExpression,  //52
+    parseExpression,  //53
+    parseExpression,  //54
+    parseExpression,  //55
+    parseExpression,  //56
+    parseExpression,  //57
     nonExistingToken, //58
     nonExistingToken, //59
-    nonExistingToken, //60
-    nonExistingToken, //61
+    syntaxError,      //60
+    syntaxError,      //61
     nonExistingToken, //62
-    nonExistingToken, //63
-    nonExistingToken, //64
-    nonExistingToken, //65
-    nonExistingToken, //66
-    nonExistingToken, //67
-    nonExistingToken, //68
-    nonExistingToken, //69
-    nonExistingToken, //70
-    nonExistingToken, //71
-    nonExistingToken, //72
-    nonExistingToken, //73
-    nonExistingToken, //74
-    nonExistingToken, //75
-    nonExistingToken, //76
-    nonExistingToken, //77
-    nonExistingToken, //78
-    nonExistingToken, //79
-    nonExistingToken, //80
-    nonExistingToken, //81
-    nonExistingToken, //82
-    nonExistingToken, //83
-    nonExistingToken, //84
-    nonExistingToken, //85
-    nonExistingToken, //86
-    nonExistingToken, //87
-    nonExistingToken, //88
-    nonExistingToken, //89
-    nonExistingToken, //90
-    nonExistingToken, //91
+    dummyReturn,      //63
+    syntaxError,      //64
+    parseExpression,  //65
+    parseExpression,  //66
+    parseExpression,  //67
+    parseExpression,  //68
+    parseExpression,  //69
+    parseExpression,  //70
+    parseExpression,  //71
+    parseExpression,  //72
+    parseExpression,  //73
+    parseExpression,  //74
+    parseExpression,  //75
+    parseExpression,  //76
+    parseExpression,  //77
+    parseExpression,  //78
+    parseExpression,  //79
+    parseExpression,  //80
+    parseExpression,  //81
+    parseExpression,  //82
+    parseExpression,  //83
+    parseExpression,  //84
+    parseExpression,  //85
+    parseExpression,  //86
+    parseExpression,  //87
+    parseExpression,  //88
+    parseExpression,  //89
+    parseExpression,  //90
+    parseExpression,  //91
     nonExistingToken, //92
-    nonExistingToken, //93
+    parseExpression,  //93
     nonExistingToken, //94
-    nonExistingToken, //95
+    functionPrgm,     //95
     nonExistingToken, //96
     nonExistingToken, //97
-    nonExistingToken, //98
+    functionCustom,   //98
     nonExistingToken, //99
     nonExistingToken, //100
     nonExistingToken, //101
@@ -188,14 +188,14 @@ const void (*functions[256])() = {
     nonExistingToken, //103
     nonExistingToken, //104
     nonExistingToken, //105
-    nonExistingToken, //106
-    nonExistingToken, //107
-    nonExistingToken, //108
-    nonExistingToken, //109
-    nonExistingToken, //110
-    nonExistingToken, //111
-    nonExistingToken, //112
-    nonExistingToken, //113
+    syntaxError,      //106
+    syntaxError,      //107
+    syntaxError,      //108
+    syntaxError,      //109
+    syntaxError,      //110
+    syntaxError,      //111
+    syntaxError,      //112
+    syntaxError,      //113
     nonExistingToken, //114
     nonExistingToken, //115
     nonExistingToken, //116
@@ -212,8 +212,8 @@ const void (*functions[256])() = {
     nonExistingToken, //127
     nonExistingToken, //128
     nonExistingToken, //129
-    nonExistingToken, //130
-    nonExistingToken, //131
+    syntaxError,      //130
+    syntaxError,      //131
     nonExistingToken, //132
     nonExistingToken, //133
     nonExistingToken, //134
@@ -253,24 +253,24 @@ const void (*functions[256])() = {
     nonExistingToken, //168
     nonExistingToken, //169
     nonExistingToken, //170
-    nonExistingToken, //171
+    parseExpression,  //171
     nonExistingToken, //172
-    nonExistingToken, //173
+    parseExpression,  //173
     nonExistingToken, //174
     nonExistingToken, //175
     nonExistingToken, //176
     nonExistingToken, //177
     nonExistingToken, //178
-    nonExistingToken, //179
+    parseExpression,  //179
     nonExistingToken, //180
     nonExistingToken, //181
     nonExistingToken, //182
     nonExistingToken, //183
-    nonExistingToken, //184
+    parseExpression,  //184
     nonExistingToken, //185
     nonExistingToken, //186
     nonExistingToken, //187
-    nonExistingToken, //188
+    parseExpression,  //188
     nonExistingToken, //189
     nonExistingToken, //190
     nonExistingToken, //191
@@ -288,26 +288,26 @@ const void (*functions[256])() = {
     nonExistingToken, //203
     nonExistingToken, //204
     nonExistingToken, //205
-    nonExistingToken, //206
+    functionIf,       //206
     nonExistingToken, //207
-    nonExistingToken, //208
-    nonExistingToken, //209
-    nonExistingToken, //210
-    nonExistingToken, //211
-    nonExistingToken, //212
-    nonExistingToken, //213
-    nonExistingToken, //214
-    nonExistingToken, //215
-    nonExistingToken, //216
+    functionElseEnd,  //208
+    functionWhile,    //209
+    functionRepeat,   //210
+    functionFor,      //211
+    functionElseEnd,  //212
+    functionReturn,   //213
+    functionLbl,      //214
+    functionGoto,     //215
+    functionPause,    //216
     nonExistingToken, //217
     nonExistingToken, //218
     nonExistingToken, //219
-    nonExistingToken, //220
+    functionInput,    //220
     nonExistingToken, //221
-    nonExistingToken, //222
+    functionDisp,     //222
     nonExistingToken, //223
-    nonExistingToken, //224
-    nonExistingToken, //225
+    functionOutput,   //224
+    functionClrHome,  //225
     nonExistingToken, //226
     nonExistingToken, //227
     nonExistingToken, //228

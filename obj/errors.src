@@ -1,0 +1,42 @@
+; Zilog eZ80 ANSI C Compiler Release 3.4
+; -nomodsect -optspeed -noreduceopt -peephole -globalopt
+; -localcse -const=ROM 
+	FILE	"..\SRC\ERRORS.C"
+	.assume ADL=1
+	SEGMENT STRSECT
+L__0:
+	DB	"This token is not implemented (yet)"
+	DB	0
+	SEGMENT DATA
+_errors:
+	DW24	L__0
+;    1	#include "errors.h"
+;    2	#include "main.h"
+;    3	
+;    4	static const char *errors[] = {
+	SEGMENT CODE
+;    5	    "This token is not implemented (yet)",
+;    6	};
+;    7	
+;    8	void displayError(unsigned int index) {
+_displayError:
+	CALL	__frameset0
+;    9	    // display 'errors[index]';
+;   10	}
+	LD	SP,IX
+	POP	IX
+	RET	
+
+
+;**************************** _displayError ***************************
+;Name                         Addr/Register   Size   Type
+;index                                 IX+6      3   parameter
+
+
+; Stack Frame Size: 9 (bytes)
+;       Spill Code: 0 (instruction)
+
+
+	XREF __frameset0:ROM
+	XDEF _displayError
+	END
