@@ -1,44 +1,41 @@
-/* Keep these headers */
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
 #include <tice.h>
- 
-/* Standard headers - it's recommended to leave them included */
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
-/* Shared library headers -- depends on which ones you wish to use */
 #include <fileioc.h>
 
-#include "parse.c"
+#include "parse.h"
+#include "main.h"
+#include "errors.h"
 
-const char prgmName[] = "ABC";
-char outputName[9];
-unsigned int token;
-ti_var_t inputProgram, outputProgram;
-uint8_t hasAlreadyCFunction = 0;
+ice_t ice;
 
 void main() {
     uint8_t a = 0;
-    
+    unsigned int token;
+
+    strcpy(ice.inName, "ABC");
+
     ti_CloseAll();
-    inputProgram = ti_OpenVar(prgmName, "r", ti_Program);
-    if (!inputProgram)                                    goto err;
-        
+    ice.inPrgm = ti_OpenVar(ice.inName, "r", ti_Program);
+    if (!ice.inPrgm)                                      goto err;
+    
     // Check if it's an ICE program
-    if (ti_GetC(inputProgram) != 0x2C)                    goto err;
+    if (ti_GetC(ice.inPrgm) != 0x2C)                      goto err;
     
     // Get the output 
-    while ((token = ti_GetC(inputProgram)) + 1 && token != 0x3F && a < 8) {
-        outputName[a++] = token;
+    while ((token = ti_GetC(ice.inPrgm) != EOF) && token != tEnter && a < 8) {
+        ice.outName[a++] = (uint8_t)token;
     }
     
     // Create or empty the output program
-    outputProgram = ti_OpenVar(outputName, "w", ti_Program);
-    if (!outputProgram)                                   goto err;
+    ice.outPrgm = ti_OpenVar(ice.outName, "w", ti_Program);
+    if (!ice.outPrgm)                                      goto err;
     
     // Do the stuff
     parseProgram();
@@ -47,3 +44,4 @@ err:
     ti_CloseAll();
     prgm_CleanUp();
 }
+
