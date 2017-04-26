@@ -5,6 +5,8 @@
 #define E_SYNTAX        1
 
 void displayError(unsigned int index);
+void nonExistingToken();
+void syntaxError();
 
 #endif
 

@@ -1,0 +1,661 @@
+; Zilog eZ80 ANSI C Compiler Release 3.4
+; -nomodsect -optspeed -noreduceopt -peephole -globalopt
+; -localcse -const=ROM 
+	FILE	"..\SRC\PARSE.C"
+	.assume ADL=1
+	SEGMENT CODE
+;    1	#include <stdbool.h>
+;    2	#include <stddef.h>
+;    3	#include <stdint.h>
+;    4	#include <tice.h>
+;    5	#include <math.h>
+;    6	#include <stdio.h>
+;    7	#include <stdlib.h>
+;    8	#include <string.h>
+;    9	
+;   10	#include <fileioc.h>
+;   11	
+;   12	#include "parse.h"
+;   13	#include "errors.h"
+;   14	#include "main.h"
+;   15	
+;   16	void parseProgram(void) {
+_parseProgram:
+	LD	HL,-3
+	CALL	__frameset
+;   17	    unsigned int token;
+;   18	
+;   19	    while ((token = ti_GetC(ice.inPrgm)) != EOF && token != tElse && token != tEnd) {
+	JR	L_2
+L_3:
+;   20	        (*functions[(uint8_t)token])();
+	LD	A,(IX+-3)
+	UEXT	HL
+	LD	L,A
+	LD	BC,HL
+	LD	HL,BC
+	ADD	HL,HL
+	ADD	HL,HL
+	OR	A,A
+	SBC	HL,BC
+	LD	BC,_functions
+	ADD	HL,BC
+	LD	IY,(HL)
+	CALL	__indcall
+;   21	    }
+L_2:
+	LD	A,(_ice+18)
+	LD	C,A
+	LD	B,0
+	PUSH	BC
+	CALL	_ti_GetC
+	POP	BC
+	LD	(IX+-3),HL
+	LD	BC,16777215
+	OR	A,A
+	SBC	HL,BC
+	JR	Z,L_4
+	LD	BC,208
+	LD	HL,(IX+-3)
+	OR	A,A
+	SBC	HL,BC
+	JR	Z,L_4
+	LD	BC,212
+	LD	HL,(IX+-3)
+	OR	A,A
+	SBC	HL,BC
+	JR	NZ,L_3
+;   22	}
+L_4:
+	LD	SP,IX
+	POP	IX
+	RET	
+
+
+;**************************** _parseProgram ***************************
+;Name                         Addr/Register   Size   Type
+;_ice                                IMPORT     20   variable
+;_ti_GetC                            IMPORT  -----   function
+;_functions                          IMPORT    768   variable
+;token                                 IX-3      3   variable
+
+
+; Stack Frame Size: 9 (bytes)
+;       Spill Code: 0 (instruction)
+
+
+;   23	
+;   24	/* Static functions */
+;   25	
+;   26	static void functionI() {
+_functionI:
+	LD	HL,-3
+	CALL	__frameset
+;   27	    unsigned int token;
+;   28	
+;   29	    while ((token = ti_GetC(ice.inPrgm)) != EOF && token != tEnter);
+L_7:
+	LD	A,(_ice+18)
+	LD	C,A
+	LD	B,0
+	PUSH	BC
+	CALL	_ti_GetC
+	POP	BC
+	LD	(IX+-3),HL
+	LD	BC,16777215
+	OR	A,A
+	SBC	HL,BC
+	JR	Z,L_8
+	LD	BC,63
+	LD	HL,(IX+-3)
+	OR	A,A
+	SBC	HL,BC
+	JR	NZ,L_7
+;   30	}
+L_8:
+	LD	SP,IX
+	POP	IX
+	RET	
+
+
+;**************************** _functionI ***************************
+;Name                         Addr/Register   Size   Type
+;_ice                                IMPORT     20   variable
+;_ti_GetC                            IMPORT  -----   function
+;token                                 IX-3      3   variable
+
+
+; Stack Frame Size: 9 (bytes)
+;       Spill Code: 0 (instruction)
+
+
+;   31	
+;   32	static void functionPrgm() {
+_functionPrgm:
+;   33	}
+	RET	
+
+
+;**************************** _functionPrgm ***************************
+;Name                         Addr/Register   Size   Type
+
+
+; Stack Frame Size: 6 (bytes)
+;       Spill Code: 0 (instruction)
+
+
+;   34	
+;   35	static void functionCustom() {
+_functionCustom:
+;   36	}
+	RET	
+
+
+;**************************** _functionCustom ***************************
+;Name                         Addr/Register   Size   Type
+
+
+; Stack Frame Size: 6 (bytes)
+;       Spill Code: 0 (instruction)
+
+
+;   37	
+;   38	static void functionIf() {
+_functionIf:
+	LD	HL,-3
+	CALL	__frameset
+;   39		unsigned int token;
+;   40		
+;   41		token = ti_GetC(ice.inPrgm);
+	LD	A,(_ice+18)
+	LD	C,A
+	LD	B,0
+	PUSH	BC
+	CALL	_ti_GetC
+	POP	BC
+	LD	(IX+-3),HL
+;   42		parseExpression();
+	CALL	_parseExpression
+;   43	}
+	LD	SP,IX
+	POP	IX
+	RET	
+
+
+;**************************** _functionIf ***************************
+;Name                         Addr/Register   Size   Type
+;_parseExpression                    IMPORT  -----   function
+;_ice                                IMPORT     20   variable
+;_ti_GetC                            IMPORT  -----   function
+;token                                 IX-3      3   variable
+
+
+; Stack Frame Size: 9 (bytes)
+;       Spill Code: 0 (instruction)
+
+
+;   44	
+;   45	static void dummyReturn() {
+_dummyReturn:
+;   46		return;
+;   47	}
+	RET	
+
+
+;**************************** _dummyReturn ***************************
+;Name                         Addr/Register   Size   Type
+
+
+; Stack Frame Size: 6 (bytes)
+;       Spill Code: 0 (instruction)
+
+
+;   48	
+;   49	static void functionWhile() {
+_functionWhile:
+;   50	}
+	RET	
+
+
+;**************************** _functionWhile ***************************
+;Name                         Addr/Register   Size   Type
+
+
+; Stack Frame Size: 6 (bytes)
+;       Spill Code: 0 (instruction)
+
+
+;   51	
+;   52	static void functionRepeat() {
+_functionRepeat:
+;   53	}
+	RET	
+
+
+;**************************** _functionRepeat ***************************
+;Name                         Addr/Register   Size   Type
+
+
+; Stack Frame Size: 6 (bytes)
+;       Spill Code: 0 (instruction)
+
+
+;   54	
+;   55	static void functionFor() {
+_functionFor:
+;   56	}
+	RET	
+
+
+;**************************** _functionFor ***************************
+;Name                         Addr/Register   Size   Type
+
+
+; Stack Frame Size: 6 (bytes)
+;       Spill Code: 0 (instruction)
+
+
+;   57	
+;   58	static void functionReturn() {
+_functionReturn:
+;   59	}
+	RET	
+
+
+;**************************** _functionReturn ***************************
+;Name                         Addr/Register   Size   Type
+
+
+; Stack Frame Size: 6 (bytes)
+;       Spill Code: 0 (instruction)
+
+
+;   60	
+;   61	static void functionLbl() {
+_functionLbl:
+;   62	}
+	RET	
+
+
+;**************************** _functionLbl ***************************
+;Name                         Addr/Register   Size   Type
+
+
+; Stack Frame Size: 6 (bytes)
+;       Spill Code: 0 (instruction)
+
+
+;   63	
+;   64	static void functionGoto() {
+_functionGoto:
+;   65	}
+	RET	
+
+
+;**************************** _functionGoto ***************************
+;Name                         Addr/Register   Size   Type
+
+
+; Stack Frame Size: 6 (bytes)
+;       Spill Code: 0 (instruction)
+
+
+;   66	
+;   67	static void functionPause() {
+_functionPause:
+;   68	}
+	RET	
+
+
+;**************************** _functionPause ***************************
+;Name                         Addr/Register   Size   Type
+
+
+; Stack Frame Size: 6 (bytes)
+;       Spill Code: 0 (instruction)
+
+
+;   69	
+;   70	static void functionInput() {
+_functionInput:
+;   71	}
+	RET	
+
+
+;**************************** _functionInput ***************************
+;Name                         Addr/Register   Size   Type
+
+
+; Stack Frame Size: 6 (bytes)
+;       Spill Code: 0 (instruction)
+
+
+;   72	
+;   73	static void functionDisp() {
+_functionDisp:
+;   74	}
+	RET	
+
+
+;**************************** _functionDisp ***************************
+;Name                         Addr/Register   Size   Type
+
+
+; Stack Frame Size: 6 (bytes)
+;       Spill Code: 0 (instruction)
+
+
+;   75	
+;   76	static void functionOutput() {
+_functionOutput:
+;   77	}
+	RET	
+
+
+;**************************** _functionOutput ***************************
+;Name                         Addr/Register   Size   Type
+
+
+; Stack Frame Size: 6 (bytes)
+;       Spill Code: 0 (instruction)
+
+
+;   78	
+;   79	static void functionClrHome() {
+_functionClrHome:
+;   80	}
+	RET	
+
+
+;**************************** _functionClrHome ***************************
+;Name                         Addr/Register   Size   Type
+
+
+; Stack Frame Size: 6 (bytes)
+;       Spill Code: 0 (instruction)
+
+
+;   81	
+;   82	static void parseExpression() {
+_parseExpression:
+;   83	}
+	RET	
+
+
+;**************************** _parseExpression ***************************
+;Name                         Addr/Register   Size   Type
+
+
+; Stack Frame Size: 6 (bytes)
+;       Spill Code: 0 (instruction)
+
+
+	SEGMENT DATA
+_functions:
+	DW24	_nonExistingToken
+	DW24	_nonExistingToken
+	DW24	_nonExistingToken
+	DW24	_nonExistingToken
+	DW24	_syntaxError
+	DW24	_nonExistingToken
+	DW24	_nonExistingToken
+	DW24	_nonExistingToken
+	DW24	_parseExpression
+	DW24	_parseExpression
+	DW24	_nonExistingToken
+	DW24	_nonExistingToken
+	DW24	_nonExistingToken
+	DW24	_nonExistingToken
+	DW24	_nonExistingToken
+	DW24	_nonExistingToken
+	DW24	_parseExpression
+	DW24	_parseExpression
+	DW24	_nonExistingToken
+	DW24	_nonExistingToken
+	DW24	_nonExistingToken
+	DW24	_nonExistingToken
+	DW24	_nonExistingToken
+	DW24	_nonExistingToken
+	DW24	_nonExistingToken
+	DW24	_nonExistingToken
+	DW24	_nonExistingToken
+	DW24	_nonExistingToken
+	DW24	_nonExistingToken
+	DW24	_nonExistingToken
+	DW24	_nonExistingToken
+	DW24	_nonExistingToken
+	DW24	_nonExistingToken
+	DW24	_nonExistingToken
+	DW24	_nonExistingToken
+	DW24	_nonExistingToken
+	DW24	_nonExistingToken
+	DW24	_nonExistingToken
+	DW24	_nonExistingToken
+	DW24	_nonExistingToken
+	DW24	_nonExistingToken
+	DW24	_nonExistingToken
+	DW24	_parseExpression
+	DW24	_nonExistingToken
+	DW24	_functionI
+	DW24	_nonExistingToken
+	DW24	_nonExistingToken
+	DW24	_nonExistingToken
+	DW24	_parseExpression
+	DW24	_parseExpression
+	DW24	_parseExpression
+	DW24	_parseExpression
+	DW24	_parseExpression
+	DW24	_parseExpression
+	DW24	_parseExpression
+	DW24	_parseExpression
+	DW24	_parseExpression
+	DW24	_parseExpression
+	DW24	_nonExistingToken
+	DW24	_nonExistingToken
+	DW24	_syntaxError
+	DW24	_syntaxError
+	DW24	_nonExistingToken
+	DW24	_dummyReturn
+	DW24	_syntaxError
+	DW24	_parseExpression
+	DW24	_parseExpression
+	DW24	_parseExpression
+	DW24	_parseExpression
+	DW24	_parseExpression
+	DW24	_parseExpression
+	DW24	_parseExpression
+	DW24	_parseExpression
+	DW24	_parseExpression
+	DW24	_parseExpression
+	DW24	_parseExpression
+	DW24	_parseExpression
+	DW24	_parseExpression
+	DW24	_parseExpression
+	DW24	_parseExpression
+	DW24	_parseExpression
+	DW24	_parseExpression
+	DW24	_parseExpression
+	DW24	_parseExpression
+	DW24	_parseExpression
+	DW24	_parseExpression
+	DW24	_parseExpression
+	DW24	_parseExpression
+	DW24	_parseExpression
+	DW24	_parseExpression
+	DW24	_parseExpression
+	DW24	_parseExpression
+	DW24	_nonExistingToken
+	DW24	_parseExpression
+	DW24	_nonExistingToken
+	DW24	_functionPrgm
+	DW24	_nonExistingToken
+	DW24	_nonExistingToken
+	DW24	_functionCustom
+	DW24	_nonExistingToken
+	DW24	_nonExistingToken
+	DW24	_nonExistingToken
+	DW24	_nonExistingToken
+	DW24	_nonExistingToken
+	DW24	_nonExistingToken
+	DW24	_nonExistingToken
+	DW24	_syntaxError
+	DW24	_syntaxError
+	DW24	_syntaxError
+	DW24	_syntaxError
+	DW24	_syntaxError
+	DW24	_syntaxError
+	DW24	_syntaxError
+	DW24	_syntaxError
+	DW24	_nonExistingToken
+	DW24	_nonExistingToken
+	DW24	_nonExistingToken
+	DW24	_nonExistingToken
+	DW24	_nonExistingToken
+	DW24	_nonExistingToken
+	DW24	_nonExistingToken
+	DW24	_nonExistingToken
+	DW24	_nonExistingToken
+	DW24	_nonExistingToken
+	DW24	_nonExistingToken
+	DW24	_nonExistingToken
+	DW24	_nonExistingToken
+	DW24	_nonExistingToken
+	DW24	_nonExistingToken
+	DW24	_nonExistingToken
+	DW24	_syntaxError
+	DW24	_syntaxError
+	DW24	_nonExistingToken
+	DW24	_nonExistingToken
+	DW24	_nonExistingToken
+	DW24	_nonExistingToken
+	DW24	_nonExistingToken
+	DW24	_nonExistingToken
+	DW24	_nonExistingToken
+	DW24	_nonExistingToken
+	DW24	_nonExistingToken
+	DW24	_nonExistingToken
+	DW24	_nonExistingToken
+	DW24	_nonExistingToken
+	DW24	_nonExistingToken
+	DW24	_nonExistingToken
+	DW24	_nonExistingToken
+	DW24	_nonExistingToken
+	DW24	_nonExistingToken
+	DW24	_nonExistingToken
+	DW24	_nonExistingToken
+	DW24	_nonExistingToken
+	DW24	_nonExistingToken
+	DW24	_nonExistingToken
+	DW24	_nonExistingToken
+	DW24	_nonExistingToken
+	DW24	_nonExistingToken
+	DW24	_nonExistingToken
+	DW24	_nonExistingToken
+	DW24	_nonExistingToken
+	DW24	_nonExistingToken
+	DW24	_nonExistingToken
+	DW24	_nonExistingToken
+	DW24	_nonExistingToken
+	DW24	_nonExistingToken
+	DW24	_nonExistingToken
+	DW24	_nonExistingToken
+	DW24	_nonExistingToken
+	DW24	_nonExistingToken
+	DW24	_nonExistingToken
+	DW24	_nonExistingToken
+	DW24	_parseExpression
+	DW24	_nonExistingToken
+	DW24	_parseExpression
+	DW24	_nonExistingToken
+	DW24	_nonExistingToken
+	DW24	_nonExistingToken
+	DW24	_nonExistingToken
+	DW24	_nonExistingToken
+	DW24	_parseExpression
+	DW24	_nonExistingToken
+	DW24	_nonExistingToken
+	DW24	_nonExistingToken
+	DW24	_nonExistingToken
+	DW24	_parseExpression
+	DW24	_nonExistingToken
+	DW24	_nonExistingToken
+	DW24	_nonExistingToken
+	DW24	_parseExpression
+	DW24	_nonExistingToken
+	DW24	_nonExistingToken
+	DW24	_nonExistingToken
+	DW24	_nonExistingToken
+	DW24	_nonExistingToken
+	DW24	_nonExistingToken
+	DW24	_nonExistingToken
+	DW24	_nonExistingToken
+	DW24	_nonExistingToken
+	DW24	_nonExistingToken
+	DW24	_nonExistingToken
+	DW24	_nonExistingToken
+	DW24	_nonExistingToken
+	DW24	_nonExistingToken
+	DW24	_nonExistingToken
+	DW24	_nonExistingToken
+	DW24	_nonExistingToken
+	DW24	_functionIf
+	DW24	_nonExistingToken
+	DW24	_dummyReturn
+	DW24	_functionWhile
+	DW24	_functionRepeat
+	DW24	_functionFor
+	DW24	_dummyReturn
+	DW24	_functionReturn
+	DW24	_functionLbl
+	DW24	_functionGoto
+	DW24	_functionPause
+	DW24	_nonExistingToken
+	DW24	_nonExistingToken
+	DW24	_nonExistingToken
+	DW24	_functionInput
+	DW24	_nonExistingToken
+	DW24	_functionDisp
+	DW24	_nonExistingToken
+	DW24	_functionOutput
+	DW24	_functionClrHome
+	DW24	_nonExistingToken
+	DW24	_nonExistingToken
+	DW24	_nonExistingToken
+	DW24	_nonExistingToken
+	DW24	_nonExistingToken
+	DW24	_nonExistingToken
+	DW24	_nonExistingToken
+	DW24	_nonExistingToken
+	DW24	_nonExistingToken
+	DW24	_nonExistingToken
+	DW24	_nonExistingToken
+	DW24	_nonExistingToken
+	DW24	_nonExistingToken
+	DW24	_nonExistingToken
+	DW24	_nonExistingToken
+	DW24	_nonExistingToken
+	DW24	_nonExistingToken
+	DW24	_nonExistingToken
+	DW24	_nonExistingToken
+	DW24	_nonExistingToken
+	DW24	_nonExistingToken
+	DW24	_nonExistingToken
+	DW24	_nonExistingToken
+	DW24	_nonExistingToken
+	DW24	_nonExistingToken
+	DW24	_nonExistingToken
+	DW24	_nonExistingToken
+	DW24	_nonExistingToken
+	DW24	_nonExistingToken
+	DW24	_nonExistingToken
+	XREF _ice:ROM
+	XREF _syntaxError:ROM
+	XREF _nonExistingToken:ROM
+	XREF _ti_GetC:ROM
+	XREF __indcall:ROM
+	XREF __frameset:ROM
+	XDEF _functions
+	XDEF _parseProgram
+;   84	
+;   85	const void (*functions[256])() = {
+	END

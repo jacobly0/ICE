@@ -1,0 +1,238 @@
+
+IEEE 695 OMF Linker Version 6.25 (11121301)
+Copyright (C) 1999-2008 Zilog, Inc. All Rights Reserved
+
+LINK MAP:
+
+DATE:      Wed Apr 26 17:56:49 2017
+PROCESSOR: assembler
+FILES:     obj\cstartup.obj
+           obj\libheader.obj
+           obj\errors.obj         obj\main.obj           obj\parse.obj          
+           obj\cheader.obj        
+           obj\fileioc_header.obj
+           C:\programming\CEdev\lib\cce.lib
+           C:\programming\CEdev\lib\cshared.lib
+           C:\programming\CEdev\lib\clinked.lib
+           C:\programming\CEdev\lib\fileioc.lib
+           
+
+
+COMMAND LIST:
+=============
+-FORMAT=INTEL32 -map -maxhexlen=64 -quiet -warnoverlap -xref -unresolved=fatal -sort ADDRESS=ascending -warn -NOdebug -NOigcase define __copy_code_to_ram = 0 range rom $000000 : $3FFFFF range ram $D00000 : $FFFFFF range bss $D031F6 : $D13FD6 change code is ram change data is ram change text is ram change strsect is text define __low_bss = base of bss define __len_bss = length of bss define __heaptop = (highaddr of bss) define __heapbot = (top of bss)+1 define __stack = $D1A87E locate .header at $D1A87F locate .icon at (top of .header)+1 locate .launcher at (top of .icon)+1 locate .libs at (top of .launcher)+1 locate .fileioc_header at (top of .libs)+1 locate .fileioc at (top of .fileioc_header)+1 locate .startup at (top of .fileioc)+1 locate code at (top of .startup)+1 locate data at (top of code)+1 locate text at (top of data)+1 bin/ICE.hex = obj\cstartup.obj,obj\libheader.obj,obj\errors.obj,obj\main.obj,obj\parse.obj,obj\cheader.obj,obj\fileioc_header.obj,C:\programming\CEdev\lib\cce.lib,C:\programming\CEdev\lib\cshared.lib,C:\programming\CEdev\lib\clinked.lib,C:\programming\CEdev\lib\fileioc.lib 
+WARNING (915) (00D1AB01 obj\cheader.obj)--> Expression range error.
+
+SPACE ALLOCATION:
+=================
+
+Space                     Base         Top      Size      Used    Unused
+------------------ ----------- ----------- --------- --------- ---------
+RAM                   D:D031F6    D:D1AEE8   300000H      67EH   2FF982H
+                                          (  3145728      1662   3144066)
+
+
+SEGMENTS WITHIN SPACE:
+======================
+
+RAM                Type                Base        Top         Size
+------------------ ------------------- ----------- ----------- ---------
+.fileioc           normal data            D:D1A8DC    D:D1A8E7        ch
+.fileioc_header    normal data            D:D1A8D2    D:D1A8DB        ah
+.header            normal data            D:D1A87F    D:D1A881        3h
+.launcher          normal data            D:D1A882    D:D1A8D1       50h
+.startup           normal data            D:D1A8E8    D:D1A925       3eh
+BSS                normal data            D:D031F6    D:D03209       14h
+CODE               normal data            D:D1A926    D:D1AB87      262h
+DATA               normal data            D:D1AB88    D:D1AEAF      328h
+TEXT               normal data            D:D1AEB0    D:D1AEE8       39h
+
+SEGMENTS WITHIN MODULES:
+========================
+
+Module: ..\SRC\ERRORS.C (File: errors.obj) Version: 1:0 04/26/2017 17:56:49
+
+    Name                                        Base        Top      Size
+    --------------------------------------- ----------- ----------- ---------
+    Segment: CODE                              D:D1A926    D:D1A944       1fh
+    Segment: DATA                              D:D1ABAA    D:D1ABAF        6h
+    Segment: TEXT (was STRSECT)                D:D1AEB0    D:D1AEE0       31h
+
+
+Module: ..\SRC\MAIN.C (File: main.obj) Version: 1:0 04/26/2017 17:49:15
+
+    Name                                        Base        Top      Size
+    --------------------------------------- ----------- ----------- ---------
+    Segment: BSS                               D:D031F6    D:D03209       14h
+    Segment: CODE                              D:D1A945    D:D1AA1C       d8h
+    Segment: TEXT (was STRSECT)                D:D1AEE1    D:D1AEE8        8h
+
+
+Module: ..\SRC\PARSE.C (File: parse.obj) Version: 1:0 04/26/2017 17:49:15
+
+    Name                                        Base        Top      Size
+    --------------------------------------- ----------- ----------- ---------
+    Segment: CODE                              D:D1AA1D    D:D1AAD9       bdh
+    Segment: DATA                              D:D1ABB0    D:D1AEAF      300h
+
+
+Module: C:\programming\Assembly\ICE\ICE\src\cheader.asm (File: cheader.obj) Version: 1:0 04/26/2017 17:55:02
+
+    Name                                        Base        Top      Size
+    --------------------------------------- ----------- ----------- ---------
+    Segment: CODE                              D:D1AADA    D:D1AB4D       74h
+
+
+Module: C:\programming\CEdev\lib\asm\cstartup.asm (File: cstartup.obj) Version: 1:0 04/26/2017 17:44:27
+
+    Name                                        Base        Top      Size
+    --------------------------------------- ----------- ----------- ---------
+    Segment: .header                           D:D1A87F    D:D1A881        3h
+    Segment: .startup                          D:D1A8E8    D:D1A925       3eh
+
+
+Module: C:\programming\CEdev\lib\asm\fileioc_header.asm (File: fileioc_header.obj) Version: 1:0 04/26/2017 17:56:49
+
+    Name                                        Base        Top      Size
+    --------------------------------------- ----------- ----------- ---------
+    Segment: .fileioc_header                   D:D1A8D2    D:D1A8DB        ah
+
+
+Module: C:\programming\CEdev\lib\asm\libheader.asm (File: libheader.obj) Version: 1:0 04/26/2017 17:56:49
+
+    Name                                        Base        Top      Size
+    --------------------------------------- ----------- ----------- ---------
+    Segment: .launcher                         D:D1A882    D:D1A8D1       50h
+    Segment: DATA                              D:D1AB88    D:D1ABA9       22h
+
+
+Module: frameset.src (Library: cshared.lib) Version: 1:0 04/06/2017 22:33:55
+
+    Name                                        Base        Top      Size
+    --------------------------------------- ----------- ----------- ---------
+    Segment: CODE                              D:D1AB59    D:D1AB66        eh
+
+
+Module: frameset0.src (Library: cshared.lib) Version: 1:0 04/06/2017 22:33:52
+
+    Name                                        Base        Top      Size
+    --------------------------------------- ----------- ----------- ---------
+    Segment: CODE                              D:D1AB4E    D:D1AB58        bh
+
+
+Module: prgmcleanup.src (Library: cce.lib) Version: 1:0 04/06/2017 22:33:26
+
+    Name                                        Base        Top      Size
+    --------------------------------------- ----------- ----------- ---------
+    Segment: CODE                              D:D1AB67    D:D1AB87       21h
+
+
+Module: ti_CloseAll.src (Library: fileioc.lib) Version: 1:0 04/06/2017 22:33:20
+
+    Name                                        Base        Top      Size
+    --------------------------------------- ----------- ----------- ---------
+    Segment: .fileioc                          D:D1A8E0    D:D1A8E3        4h
+
+
+Module: ti_GetC.src (Library: fileioc.lib) Version: 1:0 04/06/2017 22:33:15
+
+    Name                                        Base        Top      Size
+    --------------------------------------- ----------- ----------- ---------
+    Segment: .fileioc                          D:D1A8E4    D:D1A8E7        4h
+
+
+Module: ti_OpenVar.src (Library: fileioc.lib) Version: 1:0 04/06/2017 22:33:16
+
+    Name                                        Base        Top      Size
+    --------------------------------------- ----------- ----------- ---------
+    Segment: .fileioc                          D:D1A8DC    D:D1A8DF        4h
+
+EXTERNAL DEFINITIONS:
+=====================
+
+Symbol                             Address   Module          Segment
+-------------------------------- ----------- --------------- --------------------------------
+__copy_code_to_ram                  00000000 (User Defined)
+__len_bss                           00000014 (User Defined)
+__low_bss                           00D031F6 (User Defined)
+__heapbot                           00D0320A (User Defined)
+__heaptop                           00D13FD6 (User Defined)
+__stack                             00D1A87E (User Defined)
+_strcpy                             D:0000CC strcpy          CODE                            
+__indcall                           D:00015C indcall         CODE                            
+_errno                              D:D008DC cstartup        CODE                            
+_ice                                D:D031F6 MAIN            BSS                             
+_init                               D:D1A882 cstartup        .header                         
+_ti_OpenVar                         D:D1A8DC ti_OpenVar      .fileioc                        
+_ti_CloseAll                        D:D1A8E0 ti_CloseAll     .fileioc                        
+_ti_GetC                            D:D1A8E4 ti_GetC         .fileioc                        
+__exit                              D:D1A911 cstartup        .startup                        
+_exit                               D:D1A922 cstartup        .startup                        
+_nonExistingToken                   D:D1A926 ERRORS          CODE                            
+_syntaxError                        D:D1A931 ERRORS          CODE                            
+_displayError                       D:D1A93C ERRORS          CODE                            
+_main                               D:D1A945 MAIN            CODE                            
+_parseProgram                       D:D1AA1D PARSE           CODE                            
+__frameset0                         D:D1AB4E frameset0       CODE                            
+__frameset                          D:D1AB59 frameset        CODE                            
+_prgm_CleanUp                       D:D1AB67 prgmcleanup     CODE                            
+_functions                          D:D1ABB0 PARSE           DATA                            
+
+25 external symbol(s).
+
+SYMBOL CROSS REFERENCE:
+=======================
+Name                              Use         Module
+--------------------------------- ----------- -------------------------
+__copy_code_to_ram                Defined     LINKER
+__len_bss                         Defined     LINKER
+__low_bss                         Defined     LINKER
+                                  Referenced  C:\programming\CEdev\lib\asm\cstartup.asm
+__heapbot                         Defined     LINKER
+__heaptop                         Defined     LINKER
+__stack                           Defined     LINKER
+_strcpy                           Defined     strcpy.src
+                                  Referenced  ..\SRC\MAIN.C
+__indcall                         Defined     indcall.src
+                                  Referenced  ..\SRC\PARSE.C
+_errno                            Defined     C:\programming\CEdev\lib\asm\cstartup.asm
+_ice                              Defined     ..\SRC\MAIN.C
+                                  Referenced  ..\SRC\PARSE.C
+_init                             Defined     C:\programming\CEdev\lib\asm\cstartup.asm
+_ti_OpenVar                       Defined     ti_OpenVar.src
+                                  Referenced  ..\SRC\MAIN.C
+_ti_CloseAll                      Defined     ti_CloseAll.src
+                                  Referenced  ..\SRC\MAIN.C
+_ti_GetC                          Defined     ti_GetC.src
+                                  Referenced  ..\SRC\MAIN.C
+                                  Referenced  ..\SRC\PARSE.C
+__exit                            Defined     C:\programming\CEdev\lib\asm\cstartup.asm
+_exit                             Defined     C:\programming\CEdev\lib\asm\cstartup.asm
+_nonExistingToken                 Defined     ..\SRC\ERRORS.C
+                                  Referenced  ..\SRC\PARSE.C
+_syntaxError                      Defined     ..\SRC\ERRORS.C
+                                  Referenced  ..\SRC\PARSE.C
+_displayError                     Defined     ..\SRC\ERRORS.C
+_main                             Defined     ..\SRC\MAIN.C
+                                  Referenced  C:\programming\CEdev\lib\asm\cstartup.asm
+_parseProgram                     Defined     ..\SRC\PARSE.C
+                                  Referenced  ..\SRC\MAIN.C
+__frameset0                       Defined     frameset0.src
+                                  Referenced  ..\SRC\ERRORS.C
+__frameset                        Defined     frameset.src
+                                  Referenced  ..\SRC\MAIN.C
+                                  Referenced  ..\SRC\PARSE.C
+_prgm_CleanUp                     Defined     prgmcleanup.src
+                                  Referenced  ..\SRC\MAIN.C
+_functions                        Defined     ..\SRC\PARSE.C
+
+OUTPUT CHECKSUM
+===============
+bin/ICE.hex          036068
+
+
+
+END OF LINK MAP:
+================
+0 Errors
+1 Warnings

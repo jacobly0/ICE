@@ -1,11 +1,11 @@
 #include "errors.h"
 #include "main.h"
 
-static void nonExistingToken() {
+void nonExistingToken() {
     displayError(E_UNIMPLEMENTED);
 }
 
-static void syntaxError() {
+void syntaxError() {
 	displayError(E_SYNTAX);
 }
 

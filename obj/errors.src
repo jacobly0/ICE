@@ -1,0 +1,92 @@
+; Zilog eZ80 ANSI C Compiler Release 3.4
+; -nomodsect -optspeed -noreduceopt -peephole -globalopt
+; -localcse -const=ROM 
+	FILE	"..\SRC\ERRORS.C"
+	.assume ADL=1
+	SEGMENT CODE
+;    1	#include "errors.h"
+;    2	#include "main.h"
+;    3	
+;    4	void nonExistingToken() {
+_nonExistingToken:
+;    5	    displayError(E_UNIMPLEMENTED);
+	LD	BC,0
+	PUSH	BC
+	CALL	_displayError
+	POP	BC
+;    6	}
+	RET	
+
+
+;**************************** _nonExistingToken ***************************
+;Name                         Addr/Register   Size   Type
+;_displayError                       IMPORT  -----   function
+
+
+; Stack Frame Size: 6 (bytes)
+;       Spill Code: 0 (instruction)
+
+
+;    7	
+;    8	void syntaxError() {
+_syntaxError:
+;    9		displayError(E_SYNTAX);
+	LD	BC,1
+	PUSH	BC
+	CALL	_displayError
+	POP	BC
+;   10	}
+	RET	
+
+
+;**************************** _syntaxError ***************************
+;Name                         Addr/Register   Size   Type
+;_displayError                       IMPORT  -----   function
+
+
+; Stack Frame Size: 6 (bytes)
+;       Spill Code: 0 (instruction)
+
+
+	SEGMENT STRSECT
+L__2:
+	DB	"This token is not implemented (yet)"
+	DB	0
+L__3:
+	DB	"Syntax error"
+	DB	0
+	SEGMENT DATA
+_errors:
+	DW24	L__2
+	DW24	L__3
+;   11	
+;   12	static const char *errors[] = {
+	SEGMENT CODE
+;   13	    "This token is not implemented (yet)",
+;   14		"Syntax error"
+;   15	};
+;   16	
+;   17	void displayError(unsigned int index) {
+_displayError:
+	CALL	__frameset0
+;   18	    // display 'errors[index]';
+;   19	}
+	LD	SP,IX
+	POP	IX
+	RET	
+
+
+;**************************** _displayError ***************************
+;Name                         Addr/Register   Size   Type
+;index                                 IX+6      3   parameter
+
+
+; Stack Frame Size: 9 (bytes)
+;       Spill Code: 0 (instruction)
+
+
+	XREF __frameset0:ROM
+	XDEF _displayError
+	XDEF _syntaxError
+	XDEF _nonExistingToken
+	END

@@ -16,7 +16,7 @@
 void parseProgram(void) {
     unsigned int token;
 
-    while ((token = ti_GetC(ice.inPrgm)) != EOF) {
+    while ((token = ti_GetC(ice.inPrgm)) != EOF && token != tElse && token != tEnd) {
         (*functions[(uint8_t)token])();
     }
 }
@@ -26,7 +26,7 @@ void parseProgram(void) {
 static void functionI() {
     unsigned int token;
 
-    while ((token = ti_GetC(ice.inPrgm) != EOF) && token != tEnter);
+    while ((token = ti_GetC(ice.inPrgm)) != EOF && token != tEnter);
 }
 
 static void functionPrgm() {
@@ -36,9 +36,10 @@ static void functionCustom() {
 }
 
 static void functionIf() {
-}
-
-static void functionElseEnd() {
+	unsigned int token;
+	
+	token = ti_GetC(ice.inPrgm);
+	parseExpression();
 }
 
 static void dummyReturn() {
@@ -290,11 +291,11 @@ const void (*functions[256])() = {
     nonExistingToken, //205
     functionIf,       //206
     nonExistingToken, //207
-    functionElseEnd,  //208
+    dummyReturn,      //208
     functionWhile,    //209
     functionRepeat,   //210
     functionFor,      //211
-    functionElseEnd,  //212
+    dummyReturn,      //212
     functionReturn,   //213
     functionLbl,      //214
     functionGoto,     //215
@@ -339,4 +340,3 @@ const void (*functions[256])() = {
     nonExistingToken, //254
     nonExistingToken  //255
 };
-
