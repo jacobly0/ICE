@@ -19,6 +19,8 @@ uint8_t parseProgram(void) {
     unsigned int token;
     uint8_t ret = VALID;
 
+    ti_Rewind(ice.inPrgm);
+
     // do things based on the token
     while ((token = ti_GetC(ice.inPrgm)) != EOF) {
         if ((ret = (*functions[(uint8_t)token])()) != VALID) {
