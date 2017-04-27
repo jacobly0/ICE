@@ -27,15 +27,20 @@ void main() {
     if (!ice.inPrgm)                                      goto err;
     
     // Check if it's an ICE program
-    if (ti_GetC(ice.inPrgm) != tii)                       goto err;
+    if ((uint8_t)ti_GetC(ice.inPrgm) != tii)              goto err;
 	
-	// Setup program data
-	ice.headerData = (char *)malloc(500);
-	ice.programData = (char *)(*(uint24_t*)0xD52C00);
-	ice.programDataData = (char *)malloc(64000);
+	// Setup pointers
+	ice.headerData      = (uint8_t *) malloc(500);
+	ice.programData     = (uint8_t *) (uint24_t*)0xD52C00;
+	ice.programDataData = (uint8_t *) malloc(64000);
 	
-	//strcpy(ice.headerData, CHeaderData, CHeaderDataEnd - CHeaderData);
-    
+	ice.headerPtr       = (uint8_t *) (uint24_t)ice.headerData + 116;
+	ice.programPtr      = (uint8_t *) (uint24_t)ice.programData + 5;
+	ice.programDataPtr  = (uint8_t *) (uint24_t)ice.programDataData;
+	
+	memcpy(ice.headerData, CHeaderData, 116);
+	memcpy(ice.programData, CProgramHeader, 5);
+   
     // Do the stuff
     valid = parseProgram();
     

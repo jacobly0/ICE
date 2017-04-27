@@ -2,10 +2,10 @@ segment data
 
 .assume adl = 1
 
-.def CHeaderData
-.def CHeaderDataEnd
+.def _CHeaderData
+.def _CProgramHeader
 
-CHeaderData:
+_CHeaderData:
 	ld      hl, LibLoadAppVar - $ + 0D1A881h
 	call	0020320h
 	ld      a, 015h
@@ -44,4 +44,5 @@ LibLoadAppVar:
 	db "tiny.cc/clibs", 0
 RelocationStart:
 	db 0C0h, "GRAPHX", 0, 5
-CHeaderDataEnd:
+_CProgramHeader:
+	ld ix, 0D1383Fh
