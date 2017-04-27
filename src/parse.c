@@ -13,330 +13,386 @@
 #include "errors.h"
 #include "main.h"
 
-void parseProgram(void) {
-    unsigned int token;
+extern uint8_t (*functions[256])(void);
 
-    while ((token = ti_GetC(ice.inPrgm)) != EOF && token != tElse && token != tEnd) {
-        (*functions[(uint8_t)token])();
+uint8_t parseProgram(void) {
+    unsigned int token;
+    uint8_t ret = VALID;
+
+    ti_Rewind(ice.inPrgm);
+
+    // do things based on the token
+    while ((token = ti_GetC(ice.inPrgm)) != EOF) {
+        if ((ret = (*functions[(uint8_t)token])()) != VALID) {
+            break;
+        }
     }
+
+    return ret;
 }
 
 /* Static functions */
 
-static void functionI() {
+static uint8_t parseExpression(void) {
+    return VALID;
+}
+
+static uint8_t functionI(void) {
     unsigned int token;
 
-    while ((token = ti_GetC(ice.inPrgm)) != EOF && token != tEnter);
+    // Get the output name
+    if (!ice.gotName) {
+        uint8_t a = 0;
+        while ((token = ti_GetC(ice.inPrgm) != EOF) && token != tEnter && a < 9) {
+            ice.outName[a++] = (uint8_t)token;
+        }
+        ice.gotName = true;
+    }
+
+    // Get the icon and description
+    else if (!ice.gotIconDescrip) {
+        // put code here
+        ice.gotIconDescrip = true;
+    }
+
+    // otherwise, treat it as a comment
+    else {
+        while ((token = ti_GetC(ice.inPrgm)) != EOF && token != tEnter);
+    }
+
+    return VALID;
 }
 
-static void functionPrgm() {
+static uint8_t functionPrgm(void) {
+    return VALID;
 }
 
-static void functionCustom() {
+static uint8_t functionCustom(void) {
+    return VALID;
 }
 
-static void functionIf() {
+static uint8_t functionIf(void) {
 	unsigned int token;
 	
 	token = ti_GetC(ice.inPrgm);
 	parseExpression();
+    return VALID;
 }
 
-static void dummyReturn() {
-	return;
+static uint8_t dummyReturn(void) {
+	return VALID;
 }
 
-static void functionWhile() {
+static uint8_t functionWhile(void) {
+    return VALID;
 }
 
-static void functionRepeat() {
+static uint8_t functionRepeat(void) {
+    return VALID;
 }
 
-static void functionFor() {
+static uint8_t functionFor(void) {
+    return VALID;
 }
 
-static void functionReturn() {
+static uint8_t functionReturn(void) {
+    return VALID;
 }
 
-static void functionLbl() {
+static uint8_t functionLbl(void) {
+    return VALID;
 }
 
-static void functionGoto() {
+static uint8_t functionGoto(void) {
+    return VALID;
 }
 
-static void functionPause() {
+static uint8_t functionPause(void) {
+    return VALID;
 }
 
-static void functionInput() {
+static uint8_t functionInput(void) {
+    return VALID;
 }
 
-static void functionDisp() {
+static uint8_t functionDisp(void) {
+    return VALID;
 }
 
-static void functionOutput() {
+static uint8_t functionOutput(void) {
+    return VALID;
 }
 
-static void functionClrHome() {
+static uint8_t functionClrHome(void) {
+    return VALID;
 }
 
-static void parseExpression() {
+static uint8_t tokenWrongPlace(void) {
+    displayError(E_WRONG_PLACE);
+    return ERROR;
 }
 
-const void (*functions[256])() = {
-    nonExistingToken, //0
-    nonExistingToken, //1
-    nonExistingToken, //2
-    nonExistingToken, //3
-    tokenWrongPlace,  //4
-    nonExistingToken, //5
-    nonExistingToken, //6
-    nonExistingToken, //7
-    parseExpression,  //8
-    parseExpression,  //9
-    nonExistingToken, //10
-    nonExistingToken, //11
-    nonExistingToken, //12
-    nonExistingToken, //13
-    nonExistingToken, //14
-    nonExistingToken, //15
-    parseExpression,  //16
-    parseExpression,  //17
-    nonExistingToken, //18
-    nonExistingToken, //19
-    nonExistingToken, //20
-    nonExistingToken, //21
-    nonExistingToken, //22
-    nonExistingToken, //23
-    nonExistingToken, //24
-    nonExistingToken, //25
-    nonExistingToken, //26
-    nonExistingToken, //27
-    nonExistingToken, //28
-    nonExistingToken, //29
-    nonExistingToken, //30
-    nonExistingToken, //31
-    nonExistingToken, //32
-    nonExistingToken, //33
-    nonExistingToken, //34
-    nonExistingToken, //35
-    nonExistingToken, //36
-    nonExistingToken, //37
-    nonExistingToken, //38
-    nonExistingToken, //39
-    nonExistingToken, //40
-    nonExistingToken, //41
-    parseExpression,  //42
-    nonExistingToken, //43
-    functionI,        //44
-    nonExistingToken, //45
-    nonExistingToken, //46
-    nonExistingToken, //47
-    parseExpression,  //48
-    parseExpression,  //49
-    parseExpression,  //50
-    parseExpression,  //51
-    parseExpression,  //52
-    parseExpression,  //53
-    parseExpression,  //54
-    parseExpression,  //55
-    parseExpression,  //56
-    parseExpression,  //57
-    nonExistingToken, //58
-    nonExistingToken, //59
-    tokenWrongPlace,  //60
-    tokenWrongPlace,  //61
-    nonExistingToken, //62
-    dummyReturn,      //63
-    tokenWrongPlace,  //64
-    parseExpression,  //65
-    parseExpression,  //66
-    parseExpression,  //67
-    parseExpression,  //68
-    parseExpression,  //69
-    parseExpression,  //70
-    parseExpression,  //71
-    parseExpression,  //72
-    parseExpression,  //73
-    parseExpression,  //74
-    parseExpression,  //75
-    parseExpression,  //76
-    parseExpression,  //77
-    parseExpression,  //78
-    parseExpression,  //79
-    parseExpression,  //80
-    parseExpression,  //81
-    parseExpression,  //82
-    parseExpression,  //83
-    parseExpression,  //84
-    parseExpression,  //85
-    parseExpression,  //86
-    parseExpression,  //87
-    parseExpression,  //88
-    parseExpression,  //89
-    parseExpression,  //90
-    parseExpression,  //91
-    nonExistingToken, //92
-    parseExpression,  //93
-    nonExistingToken, //94
-    functionPrgm,     //95
-    nonExistingToken, //96
-    nonExistingToken, //97
-    functionCustom,   //98
-    nonExistingToken, //99
-    nonExistingToken, //100
-    nonExistingToken, //101
-    nonExistingToken, //102
-    nonExistingToken, //103
-    nonExistingToken, //104
-    nonExistingToken, //105
-    tokenWrongPlace,  //106
-    tokenWrongPlace,  //107
-    tokenWrongPlace,  //108
-    tokenWrongPlace,  //109
-    tokenWrongPlace,  //110
-    tokenWrongPlace,  //111
-    tokenWrongPlace,  //112
-    tokenWrongPlace,  //113
-    nonExistingToken, //114
-    nonExistingToken, //115
-    nonExistingToken, //116
-    nonExistingToken, //117
-    nonExistingToken, //118
-    nonExistingToken, //119
-    nonExistingToken, //120
-    nonExistingToken, //121
-    nonExistingToken, //122
-    nonExistingToken, //123
-    nonExistingToken, //124
-    nonExistingToken, //125
-    nonExistingToken, //126
-    nonExistingToken, //127
-    nonExistingToken, //128
-    nonExistingToken, //129
-    tokenWrongPlace,  //130
-    tokenWrongPlace,  //131
-    nonExistingToken, //132
-    nonExistingToken, //133
-    nonExistingToken, //134
-    nonExistingToken, //135
-    nonExistingToken, //136
-    nonExistingToken, //137
-    nonExistingToken, //138
-    nonExistingToken, //139
-    nonExistingToken, //140
-    nonExistingToken, //141
-    nonExistingToken, //142
-    nonExistingToken, //143
-    nonExistingToken, //144
-    nonExistingToken, //145
-    nonExistingToken, //146
-    nonExistingToken, //147
-    nonExistingToken, //148
-    nonExistingToken, //149
-    nonExistingToken, //150
-    nonExistingToken, //151
-    nonExistingToken, //152
-    nonExistingToken, //153
-    nonExistingToken, //154
-    nonExistingToken, //155
-    nonExistingToken, //156
-    nonExistingToken, //157
-    nonExistingToken, //158
-    nonExistingToken, //159
-    nonExistingToken, //160
-    nonExistingToken, //161
-    nonExistingToken, //162
-    nonExistingToken, //163
-    nonExistingToken, //164
-    nonExistingToken, //165
-    nonExistingToken, //166
-    nonExistingToken, //167
-    nonExistingToken, //168
-    nonExistingToken, //169
-    nonExistingToken, //170
-    parseExpression,  //171
-    nonExistingToken, //172
-    parseExpression,  //173
-    nonExistingToken, //174
-    nonExistingToken, //175
-    nonExistingToken, //176
-    nonExistingToken, //177
-    nonExistingToken, //178
-    parseExpression,  //179
-    nonExistingToken, //180
-    nonExistingToken, //181
-    nonExistingToken, //182
-    nonExistingToken, //183
-    parseExpression,  //184
-    nonExistingToken, //185
-    nonExistingToken, //186
-    nonExistingToken, //187
-    parseExpression,  //188
-    nonExistingToken, //189
-    nonExistingToken, //190
-    nonExistingToken, //191
-    nonExistingToken, //192
-    nonExistingToken, //193
-    nonExistingToken, //194
-    nonExistingToken, //195
-    nonExistingToken, //196
-    nonExistingToken, //197
-    nonExistingToken, //198
-    nonExistingToken, //199
-    nonExistingToken, //200
-    nonExistingToken, //201
-    nonExistingToken, //202
-    nonExistingToken, //203
-    nonExistingToken, //204
-    nonExistingToken, //205
-    functionIf,       //206
-    nonExistingToken, //207
-    dummyReturn,      //208
-    functionWhile,    //209
-    functionRepeat,   //210
-    functionFor,      //211
-    dummyReturn,      //212
-    functionReturn,   //213
-    functionLbl,      //214
-    functionGoto,     //215
-    functionPause,    //216
-    nonExistingToken, //217
-    nonExistingToken, //218
-    nonExistingToken, //219
-    functionInput,    //220
-    nonExistingToken, //221
-    functionDisp,     //222
-    nonExistingToken, //223
-    functionOutput,   //224
-    functionClrHome,  //225
-    nonExistingToken, //226
-    nonExistingToken, //227
-    nonExistingToken, //228
-    nonExistingToken, //229
-    nonExistingToken, //230
-    nonExistingToken, //231
-    nonExistingToken, //232
-    nonExistingToken, //233
-    nonExistingToken, //234
-    nonExistingToken, //235
-    nonExistingToken, //236
-    nonExistingToken, //237
-    nonExistingToken, //238
-    nonExistingToken, //239
-    nonExistingToken, //240
-    nonExistingToken, //241
-    nonExistingToken, //242
-    nonExistingToken, //243
-    nonExistingToken, //244
-    nonExistingToken, //245
-    nonExistingToken, //246
-    nonExistingToken, //247
-    nonExistingToken, //248
-    nonExistingToken, //249
-    nonExistingToken, //250
-    nonExistingToken, //251
-    nonExistingToken, //252
-    nonExistingToken, //253
-    nonExistingToken, //254
-    nonExistingToken  //255
+static uint8_t tokenUnimplemented(void) {
+    displayError(E_UNIMPLEMENTED);
+    return ERROR;
+}
+
+uint8_t (*functions[256])(void) = {
+    tokenUnimplemented, //0
+    tokenUnimplemented, //1
+    tokenUnimplemented, //2
+    tokenUnimplemented, //3
+    tokenWrongPlace,    //4
+    tokenUnimplemented, //5
+    tokenUnimplemented, //6
+    tokenUnimplemented, //7
+    parseExpression,    //8
+    parseExpression,    //9
+    tokenUnimplemented, //10
+    tokenUnimplemented, //11
+    tokenUnimplemented, //12
+    tokenUnimplemented, //13
+    tokenUnimplemented, //14
+    tokenUnimplemented, //15
+    parseExpression,    //16
+    parseExpression,    //17
+    tokenUnimplemented, //18
+    tokenUnimplemented, //19
+    tokenUnimplemented, //20
+    tokenUnimplemented, //21
+    tokenUnimplemented, //22
+    tokenUnimplemented, //23
+    tokenUnimplemented, //24
+    tokenUnimplemented, //25
+    tokenUnimplemented, //26
+    tokenUnimplemented, //27
+    tokenUnimplemented, //28
+    tokenUnimplemented, //29
+    tokenUnimplemented, //30
+    tokenUnimplemented, //31
+    tokenUnimplemented, //32
+    tokenUnimplemented, //33
+    tokenUnimplemented, //34
+    tokenUnimplemented, //35
+    tokenUnimplemented, //36
+    tokenUnimplemented, //37
+    tokenUnimplemented, //38
+    tokenUnimplemented, //39
+    tokenUnimplemented, //40
+    tokenUnimplemented, //41
+    parseExpression,    //42
+    tokenUnimplemented, //43
+    functionI,          //44
+    tokenUnimplemented, //45
+    tokenUnimplemented, //46
+    tokenUnimplemented, //47
+    parseExpression,    //48
+    parseExpression,    //49
+    parseExpression,    //50
+    parseExpression,    //51
+    parseExpression,    //52
+    parseExpression,    //53
+    parseExpression,    //54
+    parseExpression,    //55
+    parseExpression,    //56
+    parseExpression,    //57
+    tokenUnimplemented, //58
+    tokenUnimplemented, //59
+    tokenWrongPlace,    //60
+    tokenWrongPlace,    //61
+    tokenUnimplemented, //62
+    dummyReturn,        //63
+    tokenWrongPlace,    //64
+    parseExpression,    //65
+    parseExpression,    //66
+    parseExpression,    //67
+    parseExpression,    //68
+    parseExpression,    //69
+    parseExpression,    //70
+    parseExpression,    //71
+    parseExpression,    //72
+    parseExpression,    //73
+    parseExpression,    //74
+    parseExpression,    //75
+    parseExpression,    //76
+    parseExpression,    //77
+    parseExpression,    //78
+    parseExpression,    //79
+    parseExpression,    //80
+    parseExpression,    //81
+    parseExpression,    //82
+    parseExpression,    //83
+    parseExpression,    //84
+    parseExpression,    //85
+    parseExpression,    //86
+    parseExpression,    //87
+    parseExpression,    //88
+    parseExpression,    //89
+    parseExpression,    //90
+    parseExpression,    //91
+    tokenUnimplemented, //92
+    parseExpression,    //93
+    tokenUnimplemented, //94
+    functionPrgm,       //95
+    tokenUnimplemented, //96
+    tokenUnimplemented, //97
+    functionCustom,     //98
+    tokenUnimplemented, //99
+    tokenUnimplemented, //100
+    tokenUnimplemented, //101
+    tokenUnimplemented, //102
+    tokenUnimplemented, //103
+    tokenUnimplemented, //104
+    tokenUnimplemented, //105
+    tokenWrongPlace,    //106
+    tokenWrongPlace,    //107
+    tokenWrongPlace,    //108
+    tokenWrongPlace,    //109
+    tokenWrongPlace,    //110
+    tokenWrongPlace,    //111
+    tokenWrongPlace,    //112
+    tokenWrongPlace,    //113
+    tokenUnimplemented, //114
+    tokenUnimplemented, //115
+    tokenUnimplemented, //116
+    tokenUnimplemented, //117
+    tokenUnimplemented, //118
+    tokenUnimplemented, //119
+    tokenUnimplemented, //120
+    tokenUnimplemented, //121
+    tokenUnimplemented, //122
+    tokenUnimplemented, //123
+    tokenUnimplemented, //124
+    tokenUnimplemented, //125
+    tokenUnimplemented, //126
+    tokenUnimplemented, //127
+    tokenUnimplemented, //128
+    tokenUnimplemented, //129
+    tokenWrongPlace,    //130
+    tokenWrongPlace,    //131
+    tokenUnimplemented, //132
+    tokenUnimplemented, //133
+    tokenUnimplemented, //134
+    tokenUnimplemented, //135
+    tokenUnimplemented, //136
+    tokenUnimplemented, //137
+    tokenUnimplemented, //138
+    tokenUnimplemented, //139
+    tokenUnimplemented, //140
+    tokenUnimplemented, //141
+    tokenUnimplemented, //142
+    tokenUnimplemented, //143
+    tokenUnimplemented, //144
+    tokenUnimplemented, //145
+    tokenUnimplemented, //146
+    tokenUnimplemented, //147
+    tokenUnimplemented, //148
+    tokenUnimplemented, //149
+    tokenUnimplemented, //150
+    tokenUnimplemented, //151
+    tokenUnimplemented, //152
+    tokenUnimplemented, //153
+    tokenUnimplemented, //154
+    tokenUnimplemented, //155
+    tokenUnimplemented, //156
+    tokenUnimplemented, //157
+    tokenUnimplemented, //158
+    tokenUnimplemented, //159
+    tokenUnimplemented, //160
+    tokenUnimplemented, //161
+    tokenUnimplemented, //162
+    tokenUnimplemented, //163
+    tokenUnimplemented, //164
+    tokenUnimplemented, //165
+    tokenUnimplemented, //166
+    tokenUnimplemented, //167
+    tokenUnimplemented, //168
+    tokenUnimplemented, //169
+    tokenUnimplemented, //170
+    parseExpression,    //171
+    tokenUnimplemented, //172
+    parseExpression,    //173
+    tokenUnimplemented, //174
+    tokenUnimplemented, //175
+    tokenUnimplemented, //176
+    tokenUnimplemented, //177
+    tokenUnimplemented, //178
+    parseExpression,    //179
+    tokenUnimplemented, //180
+    tokenUnimplemented, //181
+    tokenUnimplemented, //182
+    tokenUnimplemented, //183
+    parseExpression,    //184
+    tokenUnimplemented, //185
+    tokenUnimplemented, //186
+    tokenUnimplemented, //187
+    parseExpression,    //188
+    tokenUnimplemented, //189
+    tokenUnimplemented, //190
+    tokenUnimplemented, //191
+    tokenUnimplemented, //192
+    tokenUnimplemented, //193
+    tokenUnimplemented, //194
+    tokenUnimplemented, //195
+    tokenUnimplemented, //196
+    tokenUnimplemented, //197
+    tokenUnimplemented, //198
+    tokenUnimplemented, //199
+    tokenUnimplemented, //200
+    tokenUnimplemented, //201
+    tokenUnimplemented, //202
+    tokenUnimplemented, //203
+    tokenUnimplemented, //204
+    tokenUnimplemented, //205
+    functionIf,         //206
+    tokenUnimplemented, //207
+    dummyReturn,        //208
+    functionWhile,      //209
+    functionRepeat,     //210
+    functionFor,        //211
+    dummyReturn,        //212
+    functionReturn,     //213
+    functionLbl,        //214
+    functionGoto,       //215
+    functionPause,      //216
+    tokenUnimplemented, //217
+    tokenUnimplemented, //218
+    tokenUnimplemented, //219
+    functionInput,      //220
+    tokenUnimplemented, //221
+    functionDisp,       //222
+    tokenUnimplemented, //223
+    functionOutput,     //224
+    functionClrHome,    //225
+    tokenUnimplemented, //226
+    tokenUnimplemented, //227
+    tokenUnimplemented, //228
+    tokenUnimplemented, //229
+    tokenUnimplemented, //230
+    tokenUnimplemented, //231
+    tokenUnimplemented, //232
+    tokenUnimplemented, //233
+    tokenUnimplemented, //234
+    tokenUnimplemented, //235
+    tokenUnimplemented, //236
+    tokenUnimplemented, //237
+    tokenUnimplemented, //238
+    tokenUnimplemented, //239
+    tokenUnimplemented, //240
+    tokenUnimplemented, //241
+    tokenUnimplemented, //242
+    tokenUnimplemented, //243
+    tokenUnimplemented, //244
+    tokenUnimplemented, //245
+    tokenUnimplemented, //246
+    tokenUnimplemented, //247
+    tokenUnimplemented, //248
+    tokenUnimplemented, //249
+    tokenUnimplemented, //250
+    tokenUnimplemented, //251
+    tokenUnimplemented, //252
+    tokenUnimplemented, //253
+    tokenUnimplemented, //254
+    tokenUnimplemented  //255
 };
+

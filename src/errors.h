@@ -5,8 +5,6 @@
 #define E_WRONG_PLACE   1
 
 void displayError(unsigned int index);
-void nonExistingToken();
-void tokenWrongPlace();
 
 #endif
 
