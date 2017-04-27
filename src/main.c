@@ -18,28 +18,26 @@ ice_t ice;
 void main() {
     uint8_t a = 0;
     unsigned int token;
+    uint8_t valid;
 
     strcpy(ice.inName, "ABC");
 
     ti_CloseAll();
-    ice.inPrgm = ti_OpenVar(ice.inName, "r", ti_Program);
+    ice.inPrgm = ti_OpenVar(ice.inName, "r", TI_PRGM_TYPE);
     if (!ice.inPrgm)                                      goto err;
     
     // Check if it's an ICE program
     if (ti_GetC(ice.inPrgm) != tii)                       goto err;
     
-    // Get the output 
-    while ((token = ti_GetC(ice.inPrgm) != EOF) && token != tEnter && a < 8) {
-        ice.outName[a++] = (uint8_t)token;
-    }
-    
-    // Create or empty the output program
-    ice.outPrgm = ti_OpenVar(ice.outName, "w", ti_Program);
-    if (!ice.outPrgm)                                      goto err;
-    
     // Do the stuff
-    parseProgram();
+    valid = parseProgram();
     
+    // Create or empty the output program if parsing succeeded
+    if (valid == VALID) {
+        ice.outPrgm = ti_OpenVar(ice.outName, "w", TI_PPRGM_TYPE);
+        if (!ice.outPrgm)                                      goto err;
+    }
+
 err:
     ti_CloseAll();
     prgm_CleanUp();

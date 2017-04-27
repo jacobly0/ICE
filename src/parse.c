@@ -13,17 +13,20 @@
 #include "errors.h"
 #include "main.h"
 
-enum { ERROR, VALID };
+extern uint8_t (*functions[256])(void);
 
-void parseProgram(void) {
+uint8_t parseProgram(void) {
     unsigned int token;
+    uint8_t ret = VALID;
 
     // do things based on the token
     while ((token = ti_GetC(ice.inPrgm)) != EOF) {
-        if ((*functions[(uint8_t)token])() != VALID) {
+        if ((ret = (*functions[(uint8_t)token])()) != VALID) {
             break;
         }
     }
+
+    return ret;
 }
 
 /* Static functions */
@@ -35,7 +38,25 @@ static uint8_t parseExpression(void) {
 static uint8_t functionI(void) {
     unsigned int token;
 
-    while ((token = ti_GetC(ice.inPrgm)) != EOF && token != tEnter);
+    // Get the output name
+    if (!ice.gotName) {
+        uint8_t a = 0;
+        while ((token = ti_GetC(ice.inPrgm) != EOF) && token != tEnter && a < 9) {
+            ice.outName[a++] = (uint8_t)token;
+        }
+        ice.gotName = true;
+    }
+
+    // Get the icon and description
+    else if (!ice.gotIconDescrip) {
+        // put code here
+        ice.gotIconDescrip = true;
+    }
+
+    // otherwise, treat it as a comment
+    else {
+        while ((token = ti_GetC(ice.inPrgm)) != EOF && token != tEnter);
+    }
 
     return VALID;
 }

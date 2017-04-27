@@ -9,6 +9,8 @@ typedef struct {
     char inName[9];
     ti_var_t inPrgm;
     ti_var_t outPrgm;
+    bool gotName;
+    bool gotIconDescrip;
 } ice_t;
 
 extern ice_t ice;
