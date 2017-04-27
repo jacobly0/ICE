@@ -18,7 +18,7 @@ ice_t ice;
 void main() {
     uint8_t a = 0;
     unsigned int token;
-    uint8_t valid;
+    unsigned int res;
 
     strcpy(ice.inName, "ABC");
 
@@ -42,12 +42,14 @@ void main() {
 	memcpy(ice.programData, CProgramHeader, 5);
    
     // Do the stuff
-    valid = parseProgram();
+    res = parseProgram();
     
     // Create or empty the output program if parsing succeeded
-    if (valid == VALID) {
+    if (res == VALID) {
         ice.outPrgm = ti_OpenVar(ice.outName, "w", TI_PPRGM_TYPE);
         if (!ice.outPrgm)                                 goto err;
+    } else {
+        displayError(res);
     }
 
 err:
