@@ -23,6 +23,9 @@ uint8_t parseProgram(void) {
 
     // do things based on the token
     while ((token = ti_GetC(ice.inPrgm)) != EOF) {
+		if ((uint8_t)token != tii) {
+			ice.usedCodeAfterHeader = true;
+		}
         if ((ret = (*functions[(uint8_t)token])()) != VALID) {
             break;
         }
@@ -74,9 +77,21 @@ static uint8_t functionCustom(void) {
 static uint8_t functionIf(void) {
 	unsigned int token;
 	
-	token = ti_GetC(ice.inPrgm);
-	parseExpression();
-    return VALID;
+	if ((token = ti_GetC(ice.inPrgm)) != EOF && token != tEnter) {
+		parseExpression();
+		return VALID;
+	} else {
+		displayError(E_NO_CONDITION);
+		return ERROR;
+	}
+}
+
+static uint8_t functionElseEnd(void) {
+	// This should return if in nested block
+	if (!ice.nestedBlocks) {
+		displayError(E_NO_NESTED_BLOCK);
+	}
+	return ERROR;
 }
 
 static uint8_t dummyReturn(void) {
@@ -346,11 +361,11 @@ uint8_t (*functions[256])(void) = {
     tokenUnimplemented, //205
     functionIf,         //206
     tokenUnimplemented, //207
-    dummyReturn,        //208
+    functionElseEnd,    //208
     functionWhile,      //209
     functionRepeat,     //210
     functionFor,        //211
-    dummyReturn,        //212
+    functionElseEnd,    //212
     functionReturn,     //213
     functionLbl,        //214
     functionGoto,       //215

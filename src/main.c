@@ -28,6 +28,13 @@ void main() {
     
     // Check if it's an ICE program
     if (ti_GetC(ice.inPrgm) != tii)                       goto err;
+	
+	// Setup program data
+	ice.headerData = (char *)malloc(500);
+	ice.programData = (char *)(*(uint24_t*)0xD52C00);
+	ice.programDataData = (char *)malloc(64000);
+	
+	//strcpy(ice.headerData, CHeaderData, CHeaderDataEnd - CHeaderData);
     
     // Do the stuff
     valid = parseProgram();
@@ -35,7 +42,7 @@ void main() {
     // Create or empty the output program if parsing succeeded
     if (valid == VALID) {
         ice.outPrgm = ti_OpenVar(ice.outName, "w", TI_PPRGM_TYPE);
-        if (!ice.outPrgm)                                      goto err;
+        if (!ice.outPrgm)                                 goto err;
     }
 
 err:
