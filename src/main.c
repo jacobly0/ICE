@@ -32,7 +32,7 @@ void main() {
 	// Setup pointers
 	ice.headerData      = (uint8_t *) malloc(500);
 	ice.programData     = (uint8_t *) (uint24_t*)0xD52C00;
-	ice.programDataData = (uint8_t *) malloc(64000);
+	ice.programDataData = (uint8_t *) malloc(40000);
 	
 	ice.headerPtr       = (uint8_t *) (uint24_t)ice.headerData + 116;
 	ice.programPtr      = (uint8_t *) (uint24_t)ice.programData + 5;

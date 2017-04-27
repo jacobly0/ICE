@@ -5,23 +5,23 @@
 #include <fileioc.h>
 
 typedef struct {
-    char outName[9];
-    char inName[9];
+    char     outName[9];
+    char     inName[9];
 	
-	uint8_t nestedBlocks;
-	uint8_t *headerData;
-	uint8_t *programData;
-	uint8_t *programDataData;
-	uint8_t *headerPtr;
-	uint8_t *programPtr;
-	uint8_t *programDataPtr;
+	uint8_t  nestedBlocks;
+	uint8_t  *headerData;
+	uint8_t  *programData;
+	uint8_t  *programDataData;
+	uint8_t  *headerPtr;
+	uint8_t  *programPtr;
+	uint8_t  *programDataPtr;
 	
     ti_var_t inPrgm;
     ti_var_t outPrgm;
 	
-    bool gotName;
-    bool gotIconDescrip;
-	bool usedCodeAfterHeader;
+    bool     gotName;
+    bool     gotIconDescrip;
+    bool     usedCodeAfterHeader;
 } ice_t;
 
 extern ice_t ice;

@@ -13,7 +13,7 @@
 #include "errors.h"
 #include "main.h"
 
-extern uint8_t (*functions[256])(void);
+extern uint8_t (*functions[256])(unsigned int token);
 
 uint8_t parseProgram(void) {
     unsigned int token;
@@ -26,7 +26,7 @@ uint8_t parseProgram(void) {
 		if ((uint8_t)token != tii) {
 			ice.usedCodeAfterHeader = true;
 		}
-        if ((ret = (*functions[(uint8_t)token])()) != VALID) {
+        if ((ret = (*functions[(uint8_t)token])(token)) != VALID) {
             break;
         }
     }
@@ -36,17 +36,54 @@ uint8_t parseProgram(void) {
 
 /* Static functions */
 
-static uint8_t parseExpression(void) {
+static uint8_t parseExpression(unsigned int token) {
+    uint8_t *outputStack   = (uint8_t *) (uint24_t*)0xD62C00;
+    uint8_t *stack         = (uint8_t *) (uint24_t*)0xD63000;
+    uint8_t *outputPtr     = (uint8_t *) (uint24_t)outputStack;
+    uint8_t *stackPtr      = (uint8_t *) (uint24_t)stack;
+    uint8_t index;
+    const char operators[] = "\x04\x40\x3D\x3C\x6A\x6B\x6C\x6D\x6E\x6F\x82\x83\x70\x71";
+    
+    goto noNewToken;
+    
+grabNewToken:
+    token = ti_GetC(ice.inPrgm);
+noNewToken:
+    if (token == EOF || token == tEnter)                  goto parseSYA;
+    // Process a number
+    if ((uint8_t)token >= t0 && (uint8_t)token <= t9) {
+        uint24_t output = token - t0;
+        while ((uint8_t)(token = ti_GetC(ice.inPrgm)) >= t0 && (uint8_t)token <= t9) {
+            output = output*10 + token - t0;
+        }
+        *outputPtr++ = TYPE_NUMBER;
+        *outputPtr++ = (uint8_t)output;
+        *outputPtr++ = (uint8_t)(output >> 8);
+        *outputPtr++ = (uint8_t)(output >> 16);
+        
+        goto grabNewToken;
+    } 
+    
+    // Process a variable
+    else if ((uint8_t)token >= tA && (uint8_t)token <= tTheta) {
+        *outputPtr     = TYPE_VARIABLE;
+        *(outputPtr+1) = (uint8_t)token - tA;
+        outputPtr      = outputPtr + 3;
+    }
+    
+    // Parse an operator
+    else if (index = strpbrk(operators, (char)token)) {
+    }
+    
+parseSYA:
     return VALID;
 }
 
-static uint8_t functionI(void) {
-    unsigned int token;
-
+static uint8_t functionI(unsigned int token) {
     // Get the output name
     if (!ice.gotName) {
         uint8_t a = 0;
-        while ((token = ti_GetC(ice.inPrgm) != EOF) && token != tEnter && a < 9) {
+        while ((token = ti_GetC(ice.inPrgm)) != EOF && (uint8_t)token != tEnter && a < 9) {
             ice.outName[a++] = (uint8_t)token;
         }
         ice.gotName = true;
@@ -66,19 +103,17 @@ static uint8_t functionI(void) {
     return VALID;
 }
 
-static uint8_t functionPrgm(void) {
+static uint8_t functionPrgm(unsigned int token) {
     return VALID;
 }
 
-static uint8_t functionCustom(void) {
+static uint8_t functionCustom(unsigned int token) {
     return VALID;
 }
 
-static uint8_t functionIf(void) {
-	unsigned int token;
-	
+static uint8_t functionIf(unsigned int token) {
 	if ((token = ti_GetC(ice.inPrgm)) != EOF && token != tEnter) {
-		parseExpression();
+		parseExpression(token);
 		return VALID;
 	} else {
 		displayError(E_NO_CONDITION);
@@ -86,7 +121,7 @@ static uint8_t functionIf(void) {
 	}
 }
 
-static uint8_t functionElseEnd(void) {
+static uint8_t functionElseEnd(unsigned int token) {
 	// This should return if in nested block
 	if (!ice.nestedBlocks) {
 		displayError(E_NO_NESTED_BLOCK);
@@ -94,65 +129,65 @@ static uint8_t functionElseEnd(void) {
 	return ERROR;
 }
 
-static uint8_t dummyReturn(void) {
+static uint8_t dummyReturn(unsigned int token) {
 	return VALID;
 }
 
-static uint8_t functionWhile(void) {
+static uint8_t functionWhile(unsigned int token) {
     return VALID;
 }
 
-static uint8_t functionRepeat(void) {
+static uint8_t functionRepeat(unsigned int token) {
     return VALID;
 }
 
-static uint8_t functionFor(void) {
+static uint8_t functionFor(unsigned int token) {
     return VALID;
 }
 
-static uint8_t functionReturn(void) {
+static uint8_t functionReturn(unsigned int token) {
     return VALID;
 }
 
-static uint8_t functionLbl(void) {
+static uint8_t functionLbl(unsigned int token) {
     return VALID;
 }
 
-static uint8_t functionGoto(void) {
+static uint8_t functionGoto(unsigned int token) {
     return VALID;
 }
 
-static uint8_t functionPause(void) {
+static uint8_t functionPause(unsigned int token) {
     return VALID;
 }
 
-static uint8_t functionInput(void) {
+static uint8_t functionInput(unsigned int token) {
     return VALID;
 }
 
-static uint8_t functionDisp(void) {
+static uint8_t functionDisp(unsigned int token) {
     return VALID;
 }
 
-static uint8_t functionOutput(void) {
+static uint8_t functionOutput(unsigned int token) {
     return VALID;
 }
 
-static uint8_t functionClrHome(void) {
+static uint8_t functionClrHome(unsigned int token) {
     return VALID;
 }
 
-static uint8_t tokenWrongPlace(void) {
+static uint8_t tokenWrongPlace(unsigned int token) {
     displayError(E_WRONG_PLACE);
     return ERROR;
 }
 
-static uint8_t tokenUnimplemented(void) {
+static uint8_t tokenUnimplemented(unsigned int token) {
     displayError(E_UNIMPLEMENTED);
     return ERROR;
 }
 
-uint8_t (*functions[256])(void) = {
+uint8_t (*functions[256])(unsigned int) = {
     tokenUnimplemented, //0
     tokenUnimplemented, //1
     tokenUnimplemented, //2
