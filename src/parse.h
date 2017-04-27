@@ -2,9 +2,7 @@
 #define PARSE_H
 
 void parseProgram(void);
-
-extern const void (*functions[256])();
-void parseExpression();
+extern uint8_t (*functions[256])(void);
 
 #endif
 

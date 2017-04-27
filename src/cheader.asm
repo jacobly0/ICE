@@ -1,4 +1,6 @@
-.assume ADL = 1
+segment data
+
+.assume adl = 1
 
 .def CHeaderData
 .def CHeaderDataEnd

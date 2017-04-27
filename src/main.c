@@ -15,10 +15,6 @@
 
 ice_t ice;
 
-#define progData     (uint8_t*)0xD52C00;
-#define headerData   malloc(116 + (84*4));
-#define progDataData malloc(64000);
-
 void main() {
     uint8_t a = 0;
     unsigned int token;
