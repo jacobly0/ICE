@@ -39,17 +39,23 @@ uint8_t parseProgram(void) {
 static uint8_t parseExpression(unsigned int token) {
     const uint8_t *outputStack   = (uint8_t*)0xD62C00;
     const uint8_t *stack         = (uint8_t*)0xD63000;
-    const char operators[]       = { tStore, tAnd, tXor, tOr, tEQ, tLT, tGT, tLE, tGE, tNE, tAdd, tSub, tMul, tDiv};
-    unsigned int elements        = 0;
+    const char operators[]       = {tStore, tAnd, tXor, tOr, tEQ, tLT, tGT, tLE, tGE, tNE, tMul, tDiv, tAdd, tSub};
+    const uint8_t precedence[]   = {0, 1, 2, 2, 3, 3, 3, 3, 3, 3, 5, 5, 4, 4};
+    unsigned int outputElements  = 0;
+    unsigned int stackElements   = 0;
     uint8_t tok;
+    bool grabNewToken;
     char *index;
 
     element_t *outputPtr         = (element_t*)outputStack;
     element_t *stackPtr          = (element_t*)stack;
-    element_t *curr;
+    element_t *outputCurr, *outputPrev;
+    element_t *stackCurr, *stackPrev;
 
     while (token != EOF && token != tEnter) {
-        curr = &outputPtr[elements];
+        outputCurr = &outputPtr[outputElements];
+        stackCurr  = &stackPtr[stackElements];
+        grabNewToken = true;
         tok = (uint8_t)token;
 
         // Process a number
@@ -58,24 +64,85 @@ static uint8_t parseExpression(unsigned int token) {
             while ((uint8_t)(token = ti_GetC(ice.inPrgm)) >= t0 && (uint8_t)token <= t9) {
                 output = output*10 + (uint8_t)token - t0;
             }
-            curr->type    = TYPE_NUMBER;
-            curr->operand = output;
-            elements++;
+            outputCurr->type    = TYPE_NUMBER;
+            outputCurr->operand = output;
+            outputElements++;
+            grabNewToken = false;
         }
 
         // Process a variable
         else if (tok >= tA && tok <= tTheta) {
-            curr->type    = TYPE_VARIABLE;
-            curr->operand = tok - tA;
-            elements++;
+            outputCurr->type    = TYPE_VARIABLE;
+            outputCurr->operand = tok - tA;
+            outputElements++;
         }
         
         // Parse an operator
         else if (index = strchr(operators, token)) {
-            
+            while (stackElements) {
+                stackPrev = &stackPtr[stackElements-1];
+                outputCurr = &outputPtr[outputElements];
+                if (stackPrev->type == TYPE_OPERATOR && precedence[index - operators] <= precedence[stackPrev->operand]) {
+                    outputCurr->type    = TYPE_OPERATOR;
+                    outputCurr->operand = stackPrev->operand;
+                    stackElements--;
+                    outputElements++;
+                } else {
+                    break;
+                }
+            }
+            stackCurr = &stackPtr[stackElements];
+            stackCurr->type    = TYPE_OPERATOR;
+            stackCurr->operand = index - operators;
+            stackElements++;
         }
-
-        token = ti_GetC(ice.inPrgm);
+        
+        // Push a left parenthesis
+        else if (tok == tLParen) {
+            stackCurr->type    = TYPE_FUNCTION_RETURN;
+            stackCurr->operand = token;
+            stackElements++;
+        }
+        
+        // Pop a right parenthesis
+        else if (tok == tRParen) {
+            while (stackElements) {
+                stackPrev = &stackPtr[stackElements-1];
+                outputCurr = &outputPtr[outputElements];
+                if (stackPrev->type != TYPE_FUNCTION_RETURN) {
+                    outputCurr->type    = stackPrev->type;
+                    outputCurr->operand = stackPrev->operand;
+                    stackElements--;
+                    outputElements++;
+                } else {
+                    break;
+                }
+            }
+            if (!stackElements) {
+                displayError(E_EXTRA_RPAREN);
+                return ERROR;
+            }
+            if (stackPrev->operand != tLParen) {
+                outputCurr->type    = TYPE_FUNCTION_RETURN;
+                outputCurr->operand = stackPrev->operand;
+                stackElements--;
+                outputElements++;
+            }
+        }
+        
+        if (grabNewToken) {
+            token = ti_GetC(ice.inPrgm);
+        }
+    }
+    
+    // Move stack elements to output
+    while (stackElements) {
+        outputCurr = &outputPtr[outputElements];
+        stackPrev = &stackPtr[stackElements-1];
+        outputCurr->type    = stackPrev->type;
+        outputCurr->operand = stackPrev->operand;
+        stackElements--;
+        outputElements++;
     }
 
     return VALID;

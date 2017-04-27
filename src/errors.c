@@ -6,6 +6,7 @@ static const char *errors[] = {
     "This token cannot be used at this place",
     "This token doesn't have a condition",
     "You used 'Else' or End' outside a condition block",
+    "You have an extra right paren",
 };
 
 void displayError(unsigned int index) {
