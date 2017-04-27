@@ -50,7 +50,7 @@ static uint8_t parseExpression(unsigned int token) {
     element_t *outputPtr         = (element_t*)outputStack;
     element_t *stackPtr          = (element_t*)stack;
     element_t *outputCurr, *outputPrev;
-    element_t *stackCurr, *stackPrev;
+    element_t *stackCurr, *stackPrev = NULL;
 
     while (token != EOF && token != tEnter) {
         outputCurr = &outputPtr[outputElements];
@@ -119,8 +119,7 @@ static uint8_t parseExpression(unsigned int token) {
                 }
             }
             if (!stackElements) {
-                displayError(E_EXTRA_RPAREN);
-                return ERROR;
+                return E_EXTRA_RPAREN;
             }
             if (stackPrev->operand != tLParen) {
                 outputCurr->type    = TYPE_FUNCTION_RETURN;
@@ -185,17 +184,16 @@ static uint8_t functionIf(unsigned int token) {
         parseExpression(token);
         return VALID;
     } else {
-        displayError(E_NO_CONDITION);
-        return ERROR;
+        return E_NO_CONDITION;
     }
 }
 
 static uint8_t functionElseEnd(unsigned int token) {
     // This should return if in nested block
     if (!ice.nestedBlocks) {
-        displayError(E_NO_NESTED_BLOCK);
+        return E_NO_NESTED_BLOCK;
     }
-    return ERROR;
+    return VALID;
 }
 
 static uint8_t dummyReturn(unsigned int token) {
@@ -247,13 +245,11 @@ static uint8_t functionClrHome(unsigned int token) {
 }
 
 static uint8_t tokenWrongPlace(unsigned int token) {
-    displayError(E_WRONG_PLACE);
-    return ERROR;
+    return E_WRONG_PLACE;
 }
 
 static uint8_t tokenUnimplemented(unsigned int token) {
-    displayError(E_UNIMPLEMENTED);
-    return ERROR;
+    return E_UNIMPLEMENTED;
 }
 
 uint8_t (*functions[256])(unsigned int) = {
