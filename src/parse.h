@@ -15,5 +15,10 @@ uint8_t parseProgram(void);
 
 enum { ERROR, VALID };
 
+typedef struct {
+    uint8_t type;
+    uint24_t operand;
+} element_t;
+
 #endif
 
