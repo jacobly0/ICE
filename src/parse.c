@@ -44,7 +44,6 @@ static uint8_t parseExpression(unsigned int token) {
     unsigned int outputElements  = 0;
     unsigned int stackElements   = 0;
     uint8_t tok;
-    bool grabNewToken;
     char *index;
 
     element_t *outputPtr         = (element_t*)outputStack;
@@ -55,7 +54,6 @@ static uint8_t parseExpression(unsigned int token) {
     while (token != EOF && token != tEnter) {
         outputCurr = &outputPtr[outputElements];
         stackCurr  = &stackPtr[stackElements];
-        grabNewToken = true;
         tok = (uint8_t)token;
 
         // Process a number
@@ -67,7 +65,7 @@ static uint8_t parseExpression(unsigned int token) {
             outputCurr->type    = TYPE_NUMBER;
             outputCurr->operand = output;
             outputElements++;
-            grabNewToken = false;
+            ti_Seek(-1, SEEK_CUR, ice.inPrgm);
         }
 
         // Process a variable
@@ -129,9 +127,7 @@ static uint8_t parseExpression(unsigned int token) {
             }
         }
         
-        if (grabNewToken) {
-            token = ti_GetC(ice.inPrgm);
-        }
+        token = ti_GetC(ice.inPrgm);
     }
     
     // Move stack elements to output
@@ -142,6 +138,15 @@ static uint8_t parseExpression(unsigned int token) {
         outputCurr->operand = stackPrev->operand;
         stackElements--;
         outputElements++;
+    }
+    
+    if (outputElements == 1) {
+        outputCurr = &outputPtr[0];
+        if (outputCurr == TYPE_NUMBER) {
+            ice.exprOutputIsNumber       = true;
+            *ice.programPtr++            = 0x21;
+            *(uint24_t*)ice.programPtr++ = outputCurr->operand;
+        }
     }
 
     return VALID;

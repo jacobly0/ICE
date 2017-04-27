@@ -22,6 +22,7 @@ typedef struct {
     bool     gotName;
     bool     gotIconDescrip;
     bool     usedCodeAfterHeader;
+    bool     exprOutputIsNumber;
 } ice_t;
 
 extern ice_t ice;
