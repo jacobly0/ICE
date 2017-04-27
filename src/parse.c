@@ -23,9 +23,9 @@ uint8_t parseProgram(void) {
 
     // do things based on the token
     while ((token = ti_GetC(ice.inPrgm)) != EOF) {
-		if ((uint8_t)token != tii) {
-			ice.usedCodeAfterHeader = true;
-		}
+        if ((uint8_t)token != tii) {
+            ice.usedCodeAfterHeader = true;
+        }
         if ((ret = (*functions[(uint8_t)token])(token)) != VALID) {
             break;
         }
@@ -37,45 +37,47 @@ uint8_t parseProgram(void) {
 /* Static functions */
 
 static uint8_t parseExpression(unsigned int token) {
-    uint8_t *outputStack   = (uint8_t *) (uint24_t*)0xD62C00;
-    uint8_t *stack         = (uint8_t *) (uint24_t*)0xD63000;
-    uint8_t *outputPtr     = (uint8_t *) (uint24_t)outputStack;
-    uint8_t *stackPtr      = (uint8_t *) (uint24_t)stack;
-    uint8_t index;
-    const char operators[] = "\x04\x40\x3D\x3C\x6A\x6B\x6C\x6D\x6E\x6F\x82\x83\x70\x71";
-    
-    goto noNewToken;
-    
-grabNewToken:
-    token = ti_GetC(ice.inPrgm);
-noNewToken:
-    if (token == EOF || token == tEnter)                  goto parseSYA;
-    // Process a number
-    if ((uint8_t)token >= t0 && (uint8_t)token <= t9) {
-        uint24_t output = token - t0;
-        while ((uint8_t)(token = ti_GetC(ice.inPrgm)) >= t0 && (uint8_t)token <= t9) {
-            output = output*10 + token - t0;
+    const uint8_t *outputStack   = (uint8_t*)0xD62C00;
+    const uint8_t *stack         = (uint8_t*)0xD63000;
+    const char operators[]       = { tStore, tAnd, tXor, tOr, tEQ, tLT, tGT, tLE, tGE, tNE, tAdd, tSub, tMul, tDiv};
+    unsigned int elements        = 0;
+    uint8_t tok;
+    char *index;
+
+    element_t *outputPtr         = (element_t*)outputStack;
+    element_t *stackPtr          = (element_t*)stack;
+    element_t *curr;
+
+    while (token != EOF && token != tEnter) {
+        curr = &outputPtr[elements];
+        tok = (uint8_t)token;
+
+        // Process a number
+        if (tok >= t0 && tok <= t9) {
+            uint24_t output = token - t0;
+            while ((uint8_t)(token = ti_GetC(ice.inPrgm)) >= t0 && (uint8_t)token <= t9) {
+                output = output*10 + (uint8_t)token - t0;
+            }
+            curr->type    = TYPE_NUMBER;
+            curr->operand = output;
+            elements++;
         }
-        *outputPtr++ = TYPE_NUMBER;
-        *outputPtr++ = (uint8_t)output;
-        *outputPtr++ = (uint8_t)(output >> 8);
-        *outputPtr++ = (uint8_t)(output >> 16);
+
+        // Process a variable
+        else if (tok >= tA && tok <= tTheta) {
+            curr->type    = TYPE_VARIABLE;
+            curr->operand = tok - tA;
+            elements++;
+        }
         
-        goto grabNewToken;
-    } 
-    
-    // Process a variable
-    else if ((uint8_t)token >= tA && (uint8_t)token <= tTheta) {
-        *outputPtr     = TYPE_VARIABLE;
-        *(outputPtr+1) = (uint8_t)token - tA;
-        outputPtr      = outputPtr + 3;
+        // Parse an operator
+        else if (index = strchr(operators, token)) {
+            
+        }
+
+        token = ti_GetC(ice.inPrgm);
     }
-    
-    // Parse an operator
-    else if (index = strpbrk(operators, (char)token)) {
-    }
-    
-parseSYA:
+
     return VALID;
 }
 
@@ -112,25 +114,25 @@ static uint8_t functionCustom(unsigned int token) {
 }
 
 static uint8_t functionIf(unsigned int token) {
-	if ((token = ti_GetC(ice.inPrgm)) != EOF && token != tEnter) {
-		parseExpression(token);
-		return VALID;
-	} else {
-		displayError(E_NO_CONDITION);
-		return ERROR;
-	}
+    if ((token = ti_GetC(ice.inPrgm)) != EOF && token != tEnter) {
+        parseExpression(token);
+        return VALID;
+    } else {
+        displayError(E_NO_CONDITION);
+        return ERROR;
+    }
 }
 
 static uint8_t functionElseEnd(unsigned int token) {
-	// This should return if in nested block
-	if (!ice.nestedBlocks) {
-		displayError(E_NO_NESTED_BLOCK);
-	}
-	return ERROR;
+    // This should return if in nested block
+    if (!ice.nestedBlocks) {
+        displayError(E_NO_NESTED_BLOCK);
+    }
+    return ERROR;
 }
 
 static uint8_t dummyReturn(unsigned int token) {
-	return VALID;
+    return VALID;
 }
 
 static uint8_t functionWhile(unsigned int token) {
