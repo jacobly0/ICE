@@ -1,7 +1,7 @@
 #ifndef OUTPUT_H
 #define OUTPUT_H
 
-#define output(type, value) *(type*)ice.programPtr = (value); ice.programPtr += sizeof(type)
+#define output(type, value)   do { *(type*)ice.programPtr = (value); ice.programPtr += sizeof(type); } while (0)
 
 #define LD_HL_IND_IX_OFF(off) do { output(uint16_t, 0x2FDD); output(uint8_t, off); } while (0)
 #define LD_IX_OFF_IND_HL(off) do { output(uint16_t, 0x27DD); output(uint8_t, off); } while (0)

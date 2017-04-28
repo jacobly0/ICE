@@ -6,6 +6,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <debug.h>
 
 #include <fileioc.h>
 
@@ -13,6 +14,7 @@
 #include "main.h"
 #include "errors.h"
 #include "output.h"
+#include "operator.h"
 
 ice_t ice;
 

@@ -6,6 +6,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <debug.h>
 
 #include <fileioc.h>
 
@@ -13,6 +14,7 @@
 #include "main.h"
 #include "errors.h"
 #include "output.h"
+#include "operator.h"
 
 extern uint8_t (*functions[256])(unsigned int token);
 
@@ -44,17 +46,19 @@ static uint8_t parseExpression(unsigned int token) {
     const uint8_t precedence[]   = {0, 1, 2, 2, 3, 3, 3, 3, 3, 3, 5, 5, 4, 4};
     unsigned int outputElements  = 0;
     unsigned int stackElements   = 0;
-    uint8_t tok;
-    char *index;
+    unsigned int loopIndex;
+    bool grabNewToken;
+    uint8_t tok, index;
 
     element_t *outputPtr         = (element_t*)outputStack;
     element_t *stackPtr          = (element_t*)stack;
-    element_t *outputCurr, *outputPrev;
+    element_t *outputCurr, *outputPrev, *outputPrevPrev;
     element_t *stackCurr, *stackPrev = NULL;
 
     while (token != EOF && token != tEnter) {
         outputCurr = &outputPtr[outputElements];
         stackCurr  = &stackPtr[stackElements];
+        grabNewToken = 1;
         tok = (uint8_t)token;
 
         // Process a number
@@ -66,7 +70,7 @@ static uint8_t parseExpression(unsigned int token) {
             outputCurr->type    = TYPE_NUMBER;
             outputCurr->operand = output;
             outputElements++;
-            ti_Seek(-1, SEEK_CUR, ice.inPrgm);
+            grabNewToken = 0;
         }
 
         // Process a variable
@@ -77,11 +81,11 @@ static uint8_t parseExpression(unsigned int token) {
         }
         
         // Parse an operator
-        else if (index = strchr(operators, token)) {
+        else if (index = getIndexOfOperator(tok)) {
             while (stackElements) {
                 stackPrev = &stackPtr[stackElements-1];
                 outputCurr = &outputPtr[outputElements];
-                if (stackPrev->type == TYPE_OPERATOR && precedence[index - operators] <= precedence[stackPrev->operand]) {
+                if (stackPrev->type == TYPE_OPERATOR && precedence[index - 1] <= precedence[getIndexOfOperator(stackPrev->operand) - 1]) {
                     outputCurr->type    = TYPE_OPERATOR;
                     outputCurr->operand = stackPrev->operand;
                     stackElements--;
@@ -92,7 +96,7 @@ static uint8_t parseExpression(unsigned int token) {
             }
             stackCurr = &stackPtr[stackElements];
             stackCurr->type    = TYPE_OPERATOR;
-            stackCurr->operand = index - operators;
+            stackCurr->operand = token;
             stackElements++;
         }
         
@@ -128,7 +132,9 @@ static uint8_t parseExpression(unsigned int token) {
             }
         }
         
-        token = ti_GetC(ice.inPrgm);
+        if (grabNewToken) {
+            token = ti_GetC(ice.inPrgm);
+        }
     }
     
     // Move stack elements to output
@@ -141,11 +147,31 @@ static uint8_t parseExpression(unsigned int token) {
         outputElements++;
     }
     
+    dbg_Debugger();
+    
+    // Remove stupid things like 2+5
+    for (loopIndex = 2; loopIndex < outputElements; loopIndex++) {
+        outputPrevPrev = &outputPtr[loopIndex-2];
+        outputPrev = &outputPtr[loopIndex-1];
+        outputCurr = &outputPtr[loopIndex];
+        
+        // Check if the types are number | number | operator
+        if (outputPrevPrev->type == TYPE_NUMBER && outputPrev->type == TYPE_NUMBER && outputCurr->type == TYPE_OPERATOR) {
+            // If yes, execute the operator, and store it in the first entry, and remove the other 2
+            outputPrevPrev->operand = executeOperator(outputPrevPrev->operand, outputPrev->operand, (uint8_t)outputCurr->operand);
+            memcpy(outputPrev, &outputPtr[loopIndex+1], (outputElements-1)*4);
+            loopIndex--;
+			outputElements -= 2;
+        }
+    }
+    
+    // Check if the expression is valid
     if (outputElements == 1) {
         outputCurr = &outputPtr[0];
         
         // Expression is only a single number
         if (outputCurr->type == TYPE_NUMBER) {
+            // This boolean is set, because loops may be optimized when the condition is a number
             ice.exprOutputIsNumber = true;
             LD_HL_IMM(outputCurr->operand);
         } 
@@ -153,11 +179,34 @@ static uint8_t parseExpression(unsigned int token) {
         // Expression is only a variable
         else if (outputCurr->type == TYPE_VARIABLE) {
             LD_HL_IND_IX_OFF(outputCurr->operand);
-        } else if (outputCurr->type == TYPE_FUNCTION_RETURN) {
+        } 
+        
+        // Expression is only a function that returns something (getKey, rand)
+        else if (outputCurr->type == TYPE_FUNCTION_RETURN) {
+            // Do stuff
+        }
+        
+        // Expression is something wrong, for example "not("
+        else {
+            return E_SYNTAX;
         }
         return VALID;
     } else if (outputElements == 2) {
         return E_SYNTAX;
+    }
+    
+    // Parse the expression in infix notation!
+    for (loopIndex = 2; loopIndex < outputElements; loopIndex++) {
+        outputCurr = &outputPtr[loopIndex];
+        
+        // Parse an operator with 2 arguments
+        if (outputCurr->type == TYPE_OPERATOR) {
+            parseOperator(&outputPtr[loopIndex-2], &outputPtr[loopIndex-1], outputCurr);
+        } 
+        
+        // Parse a function with X arguments
+        else if (outputCurr->type == TYPE_FUNCTION) {
+        }
     }
 
     return VALID;

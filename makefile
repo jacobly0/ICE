@@ -9,7 +9,7 @@
 
 #----------------------------
 TARGET ?= ICE
-DEBUGMODE ?= NDEBUG
+DEBUGMODE ?= DEBUG
 ARCHIVED ?= NO
 COMPRESSED ?= YES
 #----------------------------
