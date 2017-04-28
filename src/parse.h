@@ -6,9 +6,9 @@
 #define TYPE_VARIABLE        1
 #define TYPE_FUNCTION_RETURN 2
 #define TYPE_CHAIN_ANS		 3
+#define TYPE_CHAIN_PUSH      4
 // Don't change upto here!
 
-#define TYPE_CHAIN_PUSH      4
 #define TYPE_LIST            5
 #define TYPE_OS_LIST         6
 #define TYPE_STRING          7
