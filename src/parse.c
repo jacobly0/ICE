@@ -147,8 +147,6 @@ static uint8_t parseExpression(unsigned int token) {
         outputElements++;
     }
     
-    dbg_Debugger();
-    
     // Remove stupid things like 2+5
     for (loopIndex = 2; loopIndex < outputElements; loopIndex++) {
         outputPrevPrev = &outputPtr[loopIndex-2];
@@ -183,7 +181,7 @@ static uint8_t parseExpression(unsigned int token) {
         
         // Expression is only a function that returns something (getKey, rand)
         else if (outputCurr->type == TYPE_FUNCTION_RETURN) {
-            // Do stuff
+            insertFunctionReturn(outputCurr->operand, OUTPUT_IN_HL, NO_PUSH);
         }
         
         // Expression is something wrong, for example "not("
