@@ -10,8 +10,9 @@
 #include <fileioc.h>
 
 #include "parse.h"
-#include "errors.h"
 #include "main.h"
+#include "errors.h"
+#include "output.h"
 
 extern uint8_t (*functions[256])(unsigned int token);
 
@@ -97,7 +98,7 @@ static uint8_t parseExpression(unsigned int token) {
         
         // Push a left parenthesis
         else if (tok == tLParen) {
-            stackCurr->type    = TYPE_FUNCTION_RETURN;
+            stackCurr->type    = TYPE_FUNCTION;
             stackCurr->operand = token;
             stackElements++;
         }
@@ -107,7 +108,7 @@ static uint8_t parseExpression(unsigned int token) {
             while (stackElements) {
                 stackPrev = &stackPtr[stackElements-1];
                 outputCurr = &outputPtr[outputElements];
-                if (stackPrev->type != TYPE_FUNCTION_RETURN) {
+                if (stackPrev->type != TYPE_FUNCTION) {
                     outputCurr->type    = stackPrev->type;
                     outputCurr->operand = stackPrev->operand;
                     stackElements--;
@@ -120,7 +121,7 @@ static uint8_t parseExpression(unsigned int token) {
                 return E_EXTRA_RPAREN;
             }
             if (stackPrev->operand != tLParen) {
-                outputCurr->type    = TYPE_FUNCTION_RETURN;
+                outputCurr->type    = TYPE_FUNCTION;
                 outputCurr->operand = stackPrev->operand;
                 stackElements--;
                 outputElements++;
@@ -142,11 +143,21 @@ static uint8_t parseExpression(unsigned int token) {
     
     if (outputElements == 1) {
         outputCurr = &outputPtr[0];
-        if (outputCurr == TYPE_NUMBER) {
-            ice.exprOutputIsNumber       = true;
-            *ice.programPtr++            = 0x21;
-            *(uint24_t*)ice.programPtr++ = outputCurr->operand;
+        
+        // Expression is only a single number
+        if (outputCurr->type == TYPE_NUMBER) {
+            ice.exprOutputIsNumber = true;
+            LD_HL_IMM(outputCurr->operand);
+        } 
+        
+        // Expression is only a variable
+        else if (outputCurr->type == TYPE_VARIABLE) {
+            LD_HL_IND_IX_OFF(outputCurr->operand);
+        } else if (outputCurr->type == TYPE_FUNCTION_RETURN) {
         }
+        return VALID;
+    } else if (outputElements == 2) {
+        return E_SYNTAX;
     }
 
     return VALID;

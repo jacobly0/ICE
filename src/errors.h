@@ -6,6 +6,7 @@
 #define E_NO_CONDITION     2
 #define E_NO_NESTED_BLOCK  3
 #define E_EXTRA_RPAREN     4
+#define E_SYNTAX           5
 #define VALID              255
 
 void displayError(unsigned int index);

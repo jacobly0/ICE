@@ -11,7 +11,7 @@
 TARGET ?= ICE
 DEBUGMODE ?= NDEBUG
 ARCHIVED ?= NO
-COMPRESSED ?= NO
+COMPRESSED ?= YES
 #----------------------------
 ICONPNG ?= NICON
 DESCRIPTION ?= "ICE Compiler v1.6"

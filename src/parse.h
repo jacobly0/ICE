@@ -11,6 +11,7 @@
 #define TYPE_STRING          7
 #define TYPE_OS_STRING       8
 #define TYPE_OPERATOR        9
+#define TYPE_FUNCTION        10
 
 uint8_t parseProgram(void);
 

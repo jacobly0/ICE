@@ -12,6 +12,7 @@
 #include "parse.h"
 #include "main.h"
 #include "errors.h"
+#include "output.h"
 
 ice_t ice;
 
