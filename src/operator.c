@@ -16,6 +16,8 @@
 #include "output.h"
 #include "operator.h"
 
+extern void (*operatorFunctions[8])(element_t *, element_t *);
+
 uint8_t getIndexOfOperator(uint8_t operator) {
     const char operators[] = {tStore, tAnd, tXor, tOr, tEQ, tLT, tGT, tLE, tGE, tNE, tMul, tDiv, tAdd, tSub};
     char *index;
@@ -50,7 +52,7 @@ uint24_t executeOperator(uint24_t operand1, uint24_t operand2, uint8_t operator)
         case tOr:
             return operand1 || operand2;
         case tXor:
-            return operand1 ^ operand2;
+            return !operand1 != !operand2;
         case tAnd:
             return operand1 && operand2;
         default:
@@ -59,34 +61,41 @@ uint24_t executeOperator(uint24_t operand1, uint24_t operand2, uint8_t operator)
 }
 
 void parseOperator(element_t *outputPrevPrev, element_t *outputPrev, element_t *outputCurr) {
-    switch (outputCurr->type) {
-        case tAdd:
-            switch (outputPrevPrev->type) {
-                case TYPE_NUMBER:
-                    // Number, variable, chainans, function
-                case TYPE_VARIABLE:
-                    // Number, variable, chainans, function
-                case TYPE_CHAIN_PUSH:
-                    // Number, variable, chainans, function
-                case TYPE_CHAIN_ANS:
-                    // Number, variable,         , function
-                case TYPE_FUNCTION_RETURN:
-                    // Number, variable, chainans, function
-                       return;
-            }
-        case tSub:
-        case tMul:
-        case tDiv:
-        case tNE:
-        case tGE:
-        case tLE:
-        case tGT:
-        case tLT:
-        case tEQ:
-        case tOr:
-        case tXor:
-        case tAnd:
-        case tStore:
-            return;
-    }
+}
+
+static void AddNumberVariable(element_t *entry1, element_t *entry2) {
+	AddVariableNumber(entry2, entry1);
+}
+
+static void AddNumberChainAns(element_t *entry1, element_t *entry2) {
+	AddChainAnsNumber(entry2, entry1);
+}
+
+static void AddNumberFunction(element_t *entry1, element_t *entry2) {
+	AddFunctionNumber(entry2, entry1);
+}
+
+static void AddVariableNumber(element_t *entry1, element_t *entry2) {
+	LD_HL_IND_IX_OFF(entry1->operand);
+	AddChainAnsNumber(entry1, entry2);
+}
+
+static void AddVariableChainAns(element_t *entry1, element_t *entry2) {
+	AddChainAnsVariable(entry2, entry1);
+}
+
+static void AddVariableFunction(element_t *entry1, element_t *entry2) {
+	AddFunctionVariable(entry2, entry1);
+}
+
+
+static void (*operatorFunctions[8])(element_t, element_t) = {
+	AddNumberNumber,
+	AddNumberVariable,
+	AddNumberChainAns,
+	AddNumberFunction,
+	AddVariableNumber,
+	AddVariableVariable,
+	AddVariableChainAns,
+	AddVariableFunction,
 }
