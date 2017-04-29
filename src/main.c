@@ -9,6 +9,7 @@
 #include <debug.h>
 
 #include <fileioc.h>
+#include <graphx.h>
 
 #include "parse.h"
 #include "main.h"
@@ -19,20 +20,65 @@
 ice_t ice;
 
 void main() {
-    uint8_t a = 0;
+    uint8_t a = 0, selectedProgram = 0, key, amountOfPrograms;
     unsigned int token;
     unsigned int res;
+    uint8_t *search_pos = NULL;
+    char *var_name;
+    const char headerStart[] = {tii, 0};
+    
+    // Yay, GUI! :)
+    gfx_Begin(gfx_8bpp);
+    gfx_SetColor(189);
+    gfx_FillRectangle_NoClip(0, 0, 320, 10);
+    gfx_SetColor(0);
+    gfx_HorizLine_NoClip(0, 10, 320);
+    gfx_PrintStringXY("ICE Compiler v1.5 - By Peter \"PT_\" Tillema", 21, 1);
+    
+    // Get all the programs that start with the [i] token
+    while((var_name = ti_DetectVar(&search_pos, headerStart, TI_PRGM_TYPE)) != NULL && ++selectedProgram <= 22) {
+        gfx_PrintStringXY(var_name, 10, selectedProgram*10 + 3);
+    }
+    amountOfPrograms = selectedProgram;
+    
+    // Check if there are ICE programs
+    if (!amountOfPrograms) {
+        gfx_PrintStringXY("No programs found!", 10, 13);
+        goto err;
+    }
+    
+    // Select a program
+    selectedProgram = 1;
+    while ((key = os_GetCSC()) != sk_Enter) {
+        gfx_PrintStringXY(">", 1, selectedProgram*10 + 3);
+        
+        // Stop and quit
+        if (key == sk_Clear)                              goto err;
+        
+        // Select the next program
+        if (key == sk_Down && selectedProgram != amountOfPrograms) {
+            gfx_FillRectangle_NoClip(10, selectedProgram*10 + 3, 8, 8);
+            selectedProgram++;
+        }
+        
+        // Select the previous program
+        if (key == sk_Up && selectedProgram != 1) {
+            gfx_FillRectangle_NoClip(10, selectedProgram*10 + 3, 8, 8);
+            selectedProgram--;
+        }
+    }
+    
+    // Grab the right program
+    search_pos = NULL;
+    while(((var_name = ti_DetectVar(&search_pos, headerStart, TI_PRGM_TYPE)) != NULL) && --selectedProgram);
+    strcpy(ice.inName, var_name);
 
-    strcpy(ice.inName, "ABC");
-
+    // Find program
     ti_CloseAll();
     ice.inPrgm = ti_OpenVar(ice.inName, "r", TI_PRGM_TYPE);
     if (!ice.inPrgm)                                      goto err;
-    
-    // Check if it's an ICE program
-    if ((uint8_t)ti_GetC(ice.inPrgm) != tii)              goto err;
      
-    // Setup pointers
+    // Setup pointers and header
     ice.headerData      = malloc(500);
     ice.programDataData = malloc(40000);
     ice.programData     = (uint8_t*)0xD52C00;
@@ -57,6 +103,7 @@ void main() {
 
 err:
     ti_CloseAll();
+    gfx_End();
     prgm_CleanUp();
 }
 

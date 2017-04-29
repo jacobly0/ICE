@@ -9,6 +9,7 @@
 #include <debug.h>
 
 #include <fileioc.h>
+#include <graphx.h>
 
 #include "parse.h"
 #include "main.h"
@@ -173,7 +174,7 @@ static uint8_t parseExpression(unsigned int token) {
             LD_HL_IND_IX_OFF(outputCurr->operand);
         } 
         
-        // Expression is only a function that returns something (getKey, rand) (C functions?)
+        // Expression is only a function without arguments that returns something (getKey, rand)
         else if (outputCurr->type == TYPE_FUNCTION_RETURN) {
             insertFunctionReturn(outputCurr->operand, OUTPUT_IN_HL, NO_PUSH);
         }

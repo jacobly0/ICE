@@ -9,6 +9,7 @@
 #include <debug.h>
 
 #include <fileioc.h>
+#include <graphx.h>
 
 #include "parse.h"
 #include "main.h"

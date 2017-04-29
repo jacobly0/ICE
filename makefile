@@ -19,7 +19,7 @@ DESCRIPTION ?= "ICE Compiler v1.6"
 
 #Add shared library names to the L varible, for instance:
 # L := graphx fileioc keypadc
-L := fileioc
+L := fileioc graphx
 
 #These directories specify where source and output should go
 
