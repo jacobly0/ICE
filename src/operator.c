@@ -16,10 +16,11 @@
 #include "output.h"
 #include "operator.h"
 
-extern uint8_t (*operatorFunctions[20])(element_t *, element_t *);
+extern uint8_t (*operatorFunctions[20])(element_t*, element_t*);
+const char operators[] = {tStore, tAnd, tXor, tOr, tEQ, tLT, tGT, tLE, tGE, tNE, tMul, tDiv, tAdd, tSub};
+const uint8_t operatorPrecedence[] = {0, 1, 2, 2, 3, 3, 3, 3, 3, 3, 5, 5, 4, 4};
 
 uint8_t getIndexOfOperator(uint8_t operator) {
-    const char operators[] = {tStore, tAnd, tXor, tOr, tEQ, tLT, tGT, tLE, tGE, tNE, tMul, tDiv, tAdd, tSub};
     char *index;
     if (index = strchr(operators, operator)) {
         return index - operators + 1;
@@ -78,9 +79,9 @@ void insertFunctionReturn(uint8_t function, uint8_t outputRegister, uint8_t need
 
 
 static uint8_t AddChainAnsNumber(element_t *entry1, element_t *entry2) {
-    uint8_t a;
     uint24_t number = entry2->operand;
     if (number < 5) {
+        uint8_t a;
         for (a = 0; a < (uint8_t)number; a++) {
             INC_HL();
         }
@@ -210,3 +211,4 @@ uint8_t (*operatorFunctions[20])(element_t*, element_t*) = {
     AddChainPushFunction,
     AddChainPushChainAns,
 };
+

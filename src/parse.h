@@ -1,13 +1,12 @@
 #ifndef PARSE_H
 #define PARSE_H
 
-//
 #define TYPE_NUMBER          0
 #define TYPE_VARIABLE        1
 #define TYPE_FUNCTION_RETURN 2
-#define TYPE_CHAIN_ANS		 3
+#define TYPE_CHAIN_ANS       3
 #define TYPE_CHAIN_PUSH      4
-// Don't change upto here!
+// Don't change up to here!
 
 #define TYPE_LIST            5
 #define TYPE_OS_LIST         6

@@ -46,3 +46,4 @@ USE_FLASH_FUNCTIONS ?= YES
 #----------------------------
 
 include $(CEDEV)/include/.makefile
+
