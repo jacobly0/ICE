@@ -206,25 +206,92 @@ static uint8_t parseExpression(unsigned int token) {
 }
 
 static uint8_t functionI(unsigned int token) {
-    // Get the output name
-    if (!ice.gotName) {
-        uint8_t a = 0;
-        while ((token = ti_GetC(ice.inPrgm)) != EOF && (uint8_t)token != tEnter && a < 9) {
-            ice.outName[a++] = (uint8_t)token;
+    uint8_t a = 0, b = 0, outputByte, tok, tokLength, *dataPtr;
+    const char *dataString;
+    const uint8_t colorTable[16] = {255,24,224,0,248,36,227,97,9,19,230,255,181,107,106,74};
+    
+    dbg_Debugger();
+    
+    // Only get the output name, icon or description at the top of your program
+    if (!ice.usedCodeAfterHeader) {
+        // Get the output name
+        if (!ice.gotName) {
+            while ((token = ti_GetC(ice.inPrgm)) != EOF && (uint8_t)token != tEnter && a < 9) {
+                ice.outName[a++] = (uint8_t)token;
+            }
+            ice.gotName = true;
+            return VALID;
         }
-        ice.gotName = true;
+
+        // Get the icon and description
+        else if (!ice.gotIconDescription) {
+            // Move header to take place for the icon and description, setup pointer
+            memcpy(ice.headerData + 350, ice.headerData, 116);
+            ice.headerPtr = (uint8_t*)ice.headerData;
+            
+            // Insert "jp <random>" and Cesium header
+            *ice.headerPtr++ = 0xC3;
+            *(uint24_t*)(ice.headerPtr+3) = 0x101001;
+            ice.headerPtr += 6;
+            
+            if ((uint8_t)ti_GetC(ice.inPrgm) != tString) {
+                return E_WRONG_ICON;
+            }
+            do {
+                // Get hexadecimal
+                tok = (uint8_t)ti_GetC(ice.inPrgm);
+                if (tok >= t0 && tok <= t9) {
+                    outputByte = tok - t0;
+                } else if (tok >= tA && tok <= tF) {
+                    outputByte = tok - tA + 0x0A;
+                } else {
+                    return E_INVALID_ICON;
+                }
+                *ice.headerPtr++ = colorTable[outputByte];
+            } while (b++ != 255);
+            
+            // Move on to the description
+            if ((uint8_t)(token = ti_GetC(ice.inPrgm)) == tString) {
+                token = ti_GetC(ice.inPrgm);
+            }
+            if (token == EOF)                             goto NullTerminateDescription;
+            
+            if ((uint8_t)token != tEnter) {
+                return E_INVALID_ICON;
+            }
+            
+            // Check if there is a description
+            if ((token = ti_GetC(ice.inPrgm)) == tii) {
+                dataPtr = ti_GetDataPtr(ice.inPrgm);
+                
+                // Grab description
+                while ((token = ti_GetC(ice.inPrgm)) != EOF && (uint8_t)token != tEnter) {
+                    dataString = ti_GetTokenString(&dataPtr, NULL, NULL);
+                    memcpy(ice.headerPtr, dataString, tokLength = strlen(dataString));
+                    ice.headerPtr += tokLength;
+                }
+            } else if (token != EOF) {
+                ti_Seek(-1, SEEK_CUR, ice.inPrgm);
+            }
+            
+NullTerminateDescription:
+            *ice.headerPtr++ = 0;
+            
+            // Write the right jp offset
+            *(uint24_t*)(ice.headerData+1) = (uint24_t)ice.headerPtr - (uint24_t)ice.headerData + 0xD1A881;
+            
+            ice.gotIconDescription = true;
+            return VALID;
+        }
+        
+        // Don't return and treat as a comment
+        else {
+            ice.usedCodeAfterHeader = true;
+        }
     }
 
-    // Get the icon and description
-    else if (!ice.gotIconDescrip) {
-        // put code here
-        ice.gotIconDescrip = true;
-    }
-
-    // otherwise, treat it as a comment
-    else {
-        while ((token = ti_GetC(ice.inPrgm)) != EOF && token != tEnter);
-    }
+    // Treat it as a comment
+    while ((token = ti_GetC(ice.inPrgm)) != EOF && token != tEnter);
 
     return VALID;
 }

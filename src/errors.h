@@ -7,6 +7,8 @@
 #define E_NO_NESTED_BLOCK  3
 #define E_EXTRA_RPAREN     4
 #define E_SYNTAX           5
+#define E_WRONG_ICON       6
+#define E_INVALID_ICON     7
 #define VALID              255
 
 void displayError(unsigned int index);

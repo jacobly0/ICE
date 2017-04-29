@@ -9,6 +9,7 @@ typedef struct {
     char     inName[9];
 	
 	uint8_t  nestedBlocks;
+    uint8_t  amountOfUsedCRoutines;
 	uint8_t  *headerData;
 	uint8_t  *programData;
 	uint8_t  *programDataData;
@@ -20,7 +21,7 @@ typedef struct {
     ti_var_t outPrgm;
 	
     bool     gotName;
-    bool     gotIconDescrip;
+    bool     gotIconDescription;
     bool     usedCodeAfterHeader;
     bool     exprOutputIsNumber;
 } ice_t;

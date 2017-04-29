@@ -24,6 +24,8 @@ static const char *errors[] = {
     "You used 'Else' or End' outside a condition block",
     "You have an extra right paren",
     "You have an invalid expression",
+    "Your icon should start with a quote",
+    "Your icon has invalid syntax or not the right length",
 };
 
 void displayError(unsigned int index) {

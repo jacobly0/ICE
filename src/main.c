@@ -79,7 +79,7 @@ void main() {
     if (!ice.inPrgm)                                      goto err;
      
     // Setup pointers and header
-    ice.headerData      = malloc(500);
+    ice.headerData      = malloc(800);
     ice.programDataData = malloc(40000);
     ice.programData     = (uint8_t*)0xD52C00;
 
