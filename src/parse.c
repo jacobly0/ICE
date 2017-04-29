@@ -136,7 +136,7 @@ static uint8_t parseExpression(unsigned int token) {
     // Move stack elements to output
     while (stackElements) {
         outputCurr = &outputPtr[outputElements++];
-        stackPrev = &stackPtr[stackElements--];
+        stackPrev = &stackPtr[--stackElements];
         outputCurr->type    = stackPrev->type;
         outputCurr->operand = stackPrev->operand;
     }
