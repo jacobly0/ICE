@@ -31,18 +31,18 @@ void main() {
     
     // Check if it's an ICE program
     if ((uint8_t)ti_GetC(ice.inPrgm) != tii)              goto err;
-	
-	// Setup pointers
-	ice.headerData      = (uint8_t *) malloc(500);
-	ice.programData     = (uint8_t *) (uint24_t*)0xD52C00;
-	ice.programDataData = (uint8_t *) malloc(40000);
-	
-	ice.headerPtr       = (uint8_t *) (uint24_t)ice.headerData + 116;
-	ice.programPtr      = (uint8_t *) (uint24_t)ice.programData + 5;
-	ice.programDataPtr  = (uint8_t *) (uint24_t)ice.programDataData;
-	
-	memcpy(ice.headerData, CHeaderData, 116);
-	memcpy(ice.programData, CProgramHeader, 5);
+     
+    // Setup pointers
+    ice.headerData      = malloc(500);
+    ice.programDataData = malloc(40000);
+    ice.programData     = (uint8_t*)0xD52C00;
+
+    ice.headerPtr       = (uint8_t*)ice.headerData + 116;
+    ice.programPtr      = (uint8_t*)ice.programData + 5;
+    ice.programDataPtr  = (uint8_t*)ice.programDataData;
+     
+    memcpy(ice.headerData, CHeaderData, 116);
+    memcpy(ice.programData, CProgramHeader, 5);
    
     // Do the stuff
     res = parseProgram();
@@ -50,7 +50,7 @@ void main() {
     // Create or empty the output program if parsing succeeded
     if (res == VALID) {
         ice.outPrgm = ti_OpenVar(ice.outName, "w", TI_PPRGM_TYPE);
-        if (!ice.outPrgm)                                 goto err;
+        if (!ice.outPrgm)                               goto err;
     } else {
         displayError(res);
     }

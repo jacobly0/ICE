@@ -42,23 +42,19 @@ uint8_t parseProgram(void) {
 static uint8_t parseExpression(unsigned int token) {
     const uint8_t *outputStack   = (uint8_t*)0xD62C00;
     const uint8_t *stack         = (uint8_t*)0xD63000;
-    const char operators[]       = {tStore, tAnd, tXor, tOr, tEQ, tLT, tGT, tLE, tGE, tNE, tMul, tDiv, tAdd, tSub};
-    const uint8_t precedence[]   = {0, 1, 2, 2, 3, 3, 3, 3, 3, 3, 5, 5, 4, 4};
     unsigned int outputElements  = 0;
     unsigned int stackElements   = 0;
     unsigned int loopIndex;
-    bool grabNewToken;
     uint8_t tok, index;
 
-    element_t *outputPtr         = (element_t*)outputStack;
-    element_t *stackPtr          = (element_t*)stack;
+    element_t *outputPtr = (element_t*)outputStack;
+    element_t *stackPtr = (element_t*)stack;
     element_t *outputCurr, *outputPrev, *outputPrevPrev;
     element_t *stackCurr, *stackPrev = NULL;
 
     while (token != EOF && token != tEnter) {
         outputCurr = &outputPtr[outputElements];
         stackCurr  = &stackPtr[stackElements];
-        grabNewToken = 1;
         tok = (uint8_t)token;
 
         // Process a number
@@ -70,7 +66,9 @@ static uint8_t parseExpression(unsigned int token) {
             outputCurr->type    = TYPE_NUMBER;
             outputCurr->operand = output;
             outputElements++;
-            grabNewToken = 0;
+
+            // Don't grab a new token
+            continue;
         }
 
         // Process a variable
@@ -85,7 +83,7 @@ static uint8_t parseExpression(unsigned int token) {
             while (stackElements) {
                 stackPrev = &stackPtr[stackElements-1];
                 outputCurr = &outputPtr[outputElements];
-                if (stackPrev->type == TYPE_OPERATOR && precedence[index - 1] <= precedence[getIndexOfOperator(stackPrev->operand) - 1]) {
+                if (stackPrev->type == TYPE_OPERATOR && operatorPrecedence[index - 1] <= operatorPrecedence[getIndexOfOperator(stackPrev->operand) - 1]) {
                     outputCurr->type    = TYPE_OPERATOR;
                     outputCurr->operand = stackPrev->operand;
                     stackElements--;
@@ -131,20 +129,16 @@ static uint8_t parseExpression(unsigned int token) {
                 outputElements++;
             }
         }
-        
-        if (grabNewToken) {
-            token = ti_GetC(ice.inPrgm);
-        }
+       
+        token = ti_GetC(ice.inPrgm);
     }
     
     // Move stack elements to output
     while (stackElements) {
-        outputCurr = &outputPtr[outputElements];
-        stackPrev = &stackPtr[stackElements-1];
+        outputCurr = &outputPtr[outputElements++];
+        stackPrev = &stackPtr[--stackElements];
         outputCurr->type    = stackPrev->type;
         outputCurr->operand = stackPrev->operand;
-        stackElements--;
-        outputElements++;
     }
     
     // Remove stupid things like 2+5
@@ -158,8 +152,8 @@ static uint8_t parseExpression(unsigned int token) {
             // If yes, execute the operator, and store it in the first entry, and remove the other 2
             outputPrevPrev->operand = executeOperator(outputPrevPrev->operand, outputPrev->operand, (uint8_t)outputCurr->operand);
             memcpy(outputPrev, &outputPtr[loopIndex+1], (outputElements-1)*4);
+            outputElements -= 2;
             loopIndex--;
-			outputElements -= 2;
         }
     }
     
@@ -179,7 +173,7 @@ static uint8_t parseExpression(unsigned int token) {
             LD_HL_IND_IX_OFF(outputCurr->operand);
         } 
         
-        // Expression is only a function that returns something (getKey, rand)
+        // Expression is only a function that returns something (getKey, rand) (C functions?)
         else if (outputCurr->type == TYPE_FUNCTION_RETURN) {
             insertFunctionReturn(outputCurr->operand, OUTPUT_IN_HL, NO_PUSH);
         }

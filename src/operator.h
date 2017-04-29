@@ -14,4 +14,8 @@ uint8_t parseOperator(element_t *outputPrevPrev, element_t *outputPrev, element_
 
 void insertFunctionReturn(uint8_t function, uint8_t outputRegister, uint8_t needPush);
 
+extern const char operators[];
+extern const uint8_t operatorPrecedence[];
+
 #endif
+
