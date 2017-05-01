@@ -29,5 +29,5 @@ static const char *errors[] = {
 };
 
 void displayError(unsigned int index) {
-    // display 'errors[index]';
+    gfx_PrintStringXY(errors[index], 10, 13);
 }

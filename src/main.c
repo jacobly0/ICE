@@ -20,11 +20,11 @@
 ice_t ice;
 
 void main() {
-    uint8_t a = 0, selectedProgram = 0, key, amountOfPrograms;
-    unsigned int token;
-    unsigned int res;
+    uint8_t a = 0, selectedProgram = 0, key, amountOfPrograms, res;
+    unsigned int token, headerSize, programSize, programDataSize;
     uint8_t *search_pos = NULL;
     char *var_name;
+    uint8_t *outputDataPtr;
     const char headerStart[] = {tii, 0};
     
     // Yay, GUI! :)
@@ -50,7 +50,9 @@ void main() {
     // Select a program
     selectedProgram = 1;
     while ((key = os_GetCSC()) != sk_Enter) {
+        gfx_SetColor(0);
         gfx_PrintStringXY(">", 1, selectedProgram*10 + 3);
+        gfx_SetColor(255);
         
         // Stop and quit
         if (key == sk_Clear)                              goto err;
@@ -93,15 +95,44 @@ void main() {
     // Do the stuff
     res = parseProgram();
     
+    dbg_Debugger();
+    
     // Create or empty the output program if parsing succeeded
     if (res == VALID) {
         ice.outPrgm = ti_OpenVar(ice.outName, "w", TI_PPRGM_TYPE);
         if (!ice.outPrgm)                               goto err;
+        ti_Rewind(ice.outPrgm);
+        
+        // If the last token is not "Return", write a "ret" to the program
+        if (!ice.lastTokenIsReturn) {
+            *ice.programPtr++ = 0xC9;
+        }
+        
+        // Get the sizes of the 3 stacks
+        headerSize = (uint24_t)ice.headerPtr - (uint24_t)ice.headerData;
+        programSize = (uint24_t)ice.programPtr - (uint24_t)ice.programData;
+        programDataSize = (uint24_t)ice.programDataPtr - (uint24_t)ice.programDataData;
+        
+        // The output size is the sum of the sizes of the 3 stacks
+        ti_Resize(headerSize + programSize + programDataSize, ice.outPrgm);
+                  
+        outputDataPtr = ti_GetDataPtr(ice.outPrgm);
+        
+        // Write ASM header
+        *outputDataPtr++ = tExtTok;
+        *outputDataPtr++ = tAsm84CeCmp;
+        
+        // Copy the header, main program, and data to output :D
+        memcpy(outputDataPtr, ice.headerData, headerSize);
+        memcpy(outputDataPtr + headerSize, ice.programData, programSize);
+        memcpy(outputDataPtr + headerSize + programSize, ice.programDataData, programDataSize);
     } else {
         displayError(res);
     }
 
 err:
+    gfx_PrintStringXY("[Press any key to quit]", 85, 230);
+    while (!os_GetCSC());
     ti_CloseAll();
     gfx_End();
     prgm_CleanUp();

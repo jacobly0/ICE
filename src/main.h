@@ -24,6 +24,7 @@ typedef struct {
     bool     gotIconDescription;
     bool     usedCodeAfterHeader;
     bool     exprOutputIsNumber;
+    bool     lastTokenIsReturn;
 } ice_t;
 
 extern ice_t ice;

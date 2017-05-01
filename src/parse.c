@@ -224,7 +224,6 @@ static uint8_t functionI(unsigned int token) {
 
         // Get the icon and description
         else if (!ice.gotIconDescription) {
-            dbg_Debugger();
             // Move header to take place for the icon and description, setup pointer
             memcpy(ice.headerData + 350, ice.headerData, 116);
             ice.headerPtr = (uint8_t*)ice.headerData;
@@ -234,6 +233,7 @@ static uint8_t functionI(unsigned int token) {
             *(uint24_t*)(ice.headerPtr+3) = 0x101001;
             ice.headerPtr += 6;
             
+            // Icon should start with a "
             if ((uint8_t)ti_GetC(ice.inPrgm) != tString) {
                 return E_WRONG_ICON;
             }
