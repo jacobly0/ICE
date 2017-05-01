@@ -57,13 +57,13 @@ void main() {
         
         // Select the next program
         if (key == sk_Down && selectedProgram != amountOfPrograms) {
-            gfx_FillRectangle_NoClip(10, selectedProgram*10 + 3, 8, 8);
+            gfx_FillRectangle_NoClip(1, selectedProgram*10 + 3, 8, 8);
             selectedProgram++;
         }
         
         // Select the previous program
         if (key == sk_Up && selectedProgram != 1) {
-            gfx_FillRectangle_NoClip(10, selectedProgram*10 + 3, 8, 8);
+            gfx_FillRectangle_NoClip(1, selectedProgram*10 + 3, 8, 8);
             selectedProgram--;
         }
     }

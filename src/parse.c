@@ -46,7 +46,7 @@ static uint8_t parseExpression(unsigned int token) {
     unsigned int outputElements  = 0;
     unsigned int stackElements   = 0;
     unsigned int loopIndex;
-    uint8_t tok, index;
+    uint8_t index;
 
     element_t *outputPtr = (element_t*)outputStack;
     element_t *stackPtr = (element_t*)stack;
@@ -54,6 +54,7 @@ static uint8_t parseExpression(unsigned int token) {
     element_t *stackCurr, *stackPrev = NULL;
 
     while (token != EOF && token != tEnter) {
+        uint8_t tok;
         outputCurr = &outputPtr[outputElements];
         stackCurr  = &stackPtr[stackElements];
         tok = (uint8_t)token;
@@ -80,7 +81,7 @@ static uint8_t parseExpression(unsigned int token) {
         }
         
         // Parse an operator
-        else if (index = getIndexOfOperator(tok)) {
+        else if ((index = getIndexOfOperator(tok))) {
             while (stackElements) {
                 stackPrev = &stackPtr[stackElements-1];
                 outputCurr = &outputPtr[outputElements];
@@ -210,8 +211,6 @@ static uint8_t functionI(unsigned int token) {
     const char *dataString;
     const uint8_t colorTable[16] = {255,24,224,0,248,36,227,97,9,19,230,255,181,107,106,74};
     
-    dbg_Debugger();
-    
     // Only get the output name, icon or description at the top of your program
     if (!ice.usedCodeAfterHeader) {
         // Get the output name
@@ -225,6 +224,7 @@ static uint8_t functionI(unsigned int token) {
 
         // Get the icon and description
         else if (!ice.gotIconDescription) {
+            dbg_Debugger();
             // Move header to take place for the icon and description, setup pointer
             memcpy(ice.headerData + 350, ice.headerData, 116);
             ice.headerPtr = (uint8_t*)ice.headerData;
@@ -275,10 +275,18 @@ static uint8_t functionI(unsigned int token) {
             }
             
 NullTerminateDescription:
-            *ice.headerPtr++ = 0;
-            
+            // Don't increment the pointer for now, we will do that later :)
+            *ice.headerPtr = 0;
+
             // Write the right jp offset
             *(uint24_t*)(ice.headerData+1) = (uint24_t)ice.headerPtr - (uint24_t)ice.headerData + 0xD1A881;
+            
+            // Copy header back, and update the 3 pointers in the C header...
+            memcpy(ice.headerPtr+1, ice.headerData+350, 116);
+            *(uint24_t*)(ice.headerPtr+2)  = *(uint24_t*)(ice.headerPtr+2)  + (uint24_t)ice.headerPtr - (uint24_t)ice.headerData;
+            *(uint24_t*)(ice.headerPtr+53) = *(uint24_t*)(ice.headerPtr+53) + (uint24_t)ice.headerPtr - (uint24_t)ice.headerData;
+            *(uint24_t*)(ice.headerPtr+66) = *(uint24_t*)(ice.headerPtr+66) + (uint24_t)ice.headerPtr - (uint24_t)ice.headerData;
+            ice.headerPtr += 117;
             
             ice.gotIconDescription = true;
             return VALID;

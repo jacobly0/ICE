@@ -23,7 +23,7 @@ const uint8_t operatorPrecedence[] = {0, 1, 2, 2, 3, 3, 3, 3, 3, 3, 5, 5, 4, 4};
 
 uint8_t getIndexOfOperator(uint8_t operator) {
     char *index;
-    if (index = strchr(operators, operator)) {
+    if ((index = strchr(operators, operator))) {
         return index - operators + 1;
     }
     return 0;
