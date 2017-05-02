@@ -17,6 +17,7 @@
 #define TYPE_FUNCTION        255
 
 uint8_t parseProgram(void);
+unsigned int getc(void);
 
 typedef struct {
     uint8_t type;

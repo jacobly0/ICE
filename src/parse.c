@@ -19,6 +19,10 @@
 
 extern uint8_t (*functions[256])(unsigned int token);
 
+unsigned int getc(void) {
+    return ti_GetC(ice.inPrgm);
+}
+
 uint8_t parseProgram(void) {
     unsigned int token;
     uint8_t ret = VALID;
@@ -26,13 +30,18 @@ uint8_t parseProgram(void) {
     ti_Rewind(ice.inPrgm);
 
     // do things based on the token
-    while ((token = ti_GetC(ice.inPrgm)) != EOF) {
+    while ((token = getc()) != EOF) {
         if ((uint8_t)token != tii) {
             ice.usedCodeAfterHeader = true;
         }
         if ((ret = (*functions[(uint8_t)token])(token)) != VALID) {
             break;
         }
+    }
+
+    // If the last token is not "Return", write a "ret" to the program
+    if (ret == VALID && !ice.lastTokenIsReturn) {
+        output(uint8_t, OP_RET);
     }
 
     return ret;
@@ -62,10 +71,10 @@ static uint8_t parseExpression(unsigned int token) {
         // Process a number
         if (tok >= t0 && tok <= t9) {
             uint24_t output = token - t0;
-            while ((uint8_t)(token = ti_GetC(ice.inPrgm)) >= t0 && (uint8_t)token <= t9) {
+            while ((uint8_t)(token = getc()) >= t0 && (uint8_t)token <= t9) {
                 output = output*10 + (uint8_t)token - t0;
             }
-            outputCurr->type    = TYPE_NUMBER;
+            outputCurr->type = TYPE_NUMBER;
             outputCurr->operand = output;
             outputElements++;
 
@@ -75,7 +84,7 @@ static uint8_t parseExpression(unsigned int token) {
 
         // Process a variable
         else if (tok >= tA && tok <= tTheta) {
-            outputCurr->type    = TYPE_VARIABLE;
+            outputCurr->type = TYPE_VARIABLE;
             outputCurr->operand = tok - tA;
             outputElements++;
         }
@@ -86,7 +95,7 @@ static uint8_t parseExpression(unsigned int token) {
                 stackPrev = &stackPtr[stackElements-1];
                 outputCurr = &outputPtr[outputElements];
                 if (stackPrev->type == TYPE_OPERATOR && operatorPrecedence[index - 1] <= operatorPrecedence[getIndexOfOperator(stackPrev->operand) - 1]) {
-                    outputCurr->type    = TYPE_OPERATOR;
+                    outputCurr->type = TYPE_OPERATOR;
                     outputCurr->operand = stackPrev->operand;
                     stackElements--;
                     outputElements++;
@@ -95,14 +104,14 @@ static uint8_t parseExpression(unsigned int token) {
                 }
             }
             stackCurr = &stackPtr[stackElements];
-            stackCurr->type    = TYPE_OPERATOR;
+            stackCurr->type = TYPE_OPERATOR;
             stackCurr->operand = token;
             stackElements++;
         }
         
         // Push a left parenthesis
         else if (tok == tLParen) {
-            stackCurr->type    = TYPE_FUNCTION;
+            stackCurr->type = TYPE_FUNCTION;
             stackCurr->operand = token;
             stackElements++;
         }
@@ -113,7 +122,7 @@ static uint8_t parseExpression(unsigned int token) {
                 stackPrev = &stackPtr[stackElements-1];
                 outputCurr = &outputPtr[outputElements];
                 if (stackPrev->type != TYPE_FUNCTION) {
-                    outputCurr->type    = stackPrev->type;
+                    outputCurr->type = stackPrev->type;
                     outputCurr->operand = stackPrev->operand;
                     stackElements--;
                     outputElements++;
@@ -125,21 +134,21 @@ static uint8_t parseExpression(unsigned int token) {
                 return E_EXTRA_RPAREN;
             }
             if (stackPrev->operand != tLParen) {
-                outputCurr->type    = TYPE_FUNCTION;
+                outputCurr->type = TYPE_FUNCTION;
                 outputCurr->operand = stackPrev->operand;
                 stackElements--;
                 outputElements++;
             }
         }
        
-        token = ti_GetC(ice.inPrgm);
+        token = getc();
     }
     
     // Move stack elements to output
     while (stackElements) {
         outputCurr = &outputPtr[outputElements++];
         stackPrev = &stackPtr[--stackElements];
-        outputCurr->type    = stackPrev->type;
+        outputCurr->type = stackPrev->type;
         outputCurr->operand = stackPrev->operand;
     }
     
@@ -207,7 +216,7 @@ static uint8_t parseExpression(unsigned int token) {
 }
 
 static uint8_t functionI(unsigned int token) {
-    uint8_t a = 0, b = 0, outputByte, tok, tokLength, *dataPtr;
+    uint8_t a = 0, b = 0, outputByte, tok;
     const char *dataString;
     const uint8_t colorTable[16] = {255,24,224,0,248,36,227,97,9,19,230,255,181,107,106,74};
     
@@ -215,7 +224,7 @@ static uint8_t functionI(unsigned int token) {
     if (!ice.usedCodeAfterHeader) {
         // Get the output name
         if (!ice.gotName) {
-            while ((token = ti_GetC(ice.inPrgm)) != EOF && (uint8_t)token != tEnter && a < 9) {
+            while ((token = getc()) != EOF && (uint8_t)token != tEnter && a < 9) {
                 ice.outName[a++] = (uint8_t)token;
             }
             ice.gotName = true;
@@ -226,63 +235,66 @@ static uint8_t functionI(unsigned int token) {
         else if (!ice.gotIconDescription) {
             // Move header to take place for the icon and description, setup pointer
             memcpy(ice.headerData + 350, ice.headerData, 116);
-            ice.headerPtr = (uint8_t*)ice.headerData;
+            ice.headerPtr = ice.headerData;
             
             // Insert "jp <random>" and Cesium header
-            *ice.headerPtr++ = 0xC3;
-            *(uint24_t*)(ice.headerPtr+3) = 0x101001;
-            ice.headerPtr += 6;
+            *ice.headerPtr = OP_JP;
+            *(uint24_t*)(ice.headerPtr+4) = 0x101001;
+            ice.headerPtr += 7;
             
             // Icon should start with a "
-            if ((uint8_t)ti_GetC(ice.inPrgm) != tString) {
+            if ((uint8_t)getc() != tString) {
                 return E_WRONG_ICON;
             }
+
+            // Get hexadecimal
             do {
-                // Get hexadecimal
-                tok = (uint8_t)ti_GetC(ice.inPrgm);
+                tok = (uint8_t)getc();
                 if (tok >= t0 && tok <= t9) {
                     outputByte = tok - t0;
                 } else if (tok >= tA && tok <= tF) {
-                    outputByte = tok - tA + 0x0A;
+                    outputByte = tok - tA + 10;
                 } else {
                     return E_INVALID_ICON;
                 }
                 *ice.headerPtr++ = colorTable[outputByte];
-            } while (b++ != 255);
+            } while (++b);
             
             // Move on to the description
-            if ((uint8_t)(token = ti_GetC(ice.inPrgm)) == tString) {
-                token = ti_GetC(ice.inPrgm);
+            if ((uint8_t)(token = getc()) == tString) {
+                token = getc();
             }
-            if (token == EOF)                             goto NullTerminateDescription;
-            
-            if ((uint8_t)token != tEnter) {
-                return E_INVALID_ICON;
-            }
-            
-            // Check if there is a description
-            if ((token = ti_GetC(ice.inPrgm)) == tii) {
-                dataPtr = ti_GetDataPtr(ice.inPrgm);
+
+            if (token != EOF) {
                 
-                // Grab description
-                while ((token = ti_GetC(ice.inPrgm)) != EOF && (uint8_t)token != tEnter) {
-                    dataString = ti_GetTokenString(&dataPtr, NULL, NULL);
-                    memcpy(ice.headerPtr, dataString, tokLength = strlen(dataString));
-                    ice.headerPtr += tokLength;
+                if ((uint8_t)token != tEnter) {
+                    return E_INVALID_ICON;
                 }
-            } else if (token != EOF) {
-                ti_Seek(-1, SEEK_CUR, ice.inPrgm);
+                
+                // Check if there is a description
+                if ((token = getc()) == tii) {
+                    uint8_t *dataPtr = ti_GetDataPtr(ice.inPrgm);
+                    
+                    // Grab description
+                    while ((token = getc()) != EOF && (uint8_t)token != tEnter) {
+                        unsigned int tokLength;
+                        dataString = ti_GetTokenString(&dataPtr, NULL, &tokLength);
+                        memcpy(ice.headerPtr, dataString, tokLength);
+                        ice.headerPtr += tokLength;
+                    }
+                } else if (token != EOF) {
+                    ti_Seek(-1, SEEK_CUR, ice.inPrgm);
+                }
             }
-            
-NullTerminateDescription:
+
             // Don't increment the pointer for now, we will do that later :)
             *ice.headerPtr = 0;
 
             // Write the right jp offset
-            *(uint24_t*)(ice.headerData+1) = (uint24_t)ice.headerPtr - (uint24_t)ice.headerData + 0xD1A881;
+            *(uint24_t*)(ice.headerData+1) = ice.headerPtr - ice.headerData + PRGM_START;
             
             // Copy header back, and update the 3 pointers in the C header...
-            memcpy(ice.headerPtr+1, ice.headerData+350, 116);
+            memcpy(ice.headerPtr + 1, ice.headerData + 350, 116);
             *(uint24_t*)(ice.headerPtr+2)  = *(uint24_t*)(ice.headerPtr+2)  + (uint24_t)ice.headerPtr - (uint24_t)ice.headerData;
             *(uint24_t*)(ice.headerPtr+53) = *(uint24_t*)(ice.headerPtr+53) + (uint24_t)ice.headerPtr - (uint24_t)ice.headerData;
             *(uint24_t*)(ice.headerPtr+66) = *(uint24_t*)(ice.headerPtr+66) + (uint24_t)ice.headerPtr - (uint24_t)ice.headerData;
@@ -299,7 +311,7 @@ NullTerminateDescription:
     }
 
     // Treat it as a comment
-    while ((token = ti_GetC(ice.inPrgm)) != EOF && token != tEnter);
+    while ((token = getc()) != EOF && token != tEnter);
 
     return VALID;
 }
@@ -313,7 +325,7 @@ static uint8_t functionCustom(unsigned int token) {
 }
 
 static uint8_t functionIf(unsigned int token) {
-    if ((token = ti_GetC(ice.inPrgm)) != EOF && token != tEnter) {
+    if ((token = getc()) != EOF && token != tEnter) {
         parseExpression(token);
         return VALID;
     } else {
