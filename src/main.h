@@ -29,8 +29,8 @@ typedef struct {
 
 extern ice_t ice;
 
-uint8_t CHeaderData(void);
-uint8_t CProgramHeader(void);
+void CHeaderData(void);
+void CProgramHeader(void);
 
 #endif
 

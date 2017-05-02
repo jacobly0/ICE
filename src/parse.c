@@ -55,17 +55,17 @@ static uint8_t parseExpression(unsigned int token) {
     const uint8_t *stack         = (uint8_t*)0xD63000;
     unsigned int outputElements  = 0;
     unsigned int stackElements   = 0;
-    unsigned int loopIndex, lastDetIndex = 0;
+    unsigned int loopIndex, temp, lastDetIndex = 0;
     uint8_t index, usedDetInExpression = false;
     uint8_t amountOfArgumentsStack[20];
     uint8_t *amountOfArgumentsStackPtr;
     
     // Setup pointers
-    amountOfArgumentsStackPtr = (uint8_t*)amountOfArgumentsStack;
     element_t *outputPtr = (element_t*)outputStack;
     element_t *stackPtr = (element_t*)stack;
     element_t *outputCurr, *outputPrev, *outputPrevPrev;
     element_t *stackCurr, *stackPrev = NULL;
+    amountOfArgumentsStackPtr = (uint8_t*)amountOfArgumentsStack;
 
     while (token != EOF && token != tEnter) {
         uint8_t tok;
@@ -101,6 +101,23 @@ static uint8_t parseExpression(unsigned int token) {
         
         // Parse an operator
         else if ((index = getIndexOfOperator(tok))) {
+            // If the token is ->, move the entire stack to the output, instead of checking the precedence
+            if (tok == tStore) {
+                // The last argument is not counted yet, so increment
+                (*amountOfArgumentsStackPtr)++;
+                
+                // Move entire stack to output
+                while (stackElements) {
+                    outputCurr = &outputPtr[outputElements++];
+                    stackPrev = &stackPtr[--stackElements];
+                    outputCurr->type = stackPrev->type;
+                    temp = stackPrev->operand;
+                    if (stackPrev->type == TYPE_FUNCTION) {
+                        temp += (*amountOfArgumentsStackPtr--) << 8;
+                    }
+                    outputCurr->operand = temp;
+                }
+            }
             while (stackElements) {
                 stackPrev = &stackPtr[stackElements-1];
                 outputCurr = &outputPtr[outputElements];
@@ -159,7 +176,7 @@ static uint8_t parseExpression(unsigned int token) {
                     lastDetIndex = outputElements;
                 }
                 outputCurr->type = TYPE_FUNCTION;
-                outputCurr->operand = stackPrev->operand;
+                outputCurr->operand = stackPrev->operand + ((*amountOfArgumentsStackPtr--) << 8);
                 stackElements--;
                 outputElements++;
             }
@@ -181,12 +198,19 @@ static uint8_t parseExpression(unsigned int token) {
         token = getc();
     }
     
-    // Move stack elements to output
+    // The last argument is not counted yet, so increment
+    (*amountOfArgumentsStackPtr)++;
+    
+    // Move entire stack to output
     while (stackElements) {
         outputCurr = &outputPtr[outputElements++];
         stackPrev = &stackPtr[--stackElements];
         outputCurr->type = stackPrev->type;
-        outputCurr->operand = stackPrev->operand;
+        temp = stackPrev->operand;
+        if (stackPrev->type == TYPE_FUNCTION) {
+            temp += (*amountOfArgumentsStackPtr--) << 8;
+        }
+        outputCurr->operand = temp;
     }
     
     // Remove stupid things like 2+5
@@ -233,10 +257,6 @@ static uint8_t parseExpression(unsigned int token) {
         return VALID;
     } else if (outputElements == 2) {
         return E_SYNTAX;
-    }
-    
-    // RIP........
-    if (usedDetInExpression) {
     }
     
     // Parse the expression in infix notation!
