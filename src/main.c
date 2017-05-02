@@ -101,8 +101,6 @@ void main() {
     // Do the stuff
     res = parseProgram();
     
-    dbg_Debugger();
-    
     // Create or empty the output program if parsing succeeded
     if (res == VALID) {
         ice.outPrgm = ti_OpenVar(ice.outName, "w", TI_PPRGM_TYPE);

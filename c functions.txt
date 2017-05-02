@@ -1,0 +1,36 @@
+det(2,det(15,X+2->X                 2 15 X 2 + det( det( X ->
+
+det(2,det(15,X)+2->X                2 15 X det( 2 + det( X ->
+
+det(2,det(15),X+2->X                2 15 det( X 2 + det( X ->
+
+det(2,X+det(15),2->X				2 X 15 det( + 2 det( X ->
+
+det(2,X,2*det(15))+3->X				2 X 2 15 det( * det( 3 + X ->
+
+2*det(15,X)+3->X					2 15 X det( * 3 + X ->
+
+det(2,X+2,1,2,3						2 X 2 + 1 2 3 det(
+
+
+
+3+10*det(4,not(det(6,X+2,5)*2),15->X
+
+3 10 4 6 X 2 + 5 det( 2 * not( 15 det( + * X ->
+								  ^
+							   ^									ld hl, 15 \ push hl
+						  ^
+						^
+				 ^
+			   ^													ld hl, 5 \ push hl
+			 ^
+		 ^ ^														ld hl, (X) \ inc hl \ inc hl \ push hl
+	   ^															call det(6) \ pop bc \ pop bc
+					  ^												add hl, hl
+						  ^											ld de, -1 \ add hl, de \ or a, a \ sbc hl, de \ sbc hl, hl \ inc hl \ push hl
+	 ^																call det(4) \ pop bc \ pop bc
+									   ^
+  ^																	ld de, 10 \ add hl, de
+										 ^
+^																	push hl \ pop de \ add hl, hl \ add hl, de
+											 ^						ld (X), hl

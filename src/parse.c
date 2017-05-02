@@ -18,6 +18,7 @@
 #include "operator.h"
 
 extern uint8_t (*functions[256])(unsigned int token);
+const char implementedFunctions[] = {tDet, tNot, tRemainder, tMin, tMax, tMean, tSqrt};
 
 unsigned int getc(void) {
     return ti_GetC(ice.inPrgm);
@@ -54,9 +55,13 @@ static uint8_t parseExpression(unsigned int token) {
     const uint8_t *stack         = (uint8_t*)0xD63000;
     unsigned int outputElements  = 0;
     unsigned int stackElements   = 0;
-    unsigned int loopIndex;
-    uint8_t index;
-
+    unsigned int loopIndex, lastDetIndex = 0;
+    uint8_t index, usedDetInExpression = false;
+    uint8_t amountOfArgumentsStack[20];
+    uint8_t *amountOfArgumentsStackPtr;
+    
+    // Setup pointers
+    amountOfArgumentsStackPtr = (uint8_t*)amountOfArgumentsStack;
     element_t *outputPtr = (element_t*)outputStack;
     element_t *stackPtr = (element_t*)stack;
     element_t *outputCurr, *outputPrev, *outputPrevPrev;
@@ -67,6 +72,11 @@ static uint8_t parseExpression(unsigned int token) {
         outputCurr = &outputPtr[outputElements];
         stackCurr  = &stackPtr[stackElements];
         tok = (uint8_t)token;
+        
+        // If the token is det(, set the right variable to true (expressions with det() parse different)
+        if (tok == tDet) {
+            usedDetInExpression = true;
+        }
 
         // Process a number
         if (tok >= t0 && tok <= t9) {
@@ -94,6 +104,8 @@ static uint8_t parseExpression(unsigned int token) {
             while (stackElements) {
                 stackPrev = &stackPtr[stackElements-1];
                 outputCurr = &outputPtr[outputElements];
+                
+                // Move the last entry of the stack to the ouput if it's precedence is greater than the precedence of the current token
                 if (stackPrev->type == TYPE_OPERATOR && operatorPrecedence[index - 1] <= operatorPrecedence[getIndexOfOperator(stackPrev->operand) - 1]) {
                     outputCurr->type = TYPE_OPERATOR;
                     outputCurr->operand = stackPrev->operand;
@@ -117,7 +129,8 @@ static uint8_t parseExpression(unsigned int token) {
         }
         
         // Pop a right parenthesis
-        else if (tok == tRParen) {
+        else if (tok == tRParen || tok == tComma) {
+            // Move until stack is empty or a function is encountered
             while (stackElements) {
                 stackPrev = &stackPtr[stackElements-1];
                 outputCurr = &outputPtr[outputElements];
@@ -130,15 +143,39 @@ static uint8_t parseExpression(unsigned int token) {
                     break;
                 }
             }
+            
+            // No matching left parenthesis
             if (!stackElements) {
                 return E_EXTRA_RPAREN;
             }
-            if (stackPrev->operand != tLParen) {
+            
+            // Increment the amount of arguments for that function
+            (*amountOfArgumentsStackPtr)++;
+            
+            // If the right parenthesis belongs to a function, move the function as well
+            if (tok == tRParen && stackPrev->operand != tLParen) {
+                // If the operand is a det() function, update the last det() index
+                if (stackPrev->operand == tDet) {
+                    lastDetIndex = outputElements;
+                }
                 outputCurr->type = TYPE_FUNCTION;
                 outputCurr->operand = stackPrev->operand;
                 stackElements--;
                 outputElements++;
             }
+        } 
+        
+        // Process a function which returns something (not(), sqrt(), det(...))
+        else if (strchr(implementedFunctions, tok)) {
+            *++amountOfArgumentsStackPtr = 0;
+            stackCurr->type = TYPE_FUNCTION;
+            stackCurr->operand = token;
+            stackElements++;
+        } 
+        
+        // Oops, unknown token...
+        else {
+            return E_UNIMPLEMENTED;
         }
        
         token = getc();
@@ -196,6 +233,10 @@ static uint8_t parseExpression(unsigned int token) {
         return VALID;
     } else if (outputElements == 2) {
         return E_SYNTAX;
+    }
+    
+    // RIP........
+    if (usedDetInExpression) {
     }
     
     // Parse the expression in infix notation!
@@ -338,7 +379,7 @@ static uint8_t functionElseEnd(unsigned int token) {
     if (!ice.nestedBlocks) {
         return E_NO_NESTED_BLOCK;
     }
-    return VALID;
+    return E_ELSE_END;
 }
 
 static uint8_t dummyReturn(unsigned int token) {
