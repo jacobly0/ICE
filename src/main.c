@@ -22,11 +22,11 @@ ice_t ice;
 void main() {
     uint8_t a = 0, selectedProgram = 0, key, amountOfPrograms, res;
     unsigned int token, headerSize, programSize, programDataSize;
-    uint8_t *search_pos = NULL;
     char *var_name;
     uint8_t *outputDataPtr;
     const char headerStart[] = {tii, 0};
-    
+    uint8_t *search_pos = NULL;
+
     // Yay, GUI! :)
     gfx_Begin(gfx_8bpp);
     gfx_SetColor(189);
@@ -50,23 +50,29 @@ void main() {
     // Select a program
     selectedProgram = 1;
     while ((key = os_GetCSC()) != sk_Enter) {
+        uint8_t selectionOffset = selectedProgram*10 + 3;
+
         gfx_SetColor(0);
-        gfx_PrintStringXY(">", 1, selectedProgram*10 + 3);
-        gfx_SetColor(255);
-        
-        // Stop and quit
-        if (key == sk_Clear)                              goto err;
-        
-        // Select the next program
-        if (key == sk_Down && selectedProgram != amountOfPrograms) {
-            gfx_FillRectangle_NoClip(1, selectedProgram*10 + 3, 8, 8);
-            selectedProgram++;
-        }
-        
-        // Select the previous program
-        if (key == sk_Up && selectedProgram != 1) {
-            gfx_FillRectangle_NoClip(1, selectedProgram*10 + 3, 8, 8);
-            selectedProgram--;
+        gfx_PrintStringXY(">", 1, selectionOffset);
+
+        if (key) {
+            gfx_SetColor(255);
+            gfx_FillRectangle_NoClip(1, selectionOffset, 8, 8);
+
+            // Stop and quit
+            if (key == sk_Clear) {
+                goto err;
+            }
+
+            // Select the next program
+            if (key == sk_Down && selectedProgram != amountOfPrograms) {
+                selectedProgram++;
+            }
+            
+            // Select the previous program
+            if (key == sk_Up && selectedProgram != 1) {
+                selectedProgram--;
+            }
         }
     }
     
@@ -78,17 +84,17 @@ void main() {
     // Find program
     ti_CloseAll();
     ice.inPrgm = ti_OpenVar(ice.inName, "r", TI_PRGM_TYPE);
-    if (!ice.inPrgm)                                      goto err;
-     
+    if (!ice.inPrgm) {
+        goto err;
+    }
+
     // Setup pointers and header
-    ice.headerData      = malloc(800);
-    ice.programDataData = malloc(40000);
     ice.programData     = (uint8_t*)0xD52C00;
 
     ice.headerPtr       = (uint8_t*)ice.headerData + 116;
     ice.programPtr      = (uint8_t*)ice.programData + 5;
     ice.programDataPtr  = (uint8_t*)ice.programDataData;
-     
+    
     memcpy(ice.headerData, CHeaderData, 116);
     memcpy(ice.programData, CProgramHeader, 5);
    
@@ -100,12 +106,8 @@ void main() {
     // Create or empty the output program if parsing succeeded
     if (res == VALID) {
         ice.outPrgm = ti_OpenVar(ice.outName, "w", TI_PPRGM_TYPE);
-        if (!ice.outPrgm)                               goto err;
-        ti_Rewind(ice.outPrgm);
-        
-        // If the last token is not "Return", write a "ret" to the program
-        if (!ice.lastTokenIsReturn) {
-            *ice.programPtr++ = 0xC9;
+        if (!ice.outPrgm) {
+            goto err;
         }
         
         // Get the sizes of the 3 stacks
@@ -113,19 +115,14 @@ void main() {
         programSize = (uint24_t)ice.programPtr - (uint24_t)ice.programData;
         programDataSize = (uint24_t)ice.programDataPtr - (uint24_t)ice.programDataData;
         
-        // The output size is the sum of the sizes of the 3 stacks
-        ti_Resize(headerSize + programSize + programDataSize, ice.outPrgm);
-                  
-        outputDataPtr = ti_GetDataPtr(ice.outPrgm);
-        
         // Write ASM header
-        *outputDataPtr++ = tExtTok;
-        *outputDataPtr++ = tAsm84CeCmp;
+        ti_PutC(tExtTok, ice.outPrgm);
+        ti_PutC(tAsm84CeCmp, ice.outPrgm);
         
-        // Copy the header, main program, and data to output :D
-        memcpy(outputDataPtr, ice.headerData, headerSize);
-        memcpy(outputDataPtr + headerSize, ice.programData, programSize);
-        memcpy(outputDataPtr + headerSize + programSize, ice.programDataData, programDataSize);
+        // Write the header, main program, and data to output :D
+        ti_Write(ice.headerData, headerSize, 1, ice.outPrgm);
+        ti_Write(ice.programData, programSize, 1, ice.outPrgm);
+        ti_Write(ice.programDataData, programDataSize, 1, ice.outPrgm);
     } else {
         displayError(res);
     }
