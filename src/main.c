@@ -16,6 +16,7 @@
 #include "errors.h"
 #include "output.h"
 #include "operator.h"
+#include "stack.h"
 
 ice_t ice;
 
@@ -33,7 +34,7 @@ void main() {
     gfx_SetColor(0);
     gfx_SetTextFGColor(0);
     gfx_HorizLine_NoClip(0, 10, 320);
-    gfx_PrintStringXY("ICE Compiler v1.5 - By Peter \"PT_\" Tillema", 21, 1);
+    gfx_PrintStringXY("ICE Compiler v1.6 - By Peter \"PT_\" Tillema", 21, 1);
     
     // Get all the programs that start with the [i] token
     while((var_name = ti_DetectVar(&search_pos, ICEheader, TI_PRGM_TYPE)) != NULL && ++selectedProgram <= 22) {

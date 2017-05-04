@@ -16,6 +16,7 @@
 #include "errors.h"
 #include "output.h"
 #include "operator.h"
+#include "stack.h"
 
 extern uint8_t (*operatorFunctions[20])(element_t*, element_t*);
 const char operators[] = {tStore, tAnd, tXor, tOr, tEQ, tLT, tGT, tLE, tGE, tNE, tMul, tDiv, tAdd, tSub};

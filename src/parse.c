@@ -16,6 +16,7 @@
 #include "errors.h"
 #include "output.h"
 #include "operator.h"
+#include "stack.h"
 
 extern uint8_t (*functions[256])(unsigned int token);
 const char implementedFunctions[] = {tDet, tNot, tRemainder, tMin, tMax, tMean, tSqrt};
@@ -126,6 +127,8 @@ static uint8_t parseExpression(unsigned int token) {
                 }
                 nestedDets = 0;
             }
+            
+            // Move the stack to the output as long...
             while (stackElements) {
                 stackPrev = &stackPtr[stackElements-1];
                 outputCurr = &outputPtr[outputElements];
@@ -243,8 +246,6 @@ static uint8_t parseExpression(unsigned int token) {
         }
     }
     
-    dbg_Debugger();
-    
     // Check if the expression is valid
     if (outputElements == 1) {
         outputCurr = &outputPtr[0];
@@ -275,19 +276,35 @@ static uint8_t parseExpression(unsigned int token) {
     
     // This can only happen with a function with a single argument, i.e. det(X), not(X)
     else if (outputElements == 2) {
+        outputCurr = &outputPtr[1];
+        
+        // It must be a function with a single argument
+        if ((outputCurr->type & 15) != TYPE_FUNCTION) {
+            return E_SYNTAX;
+        }
+        
+        // TODO
     }
     
     // Parse the expression in postfix notation!
+    nestedDets = 0;
     for (loopIndex = 1; loopIndex < outputElements; loopIndex++) {
         outputCurr = &outputPtr[loopIndex];
         
         // Parse an operator with 2 arguments
-        if (outputCurr->type == TYPE_OPERATOR) {
+        if (outputCurr->type & 15 == TYPE_OPERATOR) {
+            // Yay, we are entering a det() function (#notyay), so store it elsewhere!
+            if ((outputCurr->type & 240) != nestedDets) {
+                push((uint24_t)ice.programPtr);
+                // TODO
+            }
             parseOperator(&outputPtr[loopIndex-2], &outputPtr[loopIndex-1], outputCurr);
+            // TODO
         } 
         
         // Parse a function with X arguments
-        else if (outputCurr->type == TYPE_FUNCTION) {
+        else if (outputCurr->type & 15 == TYPE_FUNCTION) {
+            // TODO
         }
     }
 

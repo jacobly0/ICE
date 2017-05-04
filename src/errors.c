@@ -16,6 +16,7 @@
 #include "errors.h"
 #include "output.h"
 #include "operator.h"
+#include "stack.h"
 
 static const char *errors[] = {
     "This token is not implemented (yet)",
