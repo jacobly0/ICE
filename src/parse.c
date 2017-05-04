@@ -43,7 +43,7 @@ uint8_t parseProgram(void) {
 
     // If the last token is not "Return", write a "ret" to the program
     if (ret == VALID && !ice.lastTokenIsReturn) {
-        output(uint8_t, OP_RET);
+        RET();
     }
 
     return ret;
@@ -57,16 +57,16 @@ static uint8_t parseExpression(unsigned int token) {
     unsigned int outputElements  = 0;
     unsigned int stackElements   = 0;
     unsigned int loopIndex, temp;
-    uint8_t index, nestedDets = 0;
+    uint8_t index = 0, nestedDets = 0;
     uint8_t amountOfArgumentsStack[20];
-    uint8_t *amountOfArgumentsStackPtr;
-    
+    uint8_t *amountOfArgumentsStackPtr = amountOfArgumentsStack;
+    uint8_t stackToOutputReturn;
+
     // Setup pointers
     element_t *outputPtr = (element_t*)outputStack;
     element_t *stackPtr = (element_t*)stack;
     element_t *outputCurr, *outputPrev, *outputPrevPrev;
     element_t *stackCurr, *stackPrev = NULL;
-    amountOfArgumentsStackPtr = (uint8_t*)amountOfArgumentsStack;
     
     /*
         General explanation stacks:
@@ -112,19 +112,10 @@ static uint8_t parseExpression(unsigned int token) {
                 (*amountOfArgumentsStackPtr)++;
                 
                 // Move entire stack to output
-                while (stackElements) {
-                    outputCurr = &outputPtr[outputElements++];
-                    stackPrev = &stackPtr[--stackElements];
-                    outputCurr->type = stackPrev->type;
-                    temp = stackPrev->operand;
-                    
-                    // If it's a function, add the amount of arguments as well
-                    if ((stackPrev->type & 15) == TYPE_FUNCTION) {
-                        temp += (*amountOfArgumentsStackPtr--) << 8;
-                    }
-                    
-                    outputCurr->operand = temp;
-                }
+                stackToOutputReturn = 1;
+                goto stackToOutput;
+                stackToOutputReturn1:
+
                 nestedDets = 0;
             }
             
@@ -216,20 +207,10 @@ static uint8_t parseExpression(unsigned int token) {
     (*amountOfArgumentsStackPtr)++;
     
     // Move entire stack to output
-    while (stackElements) {
-        outputCurr = &outputPtr[outputElements++];
-        stackPrev = &stackPtr[--stackElements];
-        outputCurr->type = stackPrev->type;
-        temp = stackPrev->operand;
-        
-        // If it's a function, add the amount of arguments as well
-        if ((stackPrev->type & 15) == TYPE_FUNCTION) {
-            temp += (*amountOfArgumentsStackPtr--) << 8;
-        }
+    stackToOutputReturn = 2;
+    goto stackToOutput;
+    stackToOutputReturn2:
 
-        outputCurr->operand = temp;
-    }
-    
     // Remove stupid things like 2+5
     for (loopIndex = 2; loopIndex < outputElements; loopIndex++) {
         outputPrevPrev = &outputPtr[loopIndex-2];
@@ -308,14 +289,40 @@ static uint8_t parseExpression(unsigned int token) {
         }
     }
 
+    // Actual return here
     return VALID;
+
+    // Duplicated function opt
+    stackToOutput:
+
+    // Move entire stack to output
+    while (stackElements) {
+        outputCurr = &outputPtr[outputElements++];
+        stackPrev = &stackPtr[--stackElements];
+        outputCurr->type = stackPrev->type;
+        temp = stackPrev->operand;
+        
+        // If it's a function, add the amount of arguments as well
+        if ((stackPrev->type & 15) == TYPE_FUNCTION) {
+            temp += (*amountOfArgumentsStackPtr--) << 8;
+        }
+
+        outputCurr->operand = temp;
+    }
+    
+    if (stackToOutputReturn == 2) {
+        goto stackToOutputReturn2;
+    }
+
+    goto stackToOutputReturn1;
 }
 
 static uint8_t functionI(unsigned int token) {
     uint8_t a = 0, b = 0, outputByte, tok;
     const char *dataString;
     const uint8_t colorTable[16] = {255,24,224,0,248,36,227,97,9,19,230,255,181,107,106,74};
-    
+    unsigned int offset;
+
     // Only get the output name, icon or description at the top of your program
     if (!ice.usedCodeAfterHeader) {
         // Get the output name
@@ -386,14 +393,17 @@ static uint8_t functionI(unsigned int token) {
             // Don't increment the pointer for now, we will do that later :)
             *ice.headerPtr = 0;
 
+            // Get the correct offset
+            offset = ice.headerPtr - ice.headerData;
+
             // Write the right jp offset
-            *(uint24_t*)(ice.headerData+1) = ice.headerPtr - ice.headerData + PRGM_START;
+            *(uint24_t*)(ice.headerData+1) = offset + PRGM_START;
             
             // Copy header back, and update the 3 pointers in the C header...
             memcpy(ice.headerPtr + 1, ice.headerData + 350, 116);
-            *(uint24_t*)(ice.headerPtr+2)  = *(uint24_t*)(ice.headerPtr+2)  + (uint24_t)ice.headerPtr - (uint24_t)ice.headerData;
-            *(uint24_t*)(ice.headerPtr+53) = *(uint24_t*)(ice.headerPtr+53) + (uint24_t)ice.headerPtr - (uint24_t)ice.headerData;
-            *(uint24_t*)(ice.headerPtr+66) = *(uint24_t*)(ice.headerPtr+66) + (uint24_t)ice.headerPtr - (uint24_t)ice.headerData;
+            *(uint24_t*)(ice.headerPtr+2)  += offset;
+            *(uint24_t*)(ice.headerPtr+53) += offset;
+            *(uint24_t*)(ice.headerPtr+66) += offset;
             ice.headerPtr += 117;
             
             ice.gotIconDescription = true;
