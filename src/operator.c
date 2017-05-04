@@ -152,9 +152,7 @@ static uint8_t AddFunctionFunction(element_t *entry1, element_t *entry2) {
 }
 
 static uint8_t AddChainAnsFunction(element_t *entry1, element_t *entry2) {
-    PUSH_HL();
-    insertFunctionReturn(entry2->operand, OUTPUT_IN_HL, NO_PUSH);
-    POP_DE();
+    insertFunctionReturn(entry2->operand, OUTPUT_IN_DE, NEED_PUSH);
     ADD_HL_DE();
     return VALID;
 }

@@ -13,8 +13,8 @@
 #define TYPE_STRING          7
 #define TYPE_OS_STRING       8
 
-#define TYPE_OPERATOR        254
-#define TYPE_FUNCTION        255
+#define TYPE_OPERATOR        14
+#define TYPE_FUNCTION        15
 
 uint8_t parseProgram(void);
 unsigned int getc(void);

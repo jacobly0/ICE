@@ -16,6 +16,7 @@ typedef struct {
     uint8_t  *headerPtr;
     uint8_t  *programPtr;
     uint8_t  *programDataPtr;
+    uint8_t  messageIndex;
 	
     ti_var_t inPrgm;
     ti_var_t outPrgm;

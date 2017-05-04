@@ -55,8 +55,8 @@ static uint8_t parseExpression(unsigned int token) {
     const uint8_t *stack         = (uint8_t*)0xD63000;
     unsigned int outputElements  = 0;
     unsigned int stackElements   = 0;
-    unsigned int loopIndex, temp, lastDetIndex = 0;
-    uint8_t index, usedDetInExpression = false;
+    unsigned int loopIndex, temp;
+    uint8_t index, nestedDets = 0;
     uint8_t amountOfArgumentsStack[20];
     uint8_t *amountOfArgumentsStackPtr;
     
@@ -66,17 +66,21 @@ static uint8_t parseExpression(unsigned int token) {
     element_t *outputCurr, *outputPrev, *outputPrevPrev;
     element_t *stackCurr, *stackPrev = NULL;
     amountOfArgumentsStackPtr = (uint8_t*)amountOfArgumentsStack;
+    
+    /*
+        General explanation stacks:
+        - Each entry consists of 4 bytes, the type and the operand
+        - Type: first 4 bits is the amount of nested det()'s, the last 4 the type, like number, variable, function, operator etc
+        - The operand is either a 3-byte number or consists of 3 bytes:
+            - The first byte = the operan: function/variable/operator
+            - If it's a function then the second byte is the amount of arguments for that function
+    */
 
     while (token != EOF && token != tEnter) {
         uint8_t tok;
         outputCurr = &outputPtr[outputElements];
         stackCurr  = &stackPtr[stackElements];
         tok = (uint8_t)token;
-        
-        // If the token is det(, set the right variable to true (expressions with det() parse different)
-        if (tok == tDet) {
-            usedDetInExpression = true;
-        }
 
         // Process a number
         if (tok >= t0 && tok <= t9) {
@@ -84,7 +88,7 @@ static uint8_t parseExpression(unsigned int token) {
             while ((uint8_t)(token = getc()) >= t0 && (uint8_t)token <= t9) {
                 output = output*10 + (uint8_t)token - t0;
             }
-            outputCurr->type = TYPE_NUMBER;
+            outputCurr->type = TYPE_NUMBER + (nestedDets << 4);
             outputCurr->operand = output;
             outputElements++;
 
@@ -94,7 +98,7 @@ static uint8_t parseExpression(unsigned int token) {
 
         // Process a variable
         else if (tok >= tA && tok <= tTheta) {
-            outputCurr->type = TYPE_VARIABLE;
+            outputCurr->type = TYPE_VARIABLE + (nestedDets << 4);
             outputCurr->operand = tok - tA;
             outputElements++;
         }
@@ -112,19 +116,23 @@ static uint8_t parseExpression(unsigned int token) {
                     stackPrev = &stackPtr[--stackElements];
                     outputCurr->type = stackPrev->type;
                     temp = stackPrev->operand;
-                    if (stackPrev->type == TYPE_FUNCTION) {
+                    
+                    // If it's a function, add the amount of arguments as well
+                    if ((stackPrev->type & 15) == TYPE_FUNCTION) {
                         temp += (*amountOfArgumentsStackPtr--) << 8;
                     }
+                    
                     outputCurr->operand = temp;
                 }
+                nestedDets = 0;
             }
             while (stackElements) {
                 stackPrev = &stackPtr[stackElements-1];
                 outputCurr = &outputPtr[outputElements];
                 
                 // Move the last entry of the stack to the ouput if it's precedence is greater than the precedence of the current token
-                if (stackPrev->type == TYPE_OPERATOR && operatorPrecedence[index - 1] <= operatorPrecedence[getIndexOfOperator(stackPrev->operand) - 1]) {
-                    outputCurr->type = TYPE_OPERATOR;
+                if ((stackPrev->type & 15) == TYPE_OPERATOR && operatorPrecedence[index - 1] <= operatorPrecedence[getIndexOfOperator(stackPrev->operand) - 1]) {
+                    outputCurr->type = stackPrev->type;
                     outputCurr->operand = stackPrev->operand;
                     stackElements--;
                     outputElements++;
@@ -132,15 +140,16 @@ static uint8_t parseExpression(unsigned int token) {
                     break;
                 }
             }
-            stackCurr = &stackPtr[stackElements];
-            stackCurr->type = TYPE_OPERATOR;
+            
+            // Push the operator to the stack
+            stackCurr = &stackPtr[stackElements++];
+            stackCurr->type = TYPE_OPERATOR + (nestedDets << 4);
             stackCurr->operand = token;
-            stackElements++;
         }
         
         // Push a left parenthesis
         else if (tok == tLParen) {
-            stackCurr->type = TYPE_FUNCTION;
+            stackCurr->type = TYPE_FUNCTION + (nestedDets << 4);
             stackCurr->operand = token;
             stackElements++;
         }
@@ -151,7 +160,7 @@ static uint8_t parseExpression(unsigned int token) {
             while (stackElements) {
                 stackPrev = &stackPtr[stackElements-1];
                 outputCurr = &outputPtr[outputElements];
-                if (stackPrev->type != TYPE_FUNCTION) {
+                if ((stackPrev->type & 15) != TYPE_FUNCTION) {
                     outputCurr->type = stackPrev->type;
                     outputCurr->operand = stackPrev->operand;
                     stackElements--;
@@ -171,21 +180,23 @@ static uint8_t parseExpression(unsigned int token) {
             
             // If the right parenthesis belongs to a function, move the function as well
             if (tok == tRParen && stackPrev->operand != tLParen) {
-                // If the operand is a det() function, update the last det() index
-                if (stackPrev->operand == tDet) {
-                    lastDetIndex = outputElements;
-                }
-                outputCurr->type = TYPE_FUNCTION;
+                outputCurr->type = stackPrev->type;
                 outputCurr->operand = stackPrev->operand + ((*amountOfArgumentsStackPtr--) << 8);
                 stackElements--;
                 outputElements++;
+                if ((uint8_t)stackPrev->operand == tDet) {
+                    nestedDets--;
+                }
             }
         } 
         
         // Process a function which returns something (not(), sqrt(), det(...))
         else if (strchr(implementedFunctions, tok)) {
             *++amountOfArgumentsStackPtr = 0;
-            stackCurr->type = TYPE_FUNCTION;
+            if (tok == tDet) {
+                nestedDets++;
+            }
+            stackCurr->type = TYPE_FUNCTION + (nestedDets << 4);
             stackCurr->operand = token;
             stackElements++;
         } 
@@ -207,9 +218,12 @@ static uint8_t parseExpression(unsigned int token) {
         stackPrev = &stackPtr[--stackElements];
         outputCurr->type = stackPrev->type;
         temp = stackPrev->operand;
-        if (stackPrev->type == TYPE_FUNCTION) {
+        
+        // If it's a function, add the amount of arguments as well
+        if ((stackPrev->type & 15) == TYPE_FUNCTION) {
             temp += (*amountOfArgumentsStackPtr--) << 8;
         }
+
         outputCurr->operand = temp;
     }
     
@@ -220,7 +234,7 @@ static uint8_t parseExpression(unsigned int token) {
         outputCurr = &outputPtr[loopIndex];
         
         // Check if the types are number | number | operator
-        if (outputPrevPrev->type == TYPE_NUMBER && outputPrev->type == TYPE_NUMBER && outputCurr->type == TYPE_OPERATOR) {
+        if ((outputPrevPrev->type & 15) == TYPE_NUMBER && (outputPrev->type & 15) == TYPE_NUMBER && (outputCurr->type & 15) == TYPE_OPERATOR) {
             // If yes, execute the operator, and store it in the first entry, and remove the other 2
             outputPrevPrev->operand = executeOperator(outputPrevPrev->operand, outputPrev->operand, (uint8_t)outputCurr->operand);
             memcpy(outputPrev, &outputPtr[loopIndex+1], (outputElements-1)*4);
@@ -228,6 +242,8 @@ static uint8_t parseExpression(unsigned int token) {
             loopIndex--;
         }
     }
+    
+    dbg_Debugger();
     
     // Check if the expression is valid
     if (outputElements == 1) {
@@ -250,17 +266,19 @@ static uint8_t parseExpression(unsigned int token) {
             insertFunctionReturn(outputCurr->operand, OUTPUT_IN_HL, NO_PUSH);
         }
         
-        // Expression is something wrong, for example "not("
+        // Expression is an empty function or operator, i.e. not(, +
         else {
             return E_SYNTAX;
         }
         return VALID;
-    } else if (outputElements == 2) {
-        return E_SYNTAX;
     }
     
-    // Parse the expression in infix notation!
-    for (loopIndex = 2; loopIndex < outputElements; loopIndex++) {
+    // This can only happen with a function with a single argument, i.e. det(X), not(X)
+    else if (outputElements == 2) {
+    }
+    
+    // Parse the expression in postfix notation!
+    for (loopIndex = 1; loopIndex < outputElements; loopIndex++) {
         outputCurr = &outputPtr[loopIndex];
         
         // Parse an operator with 2 arguments

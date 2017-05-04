@@ -29,5 +29,6 @@ static const char *errors[] = {
 };
 
 void displayError(unsigned int index) {
-    gfx_PrintStringXY(errors[index], 10, 13);
+    gfx_SetTextFGColor(224);
+    gfx_PrintStringXY(errors[index], 1, ++ice.messageIndex*10+3);
 }
