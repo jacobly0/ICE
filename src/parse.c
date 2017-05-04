@@ -270,10 +270,13 @@ static uint8_t parseExpression(unsigned int token) {
     // Parse the expression in postfix notation!
     nestedDets = 0;
     for (loopIndex = 1; loopIndex < outputElements; loopIndex++) {
+        uint8_t typeMasked;
+
         outputCurr = &outputPtr[loopIndex];
-        
+        typeMasked = outputCurr->type & 15;
+
         // Parse an operator with 2 arguments
-        if (outputCurr->type & 15 == TYPE_OPERATOR) {
+        if (typeMasked == TYPE_OPERATOR) {
             // Yay, we are entering a det() function (#notyay), so store it elsewhere!
             if ((outputCurr->type & 240) != nestedDets) {
                 push((uint24_t)ice.programPtr);
@@ -284,7 +287,7 @@ static uint8_t parseExpression(unsigned int token) {
         } 
         
         // Parse a function with X arguments
-        else if (outputCurr->type & 15 == TYPE_FUNCTION) {
+        else if (typeMasked == TYPE_FUNCTION) {
             // TODO
         }
     }
