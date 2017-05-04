@@ -31,7 +31,7 @@ uint8_t parseProgram(void) {
 
     ti_Rewind(ice.inPrgm);
 
-    // do things based on the token
+    // Do things based on the token
     while ((token = getc()) != EOF) {
         if ((uint8_t)token != tii) {
             ice.usedCodeAfterHeader = true;
@@ -313,6 +313,7 @@ static uint8_t parseExpression(unsigned int token) {
         outputCurr->operand = temp;
     }
     
+    // Select correct return location
     if (stackToOutputReturn == 2) {
         goto stackToOutputReturn2;
     }
