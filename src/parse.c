@@ -278,7 +278,7 @@ stackToOutputReturn2:
         typeMasked = outputCurr->type & 15;
 
         // Parse an operator with 2 arguments
-        if (typeMasked == TYPE_OPERATOR) {
+        if (typeMasked == TYPE_OPERATOR && loopIndex > 1) {
             // Yay, we are entering a det() function (#notyay), so store it elsewhere!
             if ((outputCurr->type & 240) != nestedDets) {
                 // Push the old programPtr
@@ -289,7 +289,13 @@ stackToOutputReturn2:
                 ice.programPtr = tempCFunctions + (500 * (nestedDets >> 4));
             }
             parseOperator(&outputPtr[loopIndex-2], &outputPtr[loopIndex-1], outputCurr);
-            // Cleanup
+            
+            // Remove the second argument and the operator...
+            memcpy(&outputPtr[loopIndex-1], &outputPtr[loopIndex+1], outputElements * 4);
+            loopIndex -= 2;
+            
+            // ... and edit the first argument to be in the chain, if one of the two next entries is either an operator or function, set it as 'chain ans'
+            (&outputPtr[loopIndex-2])->type = TYPE_CHAIN_PUSH - ((outputCurr->type & 15) >= TYPE_OPERATOR || ((&outputPtr[loopIndex-1])->type & 15) >= TYPE_OPERATOR);
         } 
         
         // Parse a function with X arguments
