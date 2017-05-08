@@ -1,6 +1,6 @@
 #include "stack.h"
 
-#define STACK_SIZE 50
+#define STACK_SIZE 15
 
 static unsigned int stack[STACK_SIZE];
 static unsigned int *p1 = stack;

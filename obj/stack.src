@@ -1,0 +1,78 @@
+; Zilog eZ80 ANSI C Compiler Release 3.4
+; -nomodsect -optspeed -noreduceopt -peephole -globalopt
+; -localcse -const=ROM 
+	FILE	"..\SRC\STACK.C"
+	.assume ADL=1
+	SEGMENT BSS
+_stack:
+	DS	45
+	SEGMENT DATA
+_p1:
+	DW24	_stack
+;    1	#include "stack.h"
+;    2	
+;    3	#define STACK_SIZE 15
+;    4	
+;    5	static unsigned int stack[STACK_SIZE];
+;    6	static unsigned int *p1 = stack;
+	SEGMENT CODE
+;    7	
+;    8	void push(unsigned int i) {
+_push:
+	CALL	__frameset0
+;    9	    *++p1 = i;
+	LD	IY,(_p1)
+	LEA	BC,IY+3
+	LD	(_p1),BC
+	LD	HL,(_p1)
+	LD	BC,(IX+6)
+	LD	(HL),BC
+;   10	}
+	LD	SP,IX
+	POP	IX
+	RET	
+
+
+;**************************** _push ***************************
+;Name                         Addr/Register   Size   Type
+;_p1                                 STATIC      3   variable
+;i                                     IX+6      3   parameter
+
+
+; Stack Frame Size: 9 (bytes)
+;       Spill Code: 0 (instruction)
+
+
+;   11	
+;   12	unsigned int pop(void) {
+_pop:
+	LD	HL,-3
+	CALL	__frameset
+;   13	    return *(p1--);
+	LD	BC,(_p1)
+	LD	(IX+-3),BC
+	LD	IY,(_p1)
+	LEA	BC,IY+-3
+	LD	(_p1),BC
+	LD	HL,(IX+-3)
+	LD	HL,(HL)
+;   14	}
+	LD	SP,IX
+	POP	IX
+	RET	
+
+
+;**************************** _pop ***************************
+;Name                         Addr/Register   Size   Type
+;_p1                                 STATIC      3   variable
+
+
+; Stack Frame Size: 9 (bytes)
+;       Spill Code: 0 (instruction)
+
+
+	XREF __frameset0:ROM
+	XREF __frameset:ROM
+	XDEF _pop
+	XDEF _push
+	END

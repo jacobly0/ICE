@@ -1,0 +1,1356 @@
+; Zilog eZ80 ANSI C Compiler Release 3.4
+; -nomodsect -optspeed -noreduceopt -peephole -globalopt
+; -localcse -const=ROM 
+	FILE	"..\SRC\OPERATOR.C"
+	.assume ADL=1
+	SEGMENT TEXT
+_operators:
+	DB	4
+	DB	64
+	DB	61
+	DB	60
+	DB	106
+	DB	107
+	DB	108
+	DB	109
+	DB	110
+	DB	111
+	DB	130
+	DB	131
+	DB	112
+	DB	113
+_operatorPrecedence:
+	DB	0
+	DB	1
+	DB	2
+	DB	2
+	DB	3
+	DB	3
+	DB	3
+	DB	3
+	DB	3
+	DB	3
+	DB	5
+	DB	5
+	DB	4
+	DB	4
+;    1	#include <stdbool.h>
+;    2	#include <stddef.h>
+;    3	#include <stdint.h>
+;    4	#include <tice.h>
+;    5	#include <math.h>
+;    6	#include <stdio.h>
+;    7	#include <stdlib.h>
+;    8	#include <string.h>
+;    9	#include <debug.h>
+;   10	
+;   11	#include <fileioc.h>
+;   12	#include <graphx.h>
+;   13	
+;   14	#include "parse.h"
+;   15	#include "main.h"
+;   16	#include "errors.h"
+;   17	#include "output.h"
+;   18	#include "operator.h"
+;   19	#include "stack.h"
+;   20	
+;   21	extern uint8_t (*operatorFunctions[20])(element_t*, element_t*);
+;   22	const char operators[] = {tStore, tAnd, tXor, tOr, tEQ, tLT, tGT, tLE, tGE, tNE, tMul, tDiv, tAdd, tSub};
+;   23	const uint8_t operatorPrecedence[] = {0, 1, 2, 2, 3, 3, 3, 3, 3, 3, 5, 5, 4, 4};
+	SEGMENT CODE
+;   24	
+;   25	uint8_t getIndexOfOperator(uint8_t operator) {
+_getIndexOfOperator:
+	LD	HL,-3
+	CALL	__frameset
+;   26	    char *index;
+;   27	    if ((index = strchr(operators, operator))) {
+	LD	A,(IX+6)
+	UEXT	HL
+	LD	L,A
+	PUSH	HL
+	LD	BC,_operators
+	PUSH	BC
+	CALL	_strchr
+	POP	BC
+	POP	BC
+	LD	(IX+-3),HL
+	LD	BC,0
+	OR	A,A
+	SBC	HL,BC
+	JR	Z,L_1
+;   28	        return index - operators + 1;
+	LD	BC,_operators
+	LD	HL,(IX+-3)
+	OR	A,A
+	SBC	HL,BC
+	INC	HL
+	LD	A,L
+	JR	L_2
+;   29	    }
+L_1:
+;   30	    return 0;
+	XOR	A,A
+;   31	}
+L_2:
+	LD	SP,IX
+	POP	IX
+	RET	
+
+
+;**************************** _getIndexOfOperator ***************************
+;Name                         Addr/Register   Size   Type
+;_operators                          STATIC     14   variable
+;_strchr                             IMPORT  -----   function
+;index                                 IX-3      3   variable
+;operator                              IX+6      1   parameter
+
+
+; Stack Frame Size: 12 (bytes)
+;       Spill Code: 0 (instruction)
+
+
+;   32	
+;   33	uint24_t executeOperator(uint24_t operand1, uint24_t operand2, uint8_t operator) {
+_executeOperator:
+	LD	HL,-12
+	CALL	__frameset
+;   34	    switch (operator) {
+	LD	A,(IX+12)
+	UEXT	HL
+	LD	L,A
+	LD	BC,HL
+L__5:
+	LD	DE,106
+	OR	A,A
+	SBC	HL,DE
+	JR	C,L__6
+	LD	HL,113
+	OR	A,A
+	SBC	HL,BC
+	JR	C,L__8
+	LD	HL,BC
+	ADD	HL,HL
+	ADD	HL,HL
+	OR	A,A
+	SBC	HL,BC
+	LD	DE,L__3-318
+	ADD	HL,DE
+	LD	HL,(HL)
+	JP	(HL)
+L__3:
+	DW24	L_12	
+
+	DW24	L_11	
+
+	DW24	L_10	
+
+	DW24	L_9	
+
+	DW24	L_8	
+
+	DW24	L_7	
+
+	DW24	L_3	
+
+	DW24	L_4	
+
+L__6:
+	LD	DE,64
+	LD	HL,BC
+	OR	A,A
+	SBC	HL,DE
+	JR	Z,L_28
+	LD	HL,64
+	OR	A,A
+	SBC	HL,BC
+	JR	C,L_34
+	LD	DE,60
+	LD	HL,BC
+	OR	A,A
+	SBC	HL,DE
+	JR	C,L_34
+	LD	HL,61
+	OR	A,A
+	SBC	HL,BC
+	JR	C,L_34
+	LD	HL,BC
+	ADD	HL,HL
+	ADD	HL,HL
+	OR	A,A
+	SBC	HL,BC
+	LD	DE,L__2-180
+	ADD	HL,DE
+	LD	HL,(HL)
+	JP	(HL)
+L__2:
+	DW24	L_13	
+
+	DW24	L_19	
+
+L__8:
+	LD	DE,130
+	LD	HL,BC
+	OR	A,A
+	SBC	HL,DE
+	JR	C,L_34
+	LD	HL,131
+	OR	A,A
+	SBC	HL,BC
+	JR	C,L_34
+	LD	HL,BC
+	ADD	HL,HL
+	ADD	HL,HL
+	OR	A,A
+	SBC	HL,BC
+	LD	BC,L__4-390
+	ADD	HL,BC
+	LD	HL,(HL)
+	JP	(HL)
+L__4:
+	DW24	L_5	
+
+	DW24	L_6	
+
+;   35	        case tAdd:
+L_3:
+;   36	            return operand1 + operand2;
+	LD	BC,(IX+9)
+	LD	HL,(IX+6)
+	ADD	HL,BC
+	JR	L_35
+;   37	        case tSub:
+L_4:
+;   38	            return operand1 - operand2;
+	LD	BC,(IX+9)
+	LD	HL,(IX+6)
+	OR	A,A
+	SBC	HL,BC
+	JR	L_35
+;   39	        case tMul:
+L_5:
+;   40	            return operand1 * operand2;
+	LD	HL,(IX+6)
+	LD	BC,(IX+9)
+	CALL	__imulu
+	JR	L_35
+;   41	        case tDiv:
+L_6:
+;   42	            return operand1 / operand2;
+	LD	HL,(IX+6)
+	LD	BC,(IX+9)
+	CALL	__idivu
+	JR	L_35
+;   43	        case tNE:
+L_7:
+;   44	            return operand1 != operand2;
+	LD	BC,(IX+9)
+	LD	HL,(IX+6)
+	OR	A,A
+	SBC	HL,BC
+	JR	Z,L__17
+	LD	B,1
+	JR	L__18
+L__17:
+	LD	B,0
+L__18:
+	LD	A,B
+	SEXT	HL
+	LD	L,B
+	JR	L_35
+;   45	        case tGE:
+L_8:
+;   46	            return operand1 >= operand2;
+	LD	BC,(IX+9)
+	LD	HL,(IX+6)
+	OR	A,A
+	SBC	HL,BC
+	JR	C,L__20
+	LD	B,1
+	JR	L__21
+L__20:
+	LD	B,0
+L__21:
+	LD	A,B
+	SEXT	HL
+	LD	L,B
+	JR	L_35
+;   47	        case tLE:
+L_9:
+;   48	            return operand1 <= operand2;
+	LD	BC,(IX+6)
+	LD	HL,(IX+9)
+	OR	A,A
+	SBC	HL,BC
+	JR	C,L__23
+	LD	B,1
+	JR	L__24
+L__23:
+	LD	B,0
+L__24:
+	LD	A,B
+	SEXT	HL
+	LD	L,B
+	JR	L_35
+;   49	        case tGT:
+L_10:
+;   50	            return operand1 > operand2;
+	LD	BC,(IX+6)
+	LD	HL,(IX+9)
+	OR	A,A
+	SBC	HL,BC
+	JR	NC,L__26
+	LD	B,1
+	JR	L__27
+L__26:
+	LD	B,0
+L__27:
+	LD	A,B
+	SEXT	HL
+	LD	L,B
+	JR	L_35
+;   51	        case tLT:
+L_11:
+;   52	            return operand1 < operand2;
+	LD	BC,(IX+9)
+	LD	HL,(IX+6)
+	OR	A,A
+	SBC	HL,BC
+	JR	NC,L__29
+	LD	B,1
+	JR	L__30
+L__29:
+	LD	B,0
+L__30:
+	LD	A,B
+	SEXT	HL
+	LD	L,B
+	JR	L_35
+;   53	        case tEQ:
+L_12:
+;   54	            return operand1 == operand2;
+	LD	BC,(IX+9)
+	LD	HL,(IX+6)
+	OR	A,A
+	SBC	HL,BC
+	JR	NZ,L__32
+	LD	B,1
+	JR	L__33
+L__32:
+	LD	B,0
+L__33:
+	LD	A,B
+	SEXT	HL
+	LD	L,B
+	JR	L_35
+;   55	        case tOr:
+L_13:
+;   56	            return operand1 || operand2;
+	LD	BC,0
+	LD	HL,(IX+6)
+	OR	A,A
+	SBC	HL,BC
+	JR	NZ,L_15
+	LD	HL,(IX+9)
+	OR	A,A
+	SBC	HL,BC
+	JR	Z,L_16
+L_15:
+;   57	        case tXor:
+	LD	BC,1
+	LD	(IX+-3),BC
+	JR	L_17
+L_16:
+	LD	(IX+-3),BC
+L_17:
+	LD	HL,(IX+-3)
+	JR	L_35
+L_19:
+;   58	            return !operand1 != !operand2;
+	LD	BC,0
+	LD	HL,(IX+6)
+	OR	A,A
+	SBC	HL,BC
+	JR	NZ,L_21
+	LD	BC,1
+	LD	(IX+-6),BC
+	JR	L_22
+L_21:
+	LD	(IX+-6),BC
+L_22:
+	LD	BC,0
+	LD	HL,(IX+9)
+	OR	A,A
+	SBC	HL,BC
+	JR	NZ,L_25
+	LD	BC,1
+	LD	(IX+-9),BC
+	JR	L_26
+L_25:
+	LD	(IX+-9),BC
+L_26:
+	LD	BC,(IX+-9)
+	LD	HL,(IX+-6)
+	OR	A,A
+	SBC	HL,BC
+	JR	Z,L__39
+	LD	B,1
+	JR	L__40
+L__39:
+	LD	B,0
+L__40:
+	LD	A,B
+	SEXT	HL
+	LD	L,B
+	JR	L_35
+;   59	        case tAnd:
+L_28:
+;   60	            return operand1 && operand2;
+	LD	BC,0
+	LD	HL,(IX+6)
+	OR	A,A
+	SBC	HL,BC
+	JR	Z,L_31
+	LD	HL,(IX+9)
+	OR	A,A
+	SBC	HL,BC
+	JR	Z,L_31
+;   61	        default:
+	LD	BC,1
+	LD	(IX+-12),BC
+	JR	L_32
+L_31:
+	LD	(IX+-12),BC
+L_32:
+	LD	HL,(IX+-12)
+	JR	L_35
+L_34:
+;   62	            return operand1;
+	LD	HL,(IX+6)
+;   63	    }
+;   64	}
+L_35:
+	LD	SP,IX
+	POP	IX
+	RET	
+
+
+;**************************** _executeOperator ***************************
+;Name                         Addr/Register   Size   Type
+;temp33                               IX-12      3   variable
+;temp27                                IX-9      3   variable
+;temp23                                IX-6      3   variable
+;temp18                                IX-3      3   variable
+;operator                             IX+12      1   parameter
+;operand2                              IX+9      3   parameter
+;operand1                              IX+6      3   parameter
+
+
+; Stack Frame Size: 27 (bytes)
+;       Spill Code: 0 (instruction)
+
+
+;   65	
+;   66	uint8_t parseOperator(element_t *outputPrevPrev, element_t *outputPrev, element_t *outputCurr) {
+_parseOperator:
+	LD	HL,-6
+	CALL	__frameset
+;   67	    if (outputPrev->operand <= TYPE_CHAIN_ANS && outputPrevPrev->operand <= TYPE_CHAIN_PUSH) {
+	LD	IY,(IX+9)
+	LD	BC,(IY+1)
+	LD	(IX+-3),BC
+	LD	HL,3
+	OR	A,A
+	SBC	HL,BC
+	JR	C,L_38
+	LD	IY,(IX+6)
+	LD	BC,(IY+1)
+	LD	(IX+-6),BC
+	LD	HL,4
+	OR	A,A
+	SBC	HL,BC
+	JR	C,L_38
+;   68	        return (*operatorFunctions[(outputCurr->operand * 20) + (outputPrevPrev->operand * 5) + (outputPrev->operand)])(outputPrevPrev, outputPrev);
+	LD	BC,(IX+12)
+	LD	IY,BC
+	LD	HL,(IY+1)
+	ADD	HL,HL
+	LD	IY,BC
+	LD	BC,(IY+1)
+	ADD	HL,HL
+	ADD	HL,BC
+	ADD	HL,HL
+	ADD	HL,HL
+	LD	BC,HL
+	LD	HL,(IX+-6)
+	ADD	HL,HL
+	ADD	HL,HL
+	LD	DE,(IX+-6)
+	ADD	HL,DE
+	ADD	HL,BC
+	LD	BC,(IX+-3)
+	ADD	HL,BC
+	LD	BC,HL
+	LD	HL,BC
+	ADD	HL,HL
+	ADD	HL,HL
+	OR	A,A
+	LD	DE,(IX+9)
+	PUSH	DE
+	SBC	HL,BC
+	LD	BC,_operatorFunctions
+	ADD	HL,BC
+	LD	BC,(IX+6)
+	PUSH	BC
+	LD	IY,(HL)
+	CALL	__indcall
+	POP	BC
+	POP	BC
+	JR	L_39
+;   69	    }
+L_38:
+;   70	    return E_SYNTAX;
+	LD	A,5
+;   71	}
+L_39:
+	LD	SP,IX
+	POP	IX
+	RET	
+
+
+;**************************** _parseOperator ***************************
+;Name                         Addr/Register   Size   Type
+;_operatorFunctions                  IMPORT     60   variable
+;G_0                                   IX-6      3   variable
+;G_1                                   IX-3      3   variable
+;outputCurr                           IX+12      3   parameter
+;outputPrev                            IX+9      3   parameter
+;outputPrevPrev                        IX+6      3   parameter
+
+
+; Stack Frame Size: 21 (bytes)
+;       Spill Code: 0 (instruction)
+
+
+;   72	
+;   73	void insertFunctionReturn(uint8_t function, uint8_t outputRegister, uint8_t needPush) {
+_insertFunctionReturn:
+	CALL	__frameset0
+;   74	}
+	LD	SP,IX
+	POP	IX
+	RET	
+
+
+;**************************** _insertFunctionReturn ***************************
+;Name                         Addr/Register   Size   Type
+;needPush                             IX+12      1   parameter
+;outputRegister                        IX+9      1   parameter
+;function                              IX+6      1   parameter
+
+
+; Stack Frame Size: 15 (bytes)
+;       Spill Code: 0 (instruction)
+
+
+;   75	
+;   76	
+;   77	
+;   78	
+;   79	
+;   80	
+;   81	
+;   82	
+;   83	static uint8_t AddChainAnsNumber(element_t *entry1, element_t *entry2) {
+_AddChainAnsNumber:
+	LD	HL,-4
+	CALL	__frameset
+;   84	    uint24_t number = entry2->operand;
+	LD	IY,(IX+9)
+	LD	BC,(IY+1)
+	LD	(IX+-4),BC
+;   85	    if (number < 5) {
+	LD	HL,BC
+	LD	BC,5
+	OR	A,A
+	SBC	HL,BC
+	JR	NC,L_62
+;   86	        uint8_t a;
+;   87	        for (a = 0; a < (uint8_t)number; a++) {
+	LD	(IX+-1),0
+	JR	L_48
+L_46:
+;   88	            INC_HL();
+	LD	HL,(_ice+40826)
+	LD	(HL),35
+	LD	BC,(_ice+40826)
+	INC	BC
+	LD	(_ice+40826),BC
+	INC	(IX+-1)
+;   89	        }
+L_48:
+	LD	B,(IX+-4)
+	LD	A,(IX+-1)
+	CP	A,B
+	JR	C,L_46
+	JR	L_63
+;   90	    } else {
+L_62:
+;   91	        LD_DE_IMM(number);
+	LD	HL,(_ice+40826)
+	LD	(HL),17
+	LD	BC,(_ice+40826)
+	INC	BC
+	LD	(_ice+40826),BC
+	LD	HL,(_ice+40826)
+	LD	BC,(IX+-4)
+	LD	(HL),BC
+	LD	IY,(_ice+40826)
+	LEA	BC,IY+3
+	LD	(_ice+40826),BC
+;   92	        ADD_HL_DE();
+	LD	HL,(_ice+40826)
+	LD	(HL),25
+	LD	BC,(_ice+40826)
+	INC	BC
+	LD	(_ice+40826),BC
+;   93	    }
+L_63:
+;   94	    return VALID;
+	LD	A,255
+;   95	}
+	LD	SP,IX
+	POP	IX
+	RET	
+
+
+;**************************** _AddChainAnsNumber ***************************
+;Name                         Addr/Register   Size   Type
+;_ice                                IMPORT  40840   variable
+;number                                IX-4      3   variable
+;a                                     IX-1      1   variable
+;entry2                                IX+9      3   parameter
+;entry1                                IX+6      3   parameter
+
+
+; Stack Frame Size: 16 (bytes)
+;       Spill Code: 0 (instruction)
+
+
+;   96	
+;   97	static uint8_t AddVariableNumber(element_t *entry1, element_t *entry2) {
+_AddVariableNumber:
+	CALL	__frameset0
+;   98	    LD_HL_IND_IX_OFF(entry1->operand);
+	LD	HL,(_ice+40826)
+	LD	(HL),221
+	INC	HL
+	LD	(HL),39
+	LD	IY,(_ice+40826)
+	LEA	BC,IY+2
+	LD	(_ice+40826),BC
+	LD	IY,(IX+6)
+	LD	A,(IY+1)
+	LD	HL,(_ice+40826)
+	LD	(HL),A
+	LD	BC,(_ice+40826)
+	INC	BC
+	LD	(_ice+40826),BC
+;   99	    return AddChainAnsNumber(entry1, entry2);
+	LD	BC,(IX+9)
+	PUSH	BC
+	LD	BC,(IX+6)
+	PUSH	BC
+	CALL	_AddChainAnsNumber
+	POP	BC
+	POP	BC
+;  100	}
+	LD	SP,IX
+	POP	IX
+	RET	
+
+
+;**************************** _AddVariableNumber ***************************
+;Name                         Addr/Register   Size   Type
+;_ice                                IMPORT  40840   variable
+;entry2                                IX+9      3   parameter
+;entry1                                IX+6      3   parameter
+
+
+; Stack Frame Size: 12 (bytes)
+;       Spill Code: 0 (instruction)
+
+
+;  101	
+;  102	static uint8_t AddFunctionNumber(element_t *entry1, element_t *entry2) {
+_AddFunctionNumber:
+	CALL	__frameset0
+;  103	    insertFunctionReturn(entry1->operand, OUTPUT_IN_HL, NO_PUSH);
+	LD	BC,0
+	PUSH	BC
+	LD	BC,2
+	PUSH	BC
+	LD	IY,(IX+6)
+	LD	C,(IY+1)
+	LD	B,0
+	PUSH	BC
+	CALL	_insertFunctionReturn
+	POP	BC
+	POP	BC
+	POP	BC
+;  104	    return AddChainAnsNumber(entry1, entry2);
+	LD	BC,(IX+9)
+	PUSH	BC
+	LD	BC,(IX+6)
+	PUSH	BC
+	CALL	_AddChainAnsNumber
+	POP	BC
+	POP	BC
+;  105	}
+	LD	SP,IX
+	POP	IX
+	RET	
+
+
+;**************************** _AddFunctionNumber ***************************
+;Name                         Addr/Register   Size   Type
+;_insertFunctionReturn               IMPORT  -----   function
+;entry2                                IX+9      3   parameter
+;entry1                                IX+6      3   parameter
+
+
+; Stack Frame Size: 12 (bytes)
+;       Spill Code: 0 (instruction)
+
+
+;  106	
+;  107	static uint8_t AddChainAnsVariable(element_t *entry1, element_t *entry2) {
+_AddChainAnsVariable:
+	CALL	__frameset0
+;  108	    LD_DE_IND_IX_OFF(entry2->operand);
+	LD	HL,(_ice+40826)
+	LD	(HL),221
+	INC	HL
+	LD	(HL),23
+	LD	IY,(_ice+40826)
+	LEA	BC,IY+2
+	LD	(_ice+40826),BC
+	LD	IY,(IX+9)
+	LD	A,(IY+1)
+	LD	HL,(_ice+40826)
+	LD	(HL),A
+	LD	BC,(_ice+40826)
+	INC	BC
+	LD	(_ice+40826),BC
+;  109	    ADD_HL_DE();
+	LD	HL,(_ice+40826)
+	LD	(HL),25
+	LD	BC,(_ice+40826)
+	INC	BC
+	LD	(_ice+40826),BC
+;  110	    return VALID;
+	LD	A,255
+;  111	}
+	LD	SP,IX
+	POP	IX
+	RET	
+
+
+;**************************** _AddChainAnsVariable ***************************
+;Name                         Addr/Register   Size   Type
+;_ice                                IMPORT  40840   variable
+;entry2                                IX+9      3   parameter
+;entry1                                IX+6      3   parameter
+
+
+; Stack Frame Size: 12 (bytes)
+;       Spill Code: 0 (instruction)
+
+
+;  112	
+;  113	static uint8_t AddFunctionVariable(element_t *entry1, element_t *entry2) {
+_AddFunctionVariable:
+	CALL	__frameset0
+;  114	    insertFunctionReturn(entry1->operand, OUTPUT_IN_HL, NO_PUSH);
+	LD	BC,0
+	PUSH	BC
+	LD	BC,2
+	PUSH	BC
+	LD	IY,(IX+6)
+	LD	C,(IY+1)
+	LD	B,0
+	PUSH	BC
+	CALL	_insertFunctionReturn
+	POP	BC
+	POP	BC
+	POP	BC
+;  115	    return AddChainAnsVariable(entry1, entry2);
+	LD	BC,(IX+9)
+	PUSH	BC
+	LD	BC,(IX+6)
+	PUSH	BC
+	CALL	_AddChainAnsVariable
+	POP	BC
+	POP	BC
+;  116	}
+	LD	SP,IX
+	POP	IX
+	RET	
+
+
+;**************************** _AddFunctionVariable ***************************
+;Name                         Addr/Register   Size   Type
+;_insertFunctionReturn               IMPORT  -----   function
+;entry2                                IX+9      3   parameter
+;entry1                                IX+6      3   parameter
+
+
+; Stack Frame Size: 12 (bytes)
+;       Spill Code: 0 (instruction)
+
+
+;  117	
+;  118	static uint8_t AddNumberVariable(element_t *entry1, element_t *entry2) {
+_AddNumberVariable:
+	CALL	__frameset0
+;  119	    return AddVariableNumber(entry2, entry1);
+	LD	BC,(IX+6)
+	PUSH	BC
+	LD	BC,(IX+9)
+	PUSH	BC
+	CALL	_AddVariableNumber
+	POP	BC
+	POP	BC
+;  120	}
+	LD	SP,IX
+	POP	IX
+	RET	
+
+
+;**************************** _AddNumberVariable ***************************
+;Name                         Addr/Register   Size   Type
+;entry2                                IX+9      3   parameter
+;entry1                                IX+6      3   parameter
+
+
+; Stack Frame Size: 12 (bytes)
+;       Spill Code: 0 (instruction)
+
+
+;  121	
+;  122	static uint8_t AddNumberFunction(element_t *entry1, element_t *entry2) {
+_AddNumberFunction:
+	CALL	__frameset0
+;  123	    return AddFunctionNumber(entry2, entry1);
+	LD	BC,(IX+6)
+	PUSH	BC
+	LD	BC,(IX+9)
+	PUSH	BC
+	CALL	_AddFunctionNumber
+	POP	BC
+	POP	BC
+;  124	}
+	LD	SP,IX
+	POP	IX
+	RET	
+
+
+;**************************** _AddNumberFunction ***************************
+;Name                         Addr/Register   Size   Type
+;entry2                                IX+9      3   parameter
+;entry1                                IX+6      3   parameter
+
+
+; Stack Frame Size: 12 (bytes)
+;       Spill Code: 0 (instruction)
+
+
+;  125	
+;  126	static uint8_t AddNumberChainAns(element_t *entry1, element_t *entry2) {
+_AddNumberChainAns:
+	CALL	__frameset0
+;  127	    return AddChainAnsNumber(entry2, entry1);
+	LD	BC,(IX+6)
+	PUSH	BC
+	LD	BC,(IX+9)
+	PUSH	BC
+	CALL	_AddChainAnsNumber
+	POP	BC
+	POP	BC
+;  128	}
+	LD	SP,IX
+	POP	IX
+	RET	
+
+
+;**************************** _AddNumberChainAns ***************************
+;Name                         Addr/Register   Size   Type
+;entry2                                IX+9      3   parameter
+;entry1                                IX+6      3   parameter
+
+
+; Stack Frame Size: 12 (bytes)
+;       Spill Code: 0 (instruction)
+
+
+;  129	
+;  130	static uint8_t AddVariableVariable(element_t *entry1, element_t *entry2) {
+_AddVariableVariable:
+	CALL	__frameset0
+;  131	    LD_HL_IND_IX_OFF(entry1->operand);
+	LD	HL,(_ice+40826)
+	LD	(HL),221
+	INC	HL
+	LD	(HL),39
+	LD	IY,(_ice+40826)
+	LEA	BC,IY+2
+	LD	(_ice+40826),BC
+	LD	IY,(IX+6)
+	LD	BC,(IY+1)
+	LD	HL,BC
+	LD	IY,(_ice+40826)
+	LD	(IY),L
+	LD	DE,(_ice+40826)
+	INC	DE
+	LD	(_ice+40826),DE
+;  132	    if (entry1->operand == entry2->operand) {
+	LD	IY,(IX+9)
+	LD	HL,(IY+1)
+	OR	A,A
+	SBC	HL,BC
+	JR	NZ,L_106
+;  133	        ADD_HL_HL();
+	LD	HL,(_ice+40826)
+	LD	(HL),41
+	LD	BC,(_ice+40826)
+	INC	BC
+	LD	(_ice+40826),BC
+;  134	        return VALID;
+	LD	A,255
+	JR	L_108
+;  135	    } else {
+L_106:
+;  136	        return AddChainAnsVariable(entry1, entry2);
+	LD	BC,(IX+9)
+	PUSH	BC
+	LD	BC,(IX+6)
+	PUSH	BC
+	CALL	_AddChainAnsVariable
+	POP	BC
+	POP	BC
+;  137	    }
+;  138	}
+L_108:
+	LD	SP,IX
+	POP	IX
+	RET	
+
+
+;**************************** _AddVariableVariable ***************************
+;Name                         Addr/Register   Size   Type
+;_ice                                IMPORT  40840   variable
+;entry2                                IX+9      3   parameter
+;entry1                                IX+6      3   parameter
+
+
+; Stack Frame Size: 12 (bytes)
+;       Spill Code: 0 (instruction)
+
+
+;  139	
+;  140	static uint8_t AddVariableFunction(element_t *entry1, element_t *entry2) {
+_AddVariableFunction:
+	CALL	__frameset0
+;  141	    return AddFunctionVariable(entry2, entry1);
+	LD	BC,(IX+6)
+	PUSH	BC
+	LD	BC,(IX+9)
+	PUSH	BC
+	CALL	_AddFunctionVariable
+	POP	BC
+	POP	BC
+;  142	}
+	LD	SP,IX
+	POP	IX
+	RET	
+
+
+;**************************** _AddVariableFunction ***************************
+;Name                         Addr/Register   Size   Type
+;entry2                                IX+9      3   parameter
+;entry1                                IX+6      3   parameter
+
+
+; Stack Frame Size: 12 (bytes)
+;       Spill Code: 0 (instruction)
+
+
+;  143	
+;  144	static uint8_t AddVariableChainAns(element_t *entry1, element_t *entry2) {
+_AddVariableChainAns:
+	CALL	__frameset0
+;  145	    return AddChainAnsVariable(entry2, entry1);
+	LD	BC,(IX+6)
+	PUSH	BC
+	LD	BC,(IX+9)
+	PUSH	BC
+	CALL	_AddChainAnsVariable
+	POP	BC
+	POP	BC
+;  146	}
+	LD	SP,IX
+	POP	IX
+	RET	
+
+
+;**************************** _AddVariableChainAns ***************************
+;Name                         Addr/Register   Size   Type
+;entry2                                IX+9      3   parameter
+;entry1                                IX+6      3   parameter
+
+
+; Stack Frame Size: 12 (bytes)
+;       Spill Code: 0 (instruction)
+
+
+;  147	
+;  148	static uint8_t AddFunctionFunction(element_t *entry1, element_t *entry2) {
+_AddFunctionFunction:
+	CALL	__frameset0
+;  149	    insertFunctionReturn(entry1->operand, OUTPUT_IN_DE, NO_PUSH);
+	LD	BC,0
+	PUSH	BC
+	LD	BC,1
+	PUSH	BC
+	LD	IY,(IX+6)
+	LD	C,(IY+1)
+	LD	B,0
+	PUSH	BC
+	CALL	_insertFunctionReturn
+	POP	BC
+	POP	BC
+	POP	BC
+;  150	    insertFunctionReturn(entry2->operand, OUTPUT_IN_HL, NEED_PUSH);
+	LD	BC,1
+	PUSH	BC
+	LD	BC,2
+	PUSH	BC
+	LD	IY,(IX+9)
+	LD	C,(IY+1)
+	LD	B,0
+	PUSH	BC
+	CALL	_insertFunctionReturn
+	POP	BC
+	POP	BC
+	POP	BC
+;  151	    ADD_HL_DE();
+	LD	HL,(_ice+40826)
+	LD	(HL),25
+	LD	BC,(_ice+40826)
+	INC	BC
+	LD	(_ice+40826),BC
+;  152	    return VALID;
+	LD	A,255
+;  153	}
+	LD	SP,IX
+	POP	IX
+	RET	
+
+
+;**************************** _AddFunctionFunction ***************************
+;Name                         Addr/Register   Size   Type
+;_ice                                IMPORT  40840   variable
+;_insertFunctionReturn               IMPORT  -----   function
+;entry2                                IX+9      3   parameter
+;entry1                                IX+6      3   parameter
+
+
+; Stack Frame Size: 12 (bytes)
+;       Spill Code: 0 (instruction)
+
+
+;  154	
+;  155	static uint8_t AddChainAnsFunction(element_t *entry1, element_t *entry2) {
+_AddChainAnsFunction:
+	CALL	__frameset0
+;  156	    insertFunctionReturn(entry2->operand, OUTPUT_IN_DE, NEED_PUSH);
+	LD	BC,1
+	PUSH	BC
+	PUSH	BC
+	LD	IY,(IX+9)
+	LD	C,(IY+1)
+	LD	B,0
+	PUSH	BC
+	CALL	_insertFunctionReturn
+	POP	BC
+	POP	BC
+	POP	BC
+;  157	    ADD_HL_DE();
+	LD	HL,(_ice+40826)
+	LD	(HL),25
+	LD	BC,(_ice+40826)
+	INC	BC
+	LD	(_ice+40826),BC
+;  158	    return VALID;
+	LD	A,255
+;  159	}
+	LD	SP,IX
+	POP	IX
+	RET	
+
+
+;**************************** _AddChainAnsFunction ***************************
+;Name                         Addr/Register   Size   Type
+;_ice                                IMPORT  40840   variable
+;_insertFunctionReturn               IMPORT  -----   function
+;entry2                                IX+9      3   parameter
+;entry1                                IX+6      3   parameter
+
+
+; Stack Frame Size: 12 (bytes)
+;       Spill Code: 0 (instruction)
+
+
+;  160	
+;  161	static uint8_t AddFunctionChainAns(element_t *entry1, element_t *entry2) {
+_AddFunctionChainAns:
+	CALL	__frameset0
+;  162	    return AddChainAnsFunction(entry2, entry1);
+	LD	BC,(IX+6)
+	PUSH	BC
+	LD	BC,(IX+9)
+	PUSH	BC
+	CALL	_AddChainAnsFunction
+	POP	BC
+	POP	BC
+;  163	}
+	LD	SP,IX
+	POP	IX
+	RET	
+
+
+;**************************** _AddFunctionChainAns ***************************
+;Name                         Addr/Register   Size   Type
+;entry2                                IX+9      3   parameter
+;entry1                                IX+6      3   parameter
+
+
+; Stack Frame Size: 12 (bytes)
+;       Spill Code: 0 (instruction)
+
+
+;  164	
+;  165	static uint8_t AddChainPushNumber(element_t *entry1, element_t *entry2) {
+_AddChainPushNumber:
+	CALL	__frameset0
+;  166	    POP_HL();
+	LD	HL,(_ice+40826)
+	LD	(HL),225
+	LD	BC,(_ice+40826)
+	INC	BC
+	LD	(_ice+40826),BC
+;  167	    return AddChainAnsNumber(entry1, entry2);
+	LD	BC,(IX+9)
+	PUSH	BC
+	LD	BC,(IX+6)
+	PUSH	BC
+	CALL	_AddChainAnsNumber
+	POP	BC
+	POP	BC
+;  168	}
+	LD	SP,IX
+	POP	IX
+	RET	
+
+
+;**************************** _AddChainPushNumber ***************************
+;Name                         Addr/Register   Size   Type
+;_ice                                IMPORT  40840   variable
+;entry2                                IX+9      3   parameter
+;entry1                                IX+6      3   parameter
+
+
+; Stack Frame Size: 12 (bytes)
+;       Spill Code: 0 (instruction)
+
+
+;  169	
+;  170	static uint8_t AddChainPushVariable(element_t *entry1, element_t *entry2) {
+_AddChainPushVariable:
+	CALL	__frameset0
+;  171	    POP_HL();
+	LD	HL,(_ice+40826)
+	LD	(HL),225
+	LD	BC,(_ice+40826)
+	INC	BC
+	LD	(_ice+40826),BC
+;  172	    return AddChainAnsVariable(entry1, entry2);
+	LD	BC,(IX+9)
+	PUSH	BC
+	LD	BC,(IX+6)
+	PUSH	BC
+	CALL	_AddChainAnsVariable
+	POP	BC
+	POP	BC
+;  173	}
+	LD	SP,IX
+	POP	IX
+	RET	
+
+
+;**************************** _AddChainPushVariable ***************************
+;Name                         Addr/Register   Size   Type
+;_ice                                IMPORT  40840   variable
+;entry2                                IX+9      3   parameter
+;entry1                                IX+6      3   parameter
+
+
+; Stack Frame Size: 12 (bytes)
+;       Spill Code: 0 (instruction)
+
+
+;  174	
+;  175	static uint8_t AddChainPushFunction(element_t *entry1, element_t *entry2) {
+_AddChainPushFunction:
+	CALL	__frameset0
+;  176	    insertFunctionReturn(entry2->operand, OUTPUT_IN_HL, NO_PUSH);
+	LD	BC,0
+	PUSH	BC
+	LD	BC,2
+	PUSH	BC
+	LD	IY,(IX+9)
+	LD	C,(IY+1)
+	LD	B,0
+	PUSH	BC
+	CALL	_insertFunctionReturn
+	POP	BC
+	POP	BC
+	POP	BC
+;  177	    POP_DE();
+	LD	HL,(_ice+40826)
+	LD	(HL),209
+	LD	BC,(_ice+40826)
+	INC	BC
+	LD	(_ice+40826),BC
+;  178	    ADD_HL_DE();
+	LD	HL,(_ice+40826)
+	LD	(HL),25
+	LD	BC,(_ice+40826)
+	INC	BC
+	LD	(_ice+40826),BC
+;  179	    return VALID;
+	LD	A,255
+;  180	}
+	LD	SP,IX
+	POP	IX
+	RET	
+
+
+;**************************** _AddChainPushFunction ***************************
+;Name                         Addr/Register   Size   Type
+;_ice                                IMPORT  40840   variable
+;_insertFunctionReturn               IMPORT  -----   function
+;entry2                                IX+9      3   parameter
+;entry1                                IX+6      3   parameter
+
+
+; Stack Frame Size: 12 (bytes)
+;       Spill Code: 0 (instruction)
+
+
+;  181	
+;  182	static uint8_t AddChainPushChainAns(element_t *entry1, element_t *entry2) {
+_AddChainPushChainAns:
+	CALL	__frameset0
+;  183	    POP_DE();
+	LD	HL,(_ice+40826)
+	LD	(HL),209
+	LD	BC,(_ice+40826)
+	INC	BC
+	LD	(_ice+40826),BC
+;  184	    ADD_HL_DE();
+	LD	HL,(_ice+40826)
+	LD	(HL),25
+	LD	BC,(_ice+40826)
+	INC	BC
+	LD	(_ice+40826),BC
+;  185	    return VALID;
+	LD	A,255
+;  186	}
+	LD	SP,IX
+	POP	IX
+	RET	
+
+
+;**************************** _AddChainPushChainAns ***************************
+;Name                         Addr/Register   Size   Type
+;_ice                                IMPORT  40840   variable
+;entry2                                IX+9      3   parameter
+;entry1                                IX+6      3   parameter
+
+
+; Stack Frame Size: 12 (bytes)
+;       Spill Code: 0 (instruction)
+
+
+;  187	
+;  188	static uint8_t AddError(element_t *entry1, element_t *entry2) {
+_AddError:
+	CALL	__frameset0
+;  189	    return E_SYNTAX;
+	LD	A,5
+;  190	}
+	LD	SP,IX
+	POP	IX
+	RET	
+
+
+;**************************** _AddError ***************************
+;Name                         Addr/Register   Size   Type
+;entry2                                IX+9      3   parameter
+;entry1                                IX+6      3   parameter
+
+
+; Stack Frame Size: 12 (bytes)
+;       Spill Code: 0 (instruction)
+
+
+	SEGMENT DATA
+_operatorFunctions:
+	DW24	_AddError
+	DW24	_AddNumberVariable
+	DW24	_AddNumberFunction
+	DW24	_AddNumberChainAns
+	DW24	_AddVariableNumber
+	DW24	_AddVariableVariable
+	DW24	_AddVariableFunction
+	DW24	_AddVariableChainAns
+	DW24	_AddFunctionNumber
+	DW24	_AddFunctionVariable
+	DW24	_AddFunctionFunction
+	DW24	_AddFunctionChainAns
+	DW24	_AddChainAnsNumber
+	DW24	_AddChainAnsVariable
+	DW24	_AddChainAnsFunction
+	DW24	_AddError
+	DW24	_AddChainPushNumber
+	DW24	_AddChainPushVariable
+	DW24	_AddChainPushFunction
+	DW24	_AddChainPushChainAns
+	XREF _ice:ROM
+	XREF _strchr:ROM
+	XREF __indcall:ROM
+	XREF __idivu:ROM
+	XREF __imulu:ROM
+	XREF __frameset0:ROM
+	XREF __frameset:ROM
+	XDEF _operatorFunctions
+	XDEF _insertFunctionReturn
+	XDEF _parseOperator
+	XDEF _executeOperator
+	XDEF _getIndexOfOperator
+	XDEF _operatorPrecedence
+	XDEF _operators
+;  191	
+;  192	uint8_t (*operatorFunctions[20])(element_t*, element_t*) = {
+	END

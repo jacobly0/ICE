@@ -52,10 +52,11 @@ uint8_t parseProgram(void) {
 /* Static functions */
 
 static uint8_t parseExpression(unsigned int token) {
-    const uint8_t *outputStack   = (uint8_t*)0xD62C00;
-    const uint8_t *stack         = (uint8_t*)0xD63000;
-    unsigned int outputElements  = 0;
-    unsigned int stackElements   = 0;
+    const uint8_t *outputStack    = (uint8_t*)0xD62C00;
+    const uint8_t *stack          = (uint8_t*)0xD64000;
+    const uint8_t *tempCFunctions = stack;
+    unsigned int outputElements   = 0;
+    unsigned int stackElements    = 0;
     unsigned int loopIndex, temp;
     uint8_t index = 0, nestedDets = 0;
     uint8_t amountOfArgumentsStack[20];
@@ -114,8 +115,9 @@ static uint8_t parseExpression(unsigned int token) {
                 // Move entire stack to output
                 stackToOutputReturn = 1;
                 goto stackToOutput;
-                stackToOutputReturn1:
+stackToOutputReturn1:
 
+                // We are in not in any nested det() anymore
                 nestedDets = 0;
             }
             
@@ -209,7 +211,7 @@ static uint8_t parseExpression(unsigned int token) {
     // Move entire stack to output
     stackToOutputReturn = 2;
     goto stackToOutput;
-    stackToOutputReturn2:
+stackToOutputReturn2:
 
     // Remove stupid things like 2+5
     for (loopIndex = 2; loopIndex < outputElements; loopIndex++) {
@@ -279,16 +281,25 @@ static uint8_t parseExpression(unsigned int token) {
         if (typeMasked == TYPE_OPERATOR) {
             // Yay, we are entering a det() function (#notyay), so store it elsewhere!
             if ((outputCurr->type & 240) != nestedDets) {
+                // Push the old programPtr
                 push((uint24_t)ice.programPtr);
-                // TODO
+                nestedDets = outputCurr->type & 240;
+                
+                // Place the new code at a temp location
+                ice.programPtr = tempCFunctions + (500 * (nestedDets >> 4));
             }
             parseOperator(&outputPtr[loopIndex-2], &outputPtr[loopIndex-1], outputCurr);
-            // TODO
+            // Cleanup
         } 
         
         // Parse a function with X arguments
         else if (typeMasked == TYPE_FUNCTION) {
             // TODO
+            
+            // Yay, we can restore our programPtr!
+            if ((uint8_t)outputCurr->operand == tDet) {
+                ice.programPtr = (uint8_t *)pop();
+            }
         }
     }
 
@@ -296,7 +307,7 @@ static uint8_t parseExpression(unsigned int token) {
     return VALID;
 
     // Duplicated function opt
-    stackToOutput:
+stackToOutput:
 
     // Move entire stack to output
     while (stackElements) {
