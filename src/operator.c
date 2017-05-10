@@ -18,7 +18,7 @@
 #include "operator.h"
 #include "stack.h"
 
-extern uint8_t (*operatorFunctions[60])(element_t*, element_t*);
+extern void (*operatorFunctions[60])(element_t*, element_t*);
 const char operators[] = {tStore, tAnd, tXor, tOr, tEQ, tLT, tGT, tLE, tGE, tNE, tMul, tDiv, tAdd, tSub};
 const uint8_t operatorPrecedence[] = {0, 1, 2, 2, 3, 3, 3, 3, 3, 3, 5, 5, 4, 4};
 
@@ -64,23 +64,27 @@ uint24_t executeOperator(uint24_t operand1, uint24_t operand2, uint8_t operator)
 }
 
 uint8_t parseOperator(element_t *outputPrevPrev, element_t *outputPrev, element_t *outputCurr) {
-    // Only call the function if the types of both arguments are not more than TYPE_CHAIN_PUSH
-    if ((outputPrev->type & 15) <= TYPE_CHAIN_ANS && (outputPrevPrev->type & 15) <= TYPE_CHAIN_PUSH) {
-        return (*operatorFunctions[((getIndexOfOperator(outputCurr->operand) - 1) * 20) + \
-               (outputPrevPrev->operand * 5) + \
-               (outputPrev->operand)]) \
-                (outputPrevPrev, outputPrev);
+    uint8_t typeMasked1 = outputPrevPrev->type & 15;
+    uint8_t typeMasked2 = outputPrev->type & 15;
+    
+    // Only call the function if both types are valid
+    if ((typeMasked1 == typeMasked2 && (typeMasked1 == TYPE_NUMBER || typeMasked1 == TYPE_CHAIN_ANS)) || \
+        (typeMasked1 > TYPE_CHAIN_PUSH && typeMasked2 > TYPE_CHAIN_ANS)) {
+        return E_SYNTAX;
     }
-    return E_SYNTAX;
+    (*operatorFunctions[((getIndexOfOperator(outputCurr->operand) - 1) * 20) + (outputPrevPrev->operand * 5) + (outputPrev->operand)]) \
+        (outputPrevPrev, outputPrev);
+    return VALID;
 }
 
 void insertFunctionReturn(uint24_t function, uint8_t outputRegister, uint8_t needPush) {
     if ((uint8_t)function == tRand) {
-        
+        // TODO
     } else {
         // Check if the getKey has a fast direct key argument; if so, the second byte is 1
         if (function & 0x00FF00) {
             uint8_t key = function >> 16;
+            // TODO
         }
         
         // Else, a standalone "getKey"
@@ -124,14 +128,7 @@ void insertFunctionReturn(uint24_t function, uint8_t outputRegister, uint8_t nee
     }
 }
 
-
-
-
-
-
-
-
-static uint8_t AddChainAnsNumber(element_t *entry1, element_t *entry2) {
+static void AddChainAnsNumber(element_t *entry1, element_t *entry2) {
     uint24_t number = entry2->operand;
     
     if (number < 5) {
@@ -143,109 +140,94 @@ static uint8_t AddChainAnsNumber(element_t *entry1, element_t *entry2) {
         LD_DE_IMM(number);
         ADD_HL_DE();
     }
-    return VALID;
 }
 
-static uint8_t AddVariableNumber(element_t *entry1, element_t *entry2) {
+static void AddVariableNumber(element_t *entry1, element_t *entry2) {
     LD_HL_IND_IX_OFF(entry1->operand);
-    return AddChainAnsNumber(entry1, entry2);
+    AddChainAnsNumber(entry1, entry2);
 }
 
-static uint8_t AddFunctionNumber(element_t *entry1, element_t *entry2) {
-    insertFunctionReturn((uint8_t)entry1->operand, OUTPUT_IN_HL, NO_PUSH);
-    return AddChainAnsNumber(entry1, entry2);
+static void AddFunctionNumber(element_t *entry1, element_t *entry2) {
+    insertFunctionReturn(entry1->operand, OUTPUT_IN_HL, NO_PUSH);
+    AddChainAnsNumber(entry1, entry2);
 }
 
-static uint8_t AddChainAnsVariable(element_t *entry1, element_t *entry2) {
+static void AddChainAnsVariable(element_t *entry1, element_t *entry2) {
     LD_DE_IND_IX_OFF(entry2->operand);
     ADD_HL_DE();
-    return VALID;
 }
 
-static uint8_t AddFunctionVariable(element_t *entry1, element_t *entry2) {
-    insertFunctionReturn((uint8_t)entry1->operand, OUTPUT_IN_HL, NO_PUSH);
-    return AddChainAnsVariable(entry1, entry2);
+static void AddFunctionVariable(element_t *entry1, element_t *entry2) {
+    insertFunctionReturn(entry1->operand, OUTPUT_IN_HL, NO_PUSH);
+    AddChainAnsVariable(entry1, entry2);
 }
 
-static uint8_t AddNumberVariable(element_t *entry1, element_t *entry2) {
-    return AddVariableNumber(entry2, entry1);
+static void AddNumberVariable(element_t *entry1, element_t *entry2) {
+    AddVariableNumber(entry2, entry1);
 }
 
-static uint8_t AddNumberFunction(element_t *entry1, element_t *entry2) {
-    return AddFunctionNumber(entry2, entry1);
+static void AddNumberFunction(element_t *entry1, element_t *entry2) {
+    AddFunctionNumber(entry2, entry1);
 }
 
-static uint8_t AddNumberChainAns(element_t *entry1, element_t *entry2) {
-    return AddChainAnsNumber(entry2, entry1);
+static void AddNumberChainAns(element_t *entry1, element_t *entry2) {
+    AddChainAnsNumber(entry2, entry1);
 }
 
-static uint8_t AddVariableVariable(element_t *entry1, element_t *entry2) {
+static void AddVariableVariable(element_t *entry1, element_t *entry2) {
     LD_HL_IND_IX_OFF(entry1->operand);
     if (entry1->operand == entry2->operand) {
         ADD_HL_HL();
-        return VALID;
     } else {
-        return AddChainAnsVariable(entry1, entry2);
+        AddChainAnsVariable(entry1, entry2);
     }
 }
 
-static uint8_t AddVariableFunction(element_t *entry1, element_t *entry2) {
-    return AddFunctionVariable(entry2, entry1);
+static void AddVariableFunction(element_t *entry1, element_t *entry2) {
+    AddFunctionVariable(entry2, entry1);
 }
 
-static uint8_t AddVariableChainAns(element_t *entry1, element_t *entry2) {
-    return AddChainAnsVariable(entry2, entry1);
+static void AddVariableChainAns(element_t *entry1, element_t *entry2) {
+    AddChainAnsVariable(entry2, entry1);
 }
 
-static uint8_t AddFunctionFunction(element_t *entry1, element_t *entry2) {
-    insertFunctionReturn((uint8_t)entry1->operand, OUTPUT_IN_DE, NO_PUSH);
-    insertFunctionReturn((uint8_t)entry2->operand, OUTPUT_IN_HL, NEED_PUSH);
+static void AddFunctionFunction(element_t *entry1, element_t *entry2) {
+    insertFunctionReturn(entry1->operand, OUTPUT_IN_DE, NO_PUSH);
+    insertFunctionReturn(entry2->operand, OUTPUT_IN_HL, NEED_PUSH);
     ADD_HL_DE();
-    return VALID;
 }
 
-static uint8_t AddChainAnsFunction(element_t *entry1, element_t *entry2) {
-    insertFunctionReturn((uint8_t)entry2->operand, OUTPUT_IN_DE, NEED_PUSH);
+static void AddChainAnsFunction(element_t *entry1, element_t *entry2) {
+    insertFunctionReturn(entry2->operand, OUTPUT_IN_DE, NEED_PUSH);
     ADD_HL_DE();
-    return VALID;
 }
 
-static uint8_t AddFunctionChainAns(element_t *entry1, element_t *entry2) {
-    return AddChainAnsFunction(entry2, entry1);
+static void AddFunctionChainAns(element_t *entry1, element_t *entry2) {
+    AddChainAnsFunction(entry2, entry1);
 }
 
-static uint8_t AddChainPushNumber(element_t *entry1, element_t *entry2) {
+static void AddChainPushNumber(element_t *entry1, element_t *entry2) {
     POP_HL();
-    return AddChainAnsNumber(entry1, entry2);
+    AddChainAnsNumber(entry1, entry2);
 }
 
-static uint8_t AddChainPushVariable(element_t *entry1, element_t *entry2) {
+static void AddChainPushVariable(element_t *entry1, element_t *entry2) {
     POP_HL();
-    return AddChainAnsVariable(entry1, entry2);
+    AddChainAnsVariable(entry1, entry2);
 }
 
-static uint8_t AddChainPushFunction(element_t *entry1, element_t *entry2) {
-    insertFunctionReturn((uint8_t)entry2->operand, OUTPUT_IN_HL, NO_PUSH);
+static void AddChainPushFunction(element_t *entry1, element_t *entry2) {
+    insertFunctionReturn(entry2->operand, OUTPUT_IN_HL, NO_PUSH);
     POP_DE();
     ADD_HL_DE();
-    return VALID;
 }
 
-static uint8_t AddChainPushChainAns(element_t *entry1, element_t *entry2) {
+static void AddChainPushChainAns(element_t *entry1, element_t *entry2) {
     POP_DE();
     ADD_HL_DE();
-    return VALID;
 }
 
-
-
-
-
-
-
-
-
-static uint8_t SubChainAnsNumber(element_t *entry1, element_t *entry2) {
+static void SubChainAnsNumber(element_t *entry1, element_t *entry2) {
     uint24_t number = entry2->operand;
     
     if (number < 5) {
@@ -257,119 +239,102 @@ static uint8_t SubChainAnsNumber(element_t *entry1, element_t *entry2) {
         LD_DE_IMM(0x1000000 - number);
         ADD_HL_DE();
     }
-    return VALID;
-
 }
 
-static uint8_t SubChainAnsVariable(element_t *entry1, element_t *entry2) {
+static void SubChainAnsVariable(element_t *entry1, element_t *entry2) {
     LD_DE_IND_IX_OFF(entry2->operand);
     SBC_HL_DE();
-    return VALID;
 }
 
-static uint8_t SubNumberVariable(element_t *entry1, element_t *entry2) {
+static void SubNumberVariable(element_t *entry1, element_t *entry2) {
     LD_HL_IMM(entry1->operand);
     LD_DE_IND_IX_OFF(entry1->operand);
     SBC_HL_DE();
-    return VALID;
 }
 
-static uint8_t SubNumberFunction(element_t *entry1, element_t *entry2) {
-    insertFunctionReturn((uint8_t)entry2->operand, OUTPUT_IN_DE, NO_PUSH);
+static void SubNumberFunction(element_t *entry1, element_t *entry2) {
+    insertFunctionReturn(entry2->operand, OUTPUT_IN_DE, NO_PUSH);
     LD_HL_IMM(entry1->operand);
     SBC_HL_DE();
-    return VALID;
 }
 
-static uint8_t SubNumberChainAns(element_t *entry1, element_t *entry2) {
+static void SubNumberChainAns(element_t *entry1, element_t *entry2) {
     EX_DE_HL();
     LD_HL_IMM(entry1->operand);
     SBC_HL_DE();
-    return VALID;
 }
 
-static uint8_t SubVariableNumber(element_t *entry1, element_t *entry2) {
+static void SubVariableNumber(element_t *entry1, element_t *entry2) {
     LD_HL_IND_IX_OFF(entry1->operand);
     return SubChainAnsNumber(entry1, entry2);
 }
 
-static uint8_t SubVariableVariable(element_t *entry1, element_t *entry2) {
+static void SubVariableVariable(element_t *entry1, element_t *entry2) {
     LD_HL_IND_IX_OFF(entry1->operand);
     return SubChainAnsVariable(entry1, entry2);
 }
 
-static uint8_t SubVariableFunction(element_t *entry1, element_t *entry2) {
-    insertFunctionReturn((uint8_t)entry2->operand, OUTPUT_IN_DE, NO_PUSH);
+static void SubVariableFunction(element_t *entry1, element_t *entry2) {
+    insertFunctionReturn(entry2->operand, OUTPUT_IN_DE, NO_PUSH);
     LD_HL_IND_IX_OFF(entry1->operand);
-    return VALID;
 }
 
-static uint8_t SubVariableChainAns(element_t *entry1, element_t *entry2) {
+static void SubVariableChainAns(element_t *entry1, element_t *entry2) {
     EX_DE_HL();
     LD_HL_IND_IX_OFF(entry1->operand);
     SBC_HL_DE();
-    return VALID;
 }
 
-static uint8_t SubFunctionNumber(element_t *entry1, element_t *entry2) {
-    insertFunctionReturn((uint8_t)entry1->operand, OUTPUT_IN_HL, NO_PUSH);
-    return SubChainAnsNumber(entry1, entry2);
+static void SubFunctionNumber(element_t *entry1, element_t *entry2) {
+    insertFunctionReturn(entry1->operand, OUTPUT_IN_HL, NO_PUSH);
+    SubChainAnsNumber(entry1, entry2);
 }
 
-static uint8_t SubFunctionVariable(element_t *entry1, element_t *entry2) {
-    insertFunctionReturn((uint8_t)entry1->operand, OUTPUT_IN_HL, NO_PUSH);
-    return SubChainAnsVariable(entry1, entry2);
+static void SubFunctionVariable(element_t *entry1, element_t *entry2) {
+    insertFunctionReturn(entry1->operand, OUTPUT_IN_HL, NO_PUSH);
+    SubChainAnsVariable(entry1, entry2);
 }
 
-static uint8_t SubFunctionFunction(element_t *entry1, element_t *entry2) {
-    insertFunctionReturn((uint8_t)entry2->operand, OUTPUT_IN_DE, NO_PUSH);
-    insertFunctionReturn((uint8_t)entry1->operand, OUTPUT_IN_HL, NEED_PUSH);
+static void SubFunctionFunction(element_t *entry1, element_t *entry2) {
+    insertFunctionReturn(entry2->operand, OUTPUT_IN_DE, NO_PUSH);
+    insertFunctionReturn(entry1->operand, OUTPUT_IN_HL, NEED_PUSH);
     SBC_HL_DE();
-    return VALID;
 }
 
-static uint8_t SubFunctionChainAns(element_t *entry1, element_t *entry2) {
+static void SubFunctionChainAns(element_t *entry1, element_t *entry2) {
     EX_DE_HL();
-    insertFunctionReturn((uint8_t)entry1->operand, OUTPUT_IN_HL, NEED_PUSH);
+    insertFunctionReturn(entry1->operand, OUTPUT_IN_HL, NEED_PUSH);
     SBC_HL_DE();
-    return VALID;
 }
 
-static uint8_t SubChainAnsFunction(element_t *entry1, element_t *entry2) {
-    insertFunctionReturn((uint8_t)entry2->operand, OUTPUT_IN_DE, NEED_PUSH);
+static void SubChainAnsFunction(element_t *entry1, element_t *entry2) {
+    insertFunctionReturn(entry2->operand, OUTPUT_IN_DE, NEED_PUSH);
     SBC_HL_DE();
-    return VALID;
 }
 
-static uint8_t SubChainPushNumber(element_t *entry1, element_t *entry2) {
+static void SubChainPushNumber(element_t *entry1, element_t *entry2) {
     POP_HL();
-    return SubChainAnsNumber(entry1, entry2);
+    SubChainAnsNumber(entry1, entry2);
 }
 
-static uint8_t SubChainPushVariable(element_t *entry1, element_t *entry2) {
+static void SubChainPushVariable(element_t *entry1, element_t *entry2) {
     POP_HL();
-    return SubChainAnsVariable(entry1, entry2);
+    SubChainAnsVariable(entry1, entry2);
 }
 
-static uint8_t SubChainPushFunction(element_t *entry1, element_t *entry2) {
-    insertFunctionReturn((uint8_t)entry2->operand, OUTPUT_IN_DE, NO_PUSH);
+static void SubChainPushFunction(element_t *entry1, element_t *entry2) {
+    insertFunctionReturn(entry2->operand, OUTPUT_IN_DE, NO_PUSH);
     POP_HL();
     SBC_HL_DE();
-    return VALID;
 }
 
-static uint8_t SubChainPushChainAns(element_t *entry1, element_t *entry2) {
+static void SubChainPushChainAns(element_t *entry1, element_t *entry2) {
     EX_DE_HL();
     POP_HL();
     SBC_HL_DE();
-    return VALID;
 }
 
-
-
-
-
-static uint8_t MulChainAnsNumber(element_t *entry1, element_t *entry2) {
+static void MulChainAnsNumber(element_t *entry1, element_t *entry2) {
     uint24_t number = entry2->operand;
     
     if (number == 0) {
@@ -381,102 +346,93 @@ static uint8_t MulChainAnsNumber(element_t *entry1, element_t *entry2) {
         LD_BC_IMM(number);
         CALL_IMULS();
     }
-    return VALID;
 }
 
-static uint8_t MulVariableNumber(element_t *entry1, element_t *entry2) {
+static void MulVariableNumber(element_t *entry1, element_t *entry2) {
     LD_HL_IND_IX_OFF(entry1->operand);
-    return MulChainAnsNumber(entry1, entry2);
+    MulChainAnsNumber(entry1, entry2);
 }
 
-static uint8_t MulFunctionNumber(element_t *entry1, element_t *entry2) {
-    insertFunctionReturn((uint8_t)entry1->operand, OUTPUT_IN_HL, NO_PUSH);
-    return MulChainAnsNumber(entry1, entry2);
+static void MulFunctionNumber(element_t *entry1, element_t *entry2) {
+    insertFunctionReturn(entry1->operand, OUTPUT_IN_HL, NO_PUSH);
+    MulChainAnsNumber(entry1, entry2);
 }
 
-static uint8_t MulChainAnsVariable(element_t *entry1, element_t *entry2) {
+static void MulChainAnsVariable(element_t *entry1, element_t *entry2) {
     LD_BC_IND_IX_OFF(entry2->operand);
     CALL_IMULS();
-    return VALID;
 }
 
-static uint8_t MulFunctionVariable(element_t *entry1, element_t *entry2) {
-    insertFunctionReturn((uint8_t)entry1->operand, OUTPUT_IN_HL, NO_PUSH);
-    return MulChainAnsVariable(entry1, entry2);
+static void MulFunctionVariable(element_t *entry1, element_t *entry2) {
+    insertFunctionReturn(entry1->operand, OUTPUT_IN_HL, NO_PUSH);
+    MulChainAnsVariable(entry1, entry2);
 }
 
-static uint8_t MulNumberVariable(element_t *entry1, element_t *entry2) {
-    return MulVariableNumber(entry2, entry1);
+static void MulNumberVariable(element_t *entry1, element_t *entry2) {
+    MulVariableNumber(entry2, entry1);
 }
 
-static uint8_t MulNumberFunction(element_t *entry1, element_t *entry2) {
-    return MulFunctionNumber(entry2, entry1);
+static void MulNumberFunction(element_t *entry1, element_t *entry2) {
+    MulFunctionNumber(entry2, entry1);
 }
 
-static uint8_t MulNumberChainAns(element_t *entry1, element_t *entry2) {
-    return MulChainAnsNumber(entry2, entry1);
+static void MulNumberChainAns(element_t *entry1, element_t *entry2) {
+    MulChainAnsNumber(entry2, entry1);
 }
 
-static uint8_t MulVariableVariable(element_t *entry1, element_t *entry2) {
+static void MulVariableVariable(element_t *entry1, element_t *entry2) {
     LD_HL_IND_IX_OFF(entry1->operand);
-    return MulChainAnsVariable(entry1, entry2);
+    MulChainAnsVariable(entry1, entry2);
 }
 
-static uint8_t MulVariableFunction(element_t *entry1, element_t *entry2) {
-    return MulFunctionVariable(entry2, entry1);
+static void MulVariableFunction(element_t *entry1, element_t *entry2) {
+    MulFunctionVariable(entry2, entry1);
 }
 
-static uint8_t MulVariableChainAns(element_t *entry1, element_t *entry2) {
-    return MulChainAnsVariable(entry2, entry1);
+static void MulVariableChainAns(element_t *entry1, element_t *entry2) {
+    MulChainAnsVariable(entry2, entry1);
 }
 
-static uint8_t MulFunctionFunction(element_t *entry1, element_t *entry2) {
-    insertFunctionReturn((uint8_t)entry1->operand, OUTPUT_IN_BC, NO_PUSH);
-    insertFunctionReturn((uint8_t)entry2->operand, OUTPUT_IN_HL, NEED_PUSH);
+static void MulFunctionFunction(element_t *entry1, element_t *entry2) {
+    insertFunctionReturn(entry1->operand, OUTPUT_IN_BC, NO_PUSH);
+    insertFunctionReturn(entry2->operand, OUTPUT_IN_HL, NEED_PUSH);
     CALL_IMULS();
-    return VALID;
 }
 
-static uint8_t MulChainAnsFunction(element_t *entry1, element_t *entry2) {
-    insertFunctionReturn((uint8_t)entry2->operand, OUTPUT_IN_BC, NEED_PUSH);
+static void MulChainAnsFunction(element_t *entry1, element_t *entry2) {
+    insertFunctionReturn(entry2->operand, OUTPUT_IN_BC, NEED_PUSH);
     CALL_IMULS();
-    return VALID;
 }
 
-static uint8_t MulFunctionChainAns(element_t *entry1, element_t *entry2) {
-    return MulChainAnsFunction(entry2, entry1);
+static void MulFunctionChainAns(element_t *entry1, element_t *entry2) {
+    MulChainAnsFunction(entry2, entry1);
 }
 
-static uint8_t MulChainPushNumber(element_t *entry1, element_t *entry2) {
+static void MulChainPushNumber(element_t *entry1, element_t *entry2) {
     POP_HL();
-    return MulChainAnsNumber(entry1, entry2);
+    MulChainAnsNumber(entry1, entry2);
 }
 
-static uint8_t MulChainPushVariable(element_t *entry1, element_t *entry2) {
+static void MulChainPushVariable(element_t *entry1, element_t *entry2) {
     POP_HL();
-    return MulChainAnsVariable(entry1, entry2);
+    MulChainAnsVariable(entry1, entry2);
 }
 
-static uint8_t MulChainPushFunction(element_t *entry1, element_t *entry2) {
-    insertFunctionReturn((uint8_t)entry2->operand, OUTPUT_IN_HL, NO_PUSH);
+static void MulChainPushFunction(element_t *entry1, element_t *entry2) {
+    insertFunctionReturn(entry2->operand, OUTPUT_IN_HL, NO_PUSH);
     POP_BC();
     CALL_IMULS();
-    return VALID;
 }
 
-static uint8_t MulChainPushChainAns(element_t *entry1, element_t *entry2) {
+static void MulChainPushChainAns(element_t *entry1, element_t *entry2) {
     POP_BC();
     CALL_IMULS();
-    return VALID;
 }
 
-
-
-static uint8_t OperatorError(element_t *entry1, element_t *entry2) {
-    return E_SYNTAX;
+static void OperatorError(element_t *entry1, element_t *entry2) {
 }
 
-uint8_t (*operatorFunctions[60])(element_t*, element_t*) = {
+void (*operatorFunctions[60])(element_t*, element_t*) = {
     OperatorError,
     AddNumberVariable,
     AddNumberFunction,
