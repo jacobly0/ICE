@@ -12,7 +12,7 @@ uint8_t getIndexOfOperator(uint8_t operator);
 uint24_t executeOperator(uint24_t operand1, uint24_t operand2, uint8_t operator);
 uint8_t parseOperator(element_t *outputPrevPrev, element_t *outputPrev, element_t *outputCurr);
 
-void insertFunctionReturn(uint8_t function, uint8_t outputRegister, uint8_t needPush);
+void insertFunctionReturn(uint24_t function, uint8_t outputRegister, uint8_t needPush);
 
 extern const char operators[];
 extern const uint8_t operatorPrecedence[];

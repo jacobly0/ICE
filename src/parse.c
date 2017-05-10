@@ -186,7 +186,7 @@ stackToOutputReturn1:
             }
         } 
         
-        // Process a function which returns something (not(), sqrt(), det(...))
+        // Process a function
         else if (strchr(implementedFunctions, tok)) {
             *++amountOfArgumentsStackPtr = 0;
             if (tok == tDet) {
@@ -195,7 +195,44 @@ stackToOutputReturn1:
             stackCurr->type = TYPE_FUNCTION + (nestedDets << 4);
             stackCurr->operand = token;
             stackElements++;
-        } 
+        }
+        
+        // Process a function that returns something (rand, getKey(X))
+        else if (tok == tRand || tok == tGetKey) {
+            stackCurr->type = TYPE_FUNCTION_RETURN + (nestedDets << 4);
+            stackCurr->operand = token;
+            
+            // Check for fast key input, i.e. getKey(X)
+            if (tok == tGetKey) {
+                // The next token must be a left parenthesis
+                if ((uint8_t)(token = getc()) != tLParen) {
+                    continue;
+                }
+                
+                // The next token must be a number
+                if ((uint8_t)(token = getc()) >= t0 && token <= t9) {
+                    tok = (uint8_t)token - t0;
+                    
+                    // The next token can be a number, but also right parenthesis or EOF
+                    if ((uint8_t)(token = getc()) >= t0 && token <= t9) {
+                        // Add the direct key to the operand
+                        stackCurr->operand = tGetKey | (1 << 8) | ((tok * 10 + (uint8_t)token - t0) << 16);
+                        if ((token = getc()) == EOF || token == tRParen) {
+                            continue;
+                        } else {
+                            return E_SYNTAX;
+                        }
+                    } else if ((uint8_t)token == tRParen || token == EOF) {
+                        // Add the direct key to the operand
+                        stackCurr->operand = tGetKey | (1 << 8) | (tok << 16);
+                    } else {
+                        return E_SYNTAX;
+                    }
+                } else {
+                    return E_SYNTAX;
+                }
+            }
+        }
         
         // Oops, unknown token...
         else {
@@ -294,7 +331,7 @@ stackToOutputReturn2:
             memcpy(&outputPtr[loopIndex-1], &outputPtr[loopIndex+1], outputElements * 4);
             loopIndex -= 2;
             
-            // ... and edit the first argument to be in the chain, if one of the two next entries is either an operator or function, set it as 'chain ans'
+            // ... and edit the first argument to be in the chain; if one of the two next entries is either an operator or function, set it as 'chain ans'
             (&outputPtr[loopIndex-2])->type = TYPE_CHAIN_PUSH - ((outputCurr->type & 15) >= TYPE_OPERATOR || ((&outputPtr[loopIndex-1])->type & 15) >= TYPE_OPERATOR);
         } 
         
