@@ -23,7 +23,7 @@ ice_t ice;
 void main() {
     uint8_t a = 0, selectedProgram = 0, key, amountOfPrograms, res, *outputDataPtr, *search_pos = NULL;
     char *var_name;
-    unsigned int token, headerSize, programSize, programDataSize, offset;
+    uint24_t token, headerSize, programSize, programDataSize, offset;
     signed char buf[30];
     const char ICEheader[] = {tii, 0};
 
@@ -98,13 +98,58 @@ void main() {
 
     // Setup pointers and header
     ice.programData     = (uint8_t*)0xD52C00;
-
-    ice.headerPtr       = (uint8_t*)ice.headerData + 116;
-    ice.programPtr      = (uint8_t*)ice.programData + 5;
+    ice.programPtr      = (uint8_t*)ice.programData + 116;
     ice.programDataPtr  = (uint8_t*)ice.programDataData;
     
-    memcpy(ice.headerData, CHeaderData, 116);
-    memcpy(ice.programData, CProgramHeader, 5);
+    memcpy(ice.programData, CHeaderData, 116);
+    
+    dbg_Debugger();
+    
+    // Pre-scan program and find all the C routines
+    while ((token = getc()) != EOF) {
+        uint8_t tok = (uint8_t)token;
+        
+        if (tok == tString) {
+            ice.inString = !ice.inString;
+        } else if (tok == tEnter) {
+            ice.inString = false;
+        } else if (tok == tii) {
+            while ((token = getc()) != EOF && (uint8_t)token != tEnter);
+        } else if (tok == tDet && !ice.inString) {
+            token = getc();
+            
+            // Invalid det( command
+            if ((uint8_t)token < t0 || (uint8_t)token > t9) {
+                break;
+            }
+            
+            // Get the det( command
+            tok = (uint8_t)getc();
+            if (tok < t0 || tok > t9) {
+                tok = (uint8_t)token - t0;
+            } else {
+                tok = ((uint8_t)token - t0) * 10 + tok - t0;
+            }
+            
+            // Insert the C routine
+            if (!ice.CRoutinesStack[tok]) {
+                *ice.programPtr = 0xC3;
+                *(uint24_t*)(ice.programPtr + 1) = tok * 3;
+                ice.programPtr += 4;
+                ice.CRoutinesStack[tok] = ice.amountOfCRoutinesUsed++;
+            }
+        }
+    }
+    
+    ti_Rewind(ice.inPrgm);
+    
+    // If there are no C functions, remove the entire header
+    if (!ice.amountOfCRoutinesUsed) {
+        ice.programPtr = (uint8_t*)ice.programData;
+    }
+    
+    memcpy(ice.programPtr, CProgramHeader, 5);
+    ice.programPtr += 5;
    
     // Do the stuff
     res = parseProgram();
@@ -116,20 +161,12 @@ void main() {
             goto stop;
         }
         
-        // If we didn't use any C function, we can remove the entire header
-        if (!ice.usedCFunctions) {
-            ice.headerPtr = (uint8_t*)ice.headerData;
-        }
-        
-        dbg_Debugger();
-        
         // Get the sizes of the 3 stacks
-        headerSize = (uint24_t)ice.headerPtr - (uint24_t)ice.headerData;
         programSize = (uint24_t)ice.programPtr - (uint24_t)ice.programData;
         programDataSize = (uint24_t)ice.programDataPtr - (uint24_t)ice.programDataData;
         
         // Change the pointers to the data as well, but first calculate the offset
-        offset = PRGM_START + headerSize + programSize - (uint24_t)ice.programDataData;
+        offset = PRGM_START + programSize - (uint24_t)ice.programDataData;
         while (ice.dataOffsetElements--) {
             *ice.dataOffsetStack[ice.dataOffsetElements] += offset;
         }
@@ -139,7 +176,6 @@ void main() {
         ti_PutC(tAsm84CeCmp, ice.outPrgm);
         
         // Write the header, main program, and data to output :D
-        if (headerSize)      ti_Write(ice.headerData, headerSize, 1, ice.outPrgm);
         if (programSize)     ti_Write(ice.programData, programSize, 1, ice.outPrgm);
         if (programDataSize) ti_Write(ice.programDataData, programDataSize, 1, ice.outPrgm);
         
@@ -150,9 +186,9 @@ void main() {
         // Skip line
         ice.messageIndex++;
         
-        // Output the size
+        // Display the size
         gfx_SetTextFGColor(0);
-        sprintf(buf, "Output size: %u bytes", headerSize + programSize + programDataSize);
+        sprintf(buf, "Output size: %u bytes", programSize + programDataSize + 2);
         gfx_PrintStringXY(buf, 1, ++ice.messageIndex*10+3);
     } else {
         displayError(res);

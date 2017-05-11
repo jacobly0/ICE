@@ -10,13 +10,13 @@ typedef struct {
 	
     uint8_t  nestedBlocks;
     uint8_t  amountOfUsedCRoutines;
-    uint8_t  headerData[800];
     uint8_t  *programData;
     uint8_t  programDataData[40000];
-    uint8_t  *headerPtr;
     uint8_t  *programPtr;
     uint8_t  *programDataPtr;
     uint8_t  messageIndex;
+    uint8_t  amountOfCRoutinesUsed;
+    uint8_t  CRoutinesStack[100];
     
     uint24_t *dataOffsetStack[500];
     uint24_t dataOffsetElements;
@@ -27,9 +27,9 @@ typedef struct {
     bool     gotName;
     bool     gotIconDescription;
     bool     usedCodeAfterHeader;
-    bool     usedCFunctions;
     bool     exprOutputIsNumber;
     bool     lastTokenIsReturn;
+    bool     inString;
     
     bool     usedAlreadyRand;
     uint24_t randAddr;

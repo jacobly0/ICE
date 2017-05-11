@@ -396,13 +396,13 @@ static uint8_t functionI(unsigned int token) {
         // Get the icon and description
         else if (!ice.gotIconDescription) {
             // Move header to take place for the icon and description, setup pointer
-            memcpy(ice.headerData + 350, ice.headerData, 116);
-            ice.headerPtr = ice.headerData;
+            memcpy(ice.programData + 600, ice.programData, 116);
+            ice.programPtr = ice.programData;
             
             // Insert "jp <random>" and Cesium header
-            *ice.headerPtr = OP_JP;
-            *(uint24_t*)(ice.headerPtr+4) = 0x101001;
-            ice.headerPtr += 7;
+            *ice.programPtr = OP_JP;
+            *(uint24_t*)(ice.programPtr+4) = 0x101001;
+            ice.programPtr += 7;
             
             // Icon should start with a "
             if ((uint8_t)getc() != tString) {
@@ -419,7 +419,7 @@ static uint8_t functionI(unsigned int token) {
                 } else {
                     return E_INVALID_ICON;
                 }
-                *ice.headerPtr++ = colorTable[outputByte];
+                *ice.programPtr++ = colorTable[outputByte];
             } while (++b);
             
             // Move on to the description
@@ -441,8 +441,8 @@ static uint8_t functionI(unsigned int token) {
                     while ((token = getc()) != EOF && (uint8_t)token != tEnter) {
                         unsigned int tokLength;
                         dataString = ti_GetTokenString(&dataPtr, NULL, &tokLength);
-                        memcpy(ice.headerPtr, dataString, tokLength);
-                        ice.headerPtr += tokLength;
+                        memcpy(ice.programPtr, dataString, tokLength);
+                        ice.programPtr += tokLength;
                     }
                 } else if (token != EOF) {
                     ti_Seek(-1, SEEK_CUR, ice.inPrgm);
@@ -450,20 +450,20 @@ static uint8_t functionI(unsigned int token) {
             }
 
             // Don't increment the pointer for now, we will do that later :)
-            *ice.headerPtr = 0;
+            *ice.programPtr = 0;
 
             // Get the correct offset
-            offset = ice.headerPtr - ice.headerData;
+            offset = ice.programPtr - ice.programData;
 
             // Write the right jp offset
-            *(uint24_t*)(ice.headerData+1) = offset + PRGM_START;
+            *(uint24_t*)(ice.programData+1) = offset + PRGM_START;
             
             // Copy header back, and update the 3 pointers in the C header...
-            memcpy(ice.headerPtr + 1, ice.headerData + 350, 116);
-            *(uint24_t*)(ice.headerPtr+2)  += offset;
-            *(uint24_t*)(ice.headerPtr+53) += offset;
-            *(uint24_t*)(ice.headerPtr+66) += offset;
-            ice.headerPtr += 117;
+            memcpy(ice.programPtr + 1, ice.programData + 600, 116);
+            *(uint24_t*)(ice.programPtr+2)  += offset;
+            *(uint24_t*)(ice.programPtr+53) += offset;
+            *(uint24_t*)(ice.programPtr+66) += offset;
+            ice.programPtr += 117;
             
             ice.gotIconDescription = true;
             return VALID;
