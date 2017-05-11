@@ -27,6 +27,7 @@ typedef struct {
     bool     gotName;
     bool     gotIconDescription;
     bool     usedCodeAfterHeader;
+    bool     usedCFunctions;
     bool     exprOutputIsNumber;
     bool     lastTokenIsReturn;
 } ice_t;
@@ -35,8 +36,11 @@ extern ice_t ice;
 
 void CHeaderData(void);
 void CProgramHeader(void);
-
 void RandRoutine(void);
+void MultWithNumber(uint24_t number, uint24_t *programPtr);
+void AndData(void);
+void XorData(void);
+void OrData(void);
 
 #endif
 

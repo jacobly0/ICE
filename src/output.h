@@ -10,6 +10,7 @@
 #define OP_INC_HL     0x23
 #define OP_ADD_HL_HL  0x29
 #define OP_DEC_HL     0x2B
+#define OP_CCF        0x3F
 #define OP_LD_C_A     0x4F
 #define OP_LD_E_A     0x5F
 #define OP_LD_L_A     0x6F
@@ -27,10 +28,10 @@
 
 #define output(type, value)   do { *(type*)ice.programPtr = (value); ice.programPtr += sizeof(type); } while (0)
 
-#define LD_BC_IND_IX_OFF(off) do { output(uint16_t, 0x07DD); output(uint8_t, off); } while (0)
-#define LD_DE_IND_IX_OFF(off) do { output(uint16_t, 0x17DD); output(uint8_t, off); } while (0)
-#define LD_HL_IND_IX_OFF(off) do { output(uint16_t, 0x27DD); output(uint8_t, off); } while (0)
-#define LD_IX_OFF_IND_HL(off) do { output(uint16_t, 0x2FDD); output(uint8_t, off); } while (0)
+#define LD_BC_IND_IX_OFF(off) do { output(uint16_t, 0x07DD); output(uint8_t, off * 3); } while (0)
+#define LD_DE_IND_IX_OFF(off) do { output(uint16_t, 0x17DD); output(uint8_t, off * 3); } while (0)
+#define LD_HL_IND_IX_OFF(off) do { output(uint16_t, 0x27DD); output(uint8_t, off * 3); } while (0)
+#define LD_IX_OFF_IND_HL(off) do { output(uint16_t, 0x2FDD); output(uint8_t, off * 3); } while (0)
 
 #define LD_A_IMM(val)         do { output(uint8_t, 0x3E); output(uint8_t, val); } while (0)
 #define LD_BC_IMM(val)        do { output(uint8_t, 0x01); output(uint24_t, val); } while (0)
@@ -63,6 +64,8 @@
 #define CALL_IMULS()          do { CALL(0x000154); } while (0)
 
 #define OR_A_A()              do { output(uint8_t, OP_OR_A_A); } while (0)
+    
+#define CCF()                 do { output(uint8_t, OP_CCF); } while (0)
 
 #endif
 

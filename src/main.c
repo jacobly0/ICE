@@ -116,6 +116,13 @@ void main() {
             goto stop;
         }
         
+        // If we didn't use any C function, we can remove the entire header
+        if (!ice.usedCFunctions) {
+            ice.headerPtr = (uint8_t*)ice.headerData;
+        }
+        
+        // TODO: change the pointers in the program, since that will be moved as well
+        
         // Get the sizes of the 3 stacks
         headerSize = (uint24_t)ice.headerPtr - (uint24_t)ice.headerData;
         programSize = (uint24_t)ice.programPtr - (uint24_t)ice.programData;
