@@ -103,8 +103,6 @@ void main() {
     
     memcpy(ice.programData, CHeaderData, 116);
     
-    dbg_Debugger();
-    
     // Pre-scan program and find all the C routines
     while ((token = getc()) != EOF) {
         uint8_t tok = (uint8_t)token;
@@ -141,6 +139,7 @@ void main() {
         }
     }
     
+    // Well, we scanned the entire program, so let's rewind it
     ti_Rewind(ice.inPrgm);
     
     // If there are no C functions, remove the entire header

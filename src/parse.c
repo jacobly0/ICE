@@ -333,7 +333,7 @@ stackToOutputReturn2:
             loopIndex -= 2;
             
             // ... and edit the first argument to be in the chain; if one of the two next entries is either an operator or function, set it as 'chain ans'
-            (&outputPtr[loopIndex-2])->type = TYPE_CHAIN_PUSH - ((outputCurr->type & 15) >= TYPE_OPERATOR || ((&outputPtr[loopIndex-1])->type & 15) >= TYPE_OPERATOR);
+            (&outputPtr[loopIndex])->type = TYPE_CHAIN_PUSH - ((outputCurr->type & 15) >= TYPE_OPERATOR || ((&outputPtr[loopIndex-1])->type & 15) >= TYPE_OPERATOR);
         } 
         
         // Parse a function with X arguments
