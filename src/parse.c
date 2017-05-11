@@ -267,8 +267,6 @@ stackToOutputReturn2:
         }
     }
     
-    dbg_Debugger();
-    
     // Check if the expression is valid
     if (outputElements == 1) {
         outputCurr = &outputPtr[0];

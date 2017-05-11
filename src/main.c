@@ -22,9 +22,8 @@ ice_t ice;
 
 void main() {
     uint8_t a = 0, selectedProgram = 0, key, amountOfPrograms, res, *outputDataPtr, *search_pos = NULL;
-    uint24_t *address;
     char *var_name;
-    unsigned int token, headerSize, programSize, programDataSize;
+    unsigned int token, headerSize, programSize, programDataSize, offset;
     signed char buf[30];
     const char ICEheader[] = {tii, 0};
 
@@ -77,6 +76,7 @@ void main() {
         }
     }
     
+    // Erase screen
     gfx_SetColor(255);
     gfx_FillRectangle_NoClip(0, 11, 320, 229);
     
@@ -102,7 +102,6 @@ void main() {
     ice.headerPtr       = (uint8_t*)ice.headerData + 116;
     ice.programPtr      = (uint8_t*)ice.programData + 5;
     ice.programDataPtr  = (uint8_t*)ice.programDataData;
-    ice.dataOffsetPtr   = (uint24_t*)ice.dataOffsetStack;
     
     memcpy(ice.headerData, CHeaderData, 116);
     memcpy(ice.programData, CProgramHeader, 5);
@@ -122,16 +121,17 @@ void main() {
             ice.headerPtr = (uint8_t*)ice.headerData;
         }
         
+        dbg_Debugger();
+        
         // Get the sizes of the 3 stacks
         headerSize = (uint24_t)ice.headerPtr - (uint24_t)ice.headerData;
         programSize = (uint24_t)ice.programPtr - (uint24_t)ice.programData;
         programDataSize = (uint24_t)ice.programDataPtr - (uint24_t)ice.programDataData;
         
-        // Change the pointers to the data as well
-        while ((uint24_t)ice.dataOffsetPtr-- != (uint24_t)ice.dataOffsetStack) {
-            // The value at the pointer is the (pointer to data) - (start data) + UserMem + (header size) + (program size)
-            address = *ice.dataOffsetPtr;
-            *ice.dataOffsetPtr = *address - (uint24_t)ice.programDataData + PRGM_START + headerSize + programSize;
+        // Change the pointers to the data as well, but first calculate the offset
+        offset = PRGM_START + headerSize + programSize - (uint24_t)ice.programDataData;
+        while (ice.dataOffsetElements--) {
+            *ice.dataOffsetStack[ice.dataOffsetElements] += offset;
         }
         
         // Write ASM header

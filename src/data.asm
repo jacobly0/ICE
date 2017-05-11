@@ -46,7 +46,6 @@ _OrData:
     and     a, 1
     ld      l, a
     
-; 54 bytes
 _RandRoutine:
 	ld	hl, (ix+81)
 	ld	de, (ix+81+3)
