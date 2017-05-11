@@ -93,7 +93,7 @@ void insertFunctionReturn(uint24_t function, uint8_t outputRegister, uint8_t nee
         else {
             // The key should be in HL
             if (outputRegister == OUTPUT_IN_HL) {
-                CALL(GetCSC);
+                CALL(_GetCSC);
                 OR_A_A();
                 SBC_HL_HL();
                 LD_L_A();
@@ -104,10 +104,10 @@ void insertFunctionReturn(uint24_t function, uint8_t outputRegister, uint8_t nee
                 // HL may not be destroyed
                 if (needPush) {
                     PUSH_HL();
-                    CALL(GetCSC);
+                    CALL(_GetCSC);
                     POP_HL();
                 } else {
-                    CALL(GetCSC);
+                    CALL(_GetCSC);
                 }
                 LD_DE_IMM(0);
                 LD_E_A();
@@ -118,15 +118,26 @@ void insertFunctionReturn(uint24_t function, uint8_t outputRegister, uint8_t nee
                 // HL may not be destroyed
                 if (needPush) {
                     PUSH_HL();
-                    CALL(GetCSC);
+                    CALL(_GetCSC);
                     POP_HL();
                 } else {
-                    CALL(GetCSC);
+                    CALL(_GetCSC);
                 }
                 LD_BC_IMM(0);
                 LD_C_A();
             }
         }
+    }
+}
+
+
+
+static void LD_HL_NUMBER(uint24_t number) {
+    if (!number) {
+        OR_A_A();
+        SBC_HL_HL();
+    } else {
+        LD_HL_IMM(number);
     }
 }
 
@@ -487,7 +498,7 @@ static void MulChainAnsNumber(element_t *entry1, element_t *entry2) {
         // TODO
     } else if (number > 20){
         LD_BC_IMM(number);
-        CALL(_imuls);
+        CALL(__imuls);
     }
 }
 static void MulVariableNumber(element_t *entry1, element_t *entry2) {
@@ -500,7 +511,7 @@ static void MulFunctionNumber(element_t *entry1, element_t *entry2) {
 }
 static void MulChainAnsVariable(element_t *entry1, element_t *entry2) {
     LD_BC_IND_IX_OFF(entry2->operand);
-    CALL(_imuls);
+    CALL(__imuls);
 }
 static void MulFunctionVariable(element_t *entry1, element_t *entry2) {
     insertFunctionReturn(entry1->operand, OUTPUT_IN_HL, NO_PUSH);
@@ -528,11 +539,11 @@ static void MulVariableChainAns(element_t *entry1, element_t *entry2) {
 static void MulFunctionFunction(element_t *entry1, element_t *entry2) {
     insertFunctionReturn(entry1->operand, OUTPUT_IN_BC, NO_PUSH);
     insertFunctionReturn(entry2->operand, OUTPUT_IN_HL, NEED_PUSH);
-    CALL(_imuls);
+    CALL(__imuls);
 }
 static void MulChainAnsFunction(element_t *entry1, element_t *entry2) {
     insertFunctionReturn(entry2->operand, OUTPUT_IN_BC, NEED_PUSH);
-    CALL(_imuls);
+    CALL(__imuls);
 }
 static void MulFunctionChainAns(element_t *entry1, element_t *entry2) {
     MulChainAnsFunction(entry2, entry1);
@@ -548,47 +559,106 @@ static void MulChainPushVariable(element_t *entry1, element_t *entry2) {
 static void MulChainPushFunction(element_t *entry1, element_t *entry2) {
     insertFunctionReturn(entry2->operand, OUTPUT_IN_HL, NO_PUSH);
     POP_BC();
-    CALL(_imuls);
+    CALL(__imuls);
 }
 static void MulChainPushChainAns(element_t *entry1, element_t *entry2) {
     POP_BC();
-    CALL(_imuls);
-}
-static void DivNumberVariable(element_t *entry1, element_t *entry2) {
-}
-static void DivNumberFunction(element_t *entry1, element_t *entry2) {
-}
-static void DivNumberChainAns(element_t *entry1, element_t *entry2) {
-}
-static void DivVariableNumber(element_t *entry1, element_t *entry2) {
-}
-static void DivVariableVariable(element_t *entry1, element_t *entry2) {
-}
-static void DivVariableFunction(element_t *entry1, element_t *entry2) {
-}
-static void DivVariableChainAns(element_t *entry1, element_t *entry2) {
-}
-static void DivFunctionNumber(element_t *entry1, element_t *entry2) {
-}
-static void DivFunctionVariable(element_t *entry1, element_t *entry2) {
-}
-static void DivFunctionFunction(element_t *entry1, element_t *entry2) {
-}
-static void DivFunctionChainAns(element_t *entry1, element_t *entry2) {
+    CALL(__imuls);
 }
 static void DivChainAnsNumber(element_t *entry1, element_t *entry2) {
+    LD_BC_IMM(entry2->operand);
+    CALL(__idvrmu);
+    EX_DE_HL();
 }
 static void DivChainAnsVariable(element_t *entry1, element_t *entry2) {
+    LD_BC_IND_IX_OFF(entry2->operand);
+    CALL(__idvrmu);
+    EX_DE_HL();
+}
+static void DivNumberVariable(element_t *entry1, element_t *entry2) {
+    LD_HL_NUMBER(entry1->operand);
+    DivChainAnsVariable(entry1, entry2);
+}
+static void DivNumberFunction(element_t *entry1, element_t *entry2) {
+    insertFunctionReturn(entry2->operand, OUTPUT_IN_BC, NO_PUSH);
+    LD_HL_NUMBER(entry1->operand);
+    CALL(__idvrmu);
+    EX_DE_HL();
+}
+static void DivNumberChainAns(element_t *entry1, element_t *entry2) {
+    PUSH_HL();
+    POP_BC();
+    LD_HL_NUMBER(entry1->operand);
+    CALL(__idvrmu);
+    EX_DE_HL();
+}
+static void DivVariableNumber(element_t *entry1, element_t *entry2) {
+    LD_HL_IND_IX_OFF(entry1->operand);
+    DivChainAnsNumber(entry1, entry2);
+}
+static void DivVariableVariable(element_t *entry1, element_t *entry2) {
+    LD_HL_IND_IX_OFF(entry1->operand);
+    DivChainAnsVariable(entry1, entry2);
+}
+static void DivVariableFunction(element_t *entry1, element_t *entry2) {
+    insertFunctionReturn(entry2->operand, OUTPUT_IN_BC, NO_PUSH);
+    LD_HL_IND_IX_OFF(entry1->operand);
+    CALL(__idvrmu);
+    EX_DE_HL();
+}
+static void DivVariableChainAns(element_t *entry1, element_t *entry2) {
+    PUSH_HL();
+    POP_BC();
+    LD_HL_IND_IX_OFF(entry1->operand);
+    CALL(__idvrmu);
+    EX_DE_HL();
+}
+static void DivFunctionNumber(element_t *entry1, element_t *entry2) {
+    insertFunctionReturn(entry1->operand, OUTPUT_IN_HL, NO_PUSH);
+    DivChainAnsNumber(entry1, entry2);
+}
+static void DivFunctionVariable(element_t *entry1, element_t *entry2) {
+    insertFunctionReturn(entry1->operand, OUTPUT_IN_HL, NO_PUSH);
+    DivChainAnsVariable(entry1, entry2);
+}
+static void DivFunctionFunction(element_t *entry1, element_t *entry2) {
+    insertFunctionReturn(entry2->operand, OUTPUT_IN_BC, NO_PUSH);
+    insertFunctionReturn(entry1->operand, OUTPUT_IN_HL, NEED_PUSH);
+    CALL(__idvrmu);
+    EX_DE_HL();
+}
+static void DivFunctionChainAns(element_t *entry1, element_t *entry2) {
+    PUSH_HL();
+    insertFunctionReturn(entry1->operand, OUTPUT_IN_HL, NO_PUSH);
+    POP_BC();
+    CALL(__idvrmu);
+    EX_DE_HL();
 }
 static void DivChainAnsFunction(element_t *entry1, element_t *entry2) {
+    insertFunctionReturn(entry2->operand, OUTPUT_IN_BC, NEED_PUSH);
+    CALL(__idvrmu);
+    EX_DE_HL();
 }
 static void DivChainPushNumber(element_t *entry1, element_t *entry2) {
+    POP_HL();
+    DivChainAnsNumber(entry1, entry2);
 }
 static void DivChainPushVariable(element_t *entry1, element_t *entry2) {
+    POP_HL();
+    DivChainAnsVariable(entry1, entry2);
 }
 static void DivChainPushFunction(element_t *entry1, element_t *entry2) {
+    insertFunctionReturn(entry2->operand, OUTPUT_IN_BC, NO_PUSH);
+    POP_HL();
+    CALL(__idvrmu);
+    EX_DE_HL();
 }
 static void DivChainPushChainAns(element_t *entry1, element_t *entry2) {
+    PUSH_HL();
+    POP_BC();
+    POP_HL();
+    CALL(__idvrmu);
+    EX_DE_HL();
 }
 static void AddChainAnsNumber(element_t *entry1, element_t *entry2) {
     uint24_t number = entry2->operand;
@@ -687,18 +757,17 @@ static void SubChainAnsVariable(element_t *entry1, element_t *entry2) {
     SBC_HL_DE();
 }
 static void SubNumberVariable(element_t *entry1, element_t *entry2) {
-    LD_HL_IMM(entry1->operand);
-    LD_DE_IND_IX_OFF(entry1->operand);
-    SBC_HL_DE();
+    LD_HL_NUMBER(entry1->operand);
+    SubChainAnsVariable(entry1, entry2);
 }
 static void SubNumberFunction(element_t *entry1, element_t *entry2) {
     insertFunctionReturn(entry2->operand, OUTPUT_IN_DE, NO_PUSH);
-    LD_HL_IMM(entry1->operand);
+    LD_HL_NUMBER(entry1->operand);
     SBC_HL_DE();
 }
 static void SubNumberChainAns(element_t *entry1, element_t *entry2) {
     EX_DE_HL();
-    LD_HL_IMM(entry1->operand);
+    LD_HL_NUMBER(entry1->operand);
     SBC_HL_DE();
 }
 static void SubVariableNumber(element_t *entry1, element_t *entry2) {
