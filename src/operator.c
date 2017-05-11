@@ -81,6 +81,10 @@ uint8_t parseOperator(element_t *outputPrevPrev, element_t *outputPrev, element_
 
 void insertFunctionReturn(uint24_t function, uint8_t outputRegister, uint8_t needPush) {
     if ((uint8_t)function == tRand) {
+        // The rand routine is already in the data section
+        if (ice.usedAlreadyRand) {
+        } else {
+        }
         // TODO
     } else {
         // Check if the getKey has a fast direct key argument; if so, the second byte is 1

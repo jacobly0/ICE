@@ -30,6 +30,12 @@ typedef struct {
     bool     usedCFunctions;
     bool     exprOutputIsNumber;
     bool     lastTokenIsReturn;
+    
+    bool     usedAlreadyRand;
+    uint24_t randAddr;
+    
+    bool     usedAlreadyGetKeyFast;
+    uint24_t getKeyFastAddr;
 } ice_t;
 
 extern ice_t ice;
