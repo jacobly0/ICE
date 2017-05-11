@@ -42,11 +42,11 @@ extern ice_t ice;
 
 void CHeaderData(void);
 void CProgramHeader(void);
-void RandRoutine(void);
 void MultWithNumber(uint24_t number, uint24_t *programPtr);
 void AndData(void);
 void XorData(void);
 void OrData(void);
+void RandRoutine(void);
 
 #endif
 

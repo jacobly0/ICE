@@ -61,7 +61,6 @@
 #define RET()                 do { output(uint8_t, OP_RET); } while (0)
 #define JP(val)               do { output(uint8_t, OP_JP); output(uint24_t, val); } while (0)
 #define CALL(val)             do { output(uint8_t, OP_CALL); output(uint24_t, val); } while (0)
-#define CALL_IMULS()          do { CALL(0x000154); } while (0)
 
 #define OR_A_A()              do { output(uint8_t, OP_OR_A_A); } while (0)
     

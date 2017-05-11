@@ -22,6 +22,7 @@ ice_t ice;
 
 void main() {
     uint8_t a = 0, selectedProgram = 0, key, amountOfPrograms, res, *outputDataPtr, *search_pos = NULL;
+    uint24_t *address;
     char *var_name;
     unsigned int token, headerSize, programSize, programDataSize;
     signed char buf[30];
@@ -121,12 +122,17 @@ void main() {
             ice.headerPtr = (uint8_t*)ice.headerData;
         }
         
-        // TODO: change the pointers in the program, since that will be moved as well
-        
         // Get the sizes of the 3 stacks
         headerSize = (uint24_t)ice.headerPtr - (uint24_t)ice.headerData;
         programSize = (uint24_t)ice.programPtr - (uint24_t)ice.programData;
         programDataSize = (uint24_t)ice.programDataPtr - (uint24_t)ice.programDataData;
+        
+        // Change the pointers to the data as well
+        while ((uint24_t)ice.dataOffsetPtr-- != (uint24_t)ice.dataOffsetStack) {
+            // The value at the pointer is the (pointer to data) - (start data) + UserMem + (header size) + (program size)
+            address = *ice.dataOffsetPtr;
+            *ice.dataOffsetPtr = *address - (uint24_t)ice.programDataData + PRGM_START + headerSize + programSize;
+        }
         
         // Write ASM header
         ti_PutC(tExtTok, ice.outPrgm);

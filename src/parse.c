@@ -199,8 +199,9 @@ stackToOutputReturn1:
         
         // Process a function that returns something (rand, getKey(X))
         else if (tok == tRand || tok == tGetKey) {
-            stackCurr->type = TYPE_FUNCTION_RETURN + (nestedDets << 4);
-            stackCurr->operand = token;
+            outputCurr->type = TYPE_FUNCTION_RETURN + (nestedDets << 4);
+            outputCurr->operand = token;
+            outputElements++;
             
             // Check for fast key input, i.e. getKey(X)
             if (tok == tGetKey) {
@@ -216,7 +217,7 @@ stackToOutputReturn1:
                     // The next token can be a number, but also right parenthesis or EOF
                     if ((uint8_t)(token = getc()) >= t0 && token <= t9) {
                         // Add the direct key to the operand
-                        stackCurr->operand = tGetKey | (1 << 8) | ((tok * 10 + (uint8_t)token - t0) << 16);
+                        outputCurr->operand = tGetKey | (1 << 8) | ((tok * 10 + (uint8_t)token - t0) << 16);
                         if ((token = getc()) == EOF || token == tRParen) {
                             continue;
                         } else {
@@ -224,7 +225,7 @@ stackToOutputReturn1:
                         }
                     } else if ((uint8_t)token == tRParen || token == EOF) {
                         // Add the direct key to the operand
-                        stackCurr->operand = tGetKey | (1 << 8) | (tok << 16);
+                        outputCurr->operand = tGetKey | (1 << 8) | (tok << 16);
                     } else {
                         return E_SYNTAX;
                     }
@@ -265,6 +266,8 @@ stackToOutputReturn2:
             loopIndex--;
         }
     }
+    
+    dbg_Debugger();
     
     // Check if the expression is valid
     if (outputElements == 1) {

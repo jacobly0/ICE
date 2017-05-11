@@ -67,6 +67,8 @@ uint8_t parseOperator(element_t *outputPrevPrev, element_t *outputPrev, element_
     uint8_t typeMasked1 = outputPrevPrev->type & 15;
     uint8_t typeMasked2 = outputPrev->type & 15;
     
+    dbg_Debugger();
+    
     // Only call the function if both types are valid
     if ((typeMasked1 == typeMasked2 && (typeMasked1 == TYPE_NUMBER || typeMasked1 == TYPE_CHAIN_ANS)) || \
         (typeMasked1 > TYPE_CHAIN_PUSH && typeMasked2 > TYPE_CHAIN_ANS)) {
@@ -81,11 +83,44 @@ uint8_t parseOperator(element_t *outputPrevPrev, element_t *outputPrev, element_
 
 void insertFunctionReturn(uint24_t function, uint8_t outputRegister, uint8_t needPush) {
     if ((uint8_t)function == tRand) {
-        // The rand routine is already in the data section
-        if (ice.usedAlreadyRand) {
-        } else {
+        // We need to save a register before using the routine
+        if (needPush) {
+            if (outputRegister == OUTPUT_IN_HL) {
+                PUSH_DE();
+            } else {
+                PUSH_HL();
+            }
         }
-        // TODO
+        
+        // Store the pointer to the call to the stack, to replace later
+        *ice.dataOffsetPtr++ = (uint24_t)ice.programPtr + 1;
+        
+        // We need to add the rand routine to the data section
+        if (!ice.usedAlreadyRand) {
+            ice.randAddr = (uint24_t)ice.programDataPtr;
+            memcpy(ice.programDataPtr, RandRoutine, 54);
+            ice.programDataPtr += 54;
+            ice.usedAlreadyRand = true;
+        }
+        
+        CALL(ice.randAddr);
+        
+        // Store the value to the right register
+        if (outputRegister == OUTPUT_IN_DE) {
+            EX_DE_HL();
+        } else if (outputRegister == OUTPUT_IN_BC) {
+            PUSH_HL();
+            POP_BC();
+        }
+        
+        // And restore the register of course
+        if (needPush) {
+            if (outputRegister == OUTPUT_IN_HL) {
+                POP_DE();
+            } else {
+                POP_HL();
+            }
+        }
     } else {
         // Check if the getKey has a fast direct key argument; if so, the second byte is 1
         if (function & 0x00FF00) {
