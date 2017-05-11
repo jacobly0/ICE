@@ -101,6 +101,7 @@ void main() {
     ice.headerPtr       = (uint8_t*)ice.headerData + 116;
     ice.programPtr      = (uint8_t*)ice.programData + 5;
     ice.programDataPtr  = (uint8_t*)ice.programDataData;
+    ice.dataOffsetPtr   = (uint24_t*)ice.dataOffsetStack;
     
     memcpy(ice.headerData, CHeaderData, 116);
     memcpy(ice.programData, CProgramHeader, 5);

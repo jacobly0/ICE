@@ -3,6 +3,7 @@
 
 #define PRGM_START 0xD1A881
 #define GetCSC     0x02014C
+#define _imuls     0x000154
 
 #define OP_ADD_HL_DE  0x19
 #define OP_INC_HL     0x23

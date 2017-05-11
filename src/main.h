@@ -17,6 +17,9 @@ typedef struct {
     uint8_t  *programPtr;
     uint8_t  *programDataPtr;
     uint8_t  messageIndex;
+    
+    uint24_t dataOffsetStack[500];
+    uint24_t *dataOffsetPtr;
 	
     ti_var_t inPrgm;
     ti_var_t outPrgm;
@@ -32,6 +35,8 @@ extern ice_t ice;
 
 void CHeaderData(void);
 void CProgramHeader(void);
+
+void RandRoutine(void);
 
 #endif
 
