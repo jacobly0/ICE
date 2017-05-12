@@ -103,44 +103,8 @@ void main() {
     
     memcpy(ice.programData, CHeaderData, 116);
     
-    // Pre-scan program and find all the C routines
-    while ((token = getc()) != EOF) {
-        uint8_t tok = (uint8_t)token;
-        
-        if (tok == tString) {
-            ice.inString = !ice.inString;
-        } else if (tok == tEnter) {
-            ice.inString = false;
-        } else if (tok == tii) {
-            while ((token = getc()) != EOF && (uint8_t)token != tEnter);
-        } else if (tok == tDet && !ice.inString) {
-            token = getc();
-            
-            // Invalid det( command
-            if ((uint8_t)token < t0 || (uint8_t)token > t9) {
-                break;
-            }
-            
-            // Get the det( command
-            tok = (uint8_t)getc();
-            if (tok < t0 || tok > t9) {
-                tok = (uint8_t)token - t0;
-            } else {
-                tok = ((uint8_t)token - t0) * 10 + tok - t0;
-            }
-            
-            // Insert the C routine
-            if (!ice.CRoutinesStack[tok]) {
-                *ice.programPtr = 0xC3;
-                *(uint24_t*)(ice.programPtr + 1) = tok * 3;
-                ice.programPtr += 4;
-                ice.CRoutinesStack[tok] = ice.amountOfCRoutinesUsed++;
-            }
-        }
-    }
-    
-    // Well, we scanned the entire program, so let's rewind it
-    ti_Rewind(ice.inPrgm);
+    // Pre-scan program (and subprograms) and find all the C routines
+    preScanProgram(ice.inPrgm);
     
     // If there are no C functions, remove the entire header
     if (!ice.amountOfCRoutinesUsed) {
@@ -211,3 +175,45 @@ err:
     prgm_CleanUp();
 }
 
+void preScanProgram(ti_var_t Program) {
+    uint24_t token;
+    
+    // Scan the entire program
+    while ((token = ti_GetC(Program)) != EOF) {
+        uint8_t tok = (uint8_t)token;
+        
+        if (tok == tString) {
+            ice.inString = !ice.inString;
+        } else if (tok == tEnter) {
+            ice.inString = false;
+        } else if (tok == tii) {
+            while ((token = ti_GetC(Program)) != EOF && (uint8_t)token != tEnter);
+        } else if (tok == tDet && !ice.inString) {
+            token = ti_GetC(Program);
+            
+            // Invalid det( command
+            if ((uint8_t)token < t0 || (uint8_t)token > t9) {
+                break;
+            }
+            
+            // Get the det( command
+            tok = (uint8_t)ti_GetC(Program);
+            if (tok < t0 || tok > t9) {
+                tok = (uint8_t)token - t0;
+            } else {
+                tok = ((uint8_t)token - t0) * 10 + tok - t0;
+            }
+            
+            // Insert the C routine
+            if (!ice.CRoutinesStack[tok]) {
+                *ice.programPtr = 0xC3;
+                *(uint24_t*)(ice.programPtr + 1) = tok * 3;
+                ice.programPtr += 4;
+                ice.CRoutinesStack[tok] = ice.amountOfCRoutinesUsed++;
+            }
+        }
+    }
+    
+    // Well, we scanned the entire program, so let's rewind it
+    ti_Rewind(Program);
+}

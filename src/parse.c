@@ -436,8 +436,6 @@ static uint8_t functionI(unsigned int token) {
                 if ((token = getc()) == tii) {
                     uint8_t *dataPtr = ti_GetDataPtr(ice.inPrgm);
                     
-                    dbg_Debugger();
-                    
                     // Grab description
                     while ((token = getc()) != EOF && (uint8_t)token != tEnter) {
                         unsigned int strLength;

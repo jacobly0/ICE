@@ -42,6 +42,8 @@ typedef struct {
 
 extern ice_t ice;
 
+void preScanProgram(ti_var_t);
+
 void CHeaderData(void);
 void CProgramHeader(void);
 void MultWithNumber(uint24_t number, uint24_t *programPtr);
