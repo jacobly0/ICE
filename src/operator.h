@@ -15,6 +15,7 @@ uint8_t parseOperator(element_t *outputPrevPrev, element_t *outputPrev, element_
 
 void insertFunctionReturn(uint24_t function, uint8_t outputRegister, uint8_t needPush);
 void EQInsert();
+void GEInsert();
 
 extern const char operators[];
 extern const uint8_t operatorPrecedence[];

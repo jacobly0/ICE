@@ -12,6 +12,7 @@
 #define OP_JR_Z       0x28
 #define OP_ADD_HL_HL  0x29
 #define OP_DEC_HL     0x2B
+#define OP_SCF        0x37
 #define OP_CCF        0x3F
 #define OP_LD_C_A     0x4F
 #define OP_LD_E_A     0x5F
@@ -69,6 +70,7 @@
 #define OR_A_A()              do { output(uint8_t, OP_OR_A_A); } while (0)
     
 #define CCF()                 do { output(uint8_t, OP_CCF); } while (0)
+#define SCF()                 do { output(uint8_t, OP_SCF); } while (0)
 
 #endif
 
