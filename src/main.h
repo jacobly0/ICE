@@ -20,6 +20,8 @@ typedef struct {
     
     uint24_t *dataOffsetStack[500];
     uint24_t dataOffsetElements;
+    uint24_t currentLine;
+    uint24_t programSize;
 	
     ti_var_t inPrgm;
     ti_var_t outPrgm;

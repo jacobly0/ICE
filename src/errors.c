@@ -9,7 +9,7 @@
 
 static const char *errors[] = {
     "This token is not implemented (yet)",
-    "This token cannot be used at this place",
+    "This operator cannot be used at the start of   the line",
     "This token doesn't have a condition",
     "You used 'Else' or End' outside a condition block",
     "You have an extra right paren",
@@ -19,6 +19,21 @@ static const char *errors[] = {
 };
 
 void displayError(unsigned int index) {
+    signed char buf[30];
+    signed char c;
+    signed char *str = errors[index];
+    
     gfx_SetTextFGColor(224);
-    gfx_PrintStringXY(errors[index], 1, ++ice.messageIndex*10+3);
+    gfx_SetTextXY(1, ++ice.messageIndex*10+3);
+    
+    while(c = *str++) {
+        gfx_PrintChar(c);
+        if (gfx_GetTextX() > 312) {
+            gfx_SetTextXY(1, ++ice.messageIndex*10+3);
+        }
+    }
+    
+    gfx_SetTextFGColor(0);
+    sprintf(buf, "Error at line %u", ice.currentLine);
+    gfx_PrintStringXY(buf, 1, ++ice.messageIndex*10+3);
 }

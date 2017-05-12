@@ -23,7 +23,7 @@ ice_t ice;
 void main() {
     uint8_t a = 0, selectedProgram = 0, key, amountOfPrograms, res, *outputDataPtr, *search_pos = NULL;
     char *var_name;
-    uint24_t token, headerSize, programSize, programDataSize, offset;
+    uint24_t token, headerSize, programDataSize, offset;
     signed char buf[30];
     const char ICEheader[] = {tii, 0};
 
@@ -149,6 +149,8 @@ void main() {
     
     memcpy(ice.programPtr, CProgramHeader, 5);
     ice.programPtr += 5;
+    
+    ice.programSize = (uint24_t)ice.programPtr - (uint24_t)ice.programData;
    
     // Do the stuff
     res = parseProgram();
@@ -160,12 +162,17 @@ void main() {
             goto stop;
         }
         
+        // If the last token is not "Return", write a "ret" to the program
+        if (!ice.lastTokenIsReturn) {
+            RET();
+        }
+        
         // Get the sizes of the 3 stacks
-        programSize = (uint24_t)ice.programPtr - (uint24_t)ice.programData;
+        ice.programSize = (uint24_t)ice.programPtr - (uint24_t)ice.programData;
         programDataSize = (uint24_t)ice.programDataPtr - (uint24_t)ice.programDataData;
         
         // Change the pointers to the data as well, but first calculate the offset
-        offset = PRGM_START + programSize - (uint24_t)ice.programDataData;
+        offset = PRGM_START + ice.programSize - (uint24_t)ice.programDataData;
         while (ice.dataOffsetElements--) {
             *ice.dataOffsetStack[ice.dataOffsetElements] += offset;
         }
@@ -175,7 +182,7 @@ void main() {
         ti_PutC(tAsm84CeCmp, ice.outPrgm);
         
         // Write the header, main program, and data to output :D
-        if (programSize)     ti_Write(ice.programData, programSize, 1, ice.outPrgm);
+        if (ice.programSize) ti_Write(ice.programData, ice.programSize, 1, ice.outPrgm);
         if (programDataSize) ti_Write(ice.programDataData, programDataSize, 1, ice.outPrgm);
         
         // Yep, we are really done!
@@ -187,7 +194,7 @@ void main() {
         
         // Display the size
         gfx_SetTextFGColor(0);
-        sprintf(buf, "Output size: %u bytes", programSize + programDataSize + 2);
+        sprintf(buf, "Output size: %u bytes", ice.programSize + programDataSize + 2);
         gfx_PrintStringXY(buf, 1, ++ice.messageIndex*10+3);
     } else {
         displayError(res);

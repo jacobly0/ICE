@@ -36,14 +36,13 @@ uint8_t parseProgram(void) {
         if ((uint8_t)token != tii) {
             ice.usedCodeAfterHeader = true;
         }
+        
+        // This function parses per line
+        ice.currentLine++;
+        
         if ((ret = (*functions[(uint8_t)token])(token)) != VALID) {
             break;
         }
-    }
-
-    // If the last token is not "Return", write a "ret" to the program
-    if (ret == VALID && !ice.lastTokenIsReturn) {
-        RET();
     }
 
     return ret;
@@ -395,8 +394,11 @@ static uint8_t functionI(unsigned int token) {
 
         // Get the icon and description
         else if (!ice.gotIconDescription) {
+                    dbg_Debugger();
+        
+
             // Move header to take place for the icon and description, setup pointer
-            memcpy(ice.programData + 600, ice.programData, 116);
+            memcpy(ice.programData + 600, ice.programData, ice.programSize);
             ice.programPtr = ice.programData;
             
             // Insert "jp <random>" and Cesium header
@@ -453,17 +455,21 @@ static uint8_t functionI(unsigned int token) {
             *ice.programPtr = 0;
 
             // Get the correct offset
-            offset = ice.programPtr - ice.programData;
+            offset = ice.programPtr - ice.programData + 1;
 
             // Write the right jp offset
             *(uint24_t*)(ice.programData+1) = offset + PRGM_START;
             
             // Copy header back, and update the 3 pointers in the C header...
-            memcpy(ice.programPtr + 1, ice.programData + 600, 116);
-            *(uint24_t*)(ice.programPtr+2)  += offset;
-            *(uint24_t*)(ice.programPtr+53) += offset;
-            *(uint24_t*)(ice.programPtr+66) += offset;
-            ice.programPtr += 117;
+            memcpy(ice.programPtr + 1, ice.programData + 600, ice.programSize);
+            
+            // If C functions were detected
+            if (ice.programSize > 10) {
+                *(uint24_t*)(ice.programPtr+2)  += offset;
+                *(uint24_t*)(ice.programPtr+53) += offset;
+                *(uint24_t*)(ice.programPtr+66) += offset;
+            }
+            ice.programPtr += ice.programSize + 1;
             
             ice.gotIconDescription = true;
             return VALID;
