@@ -455,41 +455,94 @@ void OrChainPushChainAns(element_t *entry1, element_t *entry2) {
     memcpy(ice.programPtr, OrData, 16);
     ice.programPtr += 16;
 }
-void EQNumberVariable(element_t *entry1, element_t *entry2) {
-}
-void EQNumberFunction(element_t *entry1, element_t *entry2) {
-}
-void EQNumberChainAns(element_t *entry1, element_t *entry2) {
-}
-void EQVariableNumber(element_t *entry1, element_t *entry2) {
-}
-void EQVariableVariable(element_t *entry1, element_t *entry2) {
-}
-void EQVariableFunction(element_t *entry1, element_t *entry2) {
-}
-void EQVariableChainAns(element_t *entry1, element_t *entry2) {
-}
-void EQFunctionNumber(element_t *entry1, element_t *entry2) {
-}
-void EQFunctionVariable(element_t *entry1, element_t *entry2) {
-}
-void EQFunctionFunction(element_t *entry1, element_t *entry2) {
-}
-void EQFunctionChainAns(element_t *entry1, element_t *entry2) {
+void EQInsert() {
+    OR_A_A();
+    SBC_HL_DE();
+    LD_HL_IMM(0);
+    JR_NZ(1);
+    INC_HL();
 }
 void EQChainAnsNumber(element_t *entry1, element_t *entry2) {
-}
-void EQChainAnsVariable(element_t *entry1, element_t *entry2) {
+    uint24_t number = entry2->operand;
+    if (number && number < 6) {
+        do {
+            DEC_HL();
+        } while (--number);
+    }
+    if (!number) {
+        LD_DE_IMM(-1);
+        ADD_HL_DE();
+        SBC_HL_HL();
+        INC_HL();
+    } else {
+        LD_DE_IMM(number);
+        EQInsert();
+    }
 }
 void EQChainAnsFunction(element_t *entry1, element_t *entry2) {
+    EX_DE_HL();
+    insertFunctionReturn(entry2->operand, OUTPUT_IN_HL, NEED_PUSH);
+    EQInsert();
+}
+void EQVariableNumber(element_t *entry1, element_t *entry2) {
+    LD_HL_IND_IX_OFF(entry1->operand);
+    EQChainAnsNumber(entry1, entry2);
+}
+void EQChainAnsVariable(element_t *entry1, element_t *entry2) {
+    LD_DE_IND_IX_OFF(entry2->operand);
+    EQInsert();
+}
+void EQFunctionNumber(element_t *entry1, element_t *entry2) {
+    insertFunctionReturn(entry1->operand, OUTPUT_IN_HL, NO_PUSH);
+    EQChainAnsNumber(entry1, entry2);
+}
+void EQFunctionVariable(element_t *entry1, element_t *entry2) {
+    insertFunctionReturn(entry1->operand, OUTPUT_IN_HL, NO_PUSH);
+    EQChainAnsVariable(entry1, entry2);
+}
+void EQNumberVariable(element_t *entry1, element_t *entry2) {
+    EQVariableNumber(entry2, entry1);
+}
+void EQNumberFunction(element_t *entry1, element_t *entry2) {
+    EQFunctionNumber(entry2, entry1);
+}
+void EQNumberChainAns(element_t *entry1, element_t *entry2) {
+    EQChainAnsNumber(entry2, entry1);
+}
+void EQVariableVariable(element_t *entry1, element_t *entry2) {
+    LD_HL_IND_IX_OFF(entry1->operand);
+    EQChainAnsVariable(entry1, entry2);
+}
+void EQVariableFunction(element_t *entry1, element_t *entry2) {
+    EQFunctionVariable(entry2, entry1);
+}
+void EQVariableChainAns(element_t *entry1, element_t *entry2) {
+    EQChainAnsVariable(entry2, entry1);
+}
+void EQFunctionFunction(element_t *entry1, element_t *entry2) {
+    insertFunctionReturn(entry1->operand, OUTPUT_IN_DE, NO_PUSH);
+    insertFunctionReturn(entry2->operand, OUTPUT_IN_HL, NEED_PUSH);
+    EQInsert();
+}
+void EQFunctionChainAns(element_t *entry1, element_t *entry2) {
+    EQChainAnsFunction(entry2, entry1);
 }
 void EQChainPushNumber(element_t *entry1, element_t *entry2) {
+    POP_HL();
+    EQChainAnsNumber(entry1, entry2);
 }
 void EQChainPushVariable(element_t *entry1, element_t *entry2) {
+    POP_HL();
+    EQChainAnsVariable(entry1, entry2);
 }
 void EQChainPushFunction(element_t *entry1, element_t *entry2) {
+    insertFunctionReturn(entry2->operand, OUTPUT_IN_HL, NO_PUSH);
+    POP_DE();
+    EQInsert();
 }
 void EQChainPushChainAns(element_t *entry1, element_t *entry2) {
+    POP_DE();
+    EQInsert();
 }
 void LTNumberVariable(element_t *entry1, element_t *entry2) {
 }
@@ -563,42 +616,6 @@ void GTChainPushFunction(element_t *entry1, element_t *entry2) {
 }
 void GTChainPushChainAns(element_t *entry1, element_t *entry2) {
 }
-void LENumberVariable(element_t *entry1, element_t *entry2) {
-}
-void LENumberFunction(element_t *entry1, element_t *entry2) {
-}
-void LENumberChainAns(element_t *entry1, element_t *entry2) {
-}
-void LEVariableNumber(element_t *entry1, element_t *entry2) {
-}
-void LEVariableVariable(element_t *entry1, element_t *entry2) {
-}
-void LEVariableFunction(element_t *entry1, element_t *entry2) {
-}
-void LEVariableChainAns(element_t *entry1, element_t *entry2) {
-}
-void LEFunctionNumber(element_t *entry1, element_t *entry2) {
-}
-void LEFunctionVariable(element_t *entry1, element_t *entry2) {
-}
-void LEFunctionFunction(element_t *entry1, element_t *entry2) {
-}
-void LEFunctionChainAns(element_t *entry1, element_t *entry2) {
-}
-void LEChainAnsNumber(element_t *entry1, element_t *entry2) {
-}
-void LEChainAnsVariable(element_t *entry1, element_t *entry2) {
-}
-void LEChainAnsFunction(element_t *entry1, element_t *entry2) {
-}
-void LEChainPushNumber(element_t *entry1, element_t *entry2) {
-}
-void LEChainPushVariable(element_t *entry1, element_t *entry2) {
-}
-void LEChainPushFunction(element_t *entry1, element_t *entry2) {
-}
-void LEChainPushChainAns(element_t *entry1, element_t *entry2) {
-}
 void GENumberVariable(element_t *entry1, element_t *entry2) {
 }
 void GENumberFunction(element_t *entry1, element_t *entry2) {
@@ -635,41 +652,156 @@ void GEChainPushFunction(element_t *entry1, element_t *entry2) {
 }
 void GEChainPushChainAns(element_t *entry1, element_t *entry2) {
 }
-void NENumberVariable(element_t *entry1, element_t *entry2) {
+void LENumberVariable(element_t *entry1, element_t *entry2) {
+    GEVariableNumber(entry2, entry1);
 }
-void NENumberFunction(element_t *entry1, element_t *entry2) {
+void LENumberFunction(element_t *entry1, element_t *entry2) {
+    GEFunctionNumber(entry2, entry1);
 }
-void NENumberChainAns(element_t *entry1, element_t *entry2) {
+void LENumberChainAns(element_t *entry1, element_t *entry2) {
+    GEChainAnsNumber(entry2, entry1);
 }
-void NEVariableNumber(element_t *entry1, element_t *entry2) {
+void LEVariableNumber(element_t *entry1, element_t *entry2) {
+    GENumberVariable(entry2, entry1);
 }
-void NEVariableVariable(element_t *entry1, element_t *entry2) {
+void LEVariableVariable(element_t *entry1, element_t *entry2) {
+    GEVariableVariable(entry2, entry1);
 }
-void NEVariableFunction(element_t *entry1, element_t *entry2) {
+void LEVariableFunction(element_t *entry1, element_t *entry2) {
+    GEFunctionVariable(entry2, entry1);
 }
-void NEVariableChainAns(element_t *entry1, element_t *entry2) {
+void LEVariableChainAns(element_t *entry1, element_t *entry2) {
+    GEChainAnsVariable(entry2, entry1);
 }
-void NEFunctionNumber(element_t *entry1, element_t *entry2) {
+void LEFunctionNumber(element_t *entry1, element_t *entry2) {
+    GENumberFunction(entry2, entry1);
 }
-void NEFunctionVariable(element_t *entry1, element_t *entry2) {
+void LEFunctionVariable(element_t *entry1, element_t *entry2) {
+    GEVariableFunction(entry2, entry1);
 }
-void NEFunctionFunction(element_t *entry1, element_t *entry2) {
+void LEFunctionFunction(element_t *entry1, element_t *entry2) {
+    GEFunctionFunction(entry2, entry1);
 }
-void NEFunctionChainAns(element_t *entry1, element_t *entry2) {
+void LEFunctionChainAns(element_t *entry1, element_t *entry2) {
+    GEChainAnsFunction(entry2, entry1);
+}
+void LEChainAnsNumber(element_t *entry1, element_t *entry2) {
+    GENumberChainAns(entry2, entry1);
+}
+void LEChainAnsVariable(element_t *entry1, element_t *entry2) {
+    GEVariableChainAns(entry2, entry1);
+}
+void LEChainAnsFunction(element_t *entry1, element_t *entry2) {
+    GEFunctionChainAns(entry2, entry1);
+}
+void LEChainPushNumber(element_t *entry1, element_t *entry2) {
+    POP_HL();
+    GENumberChainAns(entry2, entry1);
+}
+void LEChainPushVariable(element_t *entry1, element_t *entry2) {
+    POP_HL();
+    GEVariableChainAns(entry2, entry1);
+}
+void LEChainPushChainAns(element_t *entry1, element_t *entry2) {
+    POP_DE();
+    EX_DE_HL();
+    OR_A_A();
+    SBC_HL_DE();
+    SBC_HL_HL();
+    INC_HL();
+}
+void LEChainPushFunction(element_t *entry1, element_t *entry2) {
+    insertFunctionReturn(entry2->operand, OUTPUT_IN_HL, NO_PUSH);
+    LEChainPushChainAns(entry1, entry2);
+}
+void NEInsert() {
+    OR_A_A();
+    SBC_HL_DE();
+    LD_HL_IMM(0);
+    JR_Z(1);
+    INC_HL();
 }
 void NEChainAnsNumber(element_t *entry1, element_t *entry2) {
-}
-void NEChainAnsVariable(element_t *entry1, element_t *entry2) {
+    uint24_t number = entry2->operand;
+    if (number && number < 6) {
+        do {
+            DEC_HL();
+        } while (--number);
+    }
+    if (!number) {
+        LD_DE_IMM(-1);
+        ADD_HL_DE();
+        SBC_HL_HL();
+        INC_HL();
+    } else {
+        LD_DE_IMM(number);
+        NEInsert();
+    }
 }
 void NEChainAnsFunction(element_t *entry1, element_t *entry2) {
+    EX_DE_HL();
+    insertFunctionReturn(entry2->operand, OUTPUT_IN_HL, NEED_PUSH);
+    NEInsert();
+}
+void NEVariableNumber(element_t *entry1, element_t *entry2) {
+    LD_HL_IND_IX_OFF(entry1->operand);
+    NEChainAnsNumber(entry1, entry2);
+}
+void NEChainAnsVariable(element_t *entry1, element_t *entry2) {
+    LD_DE_IND_IX_OFF(entry2->operand);
+    NEInsert();
+}
+void NEFunctionNumber(element_t *entry1, element_t *entry2) {
+    insertFunctionReturn(entry1->operand, OUTPUT_IN_HL, NO_PUSH);
+    NEChainAnsNumber(entry1, entry2);
+}
+void NEFunctionVariable(element_t *entry1, element_t *entry2) {
+    insertFunctionReturn(entry1->operand, OUTPUT_IN_HL, NO_PUSH);
+    NEChainAnsVariable(entry1, entry2);
+}
+void NENumberVariable(element_t *entry1, element_t *entry2) {
+    NEVariableNumber(entry2, entry1);
+}
+void NENumberFunction(element_t *entry1, element_t *entry2) {
+    NEFunctionNumber(entry2, entry1);
+}
+void NENumberChainAns(element_t *entry1, element_t *entry2) {
+    NEChainAnsNumber(entry2, entry1);
+}
+void NEVariableVariable(element_t *entry1, element_t *entry2) {
+    LD_HL_IND_IX_OFF(entry1->operand);
+    NEChainAnsVariable(entry1, entry2);
+}
+void NEVariableFunction(element_t *entry1, element_t *entry2) {
+    NEFunctionVariable(entry2, entry1);
+}
+void NEVariableChainAns(element_t *entry1, element_t *entry2) {
+    NEChainAnsVariable(entry2, entry1);
+}
+void NEFunctionFunction(element_t *entry1, element_t *entry2) {
+    insertFunctionReturn(entry1->operand, OUTPUT_IN_DE, NO_PUSH);
+    insertFunctionReturn(entry2->operand, OUTPUT_IN_HL, NEED_PUSH);
+    NEInsert();
+}
+void NEFunctionChainAns(element_t *entry1, element_t *entry2) {
+    NEChainAnsFunction(entry2, entry1);
 }
 void NEChainPushNumber(element_t *entry1, element_t *entry2) {
+    POP_HL();
+    NEChainAnsNumber(entry1, entry2);
 }
 void NEChainPushVariable(element_t *entry1, element_t *entry2) {
+    POP_HL();
+    NEChainAnsVariable(entry1, entry2);
 }
 void NEChainPushFunction(element_t *entry1, element_t *entry2) {
+    insertFunctionReturn(entry2->operand, OUTPUT_IN_HL, NO_PUSH);
+    POP_DE();
+    NEInsert();
 }
 void NEChainPushChainAns(element_t *entry1, element_t *entry2) {
+    POP_DE();
+    NEInsert();
 }
 void MulChainAnsNumber(element_t *entry1, element_t *entry2) {
     uint24_t number = entry2->operand;

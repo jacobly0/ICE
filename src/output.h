@@ -7,7 +7,9 @@
 #define __idvrmu   0x000144
 
 #define OP_ADD_HL_DE  0x19
+#define OP_JR_NZ      0x20
 #define OP_INC_HL     0x23
+#define OP_JR_Z       0x28
 #define OP_ADD_HL_HL  0x29
 #define OP_DEC_HL     0x2B
 #define OP_CCF        0x3F
@@ -61,6 +63,8 @@
 #define RET()                 do { output(uint8_t, OP_RET); } while (0)
 #define JP(val)               do { output(uint8_t, OP_JP); output(uint24_t, val); } while (0)
 #define CALL(val)             do { output(uint8_t, OP_CALL); output(uint24_t, val); } while (0)
+#define JR_NZ(off)            do { output(uint8_t, OP_JR_NZ); output(uint8_t, off); } while (0)
+#define JR_Z(off)             do { output(uint8_t, OP_JR_Z); output(uint8_t, off); } while (0)
 
 #define OR_A_A()              do { output(uint8_t, OP_OR_A_A); } while (0)
     

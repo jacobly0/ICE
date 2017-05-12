@@ -394,9 +394,6 @@ static uint8_t functionI(unsigned int token) {
 
         // Get the icon and description
         else if (!ice.gotIconDescription) {
-                    dbg_Debugger();
-        
-
             // Move header to take place for the icon and description, setup pointer
             memcpy(ice.programData + 600, ice.programData, ice.programSize);
             ice.programPtr = ice.programData;
@@ -460,10 +457,10 @@ static uint8_t functionI(unsigned int token) {
             // Write the right jp offset
             *(uint24_t*)(ice.programData+1) = offset + PRGM_START;
             
-            // Copy header back, and update the 3 pointers in the C header...
+            // Copy header back
             memcpy(ice.programPtr + 1, ice.programData + 600, ice.programSize);
             
-            // If C functions were detected
+            // If C functions were detected, update the pointers
             if (ice.programSize > 10) {
                 *(uint24_t*)(ice.programPtr+2)  += offset;
                 *(uint24_t*)(ice.programPtr+53) += offset;
