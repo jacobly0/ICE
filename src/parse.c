@@ -436,12 +436,22 @@ static uint8_t functionI(unsigned int token) {
                 if ((token = getc()) == tii) {
                     uint8_t *dataPtr = ti_GetDataPtr(ice.inPrgm);
                     
+                    dbg_Debugger();
+                    
                     // Grab description
                     while ((token = getc()) != EOF && (uint8_t)token != tEnter) {
-                        unsigned int tokLength;
-                        dataString = ti_GetTokenString(&dataPtr, NULL, &tokLength);
-                        memcpy(ice.programPtr, dataString, tokLength);
-                        ice.programPtr += tokLength;
+                        unsigned int strLength;
+                        uint8_t tokSize;
+                        
+                        // Get the token in characters, and copy to the output
+                        dataString = ti_GetTokenString(&dataPtr, &tokSize, &strLength);
+                        memcpy(ice.programPtr, dataString, strLength);
+                        ice.programPtr += strLength;
+                        
+                        // If it's a 2-byte token, we also need to get the second byte of it
+                        if (tokSize == 2) {
+                            getc();
+                        }
                     }
                 } else if (token != EOF) {
                     ti_Seek(-1, SEEK_CUR, ice.inPrgm);
