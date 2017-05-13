@@ -7,7 +7,7 @@
 typedef struct {
     char     outName[9];
     char     inName[9];
-	
+    
     uint8_t  nestedBlocks;
     uint8_t  amountOfUsedCRoutines;
     uint8_t  *programData;
@@ -22,10 +22,10 @@ typedef struct {
     uint24_t dataOffsetElements;
     uint24_t currentLine;
     uint24_t programSize;
-	
+    
     ti_var_t inPrgm;
     ti_var_t outPrgm;
-	
+    
     bool     gotName;
     bool     gotIconDescription;
     bool     usedCodeAfterHeader;
@@ -39,6 +39,10 @@ typedef struct {
     bool     usedAlreadyGetKeyFast;
     uint24_t getKeyFastAddr;
 } ice_t;
+
+#define MESSAGE_HEIGHT       10
+#define iceMessageLine       (3 + (ice.messageIndex += MESSAGE_HEIGHT))
+#define iceMessageNewLine()  do { (iceMessageLine); } while(0)
 
 extern ice_t ice;
 

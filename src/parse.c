@@ -341,7 +341,7 @@ stackToOutputReturn2:
             
             // Yay, we can restore our programPtr!
             if ((uint8_t)outputCurr->operand == tDet) {
-                ice.programPtr = (uint8_t *)pop();
+                ice.programPtr = (uint8_t*)pop();
             }
         }
     }

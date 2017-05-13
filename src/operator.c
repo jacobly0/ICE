@@ -18,9 +18,14 @@
 #include "operator.h"
 #include "stack.h"
 
-extern void (*operatorFunctions[280])(element_t*, element_t*);
+extern void (*operatorFunctions[280])(void);
 const char operators[] = {tStore, tAnd, tXor, tOr, tEQ, tLT, tGT, tLE, tGE, tNE, tMul, tDiv, tAdd, tSub};
 const uint8_t operatorPrecedence[] = {0, 1, 2, 2, 3, 3, 3, 3, 3, 3, 5, 5, 4, 4};
+
+static element_t *entry1;
+static element_t *entry2;
+static uint24_t entry1_operand;
+static uint24_t entry2_operand;
 
 uint8_t getIndexOfOperator(uint8_t operator) {
     char *index;
@@ -63,19 +68,34 @@ uint24_t executeOperator(uint24_t operand1, uint24_t operand2, uint8_t operator)
     }
 }
 
+static void getEntryOperands() {
+    entry1_operand = entry1->operand;
+    entry2_operand = entry2->operand;
+}
+
+static void swapEntries() {
+    element_t *temp;
+    temp = entry1;
+    entry1 = entry2;
+    entry2 = temp;
+    getEntryOperands();
+}
+
 uint8_t parseOperator(element_t *outputPrevPrev, element_t *outputPrev, element_t *outputCurr) {
     uint8_t typeMasked1 = outputPrevPrev->type & 15;
     uint8_t typeMasked2 = outputPrev->type & 15;
     
     // Only call the function if both types are valid
-    if ((typeMasked1 == typeMasked2 && (typeMasked1 == TYPE_NUMBER || typeMasked1 == TYPE_CHAIN_ANS)) || \
+    if ((typeMasked1 == typeMasked2 && (typeMasked1 == TYPE_NUMBER || typeMasked1 == TYPE_CHAIN_ANS)) ||
         (typeMasked1 > TYPE_CHAIN_PUSH && typeMasked2 > TYPE_CHAIN_ANS)) {
         return E_SYNTAX;
     }
     
     // Call the right function!
-    (*operatorFunctions[((getIndexOfOperator(outputCurr->operand) - 1) * 20) + (typeMasked1 * 4) + typeMasked2]) \
-        (outputPrevPrev, outputPrev);
+    entry1 = outputPrevPrev;
+    entry2 = outputPrev;
+    getEntryOperands();
+    (*operatorFunctions[((getIndexOfOperator(outputCurr->operand) - 1) * 20) + (typeMasked1 * 4) + typeMasked2])();
     return VALID;
 }
 
@@ -179,41 +199,29 @@ void LD_HL_NUMBER(uint24_t number) {
 }
 
 
-
-
-
-
-
-
-
-
-
-
-
-void OperatorError(element_t *entry1, element_t *entry2) {
+void OperatorError(void) {
 }
-void StoChainAnsVariable(element_t *entry1, element_t *entry2) {
-    LD_IX_OFF_IND_HL(entry2->operand);
+void StoChainAnsVariable(void) {
+    LD_IX_OFF_IND_HL(entry2_operand);
 }
-void StoNumberVariable(element_t *entry1, element_t *entry2) {
-    LD_HL_NUMBER(entry1->operand);
-    StoChainAnsVariable(entry1, entry2);
+void StoNumberVariable(void) {
+    LD_HL_NUMBER(entry1_operand);
+    StoChainAnsVariable();
 }
-void StoVariableVariable(element_t *entry1, element_t *entry2) {
-    LD_HL_IND_IX_OFF(entry1->operand);
-    StoChainAnsVariable(entry1, entry2);
+void StoVariableVariable(void) {
+    LD_HL_IND_IX_OFF(entry1_operand);
+    StoChainAnsVariable();
 }
-void StoFunctionVariable(element_t *entry1, element_t *entry2) {
-    insertFunctionReturn(entry1->operand, OUTPUT_IN_HL, NO_PUSH);
-    StoChainAnsVariable(entry1, entry2);
+void StoFunctionVariable(void) {
+    insertFunctionReturn(entry1_operand, OUTPUT_IN_HL, NO_PUSH);
+    StoChainAnsVariable();
 }
-void StoChainPushVariable(element_t *entry1, element_t *entry2) {
+void StoChainPushVariable(void) {
     POP_HL();
-    StoChainAnsVariable(entry1, entry2);
+    StoChainAnsVariable();
 }
-void AndChainAnsNumber(element_t *entry1, element_t *entry2) {
-    uint24_t number = entry2->operand;
-    if (!number) {
+void AndChainAnsNumber(void) {
+    if (!entry2_operand) {
         LD_HL_NUMBER(0);
     } else {
         LD_DE_IMM(-1);
@@ -223,78 +231,84 @@ void AndChainAnsNumber(element_t *entry1, element_t *entry2) {
         INC_HL();
     }
 }
-void AndChainAnsVariable(element_t *entry1, element_t *entry2) {
-    LD_DE_IND_IX_OFF(entry2->operand);
+void AndChainAnsVariable(void) {
+    LD_DE_IND_IX_OFF(entry2_operand);
     memcpy(ice.programPtr, AndData, 16);
     ice.programPtr += 16;
 }
-void AndChainAnsFunction(element_t *entry1, element_t *entry2) {
+void AndChainAnsFunction(void) {
     EX_DE_HL();
-    insertFunctionReturn(entry2->operand, OUTPUT_IN_HL, NEED_PUSH);
+    insertFunctionReturn(entry2_operand, OUTPUT_IN_HL, NEED_PUSH);
     memcpy(ice.programPtr, AndData, 16);
     ice.programPtr += 16;
 }
-void AndFunctionNumber(element_t *entry1, element_t *entry2) {
-    insertFunctionReturn(entry1->operand, OUTPUT_IN_HL, NO_PUSH);
-    AndChainAnsNumber(entry1, entry2);
+void AndFunctionNumber(void) {
+    insertFunctionReturn(entry1_operand, OUTPUT_IN_HL, NO_PUSH);
+    AndChainAnsNumber();
 }
-void AndVariableNumber(element_t *entry1, element_t *entry2) {
-    LD_HL_IND_IX_OFF(entry1->operand);
-    AndChainAnsNumber(entry1, entry2);
+void AndVariableNumber(void) {
+    LD_HL_IND_IX_OFF(entry1_operand);
+    AndChainAnsNumber();
 }
-void AndFunctionVariable(element_t *entry1, element_t *entry2) {
-    insertFunctionReturn(entry1->operand, OUTPUT_IN_HL, NO_PUSH);
-    AndChainAnsVariable(entry1, entry2);
+void AndFunctionVariable(void) {
+    insertFunctionReturn(entry1_operand, OUTPUT_IN_HL, NO_PUSH);
+    AndChainAnsVariable();
 }
-void AndNumberVariable(element_t *entry1, element_t *entry2) {
-    AndVariableNumber(entry2, entry1);
+void AndNumberVariable(void) {
+    swapEntries();
+    AndVariableNumber();
 }
-void AndNumberFunction(element_t *entry1, element_t *entry2) {
-    AndFunctionNumber(entry2, entry1);
+void AndNumberFunction(void) {
+    swapEntries();
+    AndFunctionNumber();
 }
-void AndNumberChainAns(element_t *entry1, element_t *entry2) {
-    AndChainAnsNumber(entry2, entry1);
+void AndNumberChainAns(void) {
+    swapEntries();
+    AndChainAnsNumber();
 }
-void AndVariableVariable(element_t *entry1, element_t *entry2) {
-    LD_HL_IND_IX_OFF(entry1->operand);
-    AndChainAnsVariable(entry1, entry2);
+void AndVariableVariable(void) {
+    LD_HL_IND_IX_OFF(entry1_operand);
+    AndChainAnsVariable();
 }
-void AndVariableFunction(element_t *entry1, element_t *entry2) {
-    AndFunctionVariable(entry2, entry1);
+void AndVariableFunction(void) {
+    swapEntries();
+    AndFunctionVariable();
 }
-void AndVariableChainAns(element_t *entry1, element_t *entry2) {
-    AndChainAnsVariable(entry2, entry1);
+void AndVariableChainAns() {
+    swapEntries();
+    AndChainAnsVariable();
 }
-void AndFunctionFunction(element_t *entry1, element_t *entry2) {
-    insertFunctionReturn(entry1->operand, OUTPUT_IN_DE, NO_PUSH);
-    insertFunctionReturn(entry2->operand, OUTPUT_IN_HL, NEED_PUSH);
+void AndFunctionFunction(void) {
+    insertFunctionReturn(entry1_operand, OUTPUT_IN_DE, NO_PUSH);
+    insertFunctionReturn(entry2_operand, OUTPUT_IN_HL, NEED_PUSH);
     memcpy(ice.programPtr, AndData, 16);
     ice.programPtr += 16;
 }
-void AndFunctionChainAns(element_t *entry1, element_t *entry2) {
-    AndChainAnsFunction(entry2, entry1);
+void AndFunctionChainAns(void) {
+    swapEntries();
+    AndChainAnsFunction();
 }
-void AndChainPushNumber(element_t *entry1, element_t *entry2) {
+void AndChainPushNumber(void) {
     POP_HL();
-    AndChainAnsNumber(entry1, entry2);
+    AndChainAnsNumber();
 }
-void AndChainPushVariable(element_t *entry1, element_t *entry2) {
+void AndChainPushVariable(void) {
     POP_HL();
-    AndChainAnsVariable(entry1, entry2);
+    AndChainAnsVariable();
 }
-void AndChainPushFunction(element_t *entry1, element_t *entry2) {
-    insertFunctionReturn(entry2->operand, OUTPUT_IN_HL, NO_PUSH);
+void AndChainPushFunction(void) {
+    insertFunctionReturn(entry2_operand, OUTPUT_IN_HL, NO_PUSH);
     POP_DE();
     memcpy(ice.programPtr, AndData, 16);
     ice.programPtr += 16;
 }
-void AndChainPushChainAns(element_t *entry1, element_t *entry2) {
+void AndChainPushChainAns(void) {
     POP_DE();
     memcpy(ice.programPtr, AndData, 16);
     ice.programPtr += 16;
 }
-void XorChainAnsNumber(element_t *entry1, element_t *entry2) {
-    uint24_t number = entry2->operand;
+void XorChainAnsNumber(void) {
+    uint24_t number = entry2_operand;
     LD_DE_IMM(-1);
     ADD_HL_DE();
     if (!number) {
@@ -303,78 +317,84 @@ void XorChainAnsNumber(element_t *entry1, element_t *entry2) {
     SBC_HL_HL();
     INC_HL();
 }
-void XorChainAnsVariable(element_t *entry1, element_t *entry2) {
-    LD_DE_IND_IX_OFF(entry2->operand);
+void XorChainAnsVariable(void) {
+    LD_DE_IND_IX_OFF(entry2_operand);
     memcpy(ice.programPtr, XorData, 16);
     ice.programPtr += 16;
 }
-void XorChainAnsFunction(element_t *entry1, element_t *entry2) {
+void XorChainAnsFunction(void) {
     EX_DE_HL();
-    insertFunctionReturn(entry2->operand, OUTPUT_IN_HL, NEED_PUSH);
+    insertFunctionReturn(entry2_operand, OUTPUT_IN_HL, NEED_PUSH);
     memcpy(ice.programPtr, XorData, 16);
     ice.programPtr += 16;
 }
-void XorFunctionNumber(element_t *entry1, element_t *entry2) {
-    insertFunctionReturn(entry1->operand, OUTPUT_IN_HL, NO_PUSH);
-    XorChainAnsNumber(entry1, entry2);
+void XorFunctionNumber(void) {
+    insertFunctionReturn(entry1_operand, OUTPUT_IN_HL, NO_PUSH);
+    XorChainAnsNumber();
 }
-void XorVariableNumber(element_t *entry1, element_t *entry2) {
-    LD_HL_IND_IX_OFF(entry1->operand);
-    XorChainAnsNumber(entry1, entry2);
+void XorVariableNumber(void) {
+    LD_HL_IND_IX_OFF(entry1_operand);
+    XorChainAnsNumber();
 }
-void XorFunctionVariable(element_t *entry1, element_t *entry2) {
-    insertFunctionReturn(entry1->operand, OUTPUT_IN_HL, NO_PUSH);
-    XorChainAnsVariable(entry1, entry2);
+void XorFunctionVariable(void) {
+    insertFunctionReturn(entry1_operand, OUTPUT_IN_HL, NO_PUSH);
+    XorChainAnsVariable();
 }
-void XorNumberVariable(element_t *entry1, element_t *entry2) {
-    XorVariableNumber(entry2, entry1);
+void XorNumberVariable(void) {
+    swapEntries();
+    XorVariableNumber();
 }
-void XorNumberFunction(element_t *entry1, element_t *entry2) {
-    XorFunctionNumber(entry2, entry1);
+void XorNumberFunction(void) {
+    swapEntries();
+    XorFunctionNumber();
 }
-void XorNumberChainAns(element_t *entry1, element_t *entry2) {
-    XorChainAnsNumber(entry2, entry1);
+void XorNumberChainAns(void) {
+    swapEntries();
+    XorChainAnsNumber();
 }
-void XorVariableVariable(element_t *entry1, element_t *entry2) {
-    LD_HL_IND_IX_OFF(entry1->operand);
-    XorChainAnsVariable(entry1, entry2);
+void XorVariableVariable(void) {
+    LD_HL_IND_IX_OFF(entry1_operand);
+    XorChainAnsVariable();
 }
-void XorVariableFunction(element_t *entry1, element_t *entry2) {
-    XorFunctionVariable(entry2, entry1);
+void XorVariableFunction(void) {
+    swapEntries();
+    XorFunctionVariable();
 }
-void XorVariableChainAns(element_t *entry1, element_t *entry2) {
-    XorChainAnsVariable(entry2, entry1);
+void XorVariableChainAns(void) {
+    swapEntries();
+    XorChainAnsVariable();
 }
-void XorFunctionFunction(element_t *entry1, element_t *entry2) {
-    insertFunctionReturn(entry1->operand, OUTPUT_IN_DE, NO_PUSH);
-    insertFunctionReturn(entry2->operand, OUTPUT_IN_HL, NEED_PUSH);
+void XorFunctionFunction(void) {
+    insertFunctionReturn(entry1_operand, OUTPUT_IN_DE, NO_PUSH);
+    insertFunctionReturn(entry2_operand, OUTPUT_IN_HL, NEED_PUSH);
     memcpy(ice.programPtr, XorData, 16);
     ice.programPtr += 16;
 }
-void XorFunctionChainAns(element_t *entry1, element_t *entry2) {
-    XorChainAnsFunction(entry2, entry1);
+void XorFunctionChainAns(void) {
+    swapEntries();
+    XorChainAnsFunction();
 }
-void XorChainPushNumber(element_t *entry1, element_t *entry2) {
+void XorChainPushNumber(void) {
     POP_HL();
-    XorChainAnsNumber(entry1, entry2);
+    XorChainAnsNumber();
 }
-void XorChainPushVariable(element_t *entry1, element_t *entry2) {
+void XorChainPushVariable(void) {
     POP_HL();
-    XorChainAnsVariable(entry1, entry2);
+    XorChainAnsVariable();
 }
-void XorChainPushFunction(element_t *entry1, element_t *entry2) {
-    insertFunctionReturn(entry2->operand, OUTPUT_IN_HL, NO_PUSH);
+void XorChainPushFunction(void) {
+    insertFunctionReturn(entry2_operand, OUTPUT_IN_HL, NO_PUSH);
     POP_DE();
     memcpy(ice.programPtr, XorData, 16);
     ice.programPtr += 16;
 }
-void XorChainPushChainAns(element_t *entry1, element_t *entry2) {
+void XorChainPushChainAns(void) {
     POP_DE();
     memcpy(ice.programPtr, XorData, 16);
     ice.programPtr += 16;
 }
-void OrChainAnsNumber(element_t *entry1, element_t *entry2) {
-    uint24_t number = entry2->operand;
+void OrChainAnsNumber(void) {
+    uint24_t number = entry2_operand;
     if (!number) {
         LD_DE_IMM(-1);
         ADD_HL_DE();
@@ -385,72 +405,78 @@ void OrChainAnsNumber(element_t *entry1, element_t *entry2) {
         LD_HL_NUMBER(1);
     }
 }
-void OrChainAnsVariable(element_t *entry1, element_t *entry2) {
-    LD_DE_IND_IX_OFF(entry2->operand);
+void OrChainAnsVariable(void) {
+    LD_DE_IND_IX_OFF(entry2_operand);
     memcpy(ice.programPtr, OrData, 16);
     ice.programPtr += 16;
 }
-void OrChainAnsFunction(element_t *entry1, element_t *entry2) {
+void OrChainAnsFunction(void) {
     EX_DE_HL();
-    insertFunctionReturn(entry2->operand, OUTPUT_IN_HL, NEED_PUSH);
+    insertFunctionReturn(entry2_operand, OUTPUT_IN_HL, NEED_PUSH);
     memcpy(ice.programPtr, OrData, 16);
     ice.programPtr += 16;
 }
-void OrFunctionNumber(element_t *entry1, element_t *entry2) {
-    insertFunctionReturn(entry1->operand, OUTPUT_IN_HL, NO_PUSH);
-    OrChainAnsNumber(entry1, entry2);
+void OrFunctionNumber(void) {
+    insertFunctionReturn(entry1_operand, OUTPUT_IN_HL, NO_PUSH);
+    OrChainAnsNumber();
 }
-void OrVariableNumber(element_t *entry1, element_t *entry2) {
-    LD_HL_IND_IX_OFF(entry1->operand);
-    OrChainAnsNumber(entry1, entry2);
+void OrVariableNumber(void) {
+    LD_HL_IND_IX_OFF(entry1_operand);
+    OrChainAnsNumber();
 }
-void OrFunctionVariable(element_t *entry1, element_t *entry2) {
-    insertFunctionReturn(entry1->operand, OUTPUT_IN_HL, NO_PUSH);
-    OrChainAnsVariable(entry1, entry2);
+void OrFunctionVariable(void) {
+    insertFunctionReturn(entry1_operand, OUTPUT_IN_HL, NO_PUSH);
+    OrChainAnsVariable();
 }
-void OrNumberVariable(element_t *entry1, element_t *entry2) {
-    OrVariableNumber(entry2, entry1);
+void OrNumberVariable(void) {
+    swapEntries();
+    OrVariableNumber();
 }
-void OrNumberFunction(element_t *entry1, element_t *entry2) {
-    OrFunctionNumber(entry2, entry1);
+void OrNumberFunction(void) {
+    swapEntries();
+    OrFunctionNumber();
 }
-void OrNumberChainAns(element_t *entry1, element_t *entry2) {
-    OrChainAnsNumber(entry2, entry1);
+void OrNumberChainAns(void) {
+    swapEntries();
+    OrChainAnsNumber();
 }
-void OrVariableVariable(element_t *entry1, element_t *entry2) {
-    LD_HL_IND_IX_OFF(entry1->operand);
-    OrChainAnsVariable(entry1, entry2);
+void OrVariableVariable(void) {
+    LD_HL_IND_IX_OFF(entry1_operand);
+    OrChainAnsVariable();
 }
-void OrVariableFunction(element_t *entry1, element_t *entry2) {
-    OrFunctionVariable(entry2, entry1);
+void OrVariableFunction(void) {
+    swapEntries();
+    OrFunctionVariable();
 }
-void OrVariableChainAns(element_t *entry1, element_t *entry2) {
-    OrChainAnsVariable(entry2, entry1);
+void OrVariableChainAns(void) {
+    swapEntries();
+    OrChainAnsVariable();
 }
-void OrFunctionFunction(element_t *entry1, element_t *entry2) {
-    insertFunctionReturn(entry1->operand, OUTPUT_IN_DE, NO_PUSH);
-    insertFunctionReturn(entry2->operand, OUTPUT_IN_HL, NEED_PUSH);
+void OrFunctionFunction(void) {
+    insertFunctionReturn(entry1_operand, OUTPUT_IN_DE, NO_PUSH);
+    insertFunctionReturn(entry2_operand, OUTPUT_IN_HL, NEED_PUSH);
     memcpy(ice.programPtr, OrData, 16);
     ice.programPtr += 16;
 }
-void OrFunctionChainAns(element_t *entry1, element_t *entry2) {
-    OrChainAnsFunction(entry2, entry1);
+void OrFunctionChainAns(void) {
+    swapEntries();
+    OrChainAnsFunction();
 }
-void OrChainPushNumber(element_t *entry1, element_t *entry2) {
+void OrChainPushNumber(void) {
     POP_HL();
-    OrChainAnsNumber(entry1, entry2);
+    OrChainAnsNumber();
 }
-void OrChainPushVariable(element_t *entry1, element_t *entry2) {
+void OrChainPushVariable(void) {
     POP_HL();
-    OrChainAnsVariable(entry1, entry2);
+    OrChainAnsVariable();
 }
-void OrChainPushFunction(element_t *entry1, element_t *entry2) {
-    insertFunctionReturn(entry2->operand, OUTPUT_IN_HL, NO_PUSH);
+void OrChainPushFunction(void) {
+    insertFunctionReturn(entry2_operand, OUTPUT_IN_HL, NO_PUSH);
     POP_DE();
     memcpy(ice.programPtr, OrData, 16);
     ice.programPtr += 16;
 }
-void OrChainPushChainAns(element_t *entry1, element_t *entry2) {
+void OrChainPushChainAns(void) {
     POP_DE();
     memcpy(ice.programPtr, OrData, 16);
     ice.programPtr += 16;
@@ -462,8 +488,8 @@ void EQInsert() {
     JR_NZ(1);
     INC_HL();
 }
-void EQChainAnsNumber(element_t *entry1, element_t *entry2) {
-    uint24_t number = entry2->operand;
+void EQChainAnsNumber(void) {
+    uint24_t number = entry2_operand;
     if (number && number < 6) {
         do {
             DEC_HL();
@@ -479,68 +505,74 @@ void EQChainAnsNumber(element_t *entry1, element_t *entry2) {
         EQInsert();
     }
 }
-void EQChainAnsFunction(element_t *entry1, element_t *entry2) {
+void EQChainAnsFunction(void) {
     EX_DE_HL();
-    insertFunctionReturn(entry2->operand, OUTPUT_IN_HL, NEED_PUSH);
+    insertFunctionReturn(entry2_operand, OUTPUT_IN_HL, NEED_PUSH);
     EQInsert();
 }
-void EQVariableNumber(element_t *entry1, element_t *entry2) {
-    LD_HL_IND_IX_OFF(entry1->operand);
-    EQChainAnsNumber(entry1, entry2);
+void EQVariableNumber(void) {
+    LD_HL_IND_IX_OFF(entry1_operand);
+    EQChainAnsNumber();
 }
-void EQChainAnsVariable(element_t *entry1, element_t *entry2) {
-    LD_DE_IND_IX_OFF(entry2->operand);
+void EQChainAnsVariable(void) {
+    LD_DE_IND_IX_OFF(entry2_operand);
     EQInsert();
 }
-void EQFunctionNumber(element_t *entry1, element_t *entry2) {
-    insertFunctionReturn(entry1->operand, OUTPUT_IN_HL, NO_PUSH);
-    EQChainAnsNumber(entry1, entry2);
+void EQFunctionNumber(void) {
+    insertFunctionReturn(entry1_operand, OUTPUT_IN_HL, NO_PUSH);
+    EQChainAnsNumber();
 }
-void EQFunctionVariable(element_t *entry1, element_t *entry2) {
-    insertFunctionReturn(entry1->operand, OUTPUT_IN_HL, NO_PUSH);
-    EQChainAnsVariable(entry1, entry2);
+void EQFunctionVariable(void) {
+    insertFunctionReturn(entry1_operand, OUTPUT_IN_HL, NO_PUSH);
+    EQChainAnsVariable();
 }
-void EQNumberVariable(element_t *entry1, element_t *entry2) {
-    EQVariableNumber(entry2, entry1);
+void EQNumberVariable(void) {
+    swapEntries();
+    EQVariableNumber();
 }
-void EQNumberFunction(element_t *entry1, element_t *entry2) {
-    EQFunctionNumber(entry2, entry1);
+void EQNumberFunction(void) {
+    swapEntries();
+    EQFunctionNumber();
 }
-void EQNumberChainAns(element_t *entry1, element_t *entry2) {
-    EQChainAnsNumber(entry2, entry1);
+void EQNumberChainAns(void) {
+    swapEntries();
+    EQChainAnsNumber();
 }
-void EQVariableVariable(element_t *entry1, element_t *entry2) {
-    LD_HL_IND_IX_OFF(entry1->operand);
-    EQChainAnsVariable(entry1, entry2);
+void EQVariableVariable(void) {
+    LD_HL_IND_IX_OFF(entry1_operand);
+    EQChainAnsVariable();
 }
-void EQVariableFunction(element_t *entry1, element_t *entry2) {
-    EQFunctionVariable(entry2, entry1);
+void EQVariableFunction(void) {
+    swapEntries();
+    EQFunctionVariable();
 }
-void EQVariableChainAns(element_t *entry1, element_t *entry2) {
-    EQChainAnsVariable(entry2, entry1);
+void EQVariableChainAns(void) {
+    swapEntries();
+    EQChainAnsVariable();
 }
-void EQFunctionFunction(element_t *entry1, element_t *entry2) {
-    insertFunctionReturn(entry1->operand, OUTPUT_IN_DE, NO_PUSH);
-    insertFunctionReturn(entry2->operand, OUTPUT_IN_HL, NEED_PUSH);
+void EQFunctionFunction(void) {
+    insertFunctionReturn(entry1_operand, OUTPUT_IN_DE, NO_PUSH);
+    insertFunctionReturn(entry2_operand, OUTPUT_IN_HL, NEED_PUSH);
     EQInsert();
 }
-void EQFunctionChainAns(element_t *entry1, element_t *entry2) {
-    EQChainAnsFunction(entry2, entry1);
+void EQFunctionChainAns(void) {
+    swapEntries();
+    EQChainAnsFunction();
 }
-void EQChainPushNumber(element_t *entry1, element_t *entry2) {
+void EQChainPushNumber(void) {
     POP_HL();
-    EQChainAnsNumber(entry1, entry2);
+    EQChainAnsNumber();
 }
-void EQChainPushVariable(element_t *entry1, element_t *entry2) {
+void EQChainPushVariable(void) {
     POP_HL();
-    EQChainAnsVariable(entry1, entry2);
+    EQChainAnsVariable();
 }
-void EQChainPushFunction(element_t *entry1, element_t *entry2) {
-    insertFunctionReturn(entry2->operand, OUTPUT_IN_HL, NO_PUSH);
+void EQChainPushFunction(void) {
+    insertFunctionReturn(entry2_operand, OUTPUT_IN_HL, NO_PUSH);
     POP_DE();
     EQInsert();
 }
-void EQChainPushChainAns(element_t *entry1, element_t *entry2) {
+void EQChainPushChainAns(void) {
     POP_DE();
     EQInsert();
 }
@@ -550,136 +582,152 @@ void GTInsert() {
     SBC_HL_HL();
     INC_HL();
 }
-void GTChainAnsNumber(element_t *entry1, element_t *entry2) {
-    LD_DE_IMM(entry2->operand);
+void GTChainAnsNumber(void) {
+    LD_DE_IMM(entry2_operand);
     GTInsert();
 }
-void GTChainAnsVariable(element_t *entry1, element_t *entry2) {
-    LD_DE_IND_IX_OFF(entry2->operand);
+void GTChainAnsVariable(void) {
+    LD_DE_IND_IX_OFF(entry2_operand);
     GTInsert();
 }
-void GTNumberVariable(element_t *entry1, element_t *entry2) {
-    LD_HL_NUMBER(entry1->operand);
-    GTChainAnsVariable(entry1, entry2);
+void GTNumberVariable(void) {
+    LD_HL_NUMBER(entry1_operand);
+    GTChainAnsVariable();
 }
-void GTNumberFunction(element_t *entry1, element_t *entry2) {
-    insertFunctionReturn(entry2->operand, OUTPUT_IN_DE, NO_PUSH);
-    LD_HL_NUMBER(entry1->operand);
+void GTNumberFunction(void) {
+    insertFunctionReturn(entry2_operand, OUTPUT_IN_DE, NO_PUSH);
+    LD_HL_NUMBER(entry1_operand);
     GTInsert();
 }
-void GTNumberChainAns(element_t *entry1, element_t *entry2) {
+void GTNumberChainAns(void) {
     EX_DE_HL();
-    LD_HL_NUMBER(entry1->operand);
+    LD_HL_NUMBER(entry1_operand);
     GTInsert();
 }
-void GTVariableNumber(element_t *entry1, element_t *entry2) {
-    LD_HL_IND_IX_OFF(entry1->operand);
-    GTChainAnsNumber(entry1, entry2);
+void GTVariableNumber(void) {
+    LD_HL_IND_IX_OFF(entry1_operand);
+    GTChainAnsNumber();
 }
-void GTVariableVariable(element_t *entry1, element_t *entry2) {
-    LD_HL_IND_IX_OFF(entry1->operand);
-    GTChainAnsVariable(entry1, entry2);
+void GTVariableVariable(void) {
+    LD_HL_IND_IX_OFF(entry1_operand);
+    GTChainAnsVariable();
 }
-void GTVariableFunction(element_t *entry1, element_t *entry2) {
-    insertFunctionReturn(entry2->operand, OUTPUT_IN_DE, NO_PUSH);
-    LD_HL_IND_IX_OFF(entry1->operand);
+void GTVariableFunction(void) {
+    insertFunctionReturn(entry2_operand, OUTPUT_IN_DE, NO_PUSH);
+    LD_HL_IND_IX_OFF(entry1_operand);
     GTInsert();
 }
-void GTVariableChainAns(element_t *entry1, element_t *entry2) {
+void GTVariableChainAns(void) {
     EX_DE_HL();
-    LD_HL_IND_IX_OFF(entry1->operand);
+    LD_HL_IND_IX_OFF(entry1_operand);
     GTInsert();
 }
-void GTFunctionNumber(element_t *entry1, element_t *entry2) {
-    insertFunctionReturn(entry1->operand, OUTPUT_IN_HL, NO_PUSH);
-    GTChainAnsNumber(entry1, entry2);
+void GTFunctionNumber(void) {
+    insertFunctionReturn(entry1_operand, OUTPUT_IN_HL, NO_PUSH);
+    GTChainAnsNumber();
 }
-void GTFunctionVariable(element_t *entry1, element_t *entry2) {
-    insertFunctionReturn(entry1->operand, OUTPUT_IN_HL, NO_PUSH);
-    GTChainAnsVariable(entry1, entry2);
+void GTFunctionVariable(void) {
+    insertFunctionReturn(entry1_operand, OUTPUT_IN_HL, NO_PUSH);
+    GTChainAnsVariable();
 }
-void GTFunctionFunction(element_t *entry1, element_t *entry2) {
-    insertFunctionReturn(entry2->operand, OUTPUT_IN_DE, NO_PUSH);
-    insertFunctionReturn(entry1->operand, OUTPUT_IN_HL, NEED_PUSH);
+void GTFunctionFunction(void) {
+    insertFunctionReturn(entry2_operand, OUTPUT_IN_DE, NO_PUSH);
+    insertFunctionReturn(entry1_operand, OUTPUT_IN_HL, NEED_PUSH);
     GTInsert();
 }
-void GTFunctionChainAns(element_t *entry1, element_t *entry2) {
+void GTFunctionChainAns(void) {
     EX_DE_HL();
-    insertFunctionReturn(entry1->operand, OUTPUT_IN_HL, NEED_PUSH);
+    insertFunctionReturn(entry1_operand, OUTPUT_IN_HL, NEED_PUSH);
 }
-void GTChainAnsFunction(element_t *entry1, element_t *entry2) {
-    insertFunctionReturn(entry2->operand, OUTPUT_IN_DE, NEED_PUSH);
+void GTChainAnsFunction(void) {
+    insertFunctionReturn(entry2_operand, OUTPUT_IN_DE, NEED_PUSH);
     GTInsert();
 }
-void GTChainPushNumber(element_t *entry1, element_t *entry2) {
+void GTChainPushNumber(void) {
     POP_HL();
-    GTChainAnsNumber(entry1, entry2);
+    GTChainAnsNumber();
 }
-void GTChainPushVariable(element_t *entry1, element_t *entry2) {
+void GTChainPushVariable(void) {
     POP_HL();
-    GTChainAnsVariable(entry1, entry2);
+    GTChainAnsVariable();
 }
-void GTChainPushFunction(element_t *entry1, element_t *entry2) {
-    insertFunctionReturn(entry2->operand, OUTPUT_IN_DE, NO_PUSH);
+void GTChainPushFunction(void) {
+    insertFunctionReturn(entry2_operand, OUTPUT_IN_DE, NO_PUSH);
     POP_HL();
     GTInsert();
 }
-void GTChainPushChainAns(element_t *entry1, element_t *entry2) {
+void GTChainPushChainAns(void) {
     EX_DE_HL();
     POP_HL();
     GTInsert();
 }
-void LTNumberVariable(element_t *entry1, element_t *entry2) {
-    GTVariableNumber(entry2, entry1);
+void LTNumberVariable(void) {
+    swapEntries();
+    GTVariableNumber();
 }
-void LTNumberFunction(element_t *entry1, element_t *entry2) {
-    GTFunctionNumber(entry2, entry1);
+void LTNumberFunction(void) {
+    swapEntries();
+    GTFunctionNumber();
 }
-void LTNumberChainAns(element_t *entry1, element_t *entry2) {
-    GTChainAnsNumber(entry2, entry1);
+void LTNumberChainAns(void) {
+    swapEntries();
+    GTChainAnsNumber();
 }
-void LTVariableNumber(element_t *entry1, element_t *entry2) {
-    GTNumberVariable(entry2, entry1);
+void LTVariableNumber(void) {
+    swapEntries();
+    GTNumberVariable();
 }
-void LTVariableVariable(element_t *entry1, element_t *entry2) {
-    GTVariableVariable(entry2, entry1);
+void LTVariableVariable(void) {
+    swapEntries();
+    GTVariableVariable();
 }
-void LTVariableFunction(element_t *entry1, element_t *entry2) {
-    GTFunctionVariable(entry2, entry1);
+void LTVariableFunction(void) {
+    swapEntries();
+    GTFunctionVariable();
 }
-void LTVariableChainAns(element_t *entry1, element_t *entry2) {
-    GTChainAnsVariable(entry2, entry1);
+void LTVariableChainAns(void) {
+    swapEntries();
+    GTChainAnsVariable();
 }
-void LTFunctionNumber(element_t *entry1, element_t *entry2) {
-    GTNumberFunction(entry2, entry1);
+void LTFunctionNumber(void) {
+    swapEntries();
+    GTNumberFunction();
 }
-void LTFunctionVariable(element_t *entry1, element_t *entry2) {
-    GTVariableFunction(entry2, entry1);
+void LTFunctionVariable(void) {
+    swapEntries();
+    GTVariableFunction();
 }
-void LTFunctionFunction(element_t *entry1, element_t *entry2) {
-    GTFunctionFunction(entry2, entry1);
+void LTFunctionFunction(void) {
+    swapEntries();
+    GTFunctionFunction();
 }
-void LTFunctionChainAns(element_t *entry1, element_t *entry2) {
-    GTChainAnsFunction(entry2, entry1);
+void LTFunctionChainAns(void) {
+    swapEntries();
+    GTChainAnsFunction();
 }
-void LTChainAnsNumber(element_t *entry1, element_t *entry2) {
-    GTNumberChainAns(entry2, entry1);
+void LTChainAnsNumber(void) {
+    swapEntries();
+    GTNumberChainAns();
 }
-void LTChainAnsVariable(element_t *entry1, element_t *entry2) {
-    GTVariableChainAns(entry2, entry1);
+void LTChainAnsVariable(void) {
+    swapEntries();
+    GTVariableChainAns();
 }
-void LTChainAnsFunction(element_t *entry1, element_t *entry2) {
-    GTFunctionChainAns(entry2, entry1);
+void LTChainAnsFunction(void) {
+    swapEntries();
+    GTFunctionChainAns();
 }
-void LTChainPushNumber(element_t *entry1, element_t *entry2) {
+void LTChainPushNumber(void) {
     POP_HL();
-    GTNumberChainAns(entry2, entry1);
+    swapEntries();
+    GTNumberChainAns();
 }
-void LTChainPushVariable(element_t *entry1, element_t *entry2) {
+void LTChainPushVariable(void) {
     POP_HL();
-    GTVariableChainAns(entry2, entry1);
+    swapEntries();
+    GTVariableChainAns();
 }
-void LTChainPushChainAns(element_t *entry1, element_t *entry2) {
+void LTChainPushChainAns(void) {
     POP_DE();
     EX_DE_HL();
     SCF();
@@ -687,9 +735,9 @@ void LTChainPushChainAns(element_t *entry1, element_t *entry2) {
     SBC_HL_HL();
     INC_HL();
 }
-void LTChainPushFunction(element_t *entry1, element_t *entry2) {
-    insertFunctionReturn(entry2->operand, OUTPUT_IN_HL, NO_PUSH);
-    LTChainPushChainAns(entry1, entry2);
+void LTChainPushFunction(void) {
+    insertFunctionReturn(entry2_operand, OUTPUT_IN_HL, NO_PUSH);
+    LTChainPushChainAns();
 }
 void GEInsert() {
     OR_A_A();
@@ -697,136 +745,152 @@ void GEInsert() {
     SBC_HL_HL();
     INC_HL();
 }
-void GEChainAnsNumber(element_t *entry1, element_t *entry2) {
-    LD_DE_IMM(entry2->operand);
+void GEChainAnsNumber(void) {
+    LD_DE_IMM(entry2_operand);
     GEInsert();
 }
-void GEChainAnsVariable(element_t *entry1, element_t *entry2) {
-    LD_DE_IND_IX_OFF(entry2->operand);
+void GEChainAnsVariable(void) {
+    LD_DE_IND_IX_OFF(entry2_operand);
     GEInsert();
 }
-void GENumberVariable(element_t *entry1, element_t *entry2) {
-    LD_HL_NUMBER(entry1->operand);
-    GEChainAnsVariable(entry1, entry2);
+void GENumberVariable(void) {
+    LD_HL_NUMBER(entry1_operand);
+    GEChainAnsVariable();
 }
-void GENumberFunction(element_t *entry1, element_t *entry2) {
-    insertFunctionReturn(entry2->operand, OUTPUT_IN_DE, NO_PUSH);
-    LD_HL_NUMBER(entry1->operand);
+void GENumberFunction(void) {
+    insertFunctionReturn(entry2_operand, OUTPUT_IN_DE, NO_PUSH);
+    LD_HL_NUMBER(entry1_operand);
     GEInsert();
 }
-void GENumberChainAns(element_t *entry1, element_t *entry2) {
+void GENumberChainAns(void) {
     EX_DE_HL();
-    LD_HL_NUMBER(entry1->operand);
+    LD_HL_NUMBER(entry1_operand);
     GEInsert();
 }
-void GEVariableNumber(element_t *entry1, element_t *entry2) {
-    LD_HL_IND_IX_OFF(entry1->operand);
-    GEChainAnsNumber(entry1, entry2);
+void GEVariableNumber(void) {
+    LD_HL_IND_IX_OFF(entry1_operand);
+    GEChainAnsNumber();
 }
-void GEVariableVariable(element_t *entry1, element_t *entry2) {
-    LD_HL_IND_IX_OFF(entry1->operand);
-    GEChainAnsVariable(entry1, entry2);
+void GEVariableVariable(void) {
+    LD_HL_IND_IX_OFF(entry1_operand);
+    GEChainAnsVariable();
 }
-void GEVariableFunction(element_t *entry1, element_t *entry2) {
-    insertFunctionReturn(entry2->operand, OUTPUT_IN_DE, NO_PUSH);
-    LD_HL_IND_IX_OFF(entry1->operand);
+void GEVariableFunction(void) {
+    insertFunctionReturn(entry2_operand, OUTPUT_IN_DE, NO_PUSH);
+    LD_HL_IND_IX_OFF(entry1_operand);
     GEInsert();
 }
-void GEVariableChainAns(element_t *entry1, element_t *entry2) {
+void GEVariableChainAns(void) {
     EX_DE_HL();
-    LD_HL_IND_IX_OFF(entry1->operand);
+    LD_HL_IND_IX_OFF(entry1_operand);
     GEInsert();
 }
-void GEFunctionNumber(element_t *entry1, element_t *entry2) {
-    insertFunctionReturn(entry1->operand, OUTPUT_IN_HL, NO_PUSH);
-    GEChainAnsNumber(entry1, entry2);
+void GEFunctionNumber(void) {
+    insertFunctionReturn(entry1_operand, OUTPUT_IN_HL, NO_PUSH);
+    GEChainAnsNumber();
 }
-void GEFunctionVariable(element_t *entry1, element_t *entry2) {
-    insertFunctionReturn(entry1->operand, OUTPUT_IN_HL, NO_PUSH);
-    GEChainAnsVariable(entry1, entry2);
+void GEFunctionVariable(void) {
+    insertFunctionReturn(entry1_operand, OUTPUT_IN_HL, NO_PUSH);
+    GEChainAnsVariable();
 }
-void GEFunctionFunction(element_t *entry1, element_t *entry2) {
-    insertFunctionReturn(entry2->operand, OUTPUT_IN_DE, NO_PUSH);
-    insertFunctionReturn(entry1->operand, OUTPUT_IN_HL, NEED_PUSH);
+void GEFunctionFunction(void) {
+    insertFunctionReturn(entry2_operand, OUTPUT_IN_DE, NO_PUSH);
+    insertFunctionReturn(entry1_operand, OUTPUT_IN_HL, NEED_PUSH);
     GEInsert();
 }
-void GEFunctionChainAns(element_t *entry1, element_t *entry2) {
+void GEFunctionChainAns(void) {
     EX_DE_HL();
-    insertFunctionReturn(entry1->operand, OUTPUT_IN_HL, NEED_PUSH);
+    insertFunctionReturn(entry1_operand, OUTPUT_IN_HL, NEED_PUSH);
 }
-void GEChainAnsFunction(element_t *entry1, element_t *entry2) {
-    insertFunctionReturn(entry2->operand, OUTPUT_IN_DE, NEED_PUSH);
+void GEChainAnsFunction(void) {
+    insertFunctionReturn(entry2_operand, OUTPUT_IN_DE, NEED_PUSH);
     GEInsert();
 }
-void GEChainPushNumber(element_t *entry1, element_t *entry2) {
+void GEChainPushNumber(void) {
     POP_HL();
-    GEChainAnsNumber(entry1, entry2);
+    GEChainAnsNumber();
 }
-void GEChainPushVariable(element_t *entry1, element_t *entry2) {
+void GEChainPushVariable(void) {
     POP_HL();
-    GEChainAnsVariable(entry1, entry2);
+    GEChainAnsVariable();
 }
-void GEChainPushFunction(element_t *entry1, element_t *entry2) {
-    insertFunctionReturn(entry2->operand, OUTPUT_IN_DE, NO_PUSH);
+void GEChainPushFunction(void) {
+    insertFunctionReturn(entry2_operand, OUTPUT_IN_DE, NO_PUSH);
     POP_HL();
     GEInsert();
 }
-void GEChainPushChainAns(element_t *entry1, element_t *entry2) {
+void GEChainPushChainAns(void) {
     EX_DE_HL();
     POP_HL();
     GEInsert();
 }
-void LENumberVariable(element_t *entry1, element_t *entry2) {
-    GEVariableNumber(entry2, entry1);
+void LENumberVariable(void) {
+    swapEntries();
+    GEVariableNumber();
 }
-void LENumberFunction(element_t *entry1, element_t *entry2) {
-    GEFunctionNumber(entry2, entry1);
+void LENumberFunction(void) {
+    swapEntries();
+    GEFunctionNumber();
 }
-void LENumberChainAns(element_t *entry1, element_t *entry2) {
-    GEChainAnsNumber(entry2, entry1);
+void LENumberChainAns(void) {
+    swapEntries();
+    GEChainAnsNumber();
 }
-void LEVariableNumber(element_t *entry1, element_t *entry2) {
-    GENumberVariable(entry2, entry1);
+void LEVariableNumber(void) {
+    swapEntries();
+    GENumberVariable();
 }
-void LEVariableVariable(element_t *entry1, element_t *entry2) {
-    GEVariableVariable(entry2, entry1);
+void LEVariableVariable(void) {
+    swapEntries();
+    GEVariableVariable();
 }
-void LEVariableFunction(element_t *entry1, element_t *entry2) {
-    GEFunctionVariable(entry2, entry1);
+void LEVariableFunction(void) {
+    swapEntries();
+    GEFunctionVariable();
 }
-void LEVariableChainAns(element_t *entry1, element_t *entry2) {
-    GEChainAnsVariable(entry2, entry1);
+void LEVariableChainAns(void) {
+    swapEntries();
+    GEChainAnsVariable();
 }
-void LEFunctionNumber(element_t *entry1, element_t *entry2) {
-    GENumberFunction(entry2, entry1);
+void LEFunctionNumber(void) {
+    swapEntries();
+    GENumberFunction();
 }
-void LEFunctionVariable(element_t *entry1, element_t *entry2) {
-    GEVariableFunction(entry2, entry1);
+void LEFunctionVariable(void) {
+    swapEntries();
+    GEVariableFunction();
 }
-void LEFunctionFunction(element_t *entry1, element_t *entry2) {
-    GEFunctionFunction(entry2, entry1);
+void LEFunctionFunction(void) {
+    swapEntries();
+    GEFunctionFunction();
 }
-void LEFunctionChainAns(element_t *entry1, element_t *entry2) {
-    GEChainAnsFunction(entry2, entry1);
+void LEFunctionChainAns(void) {
+    swapEntries();
+    GEChainAnsFunction();
 }
-void LEChainAnsNumber(element_t *entry1, element_t *entry2) {
-    GENumberChainAns(entry2, entry1);
+void LEChainAnsNumber(void) {
+    swapEntries();
+    GENumberChainAns();
 }
-void LEChainAnsVariable(element_t *entry1, element_t *entry2) {
-    GEVariableChainAns(entry2, entry1);
+void LEChainAnsVariable(void) {
+    swapEntries();
+    GEVariableChainAns();
 }
-void LEChainAnsFunction(element_t *entry1, element_t *entry2) {
-    GEFunctionChainAns(entry2, entry1);
+void LEChainAnsFunction(void) {
+    swapEntries();
+    GEFunctionChainAns();
 }
-void LEChainPushNumber(element_t *entry1, element_t *entry2) {
+void LEChainPushNumber(void) {
     POP_HL();
-    GENumberChainAns(entry2, entry1);
+    swapEntries();
+    GENumberChainAns();
 }
-void LEChainPushVariable(element_t *entry1, element_t *entry2) {
+void LEChainPushVariable(void) {
     POP_HL();
-    GEVariableChainAns(entry2, entry1);
+    swapEntries();
+    GEVariableChainAns();
 }
-void LEChainPushChainAns(element_t *entry1, element_t *entry2) {
+void LEChainPushChainAns(void) {
     POP_DE();
     EX_DE_HL();
     OR_A_A();
@@ -834,9 +898,9 @@ void LEChainPushChainAns(element_t *entry1, element_t *entry2) {
     SBC_HL_HL();
     INC_HL();
 }
-void LEChainPushFunction(element_t *entry1, element_t *entry2) {
-    insertFunctionReturn(entry2->operand, OUTPUT_IN_HL, NO_PUSH);
-    LEChainPushChainAns(entry1, entry2);
+void LEChainPushFunction(void) {
+    insertFunctionReturn(entry2_operand, OUTPUT_IN_HL, NO_PUSH);
+    LEChainPushChainAns();
 }
 void NEInsert() {
     OR_A_A();
@@ -845,8 +909,8 @@ void NEInsert() {
     JR_Z(1);
     INC_HL();
 }
-void NEChainAnsNumber(element_t *entry1, element_t *entry2) {
-    uint24_t number = entry2->operand;
+void NEChainAnsNumber(void) {
+    uint24_t number = entry2_operand;
     if (number && number < 6) {
         do {
             DEC_HL();
@@ -862,73 +926,79 @@ void NEChainAnsNumber(element_t *entry1, element_t *entry2) {
         NEInsert();
     }
 }
-void NEChainAnsFunction(element_t *entry1, element_t *entry2) {
+void NEChainAnsFunction(void) {
     EX_DE_HL();
-    insertFunctionReturn(entry2->operand, OUTPUT_IN_HL, NEED_PUSH);
+    insertFunctionReturn(entry2_operand, OUTPUT_IN_HL, NEED_PUSH);
     NEInsert();
 }
-void NEVariableNumber(element_t *entry1, element_t *entry2) {
-    LD_HL_IND_IX_OFF(entry1->operand);
-    NEChainAnsNumber(entry1, entry2);
+void NEVariableNumber(void) {
+    LD_HL_IND_IX_OFF(entry1_operand);
+    NEChainAnsNumber();
 }
-void NEChainAnsVariable(element_t *entry1, element_t *entry2) {
-    LD_DE_IND_IX_OFF(entry2->operand);
+void NEChainAnsVariable(void) {
+    LD_DE_IND_IX_OFF(entry2_operand);
     NEInsert();
 }
-void NEFunctionNumber(element_t *entry1, element_t *entry2) {
-    insertFunctionReturn(entry1->operand, OUTPUT_IN_HL, NO_PUSH);
-    NEChainAnsNumber(entry1, entry2);
+void NEFunctionNumber(void) {
+    insertFunctionReturn(entry1_operand, OUTPUT_IN_HL, NO_PUSH);
+    NEChainAnsNumber();
 }
-void NEFunctionVariable(element_t *entry1, element_t *entry2) {
-    insertFunctionReturn(entry1->operand, OUTPUT_IN_HL, NO_PUSH);
-    NEChainAnsVariable(entry1, entry2);
+void NEFunctionVariable(void) {
+    insertFunctionReturn(entry1_operand, OUTPUT_IN_HL, NO_PUSH);
+    NEChainAnsVariable();
 }
-void NENumberVariable(element_t *entry1, element_t *entry2) {
-    NEVariableNumber(entry2, entry1);
+void NENumberVariable(void) {
+    swapEntries();
+    NEVariableNumber();
 }
-void NENumberFunction(element_t *entry1, element_t *entry2) {
-    NEFunctionNumber(entry2, entry1);
+void NENumberFunction(void) {
+    swapEntries();
+    NEFunctionNumber();
 }
-void NENumberChainAns(element_t *entry1, element_t *entry2) {
-    NEChainAnsNumber(entry2, entry1);
+void NENumberChainAns(void) {
+    swapEntries();
+    NEChainAnsNumber();
 }
-void NEVariableVariable(element_t *entry1, element_t *entry2) {
-    LD_HL_IND_IX_OFF(entry1->operand);
-    NEChainAnsVariable(entry1, entry2);
+void NEVariableVariable(void) {
+    LD_HL_IND_IX_OFF(entry1_operand);
+    NEChainAnsVariable();
 }
-void NEVariableFunction(element_t *entry1, element_t *entry2) {
-    NEFunctionVariable(entry2, entry1);
+void NEVariableFunction(void) {
+    swapEntries();
+    NEFunctionVariable();
 }
-void NEVariableChainAns(element_t *entry1, element_t *entry2) {
-    NEChainAnsVariable(entry2, entry1);
+void NEVariableChainAns(void) {
+    swapEntries();
+    NEChainAnsVariable();
 }
-void NEFunctionFunction(element_t *entry1, element_t *entry2) {
-    insertFunctionReturn(entry1->operand, OUTPUT_IN_DE, NO_PUSH);
-    insertFunctionReturn(entry2->operand, OUTPUT_IN_HL, NEED_PUSH);
+void NEFunctionFunction(void) {
+    insertFunctionReturn(entry1_operand, OUTPUT_IN_DE, NO_PUSH);
+    insertFunctionReturn(entry2_operand, OUTPUT_IN_HL, NEED_PUSH);
     NEInsert();
 }
-void NEFunctionChainAns(element_t *entry1, element_t *entry2) {
-    NEChainAnsFunction(entry2, entry1);
+void NEFunctionChainAns(void) {
+    swapEntries();
+    NEChainAnsFunction();
 }
-void NEChainPushNumber(element_t *entry1, element_t *entry2) {
+void NEChainPushNumber(void) {
     POP_HL();
-    NEChainAnsNumber(entry1, entry2);
+    NEChainAnsNumber();
 }
-void NEChainPushVariable(element_t *entry1, element_t *entry2) {
+void NEChainPushVariable(void) {
     POP_HL();
-    NEChainAnsVariable(entry1, entry2);
+    NEChainAnsVariable();
 }
-void NEChainPushFunction(element_t *entry1, element_t *entry2) {
-    insertFunctionReturn(entry2->operand, OUTPUT_IN_HL, NO_PUSH);
+void NEChainPushFunction(void) {
+    insertFunctionReturn(entry2_operand, OUTPUT_IN_HL, NO_PUSH);
     POP_DE();
     NEInsert();
 }
-void NEChainPushChainAns(element_t *entry1, element_t *entry2) {
+void NEChainPushChainAns(void) {
     POP_DE();
     NEInsert();
 }
-void MulChainAnsNumber(element_t *entry1, element_t *entry2) {
-    uint24_t number = entry2->operand;
+void MulChainAnsNumber(void) {
+    uint24_t number = entry2_operand;
     if (number == 0) {
         OR_A_A();
         SBC_HL_HL();
@@ -936,167 +1006,173 @@ void MulChainAnsNumber(element_t *entry1, element_t *entry2) {
         MultWithNumber(number, (uint24_t *)&ice.programPtr);
     }
 }
-void MulVariableNumber(element_t *entry1, element_t *entry2) {
-    LD_HL_IND_IX_OFF(entry1->operand);
-    MulChainAnsNumber(entry1, entry2);
+void MulVariableNumber(void) {
+    LD_HL_IND_IX_OFF(entry1_operand);
+    MulChainAnsNumber();
 }
-void MulFunctionNumber(element_t *entry1, element_t *entry2) {
-    insertFunctionReturn(entry1->operand, OUTPUT_IN_HL, NO_PUSH);
-    MulChainAnsNumber(entry1, entry2);
+void MulFunctionNumber(void) {
+    insertFunctionReturn(entry1_operand, OUTPUT_IN_HL, NO_PUSH);
+    MulChainAnsNumber();
 }
-void MulChainAnsVariable(element_t *entry1, element_t *entry2) {
-    LD_BC_IND_IX_OFF(entry2->operand);
+void MulChainAnsVariable(void) {
+    LD_BC_IND_IX_OFF(entry2_operand);
     CALL(__imuls);
 }
-void MulFunctionVariable(element_t *entry1, element_t *entry2) {
-    insertFunctionReturn(entry1->operand, OUTPUT_IN_HL, NO_PUSH);
-    MulChainAnsVariable(entry1, entry2);
+void MulFunctionVariable(void) {
+    insertFunctionReturn(entry1_operand, OUTPUT_IN_HL, NO_PUSH);
+    MulChainAnsVariable();
 }
-void MulNumberVariable(element_t *entry1, element_t *entry2) {
-    MulVariableNumber(entry2, entry1);
+void MulNumberVariable(void) {
+    swapEntries();
+    MulVariableNumber();
 }
-void MulNumberFunction(element_t *entry1, element_t *entry2) {
-    MulFunctionNumber(entry2, entry1);
+void MulNumberFunction(void) {
+    swapEntries();
+    MulFunctionNumber();
 }
-void MulNumberChainAns(element_t *entry1, element_t *entry2) {
-    MulChainAnsNumber(entry2, entry1);
+void MulNumberChainAns(void) {
+    swapEntries();
+    MulChainAnsNumber();
 }
-void MulVariableVariable(element_t *entry1, element_t *entry2) {
-    LD_HL_IND_IX_OFF(entry1->operand);
-    MulChainAnsVariable(entry1, entry2);
+void MulVariableVariable(void) {
+    LD_HL_IND_IX_OFF(entry1_operand);
+    MulChainAnsVariable();
 }
-void MulVariableFunction(element_t *entry1, element_t *entry2) {
-    MulFunctionVariable(entry2, entry1);
+void MulVariableFunction(void) {
+    swapEntries();
+    MulFunctionVariable();
 }
-void MulVariableChainAns(element_t *entry1, element_t *entry2) {
-    MulChainAnsVariable(entry2, entry1);
+void MulVariableChainAns(void) {
+    swapEntries();
+    MulChainAnsVariable();
 }
-void MulFunctionFunction(element_t *entry1, element_t *entry2) {
-    insertFunctionReturn(entry1->operand, OUTPUT_IN_BC, NO_PUSH);
-    insertFunctionReturn(entry2->operand, OUTPUT_IN_HL, NEED_PUSH);
+void MulFunctionFunction(void) {
+    insertFunctionReturn(entry1_operand, OUTPUT_IN_BC, NO_PUSH);
+    insertFunctionReturn(entry2_operand, OUTPUT_IN_HL, NEED_PUSH);
     CALL(__imuls);
 }
-void MulChainAnsFunction(element_t *entry1, element_t *entry2) {
-    insertFunctionReturn(entry2->operand, OUTPUT_IN_BC, NEED_PUSH);
+void MulChainAnsFunction(void) {
+    insertFunctionReturn(entry2_operand, OUTPUT_IN_BC, NEED_PUSH);
     CALL(__imuls);
 }
-void MulFunctionChainAns(element_t *entry1, element_t *entry2) {
-    MulChainAnsFunction(entry2, entry1);
+void MulFunctionChainAns(void) {
+    swapEntries();
+    MulChainAnsFunction();
 }
-void MulChainPushNumber(element_t *entry1, element_t *entry2) {
+void MulChainPushNumber(void) {
     POP_HL();
-    MulChainAnsNumber(entry1, entry2);
+    MulChainAnsNumber();
 }
-void MulChainPushVariable(element_t *entry1, element_t *entry2) {
+void MulChainPushVariable(void) {
     POP_HL();
-    MulChainAnsVariable(entry1, entry2);
+    MulChainAnsVariable();
 }
-void MulChainPushFunction(element_t *entry1, element_t *entry2) {
-    insertFunctionReturn(entry2->operand, OUTPUT_IN_HL, NO_PUSH);
+void MulChainPushFunction(void) {
+    insertFunctionReturn(entry2_operand, OUTPUT_IN_HL, NO_PUSH);
     POP_BC();
     CALL(__imuls);
 }
-void MulChainPushChainAns(element_t *entry1, element_t *entry2) {
+void MulChainPushChainAns(void) {
     POP_BC();
     CALL(__imuls);
 }
-void DivChainAnsNumber(element_t *entry1, element_t *entry2) {
-    LD_BC_IMM(entry2->operand);
+void DivChainAnsNumber(void) {
+    LD_BC_IMM(entry2_operand);
     CALL(__idvrmu);
     EX_DE_HL();
 }
-void DivChainAnsVariable(element_t *entry1, element_t *entry2) {
-    LD_BC_IND_IX_OFF(entry2->operand);
+void DivChainAnsVariable(void) {
+    LD_BC_IND_IX_OFF(entry2_operand);
     CALL(__idvrmu);
     EX_DE_HL();
 }
-void DivNumberVariable(element_t *entry1, element_t *entry2) {
-    LD_HL_NUMBER(entry1->operand);
-    DivChainAnsVariable(entry1, entry2);
+void DivNumberVariable(void) {
+    LD_HL_NUMBER(entry1_operand);
+    DivChainAnsVariable();
 }
-void DivNumberFunction(element_t *entry1, element_t *entry2) {
-    insertFunctionReturn(entry2->operand, OUTPUT_IN_BC, NO_PUSH);
-    LD_HL_NUMBER(entry1->operand);
+void DivNumberFunction(void) {
+    insertFunctionReturn(entry2_operand, OUTPUT_IN_BC, NO_PUSH);
+    LD_HL_NUMBER(entry1_operand);
     CALL(__idvrmu);
     EX_DE_HL();
 }
-void DivNumberChainAns(element_t *entry1, element_t *entry2) {
+void DivNumberChainAns(void) {
     PUSH_HL();
     POP_BC();
-    LD_HL_NUMBER(entry1->operand);
+    LD_HL_NUMBER(entry1_operand);
     CALL(__idvrmu);
     EX_DE_HL();
 }
-void DivVariableNumber(element_t *entry1, element_t *entry2) {
-    LD_HL_IND_IX_OFF(entry1->operand);
-    DivChainAnsNumber(entry1, entry2);
+void DivVariableNumber(void) {
+    LD_HL_IND_IX_OFF(entry1_operand);
+    DivChainAnsNumber();
 }
-void DivVariableVariable(element_t *entry1, element_t *entry2) {
-    LD_HL_IND_IX_OFF(entry1->operand);
-    DivChainAnsVariable(entry1, entry2);
+void DivVariableVariable(void) {
+    LD_HL_IND_IX_OFF(entry1_operand);
+    DivChainAnsVariable();
 }
-void DivVariableFunction(element_t *entry1, element_t *entry2) {
-    insertFunctionReturn(entry2->operand, OUTPUT_IN_BC, NO_PUSH);
-    LD_HL_IND_IX_OFF(entry1->operand);
+void DivVariableFunction(void) {
+    insertFunctionReturn(entry2_operand, OUTPUT_IN_BC, NO_PUSH);
+    LD_HL_IND_IX_OFF(entry1_operand);
     CALL(__idvrmu);
     EX_DE_HL();
 }
-void DivVariableChainAns(element_t *entry1, element_t *entry2) {
+void DivVariableChainAns(void) {
     PUSH_HL();
     POP_BC();
-    LD_HL_IND_IX_OFF(entry1->operand);
+    LD_HL_IND_IX_OFF(entry1_operand);
     CALL(__idvrmu);
     EX_DE_HL();
 }
-void DivFunctionNumber(element_t *entry1, element_t *entry2) {
-    insertFunctionReturn(entry1->operand, OUTPUT_IN_HL, NO_PUSH);
-    DivChainAnsNumber(entry1, entry2);
+void DivFunctionNumber(void) {
+    insertFunctionReturn(entry1_operand, OUTPUT_IN_HL, NO_PUSH);
+    DivChainAnsNumber();
 }
-void DivFunctionVariable(element_t *entry1, element_t *entry2) {
-    insertFunctionReturn(entry1->operand, OUTPUT_IN_HL, NO_PUSH);
-    DivChainAnsVariable(entry1, entry2);
+void DivFunctionVariable(void) {
+    insertFunctionReturn(entry1_operand, OUTPUT_IN_HL, NO_PUSH);
+    DivChainAnsVariable();
 }
-void DivFunctionFunction(element_t *entry1, element_t *entry2) {
-    insertFunctionReturn(entry2->operand, OUTPUT_IN_BC, NO_PUSH);
-    insertFunctionReturn(entry1->operand, OUTPUT_IN_HL, NEED_PUSH);
+void DivFunctionFunction(void) {
+    insertFunctionReturn(entry2_operand, OUTPUT_IN_BC, NO_PUSH);
+    insertFunctionReturn(entry1_operand, OUTPUT_IN_HL, NEED_PUSH);
     CALL(__idvrmu);
     EX_DE_HL();
 }
-void DivFunctionChainAns(element_t *entry1, element_t *entry2) {
+void DivFunctionChainAns(void) {
     PUSH_HL();
-    insertFunctionReturn(entry1->operand, OUTPUT_IN_HL, NO_PUSH);
+    insertFunctionReturn(entry1_operand, OUTPUT_IN_HL, NO_PUSH);
     POP_BC();
     CALL(__idvrmu);
     EX_DE_HL();
 }
-void DivChainAnsFunction(element_t *entry1, element_t *entry2) {
-    insertFunctionReturn(entry2->operand, OUTPUT_IN_BC, NEED_PUSH);
+void DivChainAnsFunction(void) {
+    insertFunctionReturn(entry2_operand, OUTPUT_IN_BC, NEED_PUSH);
     CALL(__idvrmu);
     EX_DE_HL();
 }
-void DivChainPushNumber(element_t *entry1, element_t *entry2) {
+void DivChainPushNumber(void) {
     POP_HL();
-    DivChainAnsNumber(entry1, entry2);
+    DivChainAnsNumber();
 }
-void DivChainPushVariable(element_t *entry1, element_t *entry2) {
+void DivChainPushVariable(void) {
     POP_HL();
-    DivChainAnsVariable(entry1, entry2);
+    DivChainAnsVariable();
 }
-void DivChainPushFunction(element_t *entry1, element_t *entry2) {
-    insertFunctionReturn(entry2->operand, OUTPUT_IN_BC, NO_PUSH);
+void DivChainPushFunction(void) {
+    insertFunctionReturn(entry2_operand, OUTPUT_IN_BC, NO_PUSH);
     POP_HL();
     CALL(__idvrmu);
     EX_DE_HL();
 }
-void DivChainPushChainAns(element_t *entry1, element_t *entry2) {
+void DivChainPushChainAns(void) {
     PUSH_HL();
     POP_BC();
     POP_HL();
     CALL(__idvrmu);
     EX_DE_HL();
 }
-void AddChainAnsNumber(element_t *entry1, element_t *entry2) {
-    uint24_t number = entry2->operand;
+void AddChainAnsNumber(void) {
+    uint24_t number = entry2_operand;
     if (number < 5) {
         uint8_t a;
         for (a = 0; a < (uint8_t)number; a++) {
@@ -1107,76 +1183,82 @@ void AddChainAnsNumber(element_t *entry1, element_t *entry2) {
         ADD_HL_DE();
     }
 }
-void AddVariableNumber(element_t *entry1, element_t *entry2) {
-    LD_HL_IND_IX_OFF(entry1->operand);
-    AddChainAnsNumber(entry1, entry2);
+void AddVariableNumber(void) {
+    LD_HL_IND_IX_OFF(entry1_operand);
+    AddChainAnsNumber();
 }
-void AddFunctionNumber(element_t *entry1, element_t *entry2) {
-    insertFunctionReturn(entry1->operand, OUTPUT_IN_HL, NO_PUSH);
-    AddChainAnsNumber(entry1, entry2);
+void AddFunctionNumber(void) {
+    insertFunctionReturn(entry1_operand, OUTPUT_IN_HL, NO_PUSH);
+    AddChainAnsNumber();
 }
-void AddChainAnsVariable(element_t *entry1, element_t *entry2) {
-    LD_DE_IND_IX_OFF(entry2->operand);
+void AddChainAnsVariable(void) {
+    LD_DE_IND_IX_OFF(entry2_operand);
     ADD_HL_DE();
 }
-void AddFunctionVariable(element_t *entry1, element_t *entry2) {
-    insertFunctionReturn(entry1->operand, OUTPUT_IN_HL, NO_PUSH);
-    AddChainAnsVariable(entry1, entry2);
+void AddFunctionVariable(void) {
+    insertFunctionReturn(entry1_operand, OUTPUT_IN_HL, NO_PUSH);
+    AddChainAnsVariable();
 }
-void AddNumberVariable(element_t *entry1, element_t *entry2) {
-    AddVariableNumber(entry2, entry1);
+void AddNumberVariable(void) {
+    swapEntries();
+    AddVariableNumber();
 }
-void AddNumberFunction(element_t *entry1, element_t *entry2) {
-    AddFunctionNumber(entry2, entry1);
+void AddNumberFunction(void) {
+    swapEntries();
+    AddFunctionNumber();
 }
-void AddNumberChainAns(element_t *entry1, element_t *entry2) {
-    AddChainAnsNumber(entry2, entry1);
+void AddNumberChainAns(void) {
+    swapEntries();
+    AddChainAnsNumber();
 }
-void AddVariableVariable(element_t *entry1, element_t *entry2) {
-    LD_HL_IND_IX_OFF(entry1->operand);
-    if (entry1->operand == entry2->operand) {
+void AddVariableVariable(void) {
+    LD_HL_IND_IX_OFF(entry1_operand);
+    if (entry1_operand == entry2_operand) {
         ADD_HL_HL();
     } else {
-        AddChainAnsVariable(entry1, entry2);
+        AddChainAnsVariable();
     }
 }
-void AddVariableFunction(element_t *entry1, element_t *entry2) {
-    AddFunctionVariable(entry2, entry1);
+void AddVariableFunction(void) {
+    swapEntries();
+    AddFunctionVariable();
 }
-void AddVariableChainAns(element_t *entry1, element_t *entry2) {
-    AddChainAnsVariable(entry2, entry1);
+void AddVariableChainAns(void) {
+    swapEntries();
+    AddChainAnsVariable();
 }
-void AddFunctionFunction(element_t *entry1, element_t *entry2) {
-    insertFunctionReturn(entry1->operand, OUTPUT_IN_DE, NO_PUSH);
-    insertFunctionReturn(entry2->operand, OUTPUT_IN_HL, NEED_PUSH);
+void AddFunctionFunction(void) {
+    insertFunctionReturn(entry1_operand, OUTPUT_IN_DE, NO_PUSH);
+    insertFunctionReturn(entry2_operand, OUTPUT_IN_HL, NEED_PUSH);
     ADD_HL_DE();
 }
-void AddChainAnsFunction(element_t *entry1, element_t *entry2) {
-    insertFunctionReturn(entry2->operand, OUTPUT_IN_DE, NEED_PUSH);
+void AddChainAnsFunction(void) {
+    insertFunctionReturn(entry2_operand, OUTPUT_IN_DE, NEED_PUSH);
     ADD_HL_DE();
 }
-void AddFunctionChainAns(element_t *entry1, element_t *entry2) {
-    AddChainAnsFunction(entry2, entry1);
+void AddFunctionChainAns(void) {
+    swapEntries();
+    AddChainAnsFunction();
 }
-void AddChainPushNumber(element_t *entry1, element_t *entry2) {
+void AddChainPushNumber(void) {
     POP_HL();
-    AddChainAnsNumber(entry1, entry2);
+    AddChainAnsNumber();
 }
-void AddChainPushVariable(element_t *entry1, element_t *entry2) {
+void AddChainPushVariable(void) {
     POP_HL();
-    AddChainAnsVariable(entry1, entry2);
+    AddChainAnsVariable();
 }
-void AddChainPushFunction(element_t *entry1, element_t *entry2) {
-    insertFunctionReturn(entry2->operand, OUTPUT_IN_HL, NO_PUSH);
+void AddChainPushFunction(void) {
+    insertFunctionReturn(entry2_operand, OUTPUT_IN_HL, NO_PUSH);
     POP_DE();
     ADD_HL_DE();
 }
-void AddChainPushChainAns(element_t *entry1, element_t *entry2) {
+void AddChainPushChainAns(void) {
     POP_DE();
     ADD_HL_DE();
 }
-void SubChainAnsNumber(element_t *entry1, element_t *entry2) {
-    uint24_t number = entry2->operand;
+void SubChainAnsNumber(void) {
+    uint24_t number = entry2_operand;
     if (number < 5) {
         uint8_t a;
         for (a = 0; a < (uint8_t)number; a++) {
@@ -1187,85 +1269,83 @@ void SubChainAnsNumber(element_t *entry1, element_t *entry2) {
         ADD_HL_DE();
     }
 }
-void SubChainAnsVariable(element_t *entry1, element_t *entry2) {
-    LD_DE_IND_IX_OFF(entry2->operand);
+void SubChainAnsVariable(void) {
+    LD_DE_IND_IX_OFF(entry2_operand);
     SBC_HL_DE();
 }
-void SubNumberVariable(element_t *entry1, element_t *entry2) {
-    LD_HL_NUMBER(entry1->operand);
-    SubChainAnsVariable(entry1, entry2);
+void SubNumberVariable(void) {
+    LD_HL_NUMBER(entry1_operand);
+    SubChainAnsVariable();
 }
-void SubNumberFunction(element_t *entry1, element_t *entry2) {
-    insertFunctionReturn(entry2->operand, OUTPUT_IN_DE, NO_PUSH);
-    LD_HL_NUMBER(entry1->operand);
+void SubNumberFunction(void) {
+    insertFunctionReturn(entry2_operand, OUTPUT_IN_DE, NO_PUSH);
+    LD_HL_NUMBER(entry1_operand);
     SBC_HL_DE();
 }
-void SubNumberChainAns(element_t *entry1, element_t *entry2) {
+void SubNumberChainAns(void) {
     EX_DE_HL();
-    LD_HL_NUMBER(entry1->operand);
+    LD_HL_NUMBER(entry1_operand);
     SBC_HL_DE();
 }
-void SubVariableNumber(element_t *entry1, element_t *entry2) {
-    LD_HL_IND_IX_OFF(entry1->operand);
-    return SubChainAnsNumber(entry1, entry2);
+void SubVariableNumber(void) {
+    LD_HL_IND_IX_OFF(entry1_operand);
+    SubChainAnsNumber();
 }
-void SubVariableVariable(element_t *entry1, element_t *entry2) {
-    LD_HL_IND_IX_OFF(entry1->operand);
-    return SubChainAnsVariable(entry1, entry2);
+void SubVariableVariable(void) {
+    LD_HL_IND_IX_OFF(entry1_operand);
+    SubChainAnsVariable();
 }
-void SubVariableFunction(element_t *entry1, element_t *entry2) {
-    insertFunctionReturn(entry2->operand, OUTPUT_IN_DE, NO_PUSH);
-    LD_HL_IND_IX_OFF(entry1->operand);
+void SubVariableFunction(void) {
+    insertFunctionReturn(entry2_operand, OUTPUT_IN_DE, NO_PUSH);
+    LD_HL_IND_IX_OFF(entry1_operand);
 }
-void SubVariableChainAns(element_t *entry1, element_t *entry2) {
+void SubVariableChainAns(void) {
     EX_DE_HL();
-    LD_HL_IND_IX_OFF(entry1->operand);
+    LD_HL_IND_IX_OFF(entry1_operand);
     SBC_HL_DE();
 }
-void SubFunctionNumber(element_t *entry1, element_t *entry2) {
-    insertFunctionReturn(entry1->operand, OUTPUT_IN_HL, NO_PUSH);
-    SubChainAnsNumber(entry1, entry2);
+void SubFunctionNumber(void) {
+    insertFunctionReturn(entry1_operand, OUTPUT_IN_HL, NO_PUSH);
+    SubChainAnsNumber();
 }
-void SubFunctionVariable(element_t *entry1, element_t *entry2) {
-    insertFunctionReturn(entry1->operand, OUTPUT_IN_HL, NO_PUSH);
-    SubChainAnsVariable(entry1, entry2);
+void SubFunctionVariable(void) {
+    insertFunctionReturn(entry1_operand, OUTPUT_IN_HL, NO_PUSH);
+    SubChainAnsVariable();
 }
-void SubFunctionFunction(element_t *entry1, element_t *entry2) {
-    insertFunctionReturn(entry2->operand, OUTPUT_IN_DE, NO_PUSH);
-    insertFunctionReturn(entry1->operand, OUTPUT_IN_HL, NEED_PUSH);
+void SubFunctionFunction(void) {
+    insertFunctionReturn(entry2_operand, OUTPUT_IN_DE, NO_PUSH);
+    insertFunctionReturn(entry1_operand, OUTPUT_IN_HL, NEED_PUSH);
     SBC_HL_DE();
 }
-void SubFunctionChainAns(element_t *entry1, element_t *entry2) {
+void SubFunctionChainAns(void) {
     EX_DE_HL();
-    insertFunctionReturn(entry1->operand, OUTPUT_IN_HL, NEED_PUSH);
+    insertFunctionReturn(entry1_operand, OUTPUT_IN_HL, NEED_PUSH);
     SBC_HL_DE();
 }
-void SubChainAnsFunction(element_t *entry1, element_t *entry2) {
-    insertFunctionReturn(entry2->operand, OUTPUT_IN_DE, NEED_PUSH);
+void SubChainAnsFunction(void) {
+    insertFunctionReturn(entry2_operand, OUTPUT_IN_DE, NEED_PUSH);
     SBC_HL_DE();
 }
-void SubChainPushNumber(element_t *entry1, element_t *entry2) {
+void SubChainPushNumber(void) {
     POP_HL();
-    SubChainAnsNumber(entry1, entry2);
+    SubChainAnsNumber();
 }
-void SubChainPushVariable(element_t *entry1, element_t *entry2) {
+void SubChainPushVariable(void) {
     POP_HL();
-    SubChainAnsVariable(entry1, entry2);
+    SubChainAnsVariable();
 }
-void SubChainPushFunction(element_t *entry1, element_t *entry2) {
-    insertFunctionReturn(entry2->operand, OUTPUT_IN_DE, NO_PUSH);
+void SubChainPushFunction(void) {
+    insertFunctionReturn(entry2_operand, OUTPUT_IN_DE, NO_PUSH);
     POP_HL();
     SBC_HL_DE();
 }
-void SubChainPushChainAns(element_t *entry1, element_t *entry2) {
+void SubChainPushChainAns(void) {
     EX_DE_HL();
     POP_HL();
     SBC_HL_DE();
 }
 
-
-
-void (*operatorFunctions[280])(element_t*, element_t*) = {
+void (*operatorFunctions[280])(void) = {
     OperatorError,
     StoNumberVariable,
     OperatorError,

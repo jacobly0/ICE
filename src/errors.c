@@ -24,16 +24,17 @@ void displayError(unsigned int index) {
     signed char *str = errors[index];
     
     gfx_SetTextFGColor(224);
-    gfx_SetTextXY(1, ++ice.messageIndex*10+3);
+    gfx_SetTextXY(1, iceMessageLine);
     
     while(c = *str++) {
         gfx_PrintChar(c);
         if (gfx_GetTextX() > 312) {
-            gfx_SetTextXY(1, ++ice.messageIndex*10+3);
+            gfx_SetTextXY(1, iceMessageLine);
         }
     }
     
     gfx_SetTextFGColor(0);
     sprintf(buf, "Error at line %u", ice.currentLine);
-    gfx_PrintStringXY(buf, 1, ++ice.messageIndex*10+3);
+    gfx_PrintStringXY(buf, 1, iceMessageLine);
 }
+
