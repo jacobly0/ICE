@@ -84,7 +84,8 @@ static void swapEntries() {
 uint8_t parseOperator(element_t *outputPrevPrev, element_t *outputPrev, element_t *outputCurr) {
     uint8_t typeMasked1 = outputPrevPrev->type & 15;
     uint8_t typeMasked2 = outputPrev->type & 15;
-    
+    uint8_t oper = (uint8_t)outputCurr->operand;
+
     // Only call the function if both types are valid
     if ((typeMasked1 == typeMasked2 && (typeMasked1 == TYPE_NUMBER || typeMasked1 == TYPE_CHAIN_ANS)) ||
         (typeMasked1 > TYPE_CHAIN_PUSH && typeMasked2 > TYPE_CHAIN_ANS)) {
@@ -95,10 +96,10 @@ uint8_t parseOperator(element_t *outputPrevPrev, element_t *outputPrev, element_
     entry1 = outputPrevPrev;
     entry2 = outputPrev;
     getEntryOperands();
-    if ((uint8_t)outputCurr->operand == tLE) {
+    if (oper == tLE || oper == tLT) {
         swapEntries();
     }
-    (*operatorFunctions[((getIndexOfOperator(outputCurr->operand) - 1) * 20) + (typeMasked1 * 4) + typeMasked2])();
+    (*operatorFunctions[((getIndexOfOperator(oper) - 1) * 20) + (typeMasked1 * 4) + typeMasked2])();
     return VALID;
 }
 
@@ -661,70 +662,26 @@ void GTChainPushChainAns(void) {
     POP_HL();
     GTInsert();
 }
-void LTNumberVariable(void) {
-    swapEntries();
-    GTVariableNumber();
-}
-void LTNumberFunction(void) {
-    swapEntries();
-    GTFunctionNumber();
-}
-void LTNumberChainAns(void) {
-    swapEntries();
-    GTChainAnsNumber();
-}
-void LTVariableNumber(void) {
-    swapEntries();
-    GTNumberVariable();
-}
-void LTVariableVariable(void) {
-    swapEntries();
-    GTVariableVariable();
-}
-void LTVariableFunction(void) {
-    swapEntries();
-    GTFunctionVariable();
-}
-void LTVariableChainAns(void) {
-    swapEntries();
-    GTChainAnsVariable();
-}
-void LTFunctionNumber(void) {
-    swapEntries();
-    GTNumberFunction();
-}
-void LTFunctionVariable(void) {
-    swapEntries();
-    GTVariableFunction();
-}
-void LTFunctionFunction(void) {
-    swapEntries();
-    GTFunctionFunction();
-}
-void LTFunctionChainAns(void) {
-    swapEntries();
-    GTChainAnsFunction();
-}
-void LTChainAnsNumber(void) {
-    swapEntries();
-    GTNumberChainAns();
-}
-void LTChainAnsVariable(void) {
-    swapEntries();
-    GTVariableChainAns();
-}
-void LTChainAnsFunction(void) {
-    swapEntries();
-    GTFunctionChainAns();
-}
+#define LTNumberVariable   GTVariableNumber
+#define LTNumberFunction   GTFunctionNumber
+#define LTNumberChainAns   GTChainAnsNumber
+#define LTVariableNumber   GTNumberVariable
+#define LTVariableVariable GTVariableVariable
+#define LTVariableFunction GTFunctionVariable
+#define LTVariableChainAns GTChainAnsVariable
+#define LTFunctionNumber   GTNumberFunction
+#define LTFunctionVariable GTVariableFunction
+#define LTFunctionFunction GTFunctionFunction
+#define LTFunctionChainAns GTChainAnsFunction
+#define LTChainAnsNumber   GTNumberChainAns
+#define LTChainAnsVariable GTVariableChainAns
+#define LTChainAnsFunction GTFunctionChainAns
 void LTChainPushNumber(void) {
     POP_HL();
-    swapEntries();
     GTNumberChainAns();
 }
 void LTChainPushVariable(void) {
     POP_HL();
-    swapEntries();
     GTVariableChainAns();
 }
 void LTChainPushChainAns(void) {
@@ -736,7 +693,7 @@ void LTChainPushChainAns(void) {
     INC_HL();
 }
 void LTChainPushFunction(void) {
-    insertFunctionReturn(entry2_operand, OUTPUT_IN_HL, NO_PUSH);
+    insertFunctionReturn(entry1_operand, OUTPUT_IN_HL, NO_PUSH);
     LTChainPushChainAns();
 }
 void GEInsert() {
