@@ -151,7 +151,7 @@ void insertFunctionReturn(uint24_t function, uint8_t outputRegister, bool needPu
         }
     } else {
         // Check if the getKey has a fast direct key argument; if so, the second byte is 1
-        if (function & 0x00FF00) {
+        if ((uint8_t)(function >> 8)) {
             uint8_t key = function >> 16;
             uint8_t keyAddress = 0x1E - (((key-1) >> 2) & 14);
             uint8_t keyBit = 1, a;
@@ -775,8 +775,10 @@ void MulVariableChainAns(void) {
     MulChainAnsVariable();
 }
 void MulFunctionFunction(void) {
-    insertFunctionReturn(entry1_operand, OUTPUT_IN_BC, NO_PUSH);
-    insertFunctionReturn(entry2_operand, OUTPUT_IN_HL, NEED_PUSH);
+    insertFunctionReturn(entry1_operand, OUTPUT_IN_HL, NO_PUSH);
+    PUSH_HL();
+    insertFunctionReturn(entry2_operand, OUTPUT_IN_HL, NO_PUSH);
+    POP_BC();
     CALL(__imuls);
 }
 void MulChainAnsFunction(void) {
@@ -861,8 +863,10 @@ void DivFunctionVariable(void) {
     DivChainAnsVariable();
 }
 void DivFunctionFunction(void) {
-    insertFunctionReturn(entry2_operand, OUTPUT_IN_BC, NO_PUSH);
-    insertFunctionReturn(entry1_operand, OUTPUT_IN_HL, NEED_PUSH);
+    insertFunctionReturn(entry2_operand, OUTPUT_IN_HL, NO_PUSH);
+    PUSH_HL();
+    insertFunctionReturn(entry1_operand, OUTPUT_IN_HL, NO_PUSH);
+    POP_BC();
     CALL(__idvrmu);
     EX_DE_HL();
 }
