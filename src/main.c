@@ -205,7 +205,7 @@ void preScanProgram(ti_var_t Program) {
             
             // Insert the C routine
             if (!ice.CRoutinesStack[tok]) {
-                JP(uint8_t, tok * 3);
+                JP(tok * 3);
                 ice.CRoutinesStack[tok] = ice.amountOfCRoutinesUsed++;
                 ice.programPtr += 4;
             }
