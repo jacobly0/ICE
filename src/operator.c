@@ -96,6 +96,8 @@ uint8_t parseOperator(element_t *outputPrevPrev, element_t *outputPrev, element_
     entry1 = outputPrevPrev;
     entry2 = outputPrev;
     getEntryOperands();
+
+    // Swap operands for optimizations
     if (oper == tLE || oper == tLT) {
         swapEntries();
     }
