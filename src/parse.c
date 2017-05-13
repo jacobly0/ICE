@@ -17,19 +17,14 @@
 #include "output.h"
 #include "operator.h"
 #include "stack.h"
+#include "functions.h"
 
-extern uint8_t (*functions[256])(unsigned int token);
-const char implementedFunctions[] = {tDet, tNot, tRemainder, tMin, tMax, tMean, tSqrt};
+extern uint8_t (*functions[256])(unsigned int token, ti_var_t currentProgram);
+const char implementedFunctions[] = {tNot, tRemainder, tMin, tMax, tMean, tSqrt};
 
-unsigned int getc(void) {
-    return ti_GetC(ice.inPrgm);
-}
-
-uint8_t parseProgram(void) {
+uint8_t parseProgram(ti_var_t currentProgram) {
     unsigned int token;
     uint8_t ret = VALID;
-
-    ti_Rewind(ice.inPrgm);
 
     // Do things based on the token
     while ((token = getc()) != EOF) {
@@ -40,7 +35,7 @@ uint8_t parseProgram(void) {
         // This function parses per line
         ice.currentLine++;
         
-        if ((ret = (*functions[(uint8_t)token])(token)) != VALID) {
+        if ((ret = (*functions[(uint8_t)token])(token, currentProgram)) != VALID) {
             break;
         }
     }
@@ -50,14 +45,14 @@ uint8_t parseProgram(void) {
 
 /* Static functions */
 
-static uint8_t parseExpression(unsigned int token) {
+static uint8_t parseExpression(unsigned int token, ti_var_t currentProgram) {
     const uint8_t *outputStack    = (uint8_t*)0xD62C00;
     const uint8_t *stack          = (uint8_t*)0xD64000;
     const uint8_t *tempCFunctions = stack;
     unsigned int outputElements   = 0;
     unsigned int stackElements    = 0;
     unsigned int loopIndex, temp;
-    uint8_t index = 0, nestedDets = 0;
+    uint8_t index = 0, ChainType, res;
     uint8_t amountOfArgumentsStack[20];
     uint8_t *amountOfArgumentsStackPtr = amountOfArgumentsStack;
     uint8_t stackToOutputReturn;
@@ -71,10 +66,11 @@ static uint8_t parseExpression(unsigned int token) {
     /*
         General explanation stacks:
         - Each entry consists of 4 bytes, the type and the operand
-        - Type: first 4 bits is the amount of nested det()'s, the last 4 the type, like number, variable, function, operator etc
+        - Type: lowest 4 bits is the type, like number, variable, function, operator etc
         - The operand is either a 3-byte number or consists of 3 bytes:
             - The first byte = the operan: function/variable/operator
             - If it's a function then the second byte is the amount of arguments for that function
+            - If it's a getKeyFast, the second byte is 1, the third byte is the key
     */
 
     while (token != EOF && token != tEnter) {
@@ -89,7 +85,7 @@ static uint8_t parseExpression(unsigned int token) {
             while ((uint8_t)(token = getc()) >= t0 && (uint8_t)token <= t9) {
                 output = output*10 + (uint8_t)token - t0;
             }
-            outputCurr->type = TYPE_NUMBER + (nestedDets << 4);
+            outputCurr->type = TYPE_NUMBER;
             outputCurr->operand = output;
             outputElements++;
 
@@ -99,7 +95,7 @@ static uint8_t parseExpression(unsigned int token) {
 
         // Process a variable
         else if (tok >= tA && tok <= tTheta) {
-            outputCurr->type = TYPE_VARIABLE + (nestedDets << 4);
+            outputCurr->type = TYPE_VARIABLE;
             outputCurr->operand = tok - tA;
             outputElements++;
         }
@@ -114,10 +110,7 @@ static uint8_t parseExpression(unsigned int token) {
                 // Move entire stack to output
                 stackToOutputReturn = 1;
                 goto stackToOutput;
-stackToOutputReturn1:
-
-                // We are in not in any nested det() anymore
-                nestedDets = 0;
+stackToOutputReturn1:;
             }
             
             // Move the stack to the output as long...
@@ -138,13 +131,13 @@ stackToOutputReturn1:
             
             // Push the operator to the stack
             stackCurr = &stackPtr[stackElements++];
-            stackCurr->type = TYPE_OPERATOR + (nestedDets << 4);
+            stackCurr->type = TYPE_OPERATOR;
             stackCurr->operand = token;
         }
         
         // Push a left parenthesis
         else if (tok == tLParen) {
-            stackCurr->type = TYPE_FUNCTION + (nestedDets << 4);
+            stackCurr->type = TYPE_FUNCTION;
             stackCurr->operand = token;
             stackElements++;
         }
@@ -179,26 +172,20 @@ stackToOutputReturn1:
                 outputCurr->operand = stackPrev->operand + ((*amountOfArgumentsStackPtr--) << 8);
                 stackElements--;
                 outputElements++;
-                if ((uint8_t)stackPrev->operand == tDet) {
-                    nestedDets--;
-                }
             }
-        } 
+        }
         
         // Process a function
         else if (strchr(implementedFunctions, tok)) {
             *++amountOfArgumentsStackPtr = 0;
-            if (tok == tDet) {
-                nestedDets++;
-            }
-            stackCurr->type = TYPE_FUNCTION + (nestedDets << 4);
+            stackCurr->type = TYPE_FUNCTION;
             stackCurr->operand = token;
             stackElements++;
         }
         
         // Process a function that returns something (rand, getKey(X))
         else if (tok == tRand || tok == tGetKey) {
-            outputCurr->type = TYPE_FUNCTION_RETURN + (nestedDets << 4);
+            outputCurr->type = TYPE_FUNCTION_RETURN;
             outputCurr->operand = token;
             outputElements++;
             
@@ -230,6 +217,10 @@ stackToOutputReturn1:
                     return E_SYNTAX;
                 }
             }
+        }
+        
+        // A C function... goodluck ;)
+        else if (tok == tDet) {
         }
         
         // Oops, unknown token...
@@ -301,11 +292,11 @@ stackToOutputReturn2:
             return E_SYNTAX;
         }
         
-        // TODO
+        // Parse the function!
+        return parseFunction(1);
     }
     
     // Parse the expression in postfix notation!
-    nestedDets = 0;
     for (loopIndex = 1; loopIndex < outputElements; loopIndex++) {
         uint8_t typeMasked;
 
@@ -314,33 +305,48 @@ stackToOutputReturn2:
 
         // Parse an operator with 2 arguments
         if (typeMasked == TYPE_OPERATOR && loopIndex > 1) {
-            // Yay, we are entering a det() function (#notyay), so store it elsewhere!
-            if ((outputCurr->type & 240) != nestedDets) {
-                // Push the old programPtr
-                push((uint24_t)ice.programPtr);
-                nestedDets = outputCurr->type & 240;
-                
-                // Place the new code at a temp location
-                ice.programPtr = tempCFunctions + (500 * (nestedDets >> 4));
-            }
+            // Parse the operator!
             parseOperator(&outputPtr[loopIndex-2], &outputPtr[loopIndex-1], outputCurr);
             
             // Remove the second argument and the operator...
             memcpy(&outputPtr[loopIndex-1], &outputPtr[loopIndex+1], outputElements * 4);
             loopIndex -= 2;
-            
-            // ... and edit the first argument to be in the chain; if one of the two next entries is either an operator or function, set it as 'chain ans'
-            (&outputPtr[loopIndex])->type = TYPE_CHAIN_PUSH - ((outputCurr->type & 15) >= TYPE_OPERATOR || ((&outputPtr[loopIndex-1])->type & 15) >= TYPE_OPERATOR);
+            outputElements -= 2;
         } 
         
         // Parse a function with X arguments
         else if (typeMasked == TYPE_FUNCTION) {
-            // TODO
+            // Use this to cleanup the function after parsing
+            uint8_t amountOfArguments = (uint8_t)(outputCurr->operand >> 8);
             
-            // Yay, we can restore our programPtr!
-            if ((uint8_t)outputCurr->operand == tDet) {
-                ice.programPtr = (uint8_t*)pop();
+            res = parseFunction(loopIndex);
+            if (res != VALID) {
+                return res;
             }
+            
+            // Cleanup, and set to chaintype
+            memcpy(&outputPtr[loopIndex-amountOfArguments+1], &outputPtr[loopIndex+1], outputElements * 4);
+            loopIndex -= amountOfArguments;
+            outputElements -= amountOfArguments;
+        }
+        
+        // Whoop, we are done parsing the expression!
+        if (outputElements == 1) {
+            return VALID;
+        }
+        
+        // Set chain type
+        if ((typeMasked == TYPE_OPERATOR) || (typeMasked == TYPE_FUNCTION)) {
+            ChainType = TYPE_CHAIN_PUSH;
+            
+            // If one of the 2 next entries is either an operator or function
+            if ((outputCurr->type & 15) >= TYPE_OPERATOR || ((&outputPtr[loopIndex-1])->type & 15) >= TYPE_OPERATOR) {
+                ChainType = TYPE_CHAIN_ANS;
+            } else {
+                PUSH_HL();
+            }
+            
+            (&outputPtr[loopIndex])->type = ChainType;
         }
     }
 
@@ -349,11 +355,17 @@ stackToOutputReturn2:
 
     // Duplicated function opt
 stackToOutput:
-
     // Move entire stack to output
     while (stackElements) {
         outputCurr = &outputPtr[outputElements++];
         stackPrev = &stackPtr[--stackElements];
+        
+        // Don't move the left paren...
+        if ((stackPrev->type & 15) == TYPE_FUNCTION && (uint8_t)stackPrev->operand == tLParen) {
+            outputElements--;
+            continue;
+        }
+        
         outputCurr->type = stackPrev->type;
         temp = stackPrev->operand;
         
@@ -373,7 +385,7 @@ stackToOutput:
     goto stackToOutputReturn1;
 }
 
-static uint8_t functionI(unsigned int token) {
+static uint8_t functionI(unsigned int token, ti_var_t currentProgram) {
     uint8_t a = 0, b = 0, outputByte, tok;
     const char *dataString;
     const uint8_t colorTable[16] = {255,24,224,0,248,36,227,97,9,19,230,255,181,107,106,74};
@@ -490,88 +502,87 @@ static uint8_t functionI(unsigned int token) {
     return VALID;
 }
 
-static uint8_t functionPrgm(unsigned int token) {
+static uint8_t functionPrgm(unsigned int token, ti_var_t currentProgram) {
     return VALID;
 }
 
-static uint8_t functionCustom(unsigned int token) {
+static uint8_t functionCustom(unsigned int token, ti_var_t currentProgram) {
     return VALID;
 }
 
-static uint8_t functionIf(unsigned int token) {
+static uint8_t functionIf(unsigned int token, ti_var_t currentProgram) {
     if ((token = getc()) != EOF && token != tEnter) {
-        parseExpression(token);
         return VALID;
     } else {
         return E_NO_CONDITION;
     }
 }
 
-static uint8_t functionElseEnd(unsigned int token) {
+static uint8_t functionElseEnd(unsigned int token, ti_var_t currentProgram) {
     // This should return if in nested block
     if (!ice.nestedBlocks) {
         return E_NO_NESTED_BLOCK;
     }
-    return E_ELSE_END;
+    return E_VALID;
 }
 
-static uint8_t dummyReturn(unsigned int token) {
+static uint8_t dummyReturn(unsigned int token, ti_var_t currentProgram) {
     return VALID;
 }
 
-static uint8_t functionWhile(unsigned int token) {
+static uint8_t functionWhile(unsigned int token, ti_var_t currentProgram) {
     return VALID;
 }
 
-static uint8_t functionRepeat(unsigned int token) {
+static uint8_t functionRepeat(unsigned int token, ti_var_t currentProgram) {
     return VALID;
 }
 
-static uint8_t functionFor(unsigned int token) {
+static uint8_t functionFor(unsigned int token, ti_var_t currentProgram) {
     return VALID;
 }
 
-static uint8_t functionReturn(unsigned int token) {
+static uint8_t functionReturn(unsigned int token, ti_var_t currentProgram) {
     return VALID;
 }
 
-static uint8_t functionLbl(unsigned int token) {
+static uint8_t functionLbl(unsigned int token, ti_var_t currentProgram) {
     return VALID;
 }
 
-static uint8_t functionGoto(unsigned int token) {
+static uint8_t functionGoto(unsigned int token, ti_var_t currentProgram) {
     return VALID;
 }
 
-static uint8_t functionPause(unsigned int token) {
+static uint8_t functionPause(unsigned int token, ti_var_t currentProgram) {
     return VALID;
 }
 
-static uint8_t functionInput(unsigned int token) {
+static uint8_t functionInput(unsigned int token, ti_var_t currentProgram) {
     return VALID;
 }
 
-static uint8_t functionDisp(unsigned int token) {
+static uint8_t functionDisp(unsigned int token, ti_var_t currentProgram) {
     return VALID;
 }
 
-static uint8_t functionOutput(unsigned int token) {
+static uint8_t functionOutput(unsigned int token, ti_var_t currentProgram) {
     return VALID;
 }
 
-static uint8_t functionClrHome(unsigned int token) {
+static uint8_t functionClrHome(unsigned int token, ti_var_t currentProgram) {
     return VALID;
 }
 
-static uint8_t tokenWrongPlace(unsigned int token) {
+static uint8_t tokenWrongPlace(unsigned int token, ti_var_t currentProgram) {
     return E_WRONG_PLACE;
 }
 
-static uint8_t tokenUnimplemented(unsigned int token) {
+static uint8_t tokenUnimplemented(unsigned int token, ti_var_t currentProgram) {
     return E_UNIMPLEMENTED;
 }
 
-uint8_t (*functions[256])(unsigned int) = {
+uint8_t (*functions[256])(unsigned int, ti_var_t) = {
     tokenUnimplemented, //0
     tokenUnimplemented, //1
     tokenUnimplemented, //2
@@ -597,7 +608,7 @@ uint8_t (*functions[256])(unsigned int) = {
     tokenUnimplemented, //22
     tokenUnimplemented, //23
     tokenUnimplemented, //24
-    tokenUnimplemented, //25
+    parseExpression,    //25
     tokenUnimplemented, //26
     tokenUnimplemented, //27
     tokenUnimplemented, //28

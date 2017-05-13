@@ -6,6 +6,7 @@
 #include "output.h"
 #include "operator.h"
 #include "stack.h"
+#include "functions.h"
 
 static const char *errors[] = {
     "This token is not implemented (yet)",
@@ -16,6 +17,8 @@ static const char *errors[] = {
     "You have an invalid expression",
     "Your icon should start with a quote",
     "Your icon has invalid syntax or not the right length",
+    "ICE ERROR: please report it!",
+    "You have the wrong number or arguments",
 };
 
 void displayError(unsigned int index) {

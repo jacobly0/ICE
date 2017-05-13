@@ -13,11 +13,13 @@
 #define TYPE_STRING          7
 #define TYPE_OS_STRING       8
 
+#define TYPE_C_FUNCTION      13
 #define TYPE_OPERATOR        14
 #define TYPE_FUNCTION        15
 
-uint8_t parseProgram(void);
-unsigned int getc(void);
+#define getc() ti_GetC(currentProgram)
+
+uint8_t parseProgram(ti_var_t);
 
 typedef struct {
     uint8_t type;

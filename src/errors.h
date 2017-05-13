@@ -9,7 +9,9 @@
 #define E_SYNTAX           5
 #define E_WRONG_ICON       6
 #define E_INVALID_ICON     7
-#define E_ELSE_END         8
+#define E_ICE_ERROR        8
+#define E_ARGUMENTS        9
+#define E_VALID            254
 #define VALID              255
 
 void displayError(unsigned int index);

@@ -17,6 +17,7 @@
 #include "output.h"
 #include "operator.h"
 #include "stack.h"
+#include "functions.h"
 
 extern void (*operatorFunctions[280])(void);
 const char operators[] = {tStore, tAnd, tXor, tOr, tEQ, tLT, tGT, tLE, tGE, tNE, tMul, tDiv, tAdd, tSub};
@@ -88,8 +89,9 @@ uint8_t parseOperator(element_t *outputPrevPrev, element_t *outputPrev, element_
     oper = (uint8_t)outputCurr->operand;
 
     // Only call the function if both types are valid
-    if ((typeMasked1 == typeMasked2 && (typeMasked1 == TYPE_NUMBER || typeMasked1 == TYPE_CHAIN_ANS)) ||
-        (typeMasked1 > TYPE_CHAIN_PUSH && typeMasked2 > TYPE_CHAIN_ANS)) {
+    if ( (typeMasked1 == typeMasked2 && (typeMasked1 == TYPE_NUMBER || typeMasked1 == TYPE_CHAIN_ANS)) ||
+         (typeMasked1 > TYPE_CHAIN_PUSH && typeMasked2 > TYPE_CHAIN_ANS) ||
+         (oper == tStore && typeMasked2 != TYPE_VARIABLE) ) {
         return E_SYNTAX;
     }
     
@@ -237,8 +239,6 @@ void insertFunctionReturn(uint24_t function, uint8_t outputRegister, bool needPu
     }
 }
 
-
-
 void LD_HL_NUMBER(uint24_t number) {
     if (!number) {
         OR_A_A();
@@ -248,8 +248,9 @@ void LD_HL_NUMBER(uint24_t number) {
     }
 }
 
-
 void OperatorError(void) {
+    // This *should* never be triggered
+    displayError(E_ICE_ERROR);
 }
 void StoChainAnsVariable(void) {
     LD_IX_OFF_IND_HL(entry2_operand);

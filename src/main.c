@@ -17,6 +17,7 @@
 #include "output.h"
 #include "operator.h"
 #include "stack.h"
+#include "functions.h"
 
 ice_t ice;
 
@@ -116,7 +117,8 @@ void main() {
     ice.programSize = (uint24_t)ice.programPtr - (uint24_t)ice.programData;
    
     // Do the stuff
-    res = parseProgram();
+    ti_Rewind(ice.inPrgm);
+    res = parseProgram(ice.inPrgm);
     
     // Create or empty the output program if parsing succeeded
     if (res == VALID) {

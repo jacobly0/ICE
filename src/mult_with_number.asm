@@ -5,9 +5,6 @@ segment data
 .def _MultWithNumber
 
 _MultWithNumber:
-    scf
-    sbc hl, hl
-    ld (hl), 2
     ld      iy, 0
     add     iy, sp
     ld      hl, (iy+3)
