@@ -5,8 +5,8 @@
 #define OUTPUT_IN_DE 1
 #define OUTPUT_IN_HL 2
 
-#define NO_PUSH   0
-#define NEED_PUSH 1
+#define NO_PUSH   false
+#define NEED_PUSH true
 
 uint8_t getIndexOfOperator(uint8_t operator);
 uint24_t executeOperator(uint24_t operand1, uint24_t operand2, uint8_t operator);

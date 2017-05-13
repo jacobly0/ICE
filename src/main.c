@@ -24,8 +24,8 @@ void main() {
     uint8_t a = 0, selectedProgram = 0, key, amountOfPrograms, res, *outputDataPtr, *search_pos = NULL;
     char *var_name;
     uint24_t token, headerSize, programDataSize, offset;
-    signed char buf[30];
     const char ICEheader[] = {tii, 0};
+    char buf[30];
 
     // Yay, GUI! :)
     gfx_Begin(gfx_8bpp);
@@ -37,7 +37,7 @@ void main() {
     gfx_PrintStringXY("ICE Compiler v1.6 - By Peter \"PT_\" Tillema", 21, 1);
     
     // Get all the programs that start with the [i] token
-    while((var_name = ti_DetectVar(&search_pos, ICEheader, TI_PRGM_TYPE)) != NULL && ++selectedProgram <= 22) {
+    while((var_name = ti_DetectVar(&search_pos, ICEheader, TI_PRGM_TYPE)) && ++selectedProgram <= 22) {
         gfx_PrintStringXY(var_name, 10, selectedProgram*10 + 3);
     }
     amountOfPrograms = selectedProgram;
@@ -85,9 +85,8 @@ void main() {
     while(((var_name = ti_DetectVar(&search_pos, ICEheader, TI_PRGM_TYPE)) != NULL) && --selectedProgram);
     strcpy(ice.inName, var_name);
     
-    gfx_SetColor(0);
     sprintf(buf, "Compiling program %s...", var_name);
-    gfx_PrintStringXY(buf, 1, ++ice.messageIndex*10+3);
+    gfx_PrintStringXY(buf, 1, iceMessageLine);
 
     // Find program
     ti_CloseAll();
@@ -151,15 +150,15 @@ void main() {
         
         // Yep, we are really done!
         gfx_SetTextFGColor(4);
-        gfx_PrintStringXY("Succesfully compiled!", 1, ++ice.messageIndex*10+3);
+        gfx_PrintStringXY("Succesfully compiled!", 1, iceMessageLine);
         
         // Skip line
-        ice.messageIndex++;
+        iceMessageNewLine();
         
         // Display the size
         gfx_SetTextFGColor(0);
         sprintf(buf, "Output size: %u bytes", ice.programSize + programDataSize + 2);
-        gfx_PrintStringXY(buf, 1, ++ice.messageIndex*10+3);
+        gfx_PrintStringXY(buf, 1, iceMessageLine);
     } else {
         displayError(res);
     }
@@ -189,26 +188,24 @@ void preScanProgram(ti_var_t Program) {
         } else if (tok == tii) {
             while ((token = ti_GetC(Program)) != EOF && (uint8_t)token != tEnter);
         } else if (tok == tDet && !ice.inString) {
-            token = ti_GetC(Program);
-            
+            uint8_t tok1 = ti_GetC(Program);
+            uint8_t tok2 = ti_GetC(Program);
+
             // Invalid det( command
-            if ((uint8_t)token < t0 || (uint8_t)token > t9) {
+            if (tok1 < t0 || tok1 > t9) {
                 break;
             }
             
             // Get the det( command
-            tok = (uint8_t)ti_GetC(Program);
-            if (tok < t0 || tok > t9) {
-                tok = (uint8_t)token - t0;
+            if (tok2 < t0 || tok2 > t9) {
+                tok = tok1 - t0;
             } else {
-                tok = ((uint8_t)token - t0) * 10 + tok - t0;
+                tok = (tok1 - t0) * 10 + (tok2 - t0);
             }
             
             // Insert the C routine
             if (!ice.CRoutinesStack[tok]) {
-                *ice.programPtr = 0xC3;
-                *(uint24_t*)(ice.programPtr + 1) = tok * 3;
-                ice.programPtr += 4;
+                JP(tok * 3);
                 ice.CRoutinesStack[tok] = ice.amountOfCRoutinesUsed++;
             }
         }
@@ -217,3 +214,4 @@ void preScanProgram(ti_var_t Program) {
     // Well, we scanned the entire program, so let's rewind it
     ti_Rewind(Program);
 }
+

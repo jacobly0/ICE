@@ -1,10 +1,11 @@
 #ifndef OUTPUT_H
 #define OUTPUT_H
 
-#define PRGM_START 0xD1A881
-#define _GetCSC    0x02014C
-#define __imuls    0x000154
-#define __idvrmu   0x000144
+#define PRGM_START    0xD1A881
+#define _GetCSC       0x02014C
+#define _os_GetCSC    0x021D3C
+#define __imuls       0x000154
+#define __idvrmu      0x000144
 
 #define OP_ADD_HL_DE  0x19
 #define OP_JR_NZ      0x20
@@ -59,11 +60,13 @@
 #define POP_DE()              do { output(uint8_t, OP_POP_DE); } while (0)
 #define POP_HL()              do { output(uint8_t, OP_POP_HL); } while (0)
 
+#define PUSH_REG(a)           do { output(uint8_t, OP_PUSH_HL); } while (0)
+
 #define EX_DE_HL()            do { output(uint8_t, OP_EX_DE_HL); } while (0)
 
 #define RET()                 do { output(uint8_t, OP_RET); } while (0)
-#define JP(val)               do { output(uint8_t, OP_JP); output(uint24_t, val); } while (0)
-#define CALL(val)             do { output(uint8_t, OP_CALL); output(uint24_t, val); } while (0)
+#define JP(addr)              do { output(uint8_t, OP_JP); output(uint24_t, addr); } while (0)
+#define CALL(addr)            do { output(uint8_t, OP_CALL); output(uint24_t, addr); } while (0)
 #define JR_NZ(off)            do { output(uint8_t, OP_JR_NZ); output(uint8_t, off); } while (0)
 #define JR_Z(off)             do { output(uint8_t, OP_JR_Z); output(uint8_t, off); } while (0)
 
