@@ -587,129 +587,12 @@ void EQChainPushChainAns(void) {
     POP_DE();
     EQInsert();
 }
-void GTInsert() {
-    SCF();
-    SBC_HL_DE();
-    SBC_HL_HL();
-    INC_HL();
-}
-void GTChainAnsNumber(void) {
-    LD_DE_IMM(entry2_operand);
-    GTInsert();
-}
-void GTChainAnsVariable(void) {
-    LD_DE_IND_IX_OFF(entry2_operand);
-    GTInsert();
-}
-void GTNumberVariable(void) {
-    LD_HL_NUMBER(entry1_operand);
-    GTChainAnsVariable();
-}
-void GTNumberFunction(void) {
-    insertFunctionReturn(entry2_operand, OUTPUT_IN_DE, NO_PUSH);
-    LD_HL_NUMBER(entry1_operand);
-    GTInsert();
-}
-void GTNumberChainAns(void) {
-    EX_DE_HL();
-    LD_HL_NUMBER(entry1_operand);
-    GTInsert();
-}
-void GTVariableNumber(void) {
-    LD_HL_IND_IX_OFF(entry1_operand);
-    GTChainAnsNumber();
-}
-void GTVariableVariable(void) {
-    LD_HL_IND_IX_OFF(entry1_operand);
-    GTChainAnsVariable();
-}
-void GTVariableFunction(void) {
-    insertFunctionReturn(entry2_operand, OUTPUT_IN_DE, NO_PUSH);
-    LD_HL_IND_IX_OFF(entry1_operand);
-    GTInsert();
-}
-void GTVariableChainAns(void) {
-    EX_DE_HL();
-    LD_HL_IND_IX_OFF(entry1_operand);
-    GTInsert();
-}
-void GTFunctionNumber(void) {
-    insertFunctionReturn(entry1_operand, OUTPUT_IN_HL, NO_PUSH);
-    GTChainAnsNumber();
-}
-void GTFunctionVariable(void) {
-    insertFunctionReturn(entry1_operand, OUTPUT_IN_HL, NO_PUSH);
-    GTChainAnsVariable();
-}
-void GTFunctionFunction(void) {
-    insertFunctionReturn(entry2_operand, OUTPUT_IN_DE, NO_PUSH);
-    insertFunctionReturn(entry1_operand, OUTPUT_IN_HL, NEED_PUSH);
-    GTInsert();
-}
-void GTFunctionChainAns(void) {
-    EX_DE_HL();
-    insertFunctionReturn(entry1_operand, OUTPUT_IN_HL, NEED_PUSH);
-}
-void GTChainAnsFunction(void) {
-    insertFunctionReturn(entry2_operand, OUTPUT_IN_DE, NEED_PUSH);
-    GTInsert();
-}
-void GTChainPushNumber(void) {
-    POP_HL();
-    GTChainAnsNumber();
-}
-void GTChainPushVariable(void) {
-    POP_HL();
-    GTChainAnsVariable();
-}
-void GTChainPushFunction(void) {
-    insertFunctionReturn(entry2_operand, OUTPUT_IN_DE, NO_PUSH);
-    POP_HL();
-    GTInsert();
-}
-void GTChainPushChainAns(void) {
-    EX_DE_HL();
-    POP_HL();
-    GTInsert();
-}
-
-#define LTNumberVariable   GTVariableNumber
-#define LTNumberFunction   GTFunctionNumber
-#define LTNumberChainAns   GTChainAnsNumber
-#define LTVariableNumber   GTNumberVariable
-#define LTVariableVariable GTVariableVariable
-#define LTVariableFunction GTFunctionVariable
-#define LTVariableChainAns GTChainAnsVariable
-#define LTFunctionNumber   GTNumberFunction
-#define LTFunctionVariable GTVariableFunction
-#define LTFunctionFunction GTFunctionFunction
-#define LTFunctionChainAns GTChainAnsFunction
-#define LTChainAnsNumber   GTNumberChainAns
-#define LTChainAnsVariable GTVariableChainAns
-#define LTChainAnsFunction GTFunctionChainAns
-
-void LTChainPushNumber(void) {
-    POP_HL();
-    GTNumberChainAns();
-}
-void LTChainPushVariable(void) {
-    POP_HL();
-    GTVariableChainAns();
-}
-void LTChainPushChainAns(void) {
-    POP_DE();
-    EX_DE_HL();
-    SCF();
-    SBC_HL_DE();
-    SBC_HL_HL();
-    INC_HL();
-}
-void LTChainPushFunction(void) {
-    insertFunctionReturn(entry1_operand, OUTPUT_IN_HL, NO_PUSH);
-    LTChainPushChainAns();
-}
 void GEInsert() {
-    OR_A_A();
+    if (oper == tGE || oper == tLE) {
+        OR_A_A();
+    } else {
+        SCF();
+    }
     SBC_HL_DE();
     SBC_HL_HL();
     INC_HL();
@@ -792,6 +675,61 @@ void GEChainPushChainAns(void) {
     EX_DE_HL();
     POP_HL();
     GEInsert();
+}
+
+#define GTNumberVariable    GENumberVariable   
+#define GTNumberFunction    GENumberFunction   
+#define GTNumberChainAns    GENumberChainAns   
+#define GTVariableNumber    GEVariableNumber   
+#define GTVariableVariable  GEVariableVariable 
+#define GTVariableFunction  GEVariableFunction 
+#define GTVariableChainAns  GEVariableChainAns 
+#define GTFunctionNumber    GEFunctionNumber   
+#define GTFunctionVariable  GEFunctionVariable 
+#define GTFunctionFunction  GEFunctionFunction 
+#define GTFunctionChainAns  GEFunctionChainAns 
+#define GTChainAnsNumber    GEChainAnsNumber   
+#define GTChainAnsVariable  GEChainAnsVariable 
+#define GTChainAnsFunction  GEChainAnsFunction 
+#define GTChainPushNumber   GEChainPushNumber  
+#define GTChainPushVariable GEChainPushVariable
+#define GTChainPushFunction GEChainPushFunction
+#define GTChainPushChainAns GEChainPushChainAns
+
+#define LTNumberVariable   GTVariableNumber
+#define LTNumberFunction   GTFunctionNumber
+#define LTNumberChainAns   GTChainAnsNumber
+#define LTVariableNumber   GTNumberVariable
+#define LTVariableVariable GTVariableVariable
+#define LTVariableFunction GTFunctionVariable
+#define LTVariableChainAns GTChainAnsVariable
+#define LTFunctionNumber   GTNumberFunction
+#define LTFunctionVariable GTVariableFunction
+#define LTFunctionFunction GTFunctionFunction
+#define LTFunctionChainAns GTChainAnsFunction
+#define LTChainAnsNumber   GTNumberChainAns
+#define LTChainAnsVariable GTVariableChainAns
+#define LTChainAnsFunction GTFunctionChainAns
+
+void LTChainPushNumber(void) {
+    POP_HL();
+    GTNumberChainAns();
+}
+void LTChainPushVariable(void) {
+    POP_HL();
+    GTVariableChainAns();
+}
+void LTChainPushChainAns(void) {
+    POP_DE();
+    EX_DE_HL();
+    SCF();
+    SBC_HL_DE();
+    SBC_HL_HL();
+    INC_HL();
+}
+void LTChainPushFunction(void) {
+    insertFunctionReturn(entry1_operand, OUTPUT_IN_HL, NO_PUSH);
+    LTChainPushChainAns();
 }
 
 #define LENumberVariable   GEVariableNumber
