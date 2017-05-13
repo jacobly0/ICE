@@ -13,6 +13,7 @@ typedef struct {
     uint8_t  *programData;
     uint8_t  programDataData[40000];
     uint8_t  *programPtr;
+    uint8_t  *programPtrBackup;
     uint8_t  *programDataPtr;
     uint8_t  messageIndex;
     uint8_t  amountOfCRoutinesUsed;

@@ -93,6 +93,9 @@ uint8_t parseOperator(element_t *outputPrevPrev, element_t *outputPrev, element_
         return E_SYNTAX;
     }
     
+    // If you have something like "A or 1", the output is always 1, so we can remove the "ld hl, (A)"
+    ice.programPtrBackup = ice.programPtr;
+    
     dbg_Debugger();
     
     // Call the right function!
@@ -247,12 +250,13 @@ void AndChainAnsNumber(void) {
         INC_HL();
     } else if (oper == tAnd) {
         if (!entry2_operand) {
+            ice.programPtr = ice.programPtrBackup;
             LD_HL_NUMBER(0);
         } else {
             LD_DE_IMM(-1);
             ADD_HL_DE();
-            SBC_HL_HL();
             CCF();
+            SBC_HL_HL();
             INC_HL();
         }
     } else {
@@ -263,6 +267,7 @@ void AndChainAnsNumber(void) {
             SBC_HL_HL();
             INC_HL();
         } else {
+            ice.programPtr = ice.programPtrBackup;
             LD_HL_NUMBER(1);
         }
     }
@@ -682,8 +687,8 @@ void LEChainPushFunction(void) {
 void MulChainAnsNumber(void) {
     uint24_t number = entry2_operand;
     if (number == 0) {
-        OR_A_A();
-        SBC_HL_HL();
+        ice.programPtr = ice.programPtrBackup;
+        LD_HL_NUMBER(0);
     } else {
         MultWithNumber(number, (uint24_t *)&ice.programPtr);
     }

@@ -274,7 +274,7 @@ stackToOutputReturn2:
         if (outputCurr->type == TYPE_NUMBER) {
             // This boolean is set, because loops may be optimized when the condition is a number
             ice.exprOutputIsNumber = true;
-            LD_HL_IMM(outputCurr->operand);
+            LD_HL_NUMBER(outputCurr->operand);
         } 
         
         // Expression is only a variable
