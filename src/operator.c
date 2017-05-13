@@ -93,6 +93,8 @@ uint8_t parseOperator(element_t *outputPrevPrev, element_t *outputPrev, element_
         return E_SYNTAX;
     }
     
+    dbg_Debugger();
+    
     // Call the right function!
     entry1 = outputPrevPrev;
     entry2 = outputPrev;
@@ -224,27 +226,55 @@ void StoChainPushVariable(void) {
     POP_HL();
     StoChainAnsVariable();
 }
-void AndChainAnsNumber(void) {
-    if (!entry2_operand) {
-        LD_HL_NUMBER(0);
+void AndInsert(void) {
+    if (oper == tAnd) {
+        memcpy(ice.programPtr, AndData, 16);
+    } else if (oper == tOr) {
+        memcpy(ice.programPtr, OrData, 16);
     } else {
+        memcpy(ice.programPtr, XorData, 16);
+    }
+    ice.programPtr += 16;
+}
+void AndChainAnsNumber(void) {
+    if (oper == tXor) {
         LD_DE_IMM(-1);
         ADD_HL_DE();
+        if (!entry2_operand) {
+            CCF();
+        }
         SBC_HL_HL();
-        CCF();
         INC_HL();
+    } else if (oper == tAnd) {
+        if (!entry2_operand) {
+            LD_HL_NUMBER(0);
+        } else {
+            LD_DE_IMM(-1);
+            ADD_HL_DE();
+            SBC_HL_HL();
+            CCF();
+            INC_HL();
+        }
+    } else {
+        if (!entry2_operand) {
+            LD_DE_IMM(-1);
+            ADD_HL_DE();
+            CCF();
+            SBC_HL_HL();
+            INC_HL();
+        } else {
+            LD_HL_NUMBER(1);
+        }
     }
 }
 void AndChainAnsVariable(void) {
     LD_DE_IND_IX_OFF(entry2_operand);
-    memcpy(ice.programPtr, AndData, 16);
-    ice.programPtr += 16;
+    AndInsert();
 }
 void AndChainAnsFunction(void) {
     EX_DE_HL();
     insertFunctionReturn(entry2_operand, OUTPUT_IN_HL, NEED_PUSH);
-    memcpy(ice.programPtr, AndData, 16);
-    ice.programPtr += 16;
+    AndInsert();
 }
 void AndFunctionNumber(void) {
     insertFunctionReturn(entry1_operand, OUTPUT_IN_HL, NO_PUSH);
@@ -285,8 +315,7 @@ void AndVariableChainAns() {
 void AndFunctionFunction(void) {
     insertFunctionReturn(entry1_operand, OUTPUT_IN_DE, NO_PUSH);
     insertFunctionReturn(entry2_operand, OUTPUT_IN_HL, NEED_PUSH);
-    memcpy(ice.programPtr, AndData, 16);
-    ice.programPtr += 16;
+    AndInsert();
 }
 void AndFunctionChainAns(void) {
     swapEntries();
@@ -303,188 +332,51 @@ void AndChainPushVariable(void) {
 void AndChainPushFunction(void) {
     insertFunctionReturn(entry2_operand, OUTPUT_IN_HL, NO_PUSH);
     POP_DE();
-    memcpy(ice.programPtr, AndData, 16);
-    ice.programPtr += 16;
+    AndInsert();
 }
 void AndChainPushChainAns(void) {
     POP_DE();
-    memcpy(ice.programPtr, AndData, 16);
-    ice.programPtr += 16;
+    AndInsert();
 }
-void XorChainAnsNumber(void) {
-    uint24_t number = entry2_operand;
-    LD_DE_IMM(-1);
-    ADD_HL_DE();
-    if (!number) {
-        CCF();
-    }
-    SBC_HL_HL();
-    INC_HL();
-}
-void XorChainAnsVariable(void) {
-    LD_DE_IND_IX_OFF(entry2_operand);
-    memcpy(ice.programPtr, XorData, 16);
-    ice.programPtr += 16;
-}
-void XorChainAnsFunction(void) {
-    EX_DE_HL();
-    insertFunctionReturn(entry2_operand, OUTPUT_IN_HL, NEED_PUSH);
-    memcpy(ice.programPtr, XorData, 16);
-    ice.programPtr += 16;
-}
-void XorFunctionNumber(void) {
-    insertFunctionReturn(entry1_operand, OUTPUT_IN_HL, NO_PUSH);
-    XorChainAnsNumber();
-}
-void XorVariableNumber(void) {
-    LD_HL_IND_IX_OFF(entry1_operand);
-    XorChainAnsNumber();
-}
-void XorFunctionVariable(void) {
-    insertFunctionReturn(entry1_operand, OUTPUT_IN_HL, NO_PUSH);
-    XorChainAnsVariable();
-}
-void XorNumberVariable(void) {
-    swapEntries();
-    XorVariableNumber();
-}
-void XorNumberFunction(void) {
-    swapEntries();
-    XorFunctionNumber();
-}
-void XorNumberChainAns(void) {
-    swapEntries();
-    XorChainAnsNumber();
-}
-void XorVariableVariable(void) {
-    LD_HL_IND_IX_OFF(entry1_operand);
-    XorChainAnsVariable();
-}
-void XorVariableFunction(void) {
-    swapEntries();
-    XorFunctionVariable();
-}
-void XorVariableChainAns(void) {
-    swapEntries();
-    XorChainAnsVariable();
-}
-void XorFunctionFunction(void) {
-    insertFunctionReturn(entry1_operand, OUTPUT_IN_DE, NO_PUSH);
-    insertFunctionReturn(entry2_operand, OUTPUT_IN_HL, NEED_PUSH);
-    memcpy(ice.programPtr, XorData, 16);
-    ice.programPtr += 16;
-}
-void XorFunctionChainAns(void) {
-    swapEntries();
-    XorChainAnsFunction();
-}
-void XorChainPushNumber(void) {
-    POP_HL();
-    XorChainAnsNumber();
-}
-void XorChainPushVariable(void) {
-    POP_HL();
-    XorChainAnsVariable();
-}
-void XorChainPushFunction(void) {
-    insertFunctionReturn(entry2_operand, OUTPUT_IN_HL, NO_PUSH);
-    POP_DE();
-    memcpy(ice.programPtr, XorData, 16);
-    ice.programPtr += 16;
-}
-void XorChainPushChainAns(void) {
-    POP_DE();
-    memcpy(ice.programPtr, XorData, 16);
-    ice.programPtr += 16;
-}
-void OrChainAnsNumber(void) {
-    uint24_t number = entry2_operand;
-    if (!number) {
-        LD_DE_IMM(-1);
-        ADD_HL_DE();
-        CCF();
-        SBC_HL_HL();
-        INC_HL();
-    } else {
-        LD_HL_NUMBER(1);
-    }
-}
-void OrChainAnsVariable(void) {
-    LD_DE_IND_IX_OFF(entry2_operand);
-    memcpy(ice.programPtr, OrData, 16);
-    ice.programPtr += 16;
-}
-void OrChainAnsFunction(void) {
-    EX_DE_HL();
-    insertFunctionReturn(entry2_operand, OUTPUT_IN_HL, NEED_PUSH);
-    memcpy(ice.programPtr, OrData, 16);
-    ice.programPtr += 16;
-}
-void OrFunctionNumber(void) {
-    insertFunctionReturn(entry1_operand, OUTPUT_IN_HL, NO_PUSH);
-    OrChainAnsNumber();
-}
-void OrVariableNumber(void) {
-    LD_HL_IND_IX_OFF(entry1_operand);
-    OrChainAnsNumber();
-}
-void OrFunctionVariable(void) {
-    insertFunctionReturn(entry1_operand, OUTPUT_IN_HL, NO_PUSH);
-    OrChainAnsVariable();
-}
-void OrNumberVariable(void) {
-    swapEntries();
-    OrVariableNumber();
-}
-void OrNumberFunction(void) {
-    swapEntries();
-    OrFunctionNumber();
-}
-void OrNumberChainAns(void) {
-    swapEntries();
-    OrChainAnsNumber();
-}
-void OrVariableVariable(void) {
-    LD_HL_IND_IX_OFF(entry1_operand);
-    OrChainAnsVariable();
-}
-void OrVariableFunction(void) {
-    swapEntries();
-    OrFunctionVariable();
-}
-void OrVariableChainAns(void) {
-    swapEntries();
-    OrChainAnsVariable();
-}
-void OrFunctionFunction(void) {
-    insertFunctionReturn(entry1_operand, OUTPUT_IN_DE, NO_PUSH);
-    insertFunctionReturn(entry2_operand, OUTPUT_IN_HL, NEED_PUSH);
-    memcpy(ice.programPtr, OrData, 16);
-    ice.programPtr += 16;
-}
-void OrFunctionChainAns(void) {
-    swapEntries();
-    OrChainAnsFunction();
-}
-void OrChainPushNumber(void) {
-    POP_HL();
-    OrChainAnsNumber();
-}
-void OrChainPushVariable(void) {
-    POP_HL();
-    OrChainAnsVariable();
-}
-void OrChainPushFunction(void) {
-    insertFunctionReturn(entry2_operand, OUTPUT_IN_HL, NO_PUSH);
-    POP_DE();
-    memcpy(ice.programPtr, OrData, 16);
-    ice.programPtr += 16;
-}
-void OrChainPushChainAns(void) {
-    POP_DE();
-    memcpy(ice.programPtr, OrData, 16);
-    ice.programPtr += 16;
-}
+
+#define XorNumberVariable    AndNumberVariable   
+#define XorNumberFunction    AndNumberFunction   
+#define XorNumberChainAns    AndNumberChainAns   
+#define XorVariableNumber    AndVariableNumber   
+#define XorVariableVariable  AndVariableVariable 
+#define XorVariableFunction  AndVariableFunction 
+#define XorVariableChainAns  AndVariableChainAns 
+#define XorFunctionNumber    AndFunctionNumber   
+#define XorFunctionVariable  AndFunctionVariable 
+#define XorFunctionFunction  AndFunctionFunction 
+#define XorFunctionChainAns  AndFunctionChainAns 
+#define XorChainAnsNumber    AndChainAnsNumber   
+#define XorChainAnsVariable  AndChainAnsVariable 
+#define XorChainAnsFunction  AndChainAnsFunction 
+#define XorChainPushNumber   AndChainPushNumber  
+#define XorChainPushVariable AndChainPushVariable
+#define XorChainPushFunction AndChainPushFunction
+#define XorChainPushChainAns AndChainPushChainAns
+
+#define OrNumberVariable    AndNumberVariable   
+#define OrNumberFunction    AndNumberFunction   
+#define OrNumberChainAns    AndNumberChainAns   
+#define OrVariableNumber    AndVariableNumber   
+#define OrVariableVariable  AndVariableVariable 
+#define OrVariableFunction  AndVariableFunction 
+#define OrVariableChainAns  AndVariableChainAns 
+#define OrFunctionNumber    AndFunctionNumber   
+#define OrFunctionVariable  AndFunctionVariable 
+#define OrFunctionFunction  AndFunctionFunction 
+#define OrFunctionChainAns  AndFunctionChainAns 
+#define OrChainAnsNumber    AndChainAnsNumber   
+#define OrChainAnsVariable  AndChainAnsVariable 
+#define OrChainAnsFunction  AndChainAnsFunction 
+#define OrChainPushNumber   AndChainPushNumber  
+#define OrChainPushVariable AndChainPushVariable
+#define OrChainPushFunction AndChainPushFunction
+#define OrChainPushChainAns AndChainPushChainAns
+
 void EQInsert() {
     OR_A_A();
     SBC_HL_DE();
