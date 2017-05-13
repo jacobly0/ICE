@@ -26,6 +26,7 @@ static element_t *entry1;
 static element_t *entry2;
 static uint24_t entry1_operand;
 static uint24_t entry2_operand;
+static uint8_t oper;
 
 uint8_t getIndexOfOperator(uint8_t operator) {
     char *index;
@@ -84,7 +85,7 @@ static void swapEntries() {
 uint8_t parseOperator(element_t *outputPrevPrev, element_t *outputPrev, element_t *outputCurr) {
     uint8_t typeMasked1 = outputPrevPrev->type & 15;
     uint8_t typeMasked2 = outputPrev->type & 15;
-    uint8_t oper = (uint8_t)outputCurr->operand;
+    oper = (uint8_t)outputCurr->operand;
 
     // Only call the function if both types are valid
     if ((typeMasked1 == typeMasked2 && (typeMasked1 == TYPE_NUMBER || typeMasked1 == TYPE_CHAIN_ANS)) ||
@@ -488,7 +489,11 @@ void EQInsert() {
     OR_A_A();
     SBC_HL_DE();
     LD_HL_IMM(0);
-    JR_NZ(1);
+    if (oper == tEQ) {
+        JR_NZ(1);
+    } else {
+        JR_Z(1);
+    }
     INC_HL();
 }
 void EQChainAnsNumber(void) {
@@ -501,6 +506,9 @@ void EQChainAnsNumber(void) {
     if (!number) {
         LD_DE_IMM(-1);
         ADD_HL_DE();
+        if (oper == tNE) {
+            CCF();
+        }
         SBC_HL_HL();
         INC_HL();
     } else {
@@ -664,6 +672,7 @@ void GTChainPushChainAns(void) {
     POP_HL();
     GTInsert();
 }
+
 #define LTNumberVariable   GTVariableNumber
 #define LTNumberFunction   GTFunctionNumber
 #define LTNumberChainAns   GTChainAnsNumber
@@ -678,6 +687,7 @@ void GTChainPushChainAns(void) {
 #define LTChainAnsNumber   GTNumberChainAns
 #define LTChainAnsVariable GTVariableChainAns
 #define LTChainAnsFunction GTFunctionChainAns
+
 void LTChainPushNumber(void) {
     POP_HL();
     GTNumberChainAns();
@@ -783,6 +793,7 @@ void GEChainPushChainAns(void) {
     POP_HL();
     GEInsert();
 }
+
 #define LENumberVariable   GEVariableNumber
 #define LENumberFunction   GEFunctionNumber
 #define LENumberChainAns   GEChainAnsNumber
@@ -797,6 +808,7 @@ void GEChainPushChainAns(void) {
 #define LEChainAnsNumber   GENumberChainAns
 #define LEChainAnsVariable GEVariableChainAns
 #define LEChainAnsFunction GEFunctionChainAns
+
 void LEChainPushNumber(void) {
     POP_HL();
     GENumberChainAns();
@@ -817,101 +829,26 @@ void LEChainPushFunction(void) {
     insertFunctionReturn(entry1_operand, OUTPUT_IN_HL, NO_PUSH);
     LEChainPushChainAns();
 }
-void NEInsert() {
-    OR_A_A();
-    SBC_HL_DE();
-    LD_HL_IMM(0);
-    JR_Z(1);
-    INC_HL();
-}
-void NEChainAnsNumber(void) {
-    uint24_t number = entry2_operand;
-    if (number && number < 6) {
-        do {
-            DEC_HL();
-        } while (--number);
-    }
-    if (!number) {
-        LD_DE_IMM(-1);
-        ADD_HL_DE();
-        SBC_HL_HL();
-        INC_HL();
-    } else {
-        LD_DE_IMM(number);
-        NEInsert();
-    }
-}
-void NEChainAnsFunction(void) {
-    EX_DE_HL();
-    insertFunctionReturn(entry2_operand, OUTPUT_IN_HL, NEED_PUSH);
-    NEInsert();
-}
-void NEVariableNumber(void) {
-    LD_HL_IND_IX_OFF(entry1_operand);
-    NEChainAnsNumber();
-}
-void NEChainAnsVariable(void) {
-    LD_DE_IND_IX_OFF(entry2_operand);
-    NEInsert();
-}
-void NEFunctionNumber(void) {
-    insertFunctionReturn(entry1_operand, OUTPUT_IN_HL, NO_PUSH);
-    NEChainAnsNumber();
-}
-void NEFunctionVariable(void) {
-    insertFunctionReturn(entry1_operand, OUTPUT_IN_HL, NO_PUSH);
-    NEChainAnsVariable();
-}
-void NENumberVariable(void) {
-    swapEntries();
-    NEVariableNumber();
-}
-void NENumberFunction(void) {
-    swapEntries();
-    NEFunctionNumber();
-}
-void NENumberChainAns(void) {
-    swapEntries();
-    NEChainAnsNumber();
-}
-void NEVariableVariable(void) {
-    LD_HL_IND_IX_OFF(entry1_operand);
-    NEChainAnsVariable();
-}
-void NEVariableFunction(void) {
-    swapEntries();
-    NEFunctionVariable();
-}
-void NEVariableChainAns(void) {
-    swapEntries();
-    NEChainAnsVariable();
-}
-void NEFunctionFunction(void) {
-    insertFunctionReturn(entry1_operand, OUTPUT_IN_DE, NO_PUSH);
-    insertFunctionReturn(entry2_operand, OUTPUT_IN_HL, NEED_PUSH);
-    NEInsert();
-}
-void NEFunctionChainAns(void) {
-    swapEntries();
-    NEChainAnsFunction();
-}
-void NEChainPushNumber(void) {
-    POP_HL();
-    NEChainAnsNumber();
-}
-void NEChainPushVariable(void) {
-    POP_HL();
-    NEChainAnsVariable();
-}
-void NEChainPushFunction(void) {
-    insertFunctionReturn(entry2_operand, OUTPUT_IN_HL, NO_PUSH);
-    POP_DE();
-    NEInsert();
-}
-void NEChainPushChainAns(void) {
-    POP_DE();
-    NEInsert();
-}
+
+#define NENumberVariable    EQVariableNumber
+#define NENumberFunction    EQFunctionNumber
+#define NENumberChainAns    EQChainAnsNumber
+#define NEVariableNumber    EQNumberVariable
+#define NEVariableVariable  EQVariableVariable
+#define NEVariableFunction  EQFunctionVariable
+#define NEVariableChainAns  EQChainAnsVariable
+#define NEFunctionNumber    EQNumberFunction
+#define NEFunctionVariable  EQVariableFunction
+#define NEFunctionFunction  EQFunctionFunction
+#define NEFunctionChainAns  EQChainAnsFunction
+#define NEChainAnsNumber    EQNumberChainAns
+#define NEChainAnsVariable  EQVariableChainAns
+#define NEChainAnsFunction  EQFunctionChainAns
+#define NEChainPushNumber   EQChainPushNumber
+#define NEChainPushVariable EQChainPushVariable
+#define NEChainPushFunction EQChainPushFunction
+#define NEChainPushChainAns EQChainPushChainAns
+
 void MulChainAnsNumber(void) {
     uint24_t number = entry2_operand;
     if (number == 0) {
