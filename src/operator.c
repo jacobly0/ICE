@@ -95,11 +95,14 @@ uint8_t parseOperator(element_t *outputPrevPrev, element_t *outputPrev, element_
     entry1 = outputPrevPrev;
     entry2 = outputPrev;
     getEntryOperands();
+    if ((uint8_t)outputCurr->operand == tLE) {
+        swapEntries();
+    }
     (*operatorFunctions[((getIndexOfOperator(outputCurr->operand) - 1) * 20) + (typeMasked1 * 4) + typeMasked2])();
     return VALID;
 }
 
-void insertFunctionReturn(uint24_t function, uint8_t outputRegister, uint8_t needPush) {
+void insertFunctionReturn(uint24_t function, uint8_t outputRegister, bool needPush) {
     if ((uint8_t)function == tRand) {
         // We need to save a register before using the routine
         if (needPush) {
@@ -150,10 +153,7 @@ void insertFunctionReturn(uint24_t function, uint8_t outputRegister, uint8_t nee
         else {
             // The key should be in HL
             if (outputRegister == OUTPUT_IN_HL) {
-                CALL(_GetCSC);
-                OR_A_A();
-                SBC_HL_HL();
-                LD_L_A();
+                CALL(_os_GetCSC);
             }
             
             // The key should be in DE
@@ -824,70 +824,26 @@ void GEChainPushChainAns(void) {
     POP_HL();
     GEInsert();
 }
-void LENumberVariable(void) {
-    swapEntries();
-    GEVariableNumber();
-}
-void LENumberFunction(void) {
-    swapEntries();
-    GEFunctionNumber();
-}
-void LENumberChainAns(void) {
-    swapEntries();
-    GEChainAnsNumber();
-}
-void LEVariableNumber(void) {
-    swapEntries();
-    GENumberVariable();
-}
-void LEVariableVariable(void) {
-    swapEntries();
-    GEVariableVariable();
-}
-void LEVariableFunction(void) {
-    swapEntries();
-    GEFunctionVariable();
-}
-void LEVariableChainAns(void) {
-    swapEntries();
-    GEChainAnsVariable();
-}
-void LEFunctionNumber(void) {
-    swapEntries();
-    GENumberFunction();
-}
-void LEFunctionVariable(void) {
-    swapEntries();
-    GEVariableFunction();
-}
-void LEFunctionFunction(void) {
-    swapEntries();
-    GEFunctionFunction();
-}
-void LEFunctionChainAns(void) {
-    swapEntries();
-    GEChainAnsFunction();
-}
-void LEChainAnsNumber(void) {
-    swapEntries();
-    GENumberChainAns();
-}
-void LEChainAnsVariable(void) {
-    swapEntries();
-    GEVariableChainAns();
-}
-void LEChainAnsFunction(void) {
-    swapEntries();
-    GEFunctionChainAns();
-}
+#define LENumberVariable   GEVariableNumber
+#define LENumberFunction   GEFunctionNumber
+#define LENumberChainAns   GEChainAnsNumber
+#define LEVariableNumber   GENumberVariable
+#define LEVariableVariable GEVariableVariable
+#define LEVariableFunction GEFunctionVariable
+#define LEVariableChainAns GEChainAnsVariable
+#define LEFunctionNumber   GENumberFunction
+#define LEFunctionVariable GEVariableFunction
+#define LEFunctionFunction GEFunctionFunction
+#define LEFunctionChainAns GEChainAnsFunction
+#define LEChainAnsNumber   GENumberChainAns
+#define LEChainAnsVariable GEVariableChainAns
+#define LEChainAnsFunction GEFunctionChainAns
 void LEChainPushNumber(void) {
     POP_HL();
-    swapEntries();
     GENumberChainAns();
 }
 void LEChainPushVariable(void) {
     POP_HL();
-    swapEntries();
     GEVariableChainAns();
 }
 void LEChainPushChainAns(void) {
@@ -899,7 +855,7 @@ void LEChainPushChainAns(void) {
     INC_HL();
 }
 void LEChainPushFunction(void) {
-    insertFunctionReturn(entry2_operand, OUTPUT_IN_HL, NO_PUSH);
+    insertFunctionReturn(entry1_operand, OUTPUT_IN_HL, NO_PUSH);
     LEChainPushChainAns();
 }
 void NEInsert() {
