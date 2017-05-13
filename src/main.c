@@ -207,7 +207,6 @@ void preScanProgram(ti_var_t Program) {
             if (!ice.CRoutinesStack[tok]) {
                 JP(tok * 3);
                 ice.CRoutinesStack[tok] = ice.amountOfCRoutinesUsed++;
-                ice.programPtr += 4;
             }
         }
     }
