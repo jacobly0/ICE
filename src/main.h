@@ -56,6 +56,7 @@ void AndData(void);
 void XorData(void);
 void OrData(void);
 void RandRoutine(void);
+void KeypadRoutine(void);
 
 #endif
 

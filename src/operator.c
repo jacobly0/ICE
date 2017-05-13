@@ -96,8 +96,6 @@ uint8_t parseOperator(element_t *outputPrevPrev, element_t *outputPrev, element_
     // If you have something like "A or 1", the output is always 1, so we can remove the "ld hl, (A)"
     ice.programPtrBackup = ice.programPtr;
     
-    dbg_Debugger();
-    
     // Call the right function!
     entry1 = outputPrevPrev;
     entry2 = outputPrev;
@@ -155,7 +153,50 @@ void insertFunctionReturn(uint24_t function, uint8_t outputRegister, bool needPu
         // Check if the getKey has a fast direct key argument; if so, the second byte is 1
         if (function & 0x00FF00) {
             uint8_t key = function >> 16;
-            // TODO
+            uint8_t keyAddress = 0x1E - (((key-1) >> 2) & 14);
+            uint8_t keyBit = 1, a;
+            
+            // Get the right bit for the keypress
+            if ((key - 1) & 7) {
+                for (a = 0; a < ((key - 1) & 7); a++) {
+                    keyBit = keyBit << 1;
+                }
+            }
+            
+            LD_B(keyAddress);
+            LD_C(keyBit);
+            
+            // Check if we need to preserve HL
+            if (NEED_PUSH && outputRegister != OUTPUT_IN_HL) {
+                PUSH_HL();
+            }
+            
+            
+            // Store the pointer to the call to the stack, to replace later
+            ice.dataOffsetStack[ice.dataOffsetElements++] = (uint24_t*)(ice.programPtr + 1);
+            
+            // We need to add the getKeyFast routine to the data section
+            if (!ice.usedAlreadyGetKeyFast) {
+                ice.getKeyFastAddr = (uint24_t)ice.programDataPtr;
+                memcpy(ice.programDataPtr, KeypadRoutine, 19);
+                ice.programDataPtr += 19;
+                ice.usedAlreadyGetKeyFast = true;
+            }
+            
+            CALL(ice.getKeyFastAddr);
+            
+            // Store the keypress in the right register
+            if (outputRegister == OUTPUT_IN_DE) {
+                EX_DE_HL();
+            } else if (outputRegister == OUTPUT_IN_BC) {
+                PUSH_HL();
+                POP_BC();
+            }
+            
+            // Check if we need to preserve HL
+            if (NEED_PUSH && outputRegister != OUTPUT_IN_HL) {
+                POP_HL();
+            }
         }
         
         // Else, a standalone "getKey"

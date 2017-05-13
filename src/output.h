@@ -7,6 +7,8 @@
 #define __imuls       0x000154
 #define __idvrmu      0x000144
 
+#define OP_LD_B       0x06
+#define OP_LD_C       0x0E
 #define OP_ADD_HL_DE  0x19
 #define OP_JR_NZ      0x20
 #define OP_INC_HL     0x23
@@ -42,6 +44,8 @@
 #define LD_DE_IMM(val)        do { output(uint8_t, 0x11); output(uint24_t, val); } while (0)
 #define LD_HL_IMM(val)        do { output(uint8_t, 0x21); output(uint24_t, val); } while (0)
     
+#define LD_B(val)             do { output(uint8_t, OP_LD_B); output(uint8_t, val); } while (0)
+#define LD_C(val)             do { output(uint8_t, OP_LD_C); output(uint8_t, val); } while (0)
 #define LD_C_A()              do { output(uint8_t, OP_LD_C_A); } while (0)
 #define LD_E_A()              do { output(uint8_t, OP_LD_E_A); } while (0)
 #define LD_L_A()              do { output(uint8_t, OP_LD_L_A); } while (0)

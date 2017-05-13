@@ -217,9 +217,7 @@ stackToOutputReturn1:
                     if ((uint8_t)(token = getc()) >= t0 && token <= t9) {
                         // Add the direct key to the operand
                         outputCurr->operand = tGetKey | (1 << 8) | ((tok * 10 + (uint8_t)token - t0) << 16);
-                        if ((token = getc()) == EOF || token == tRParen) {
-                            continue;
-                        } else {
+                        if ((token = getc()) != EOF && token != tRParen) {
                             return E_SYNTAX;
                         }
                     } else if ((uint8_t)token == tRParen || token == EOF) {
