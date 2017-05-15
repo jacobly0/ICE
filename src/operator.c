@@ -273,7 +273,6 @@ void StoChainPushVariable(void) {
 }
 void AndInsert(void) {
     uint8_t *op = AndOrXorData + 10;
-    memcpy(ice.programPtr, AndOrXorData, sizeof AndOrXorData);
     if (oper == tAnd) {
         *op = OP_AND_A_D;
     } else if (oper == tOr) {
@@ -281,6 +280,7 @@ void AndInsert(void) {
     } else {
         *op = OP_XOR_A_D;
     }
+    memcpy(ice.programPtr, AndOrXorData, sizeof AndOrXorData);
     ice.programPtr += 16;
 }
 void AndChainAnsNumber(void) {
