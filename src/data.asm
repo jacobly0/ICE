@@ -2,50 +2,22 @@ segment data
 
 .assume adl = 1
 
-.def _AndData
-.def _XorData
-.def _OrData
+.def _AndOrXorData
 .def _RandRoutine
 .def _KeypadRoutine
 
-_AndData:
-    ld      bc, -1
-    add     hl, bc
-    sbc     a, a
-    ex      de, hl
-    ld      d, a
-    add     hl, bc
-    sbc     a, a
-    and     a, d
-    sbc     hl, hl
-    and     a, 1
-    ld      l, a
-    
-_XorData:
-    ld      bc, -1
-    add     hl, bc
-    sbc     a, a
-    ex      de, hl
-    ld      d, a
-    add     hl, bc
-    sbc     a, a
-    xor     a, d
-    sbc     hl, hl
-    and     a, 1
-    ld      l, a
-    
-_OrData:
-    ld      bc, -1
-    add     hl, bc
-    sbc     a, a
-    ex      de, hl
-    ld      d, a
-    add     hl, bc
-    sbc     a, a
-    or      a, d
-    sbc     hl, hl
-    and     a, 1
-    ld      l, a
+_AndOrXorData:
+    ld      bc, -1           ; 0
+    add     hl, bc           ; 4
+    sbc     a, a             ; 5
+    ex      de, hl           ; 6
+    ld      d, a             ; 7
+    add     hl, bc           ; 8
+    sbc     a, a             ; 9
+    nop                      ; 10
+    sbc     hl, hl           ; 11
+    and     a, 1             ; 13
+    ld      l, a             ; 15
     
 _RandRoutine:
     ld      hl, (ix+81)

@@ -272,13 +272,15 @@ void StoChainPushVariable(void) {
     StoChainAnsVariable();
 }
 void AndInsert(void) {
+    uint8_t *op = AndOrXorData + 10;
     if (oper == tAnd) {
-        memcpy(ice.programPtr, AndData, 16);
+        *op = OP_AND_A_D;
     } else if (oper == tOr) {
-        memcpy(ice.programPtr, OrData, 16);
+        *op = OP_OR_A_D;
     } else {
-        memcpy(ice.programPtr, XorData, 16);
+        *op = OP_XOR_A_D;
     }
+    memcpy(ice.programPtr, AndOrXorData, sizeof AndOrXorData);
     ice.programPtr += 16;
 }
 void AndChainAnsNumber(void) {

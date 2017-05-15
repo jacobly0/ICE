@@ -20,6 +20,9 @@
 #define OP_LD_C_A     0x4F
 #define OP_LD_E_A     0x5F
 #define OP_LD_L_A     0x6F
+#define OP_AND_A_D    0xA2
+#define OP_XOR_A_D    0xAA
+#define OP_OR_A_D     0xB2
 #define OP_OR_A_A     0xB7
 #define OP_JP         0xC3
 #define OP_RET        0xC9
