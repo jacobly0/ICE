@@ -53,11 +53,10 @@ void preScanProgram(ti_var_t);
 void CHeaderData(void);
 void CProgramHeader(void);
 void MultWithNumber(uint24_t number, uint24_t *programPtr);
-void AndData(void);
-void XorData(void);
-void OrData(void);
 void RandRoutine(void);
 void KeypadRoutine(void);
+
+extern uint8_t AndOrXorData[16];
 
 #endif
 
