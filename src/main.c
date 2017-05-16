@@ -20,6 +20,7 @@
 #include "functions.h"
 
 ice_t ice;
+expr_t expr;
 
 void main() {
     uint8_t a = 0, selectedProgram = 0, key, amountOfPrograms, res, *outputDataPtr, *search_pos = NULL;
@@ -184,12 +185,12 @@ void preScanProgram(ti_var_t Program) {
         uint8_t tok = (uint8_t)token;
         
         if (tok == tString) {
-            ice.inString = !ice.inString;
+            expr.inString = !expr.inString;
         } else if (tok == tEnter) {
-            ice.inString = false;
+            expr.inString = false;
         } else if (tok == tii) {
             while ((token = ti_GetC(Program)) != EOF && (uint8_t)token != tEnter);
-        } else if (tok == tDet && !ice.inString) {
+        } else if (tok == tDet && !expr.inString) {
             uint8_t tok1 = ti_GetC(Program);
             uint8_t tok2 = ti_GetC(Program);
 

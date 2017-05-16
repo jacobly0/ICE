@@ -22,8 +22,104 @@
 extern uint8_t (*functions[256])(unsigned int token, ti_var_t currentProgram);
 const char implementedFunctions[] = {tNot, tRemainder, tMin, tMax, tMean, tSqrt};
 
+/* First byte:  bit 7  : returns something in A
+                bit 6  : not implemented (yet)
+                bit 5  : returns something in HL(s)
+                bit 4  : deprecated
+                bit 2-0: amount of arguments needed
+   Second byte: bit 7  : first argument is small
+                bit 6  : second argument is small
+                bit 5  : third argument is small
+                ...
+*/
+const uint8_t CArguments[] = {0  ,0  ,    // Begin
+                              0  ,0  ,    // End
+                              129,128,    // SetColor
+                              0  ,0  ,    // SetDefaultPalette
+                              64 ,0  ,    // SetPalette
+                              1  ,128,    // FillScreen
+                              2  ,64 ,    // SetPixel
+                              130,64 ,    // GetPixel
+                              128,0  ,    // GetDraw
+                              1  ,128,    // SetDraw
+                              0  ,0  ,    // SwapDraw
+                              1  ,128,    // Blit
+                              3  ,224,    // BlitLines
+                              5  ,160,    // BlitArea
+                              1  ,128,    // PrintChar
+                              2  ,64 ,    // PrintInt
+                              2  ,64 ,    // PrintUInt
+                              1  ,0  ,    // PrintString
+                              3  ,0  ,    // PrintStringXY
+                              2  ,0  ,    // SetTextXY
+                              129,128,    // SetTextBGColor
+                              129,128,    // SetTextFGColor
+                              129,128,    // SetTextTransparentColor
+                              64 ,0  ,    // SetCustomFontData
+                              64 ,0  ,    // SetCustomFontSpacing
+                              1  ,128,    // SetMonoSpaceFont
+                              1  ,0  ,    // GetStringWidth
+                              1  ,128,    // GetCharWidth
+                              0  ,0  ,    // GetTextX
+                              0  ,0  ,    // GetTextY
+                              4  ,0  ,    // Line
+                              3  ,0  ,    // HorizLine
+                              3  ,0  ,    // VertLine
+                              3  ,0  ,    // Circle
+                              3  ,0  ,    // FillCircle
+                              4  ,0  ,    // Rectangle
+                              4  ,0  ,    // FillRectangle
+                              4  ,0  ,    // Line_NoClip
+                              3  ,0  ,    // HorizLine_NoClip
+                              3  ,0  ,    // VertLine_NoClip
+                              3  ,0  ,    // FillCircle_NoClip
+                              4  ,0  ,    // Rectangle_NoClip
+                              4  ,0  ,    // FillRectangle_NoClip
+                              4  ,0  ,    // SetClipRegion
+                              64 ,0  ,    // GetClipRegion
+                              1  ,128,    // ShiftDown
+                              1  ,128,    // ShiftUp
+                              1  ,128,    // ShiftLeft
+                              1  ,128,    // ShiftRight
+                              64 ,0  ,    // Tilemap
+                              64 ,0  ,    // Tilemap_NoClip
+                              64 ,0  ,    // TransparentTilemap
+                              64 ,0  ,    // TransparentTilemap_NoClip
+                              64 ,0  ,    // TilePtr
+                              64 ,0  ,    // TilePtrMapped
+                              16 ,0  ,    // LZDecompress
+                              64 ,0  ,    // AllocSprite
+                              3  ,0  ,    // Sprite
+                              3  ,0  ,    // TransparentSprite
+                              3  ,32 ,    // Sprite_NoClip
+                              3  ,32 ,    // TransparentSprite_NoClip
+                              64 ,0  ,    // GetSprite
+                              5  ,24 ,    // ScaledSprite_NoClip
+                              5  ,24 ,    // ScaledTransparentSprite_NoClip
+                              64 ,0  ,    // FlipSpriteY
+                              64 ,0  ,    // FlipSpriteX
+                              64 ,0  ,    // RotateSpriteC
+                              64 ,0  ,    // RotateSpriteCC
+                              64 ,0  ,    // RotateSpriteHalf
+                              64 ,0  ,    // Polygon
+                              64 ,0  ,    // Polygon_NoClip
+                              6  ,0  ,    // FillTriangle
+                              6  ,0  ,    // FillTriangle_NoClip
+                              16 ,0  ,    // LZDecompressSprite
+                              2  ,192,    // SetTextScale
+                              129,128,    // SetTransparentColor
+                              0  ,0  ,    // ZeroScreen
+                              1  ,128,    // SetTextConfig
+                              64 ,0  ,    // GetSpriteChar
+                              34 ,64 ,    // Lighten
+                              34 ,64 ,    // Darken
+                              129,128,    // SetFontHeight
+                              64 ,0  ,    // ScaleSprite
+                              3  ,96      // FloodFill
+};
+
 uint8_t parseProgram(ti_var_t currentProgram) {
-    unsigned int token;
+    unsigned int token, size;
     uint8_t ret = VALID;
 
     // Do things based on the token
@@ -35,8 +131,24 @@ uint8_t parseProgram(ti_var_t currentProgram) {
         // This function parses per line
         ice.currentLine++;
         
+        dbg_Debugger();
+        
+        // Clean the expr struct
+        memset(&expr, 0, sizeof(expr));
+        
+        // Backup the program pointer, because we gonna mess with it
+        expr.programPtr = ice.programPtr;
+        
         if ((ret = (*functions[(uint8_t)token])(token, currentProgram)) != VALID) {
             break;
+        }
+        
+        size = (uint24_t)ice.programPtr - 0xD60294;
+        
+        // Check if it was an expression, and if so, copy to main program and restore pointer
+        if (size && (uint24_t)ice.programPtr > 0xD60000) {
+            memcpy(expr.programPtr, (uint8_t*)0xD60294, size);
+            ice.programPtr = (uint8_t*)(expr.programPtr + size);
         }
     }
 
@@ -46,9 +158,9 @@ uint8_t parseProgram(ti_var_t currentProgram) {
 /* Static functions */
 
 static uint8_t parseExpression(unsigned int token, ti_var_t currentProgram) {
-    const uint8_t *outputStack    = (uint8_t*)0xD62C00;
-    const uint8_t *stack          = (uint8_t*)0xD64000;
-    const uint8_t *tempCFunctions = stack;
+    const uint24_t offset         = 0xD60000 + expr.numberArgument * 1000;
+    const uint8_t *outputStack    = (uint8_t*)offset;
+    const uint8_t *stack          = (uint8_t*)(offset + 500);
     unsigned int outputElements   = 0;
     unsigned int stackElements    = 0;
     unsigned int loopIndex, temp;
@@ -59,9 +171,10 @@ static uint8_t parseExpression(unsigned int token, ti_var_t currentProgram) {
 
     // Setup pointers
     element_t *outputPtr = (element_t*)outputStack;
-    element_t *stackPtr = (element_t*)stack;
+    element_t *stackPtr  = (element_t*)stack;
     element_t *outputCurr, *outputPrev, *outputPrevPrev;
     element_t *stackCurr, *stackPrev = NULL;
+    ice.programPtr       = (uint8_t*)(offset + 660);
     
     /*
         General explanation stacks:
@@ -221,6 +334,18 @@ stackToOutputReturn1:;
         
         // A C function... goodluck ;)
         else if (tok == tDet) {
+            uint8_t number, neededArguments;
+            
+            if ((uint8_t)(token = getc()) >= t0 && token <= t9) {
+                number = (uint8_t)token - t0;
+                
+                if ((uint8_t)(token = getc()) >= t0 && token <= t9) {
+                    number = number*10 + (uint8_t)token - t0;
+                }
+                neededArguments = CArguments[number * 2] & 15;
+            } else {
+                return E_SYNTAX;
+            }
         }
         
         // Oops, unknown token...
@@ -246,7 +371,7 @@ stackToOutputReturn2:
         outputCurr = &outputPtr[loopIndex];
         
         // Check if the types are number | number | operator
-        if ((outputPrevPrev->type & 15) == TYPE_NUMBER && (outputPrev->type & 15) == TYPE_NUMBER && (outputCurr->type & 15) == TYPE_OPERATOR) {
+        if (outputPrevPrev->type == TYPE_NUMBER && outputPrev->type == TYPE_NUMBER && outputCurr->type == TYPE_OPERATOR) {
             // If yes, execute the operator, and store it in the first entry, and remove the other 2
             outputPrevPrev->operand = executeOperator(outputPrevPrev->operand, outputPrev->operand, (uint8_t)outputCurr->operand);
             memcpy(outputPrev, &outputPtr[loopIndex+1], (outputElements-1)*4);
@@ -262,7 +387,7 @@ stackToOutputReturn2:
         // Expression is only a single number
         if (outputCurr->type == TYPE_NUMBER) {
             // This boolean is set, because loops may be optimized when the condition is a number
-            ice.exprOutputIsNumber = true;
+            expr.outputIsNumber = true;
             LD_HL_NUMBER(outputCurr->operand);
         } 
         
@@ -288,23 +413,23 @@ stackToOutputReturn2:
         outputCurr = &outputPtr[1];
         
         // It must be a function with a single argument
-        if ((outputCurr->type & 15) != TYPE_FUNCTION) {
+        if (outputCurr->type != TYPE_FUNCTION) {
             return E_SYNTAX;
         }
         
         // Parse the function!
-        return parseFunction(1);
+        return parseFunction(1, outputStack);
     }
     
     // Parse the expression in postfix notation!
     for (loopIndex = 1; loopIndex < outputElements; loopIndex++) {
-        uint8_t typeMasked;
+        uint8_t type;
 
         outputCurr = &outputPtr[loopIndex];
-        typeMasked = outputCurr->type & 15;
+        type = outputCurr->type;
 
         // Parse an operator with 2 arguments
-        if (typeMasked == TYPE_OPERATOR && loopIndex > 1) {
+        if (type == TYPE_OPERATOR && loopIndex > 1) {
             // Parse the operator!
             parseOperator(&outputPtr[loopIndex-2], &outputPtr[loopIndex-1], outputCurr);
             
@@ -315,11 +440,11 @@ stackToOutputReturn2:
         } 
         
         // Parse a function with X arguments
-        else if (typeMasked == TYPE_FUNCTION) {
+        else if (type == TYPE_FUNCTION) {
             // Use this to cleanup the function after parsing
             uint8_t amountOfArguments = (uint8_t)(outputCurr->operand >> 8);
             
-            res = parseFunction(loopIndex);
+            res = parseFunction(loopIndex, outputStack);
             if (res != VALID) {
                 return res;
             }
@@ -336,7 +461,7 @@ stackToOutputReturn2:
         }
         
         // Set chain type
-        if ((typeMasked == TYPE_OPERATOR) || (typeMasked == TYPE_FUNCTION)) {
+        if ((type == TYPE_OPERATOR) || (type == TYPE_FUNCTION)) {
             ChainType = TYPE_CHAIN_PUSH;
             
             // If one of the 2 next entries is either an operator or function
@@ -361,7 +486,7 @@ stackToOutput:
         stackPrev = &stackPtr[--stackElements];
         
         // Don't move the left paren...
-        if ((stackPrev->type & 15) == TYPE_FUNCTION && (uint8_t)stackPrev->operand == tLParen) {
+        if (stackPrev->type == TYPE_FUNCTION && (uint8_t)stackPrev->operand == tLParen) {
             outputElements--;
             continue;
         }
@@ -370,7 +495,7 @@ stackToOutput:
         temp = stackPrev->operand;
         
         // If it's a function, add the amount of arguments as well
-        if ((stackPrev->type & 15) == TYPE_FUNCTION) {
+        if (stackPrev->type == TYPE_FUNCTION) {
             temp += (*amountOfArgumentsStackPtr--) << 8;
         }
 

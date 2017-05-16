@@ -18,7 +18,6 @@ typedef struct {
     uint8_t  messageIndex;
     uint8_t  amountOfCRoutinesUsed;
     uint8_t  CRoutinesStack[100];
-    uint8_t  nestedDets;
     
     uint24_t *dataOffsetStack[500];
     uint24_t dataOffsetElements;
@@ -31,9 +30,7 @@ typedef struct {
     bool     gotName;
     bool     gotIconDescription;
     bool     usedCodeAfterHeader;
-    bool     exprOutputIsNumber;
     bool     lastTokenIsReturn;
-    bool     inString;
     
     bool     usedAlreadyRand;
     uint24_t randAddr;
@@ -42,11 +39,21 @@ typedef struct {
     uint24_t getKeyFastAddr;
 } ice_t;
 
+typedef struct {
+    uint8_t  numberArgument;
+    uint8_t  *programPtr;
+    
+    bool     inString;
+    bool     inFunction;
+    bool     outputIsNumber;
+} expr_t;
+
 #define MESSAGE_HEIGHT       10
 #define iceMessageLine       (3 + (ice.messageIndex += MESSAGE_HEIGHT))
 #define iceMessageNewLine()  do { (iceMessageLine); } while(0)
 
 extern ice_t ice;
+extern expr_t expr;
 
 void preScanProgram(ti_var_t);
 
