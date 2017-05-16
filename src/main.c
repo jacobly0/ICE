@@ -217,4 +217,3 @@ void preScanProgram(ti_var_t Program) {
     // Well, we scanned the entire program, so let's rewind it
     ti_Rewind(Program);
 }
-

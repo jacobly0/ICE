@@ -21,4 +21,3 @@ extern const char operators[];
 extern const uint8_t operatorPrecedence[];
 
 #endif
-
