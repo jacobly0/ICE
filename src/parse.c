@@ -23,15 +23,36 @@ extern uint8_t (*functions[256])(unsigned int token, ti_var_t currentProgram);
 const char implementedFunctions[] = {tNot, tRemainder, tMin, tMax, tMean, tSqrt};
 
 /* First byte:  bit 7  : returns something in A
-                bit 6  : not implemented (yet)
+                bit 6  : unimplemented
                 bit 5  : returns something in HL(s)
-                bit 4  : deprecated
+                bit 4  : extra bit
                 bit 2-0: amount of arguments needed
    Second byte: bit 7  : first argument is small
                 bit 6  : second argument is small
                 bit 5  : third argument is small
                 ...
 */
+<<<<<<< HEAD
+=======
+
+#define RET_A         (1<<7)
+#define RET_HL        (1<<5)
+#define RET_NONE      (0)
+#define UN            (1<<6)
+#define ARG_NORM      (0)
+#define SMALL_1       (1<<7)
+#define SMALL_2       (1<<6)
+#define SMALL_3       (1<<5)
+#define SMALL_4       (1<<4)
+#define SMALL_5       (1<<3)
+#define SMALL_12      (SMALL_1 | SMALL_2)
+#define SMALL_123     (SMALL_1 | SMALL_2 | SMALL_3)
+#define SMALL_13      (SMALL_1 | SMALL_3)
+#define SMALL_23      (SMALL_2 | SMALL_3)
+#define SMALL_14      (SMALL_1 | SMALL_4)
+#define SMALL_45      (SMALL_4 | SMALL_5)
+
+>>>>>>> ab4263a21b848d26a99d8de04d31ada93558b2a9
 const uint8_t CArguments[] = {
     RET_NONE | 0, ARG_NORM,    // Begin
     RET_NONE | 0, ARG_NORM,    // End
