@@ -23,99 +23,118 @@ extern uint8_t (*functions[256])(unsigned int token, ti_var_t currentProgram);
 const char implementedFunctions[] = {tNot, tRemainder, tMin, tMax, tMean, tSqrt};
 
 /* First byte:  bit 7  : returns something in A
-                bit 6  : not implemented (yet)
+                bit 6  : unimplemented
                 bit 5  : returns something in HL(s)
-                bit 4  : deprecated
+                bit 4  : extra bit
                 bit 2-0: amount of arguments needed
    Second byte: bit 7  : first argument is small
                 bit 6  : second argument is small
                 bit 5  : third argument is small
                 ...
 */
-const uint8_t CArguments[] = {0  ,0  ,    // Begin
-                              0  ,0  ,    // End
-                              129,128,    // SetColor
-                              0  ,0  ,    // SetDefaultPalette
-                              64 ,0  ,    // SetPalette
-                              1  ,128,    // FillScreen
-                              2  ,64 ,    // SetPixel
-                              130,64 ,    // GetPixel
-                              128,0  ,    // GetDraw
-                              1  ,128,    // SetDraw
-                              0  ,0  ,    // SwapDraw
-                              1  ,128,    // Blit
-                              3  ,224,    // BlitLines
-                              5  ,160,    // BlitArea
-                              1  ,128,    // PrintChar
-                              2  ,64 ,    // PrintInt
-                              2  ,64 ,    // PrintUInt
-                              1  ,0  ,    // PrintString
-                              3  ,0  ,    // PrintStringXY
-                              2  ,0  ,    // SetTextXY
-                              129,128,    // SetTextBGColor
-                              129,128,    // SetTextFGColor
-                              129,128,    // SetTextTransparentColor
-                              64 ,0  ,    // SetCustomFontData
-                              64 ,0  ,    // SetCustomFontSpacing
-                              1  ,128,    // SetMonoSpaceFont
-                              1  ,0  ,    // GetStringWidth
-                              1  ,128,    // GetCharWidth
-                              0  ,0  ,    // GetTextX
-                              0  ,0  ,    // GetTextY
-                              4  ,0  ,    // Line
-                              3  ,0  ,    // HorizLine
-                              3  ,0  ,    // VertLine
-                              3  ,0  ,    // Circle
-                              3  ,0  ,    // FillCircle
-                              4  ,0  ,    // Rectangle
-                              4  ,0  ,    // FillRectangle
-                              4  ,0  ,    // Line_NoClip
-                              3  ,0  ,    // HorizLine_NoClip
-                              3  ,0  ,    // VertLine_NoClip
-                              3  ,0  ,    // FillCircle_NoClip
-                              4  ,0  ,    // Rectangle_NoClip
-                              4  ,0  ,    // FillRectangle_NoClip
-                              4  ,0  ,    // SetClipRegion
-                              64 ,0  ,    // GetClipRegion
-                              1  ,128,    // ShiftDown
-                              1  ,128,    // ShiftUp
-                              1  ,128,    // ShiftLeft
-                              1  ,128,    // ShiftRight
-                              64 ,0  ,    // Tilemap
-                              64 ,0  ,    // Tilemap_NoClip
-                              64 ,0  ,    // TransparentTilemap
-                              64 ,0  ,    // TransparentTilemap_NoClip
-                              64 ,0  ,    // TilePtr
-                              64 ,0  ,    // TilePtrMapped
-                              16 ,0  ,    // LZDecompress
-                              64 ,0  ,    // AllocSprite
-                              3  ,0  ,    // Sprite
-                              3  ,0  ,    // TransparentSprite
-                              3  ,32 ,    // Sprite_NoClip
-                              3  ,32 ,    // TransparentSprite_NoClip
-                              64 ,0  ,    // GetSprite
-                              5  ,24 ,    // ScaledSprite_NoClip
-                              5  ,24 ,    // ScaledTransparentSprite_NoClip
-                              64 ,0  ,    // FlipSpriteY
-                              64 ,0  ,    // FlipSpriteX
-                              64 ,0  ,    // RotateSpriteC
-                              64 ,0  ,    // RotateSpriteCC
-                              64 ,0  ,    // RotateSpriteHalf
-                              64 ,0  ,    // Polygon
-                              64 ,0  ,    // Polygon_NoClip
-                              6  ,0  ,    // FillTriangle
-                              6  ,0  ,    // FillTriangle_NoClip
-                              16 ,0  ,    // LZDecompressSprite
-                              2  ,192,    // SetTextScale
-                              129,128,    // SetTransparentColor
-                              0  ,0  ,    // ZeroScreen
-                              1  ,128,    // SetTextConfig
-                              64 ,0  ,    // GetSpriteChar
-                              34 ,64 ,    // Lighten
-                              34 ,64 ,    // Darken
-                              129,128,    // SetFontHeight
-                              64 ,0  ,    // ScaleSprite
-                              3  ,96      // FloodFill
+
+#define RET_A         (1<<7)
+#define RET_HL        (1<<5)
+#define RET_NONE      (0)
+#define UN            (1<<6)
+#define ARG_NORM      (0)
+#define SMALL_1       (1<<7)
+#define SMALL_2       (1<<6)
+#define SMALL_3       (1<<5)
+#define SMALL_4       (1<<4)
+#define SMALL_5       (1<<3)
+#define SMALL_12      (SMALL_1 | SMALL_2)
+#define SMALL_123     (SMALL_1 | SMALL_2 | SMALL_3)
+#define SMALL_13      (SMALL_1 | SMALL_3)
+#define SMALL_23      (SMALL_2 | SMALL_3)
+#define SMALL_14      (SMALL_1 | SMALL_4)
+#define SMALL_45      (SMALL_4 | SMALL_5)
+
+const uint8_t CArguments[] = {
+    RET_NONE | 0, ARG_NORM,    // Begin
+    RET_NONE | 0, ARG_NORM,    // End
+    RET_A    | 1, SMALL_1,     // SetColor
+    RET_NONE | 0, ARG_NORM,    // SetDefaultPalette
+    UN       | 3, ARG_NORM,    // SetPalette
+    RET_NONE | 1, SMALL_1,     // FillScreen
+    RET_NONE | 2, SMALL_2,     // SetPixel
+    RET_A    | 2, SMALL_2,     // GetPixel
+    RET_A    | 0, ARG_NORM,    // GetDraw
+    RET_NONE | 1, SMALL_1,     // SetDraw
+    RET_NONE | 0, ARG_NORM,    // SwapDraw
+    RET_NONE | 1, SMALL_1,     // Blit
+    RET_NONE | 3, SMALL_123,   // BlitLines
+    RET_NONE | 5, SMALL_13,    // BlitArea
+    RET_NONE | 1, SMALL_1,     // PrintChar
+    RET_NONE | 2, SMALL_2,     // PrintInt
+    RET_NONE | 2, SMALL_2,     // PrintUInt
+    RET_NONE | 1, ARG_NORM,    // PrintString
+    RET_NONE | 3, ARG_NORM,    // PrintStringXY
+    RET_NONE | 2, ARG_NORM,    // SetTextXY
+    RET_A    | 1, SMALL_1,     // SetTextBGColor
+    RET_A    | 1, SMALL_1,     // SetTextFGColor
+    RET_A    | 1, SMALL_1,     // SetTextTransparentColor
+    UN       | 0, ARG_NORM,    // SetCustomFontData
+    UN       | 0, ARG_NORM,    // SetCustomFontSpacing
+    RET_NONE | 1, SMALL_1,     // SetMonoSpaceFont
+    RET_NONE | 1, ARG_NORM,    // GetStringWidth
+    RET_NONE | 1, SMALL_1,     // GetCharWidth
+    RET_HL   | 0, ARG_NORM,    // GetTextX
+    RET_HL   | 0, ARG_NORM,    // GetTextY
+    RET_NONE | 4, ARG_NORM,    // Line
+    RET_NONE | 3, ARG_NORM,    // HorizLine
+    RET_NONE | 3, ARG_NORM,    // VertLine
+    RET_NONE | 3, ARG_NORM,    // Circle
+    RET_NONE | 3, ARG_NORM,    // FillCircle
+    RET_NONE | 4, ARG_NORM,    // Rectangle
+    RET_NONE | 4, ARG_NORM,    // FillRectangle
+    RET_NONE | 4, SMALL_14,    // Line_NoClip
+    RET_NONE | 3, SMALL_2,     // HorizLine_NoClip
+    RET_NONE | 3, SMALL_2,     // VertLine_NoClip
+    RET_NONE | 3, SMALL_2,     // FillCircle_NoClip
+    RET_NONE | 3, SMALL_14,    // Rectangle_NoClip
+    RET_NONE | 4, SMALL_14,    // FillRectangle_NoClip
+    RET_NONE | 4, ARG_NORM,    // SetClipRegion
+    UN       | 0, ARG_NORM,    // GetClipRegion
+    RET_NONE | 1, SMALL_1,     // ShiftDown
+    RET_NONE | 1, SMALL_1,     // ShiftUp
+    RET_NONE | 1, SMALL_1,     // ShiftLeft
+    RET_NONE | 1, SMALL_1,     // ShiftRight
+    UN       | 0, ARG_NORM,    // Tilemap
+    UN       | 0, ARG_NORM,    // Tilemap_NoClip
+    UN       | 0, ARG_NORM,    // TransparentTilemap
+    UN       | 0, ARG_NORM,    // TransparentTilemap_NoClip
+    UN       | 0, ARG_NORM,    // TilePtr
+    UN       | 0, ARG_NORM,    // TilePtrMapped
+    UN       | 0, ARG_NORM,    // LZDecompress
+    UN       | 0, ARG_NORM,    // AllocSprite
+    RET_NONE | 3, ARG_NORM,    // Sprite
+    RET_NONE | 3, ARG_NORM,    // TransparentSprite
+    RET_NONE | 3, SMALL_3,     // Sprite_NoClip
+    RET_NONE | 3, SMALL_3,     // TransparentSprite_NoClip
+    UN       | 0, ARG_NORM,    // GetSprite
+    RET_NONE | 5, SMALL_45,    // ScaledSprite_NoClip
+    RET_NONE | 5, SMALL_45,    // ScaledTransparentSprite_NoClip
+    UN       | 0, ARG_NORM,    // FlipSpriteY
+    UN       | 0, ARG_NORM,    // FlipSpriteX
+    UN       | 0, ARG_NORM,    // RotateSpriteC
+    UN       | 0, ARG_NORM,    // RotateSpriteCC
+    UN       | 0, ARG_NORM,    // RotateSpriteHalf
+    UN       | 0, ARG_NORM,    // Polygon
+    UN       | 0, ARG_NORM,    // Polygon_NoClip
+    RET_NONE | 6, ARG_NORM,    // FillTriangle
+    RET_NONE | 6, ARG_NORM,    // FillTriangle_NoClip
+    UN       | 0, ARG_NORM,    // LZDecompressSprite
+    RET_NONE | 2, SMALL_12,    // SetTextScale
+    RET_A    | 1, SMALL_1,     // SetTransparentColor
+    RET_NONE | 0, ARG_NORM,    // ZeroScreen
+    RET_NONE | 1, SMALL_1,     // SetTextConfig
+    UN       | 0, ARG_NORM,    // GetSpriteChar
+    RET_HL   | 2, SMALL_2,     // Lighten
+    RET_HL   | 2, SMALL_2,     // Darken
+    RET_A    | 1, SMALL_1,     // SetFontHeight
+    UN       | 0, ARG_NORM,    // ScaleSprite
+    RET_NONE | 3, SMALL_12     // FloodFill
 };
 
 uint8_t parseProgram(ti_var_t currentProgram) {

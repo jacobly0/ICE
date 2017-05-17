@@ -83,4 +83,3 @@
 #define SCF()                 do { output(uint8_t, OP_SCF); } while (0)
 
 #endif
-
