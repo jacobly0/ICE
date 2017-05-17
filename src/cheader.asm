@@ -46,4 +46,3 @@ RelocationStart:
 	db 0C0h, "GRAPHX", 0, 5
 _CProgramHeader:
 	ld ix, 0D1383Fh
-

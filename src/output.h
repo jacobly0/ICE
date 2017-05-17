@@ -4,6 +4,7 @@
 #define PRGM_START    0xD1A881
 #define _GetCSC       0x02014C
 #define _os_GetCSC    0x021D3C
+#define _SetHLUTo0    0x021D8C
 #define __imuls       0x000154
 #define __idvrmu      0x000144
 
@@ -83,4 +84,3 @@
 #define SCF()                 do { output(uint8_t, OP_SCF); } while (0)
 
 #endif
-

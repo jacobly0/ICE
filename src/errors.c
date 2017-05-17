@@ -19,6 +19,8 @@ static const char *errors[] = {
     "Your icon has invalid syntax or not the right length",
     "ICE ERROR: please report it!",
     "You have the wrong number or arguments",
+    "This C function is not implemented (yet)",
+    "This C function is deprecated",
 };
 
 void displayError(unsigned int index) {
@@ -40,4 +42,3 @@ void displayError(unsigned int index) {
     sprintf(buf, "Error at line %u", ice.currentLine);
     gfx_PrintStringXY(buf, 1, iceMessageLine);
 }
-

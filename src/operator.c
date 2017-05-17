@@ -1375,4 +1375,3 @@ void (*operatorFunctions[280])(void) = {
     SubChainPushFunction,
     SubChainPushChainAns,
 };
-

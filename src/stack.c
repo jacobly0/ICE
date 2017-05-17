@@ -12,4 +12,3 @@ void push(unsigned int i) {
 unsigned int pop(void) {
     return *(p1--);
 }
-

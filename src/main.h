@@ -18,6 +18,7 @@ typedef struct {
     uint8_t  messageIndex;
     uint8_t  amountOfCRoutinesUsed;
     uint8_t  CRoutinesStack[100];
+    uint8_t  tempToken;
     
     uint24_t *dataOffsetStack[500];
     uint24_t dataOffsetElements;
@@ -66,4 +67,3 @@ void KeypadRoutine(void);
 extern uint8_t AndOrXorData[16];
 
 #endif
-

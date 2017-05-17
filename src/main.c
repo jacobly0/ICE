@@ -98,9 +98,9 @@ void main() {
     }
 
     // Setup pointers and header
-    ice.programData     = (uint8_t*)0xD52C00;
-    ice.programPtr      = (uint8_t*)ice.programData + 116;
-    ice.programDataPtr  = (uint8_t*)ice.programDataData;
+    ice.programData    = (uint8_t*)0xD52C00;
+    ice.programPtr     = (uint8_t*)ice.programData + 116;
+    ice.programDataPtr = (uint8_t*)ice.programDataData;
     
     memcpy(ice.programData, CHeaderData, 116);
     
@@ -217,4 +217,3 @@ void preScanProgram(ti_var_t Program) {
     // Well, we scanned the entire program, so let's rewind it
     ti_Rewind(Program);
 }
-

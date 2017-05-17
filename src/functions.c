@@ -20,7 +20,7 @@
 #include "functions.h"
 
 uint8_t parseFunction(uint24_t index, uint8_t *outputStack) {
-    element_t *outputPtr       = (element_t*)outputStack;
+    element_t *outputPtr = (element_t*)outputStack;
     element_t *outputCurr, *outputPrev;
     uint8_t function, amountOfArguments;
     uint24_t output;
