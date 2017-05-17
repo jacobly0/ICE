@@ -4,6 +4,7 @@
 #define TYPE_NUMBER          0
 #define TYPE_VARIABLE        1
 #define TYPE_FUNCTION_RETURN 2
+#define TYPE_C_FUNCTION      2
 #define TYPE_CHAIN_ANS       3
 #define TYPE_CHAIN_PUSH      4
 // Don't change up to here!
@@ -13,7 +14,6 @@
 #define TYPE_STRING          7
 #define TYPE_OS_STRING       8
 
-#define TYPE_C_FUNCTION      13
 #define TYPE_OPERATOR        14
 #define TYPE_FUNCTION        15
 

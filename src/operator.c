@@ -112,6 +112,11 @@ uint8_t parseOperator(element_t *outputPrevPrev, element_t *outputPrev, element_
 }
 
 void insertFunctionReturn(uint24_t function, uint8_t outputRegister, bool needPush) {
+    // It's a C function routine
+    if (function > 0x100000) {
+        
+    }
+    
     if ((uint8_t)function == tRand) {
         // We need to save a register before using the routine
         if (needPush) {

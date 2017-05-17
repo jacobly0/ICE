@@ -32,27 +32,7 @@ const char implementedFunctions[] = {tNot, tRemainder, tMin, tMax, tMean, tSqrt}
                 bit 5  : third argument is small
                 ...
 */
-<<<<<<< HEAD
-=======
 
-#define RET_A         (1<<7)
-#define RET_HL        (1<<5)
-#define RET_NONE      (0)
-#define UN            (1<<6)
-#define ARG_NORM      (0)
-#define SMALL_1       (1<<7)
-#define SMALL_2       (1<<6)
-#define SMALL_3       (1<<5)
-#define SMALL_4       (1<<4)
-#define SMALL_5       (1<<3)
-#define SMALL_12      (SMALL_1 | SMALL_2)
-#define SMALL_123     (SMALL_1 | SMALL_2 | SMALL_3)
-#define SMALL_13      (SMALL_1 | SMALL_3)
-#define SMALL_23      (SMALL_2 | SMALL_3)
-#define SMALL_14      (SMALL_1 | SMALL_4)
-#define SMALL_45      (SMALL_4 | SMALL_5)
-
->>>>>>> ab4263a21b848d26a99d8de04d31ada93558b2a9
 const uint8_t CArguments[] = {
     RET_NONE | 0, ARG_NORM,    // Begin
     RET_NONE | 0, ARG_NORM,    // End
@@ -420,8 +400,6 @@ stackToOutputReturn1:;
                     PUSH_HL();
                     expr.numberArgument--;
                     
-                    dbg_Debugger();
-                    
                     // Copy all the arguments to the memory of the last argument
                     temp2 = 0xD60294 + expr.numberArgument * 1000;
                     for (a = 2; a <= neededArguments; a++) {
@@ -449,14 +427,28 @@ insertCCall:
                     CALL(_SetHLUTo0);
                 }
                 
-                // Copy thing to first argument
+                // Make a temp argument to store the C function code
                 expr.numberArgument++;
-                //memcpy
+                
+                // Pointer to the memory where the code will be placed
+                temp  = 0xD60294 + expr.numberArgument * 1000;
+                
+                // Pointer where the originally code is located
+                temp2 = 0xD60294 + (expr.numberArgument + neededArguments - 1) * 1000;
+                
+                // Prepend the data with the pointer to the last byte
+                *(uint24_t*)temp = temp + (uint24_t)ice.programPtr - temp2 + 3;
+                
+                // Copy code to new location
+                memcpy((uint8_t*)temp + 3, (uint8_t*)temp2, (uint24_t)ice.programPtr - temp2);
                 
                 // ... and finally insert it in the main expression...
                 outputCurr->type = TYPE_C_FUNCTION;
-                outputCurr->operand = 0;
+                outputCurr->operand = temp;
                 outputElements++;
+                
+                // And finally restore the program pointer
+                ice.programPtr = (uint8_t*)pop();
             } else {
                 return E_SYNTAX;
             }
