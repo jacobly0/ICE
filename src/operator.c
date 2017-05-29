@@ -23,6 +23,93 @@ extern void (*operatorFunctions[280])(void);
 const char operators[] = {tStore, tAnd, tXor, tOr, tEQ, tLT, tGT, tLE, tGE, tNE, tMul, tDiv, tAdd, tSub};
 const uint8_t operatorPrecedence[] = {0, 1, 2, 2, 3, 3, 3, 3, 3, 3, 5, 5, 4, 4};
 
+const uint8_t CArguments[] = {
+    RET_NONE | 0, ARG_NORM,    // Begin
+    RET_NONE | 0, ARG_NORM,    // End
+    RET_A    | 1, SMALL_1,     // SetColor
+    RET_NONE | 0, ARG_NORM,    // SetDefaultPalette
+    UN       | 3, ARG_NORM,    // SetPalette
+    RET_NONE | 1, SMALL_1,     // FillScreen
+    RET_NONE | 2, SMALL_2,     // SetPixel
+    RET_A    | 2, SMALL_2,     // GetPixel
+    RET_A    | 0, ARG_NORM,    // GetDraw
+    RET_NONE | 1, SMALL_1,     // SetDraw
+    RET_NONE | 0, ARG_NORM,    // SwapDraw
+    RET_NONE | 1, SMALL_1,     // Blit
+    RET_NONE | 3, SMALL_123,   // BlitLines
+    RET_NONE | 5, SMALL_13,    // BlitArea
+    RET_NONE | 1, SMALL_1,     // PrintChar
+    RET_NONE | 2, SMALL_2,     // PrintInt
+    RET_NONE | 2, SMALL_2,     // PrintUInt
+    RET_NONE | 1, ARG_NORM,    // PrintString
+    RET_NONE | 3, ARG_NORM,    // PrintStringXY
+    RET_NONE | 2, ARG_NORM,    // SetTextXY
+    RET_A    | 1, SMALL_1,     // SetTextBGColor
+    RET_A    | 1, SMALL_1,     // SetTextFGColor
+    RET_A    | 1, SMALL_1,     // SetTextTransparentColor
+    UN       | 0, ARG_NORM,    // SetCustomFontData
+    UN       | 0, ARG_NORM,    // SetCustomFontSpacing
+    RET_NONE | 1, SMALL_1,     // SetMonoSpaceFont
+    RET_NONE | 1, ARG_NORM,    // GetStringWidth
+    RET_NONE | 1, SMALL_1,     // GetCharWidth
+    RET_HL   | 0, ARG_NORM,    // GetTextX
+    RET_HL   | 0, ARG_NORM,    // GetTextY
+    RET_NONE | 4, ARG_NORM,    // Line
+    RET_NONE | 3, ARG_NORM,    // HorizLine
+    RET_NONE | 3, ARG_NORM,    // VertLine
+    RET_NONE | 3, ARG_NORM,    // Circle
+    RET_NONE | 3, ARG_NORM,    // FillCircle
+    RET_NONE | 4, ARG_NORM,    // Rectangle
+    RET_NONE | 4, ARG_NORM,    // FillRectangle
+    RET_NONE | 4, SMALL_14,    // Line_NoClip
+    RET_NONE | 3, SMALL_2,     // HorizLine_NoClip
+    RET_NONE | 3, SMALL_2,     // VertLine_NoClip
+    RET_NONE | 3, SMALL_2,     // FillCircle_NoClip
+    RET_NONE | 3, SMALL_14,    // Rectangle_NoClip
+    RET_NONE | 4, SMALL_14,    // FillRectangle_NoClip
+    RET_NONE | 4, ARG_NORM,    // SetClipRegion
+    UN       | 0, ARG_NORM,    // GetClipRegion
+    RET_NONE | 1, SMALL_1,     // ShiftDown
+    RET_NONE | 1, SMALL_1,     // ShiftUp
+    RET_NONE | 1, SMALL_1,     // ShiftLeft
+    RET_NONE | 1, SMALL_1,     // ShiftRight
+    UN       | 0, ARG_NORM,    // Tilemap
+    UN       | 0, ARG_NORM,    // Tilemap_NoClip
+    UN       | 0, ARG_NORM,    // TransparentTilemap
+    UN       | 0, ARG_NORM,    // TransparentTilemap_NoClip
+    UN       | 0, ARG_NORM,    // TilePtr
+    UN       | 0, ARG_NORM,    // TilePtrMapped
+    UN       | 0, ARG_NORM,    // LZDecompress
+    UN       | 0, ARG_NORM,    // AllocSprite
+    RET_NONE | 3, ARG_NORM,    // Sprite
+    RET_NONE | 3, ARG_NORM,    // TransparentSprite
+    RET_NONE | 3, SMALL_3,     // Sprite_NoClip
+    RET_NONE | 3, SMALL_3,     // TransparentSprite_NoClip
+    UN       | 0, ARG_NORM,    // GetSprite
+    RET_NONE | 5, SMALL_45,    // ScaledSprite_NoClip
+    RET_NONE | 5, SMALL_45,    // ScaledTransparentSprite_NoClip
+    UN       | 0, ARG_NORM,    // FlipSpriteY
+    UN       | 0, ARG_NORM,    // FlipSpriteX
+    UN       | 0, ARG_NORM,    // RotateSpriteC
+    UN       | 0, ARG_NORM,    // RotateSpriteCC
+    UN       | 0, ARG_NORM,    // RotateSpriteHalf
+    UN       | 0, ARG_NORM,    // Polygon
+    UN       | 0, ARG_NORM,    // Polygon_NoClip
+    RET_NONE | 6, ARG_NORM,    // FillTriangle
+    RET_NONE | 6, ARG_NORM,    // FillTriangle_NoClip
+    UN       | 0, ARG_NORM,    // LZDecompressSprite
+    RET_NONE | 2, SMALL_12,    // SetTextScale
+    RET_A    | 1, SMALL_1,     // SetTransparentColor
+    RET_NONE | 0, ARG_NORM,    // ZeroScreen
+    RET_NONE | 1, SMALL_1,     // SetTextConfig
+    UN       | 0, ARG_NORM,    // GetSpriteChar
+    RET_HL   | 2, SMALL_2,     // Lighten
+    RET_HL   | 2, SMALL_2,     // Darken
+    RET_A    | 1, SMALL_1,     // SetFontHeight
+    UN       | 0, ARG_NORM,    // ScaleSprite
+    RET_NONE | 3, SMALL_12     // FloodFill
+};
+
 static element_t *entry1;
 static element_t *entry2;
 static uint24_t entry1_operand;
@@ -84,8 +171,8 @@ static void swapEntries() {
 }
 
 uint8_t parseOperator(element_t *outputPrevPrev, element_t *outputPrev, element_t *outputCurr) {
-    uint8_t typeMasked1 = outputPrevPrev->type & 15;
-    uint8_t typeMasked2 = outputPrev->type & 15;
+    uint8_t typeMasked1 = outputPrevPrev->type;
+    uint8_t typeMasked2 = outputPrev->type;
     oper = (uint8_t)outputCurr->operand;
 
     // Only call the function if both types are valid
@@ -112,12 +199,97 @@ uint8_t parseOperator(element_t *outputPrevPrev, element_t *outputPrev, element_
 }
 
 void insertFunctionReturn(uint24_t function, uint8_t outputRegister, bool needPush) {
-    // It's a C function routine
-    if (function > 0x100000) {
+    // Parse a C function
+    if ((uint8_t)(function >> 16)) {
+        const uint8_t *outputStack = (uint8_t*)0xD62C00;
+        element_t *outputPtr = (element_t*)outputStack, *outputCurr;
+        uint8_t temp, neededArguments, a;
+        uint24_t tempIndex;
         
+        dbg_Debugger();
+        
+        outputCurr = (element_t *)function;
+        neededArguments = (uint8_t)(outputCurr->operand >> 8);
+        expr.inFunction = true;
+        
+        // Get every argument
+        for (a = 0; a < neededArguments; a++) {
+            // This index is the right bound of the next parsing
+            tempIndex = function;
+            temp = 0;
+
+            // Find the last argument seperator
+            do {
+ForceGetNewEntry:
+                outputCurr = &outputPtr[--function];
+                
+                // If it's a det(, skip that
+                if (outputCurr->type == TYPE_FUNCTION && (uint8_t)outputCurr->operand == tDet) {
+                    temp++;
+                }
+                
+                // It it's the start of a det(, go one layer back
+                if (outputCurr->type == TYPE_C_START && temp) {
+                    temp--;
+                    goto ForceGetNewEntry;
+                }
+            } while (temp || (outputCurr->type != TYPE_ARG_DELIMITER && outputCurr->type != TYPE_C_START));
+            
+            // function is the left bound of the next parsing
+            if ((temp = parsePostFixFromIndexToIndex(function + 1, tempIndex - 1)) != VALID) {
+                //return temp;
+            }
+            
+            // Push the argument
+            PUSH_HL();
+        }
+        
+        dbg_Debugger();
+        
+        // Check if the first argument of the det( is a number (should be), and the expression should end with a right parenthesis
+        if (!expr.outputIsNumber || ice.tempToken != tRParen) {
+            //return E_SYNTAX;
+        }
+        
+        temp = CArguments[expr.outputNumber * 2];
+        
+        // Not implemented
+        if (temp & UN) {
+            //return E_NOT_IMPLEMENTED;
+        }
+        
+        // Deprecated
+        if (temp & DEPR) {
+            //return E_DEPRECATED;
+        }
+        
+        // Check the right amount of arguments, after parsing them ;)
+        if ((neededArguments - 1) != (temp & 7)) {
+            //return E_ARGUMENTS;
+        }
+        
+        // Remove the last number and push from the program
+        ice.programPtr -= 5;
+        
+        // Finally do it! :D
+        CALL(/*0xD1A8F5*/0xD52C74 + ice.CRoutinesStack[expr.outputNumber]*4);
+        
+        for (a = 1; a < neededArguments; a++) {
+            POP_BC();
+        }
+        
+        // Check if the output is in HL(s) or A
+        if (temp & RET_A) {
+            OR_A_A();
+            SBC_HL_HL();
+            LD_L_A();
+        } else if (temp & RET_HL) {
+            CALL(_SetHLUTo0);
+        }
+
     }
-    
-    if ((uint8_t)function == tRand) {
+
+    else if ((uint8_t)function == tRand) {
         // We need to save a register before using the routine
         if (needPush) {
             if (outputRegister == OUTPUT_IN_HL) {
@@ -156,10 +328,13 @@ void insertFunctionReturn(uint24_t function, uint8_t outputRegister, bool needPu
                 POP_HL();
             }
         }
-    } else {
+    }
+    
+    else {
         // Check if the getKey has a fast direct key argument; if so, the second byte is 1
         if ((uint8_t)(function >> 8)) {
-            uint8_t key = function >> 16;
+            uint8_t key = function >> 8;
+            // This is the same as ((key-1)/8 & 7) * 2 = (key-1)/4 & (7*2) = (key-1) >> 2 & 14
             uint8_t keyAddress = 0x1E - (((key-1) >> 2) & 14);
             uint8_t keyBit = 1, a;
             
@@ -1011,6 +1186,7 @@ void SubChainAnsNumber(void) {
 }
 void SubChainAnsVariable(void) {
     LD_DE_IND_IX_OFF(entry2_operand);
+    OR_A_A();
     SBC_HL_DE();
 }
 void SubNumberVariable(void) {
@@ -1020,11 +1196,13 @@ void SubNumberVariable(void) {
 void SubNumberFunction(void) {
     insertFunctionReturn(entry2_operand, OUTPUT_IN_DE, NO_PUSH);
     LD_HL_NUMBER(entry1_operand);
+    OR_A_A();
     SBC_HL_DE();
 }
 void SubNumberChainAns(void) {
     EX_DE_HL();
     LD_HL_NUMBER(entry1_operand);
+    OR_A_A();
     SBC_HL_DE();
 }
 void SubVariableNumber(void) {
@@ -1042,6 +1220,7 @@ void SubVariableFunction(void) {
 void SubVariableChainAns(void) {
     EX_DE_HL();
     LD_HL_IND_IX_OFF(entry1_operand);
+    OR_A_A();
     SBC_HL_DE();
 }
 void SubFunctionNumber(void) {
@@ -1055,15 +1234,18 @@ void SubFunctionVariable(void) {
 void SubFunctionFunction(void) {
     insertFunctionReturn(entry2_operand, OUTPUT_IN_DE, NO_PUSH);
     insertFunctionReturn(entry1_operand, OUTPUT_IN_HL, NEED_PUSH);
+    OR_A_A();
     SBC_HL_DE();
 }
 void SubFunctionChainAns(void) {
     EX_DE_HL();
     insertFunctionReturn(entry1_operand, OUTPUT_IN_HL, NEED_PUSH);
+    OR_A_A();
     SBC_HL_DE();
 }
 void SubChainAnsFunction(void) {
     insertFunctionReturn(entry2_operand, OUTPUT_IN_DE, NEED_PUSH);
+    OR_A_A();
     SBC_HL_DE();
 }
 void SubChainPushNumber(void) {
@@ -1077,11 +1259,13 @@ void SubChainPushVariable(void) {
 void SubChainPushFunction(void) {
     insertFunctionReturn(entry2_operand, OUTPUT_IN_DE, NO_PUSH);
     POP_HL();
+    OR_A_A();
     SBC_HL_DE();
 }
 void SubChainPushChainAns(void) {
     EX_DE_HL();
     POP_HL();
+    OR_A_A();
     SBC_HL_DE();
 }
 

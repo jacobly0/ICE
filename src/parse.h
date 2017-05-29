@@ -14,13 +14,16 @@
 #define TYPE_STRING          7
 #define TYPE_OS_STRING       8
 
-#define TYPE_OPERATOR        14
-#define TYPE_FUNCTION        15
+#define TYPE_C_START         252
+#define TYPE_ARG_DELIMITER   253
+#define TYPE_OPERATOR        254
+#define TYPE_FUNCTION        255
 
 #define RET_A         (1<<7)
 #define RET_HL        (1<<5)
 #define RET_NONE      (0)
 #define UN            (1<<6)
+#define DEPR          (1<<4)
 #define ARG_NORM      (0)
 #define SMALL_1       (1<<7)
 #define SMALL_2       (1<<6)
@@ -37,6 +40,7 @@
 #define getc() ti_GetC(currentProgram)
 
 uint8_t parseProgram(ti_var_t);
+uint8_t parsePostFixFromIndexToIndex(uint24_t startIndex, uint24_t endIndex);
 
 typedef struct {
     uint8_t type;

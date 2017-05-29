@@ -24,6 +24,7 @@ typedef struct {
     uint24_t dataOffsetElements;
     uint24_t currentLine;
     uint24_t programSize;
+    uint24_t outputElements;
     
     ti_var_t inPrgm;
     ti_var_t outPrgm;
@@ -41,12 +42,11 @@ typedef struct {
 } ice_t;
 
 typedef struct {
-    uint8_t  numberArgument;
-    uint8_t  *programPtr;
-    
     bool     inString;
     bool     inFunction;
     bool     outputIsNumber;
+    
+    uint24_t outputNumber;
 } expr_t;
 
 #define MESSAGE_HEIGHT       10

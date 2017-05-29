@@ -20,7 +20,7 @@
 #include "functions.h"
 
 extern uint8_t (*functions[256])(unsigned int token, ti_var_t currentProgram);
-const char implementedFunctions[] = {tNot, tRemainder, tMin, tMax, tMean, tSqrt};
+const char implementedFunctions[] = {tNot, tRemainder, tMin, tMax, tMean, tSqrt, tDet};
 
 /* First byte:  bit 7  : returns something in A
                 bit 6  : unimplemented
@@ -32,93 +32,6 @@ const char implementedFunctions[] = {tNot, tRemainder, tMin, tMax, tMean, tSqrt}
                 bit 5  : third argument is small
                 ...
 */
-
-const uint8_t CArguments[] = {
-    RET_NONE | 0, ARG_NORM,    // Begin
-    RET_NONE | 0, ARG_NORM,    // End
-    RET_A    | 1, SMALL_1,     // SetColor
-    RET_NONE | 0, ARG_NORM,    // SetDefaultPalette
-    UN       | 3, ARG_NORM,    // SetPalette
-    RET_NONE | 1, SMALL_1,     // FillScreen
-    RET_NONE | 2, SMALL_2,     // SetPixel
-    RET_A    | 2, SMALL_2,     // GetPixel
-    RET_A    | 0, ARG_NORM,    // GetDraw
-    RET_NONE | 1, SMALL_1,     // SetDraw
-    RET_NONE | 0, ARG_NORM,    // SwapDraw
-    RET_NONE | 1, SMALL_1,     // Blit
-    RET_NONE | 3, SMALL_123,   // BlitLines
-    RET_NONE | 5, SMALL_13,    // BlitArea
-    RET_NONE | 1, SMALL_1,     // PrintChar
-    RET_NONE | 2, SMALL_2,     // PrintInt
-    RET_NONE | 2, SMALL_2,     // PrintUInt
-    RET_NONE | 1, ARG_NORM,    // PrintString
-    RET_NONE | 3, ARG_NORM,    // PrintStringXY
-    RET_NONE | 2, ARG_NORM,    // SetTextXY
-    RET_A    | 1, SMALL_1,     // SetTextBGColor
-    RET_A    | 1, SMALL_1,     // SetTextFGColor
-    RET_A    | 1, SMALL_1,     // SetTextTransparentColor
-    UN       | 0, ARG_NORM,    // SetCustomFontData
-    UN       | 0, ARG_NORM,    // SetCustomFontSpacing
-    RET_NONE | 1, SMALL_1,     // SetMonoSpaceFont
-    RET_NONE | 1, ARG_NORM,    // GetStringWidth
-    RET_NONE | 1, SMALL_1,     // GetCharWidth
-    RET_HL   | 0, ARG_NORM,    // GetTextX
-    RET_HL   | 0, ARG_NORM,    // GetTextY
-    RET_NONE | 4, ARG_NORM,    // Line
-    RET_NONE | 3, ARG_NORM,    // HorizLine
-    RET_NONE | 3, ARG_NORM,    // VertLine
-    RET_NONE | 3, ARG_NORM,    // Circle
-    RET_NONE | 3, ARG_NORM,    // FillCircle
-    RET_NONE | 4, ARG_NORM,    // Rectangle
-    RET_NONE | 4, ARG_NORM,    // FillRectangle
-    RET_NONE | 4, SMALL_14,    // Line_NoClip
-    RET_NONE | 3, SMALL_2,     // HorizLine_NoClip
-    RET_NONE | 3, SMALL_2,     // VertLine_NoClip
-    RET_NONE | 3, SMALL_2,     // FillCircle_NoClip
-    RET_NONE | 3, SMALL_14,    // Rectangle_NoClip
-    RET_NONE | 4, SMALL_14,    // FillRectangle_NoClip
-    RET_NONE | 4, ARG_NORM,    // SetClipRegion
-    UN       | 0, ARG_NORM,    // GetClipRegion
-    RET_NONE | 1, SMALL_1,     // ShiftDown
-    RET_NONE | 1, SMALL_1,     // ShiftUp
-    RET_NONE | 1, SMALL_1,     // ShiftLeft
-    RET_NONE | 1, SMALL_1,     // ShiftRight
-    UN       | 0, ARG_NORM,    // Tilemap
-    UN       | 0, ARG_NORM,    // Tilemap_NoClip
-    UN       | 0, ARG_NORM,    // TransparentTilemap
-    UN       | 0, ARG_NORM,    // TransparentTilemap_NoClip
-    UN       | 0, ARG_NORM,    // TilePtr
-    UN       | 0, ARG_NORM,    // TilePtrMapped
-    UN       | 0, ARG_NORM,    // LZDecompress
-    UN       | 0, ARG_NORM,    // AllocSprite
-    RET_NONE | 3, ARG_NORM,    // Sprite
-    RET_NONE | 3, ARG_NORM,    // TransparentSprite
-    RET_NONE | 3, SMALL_3,     // Sprite_NoClip
-    RET_NONE | 3, SMALL_3,     // TransparentSprite_NoClip
-    UN       | 0, ARG_NORM,    // GetSprite
-    RET_NONE | 5, SMALL_45,    // ScaledSprite_NoClip
-    RET_NONE | 5, SMALL_45,    // ScaledTransparentSprite_NoClip
-    UN       | 0, ARG_NORM,    // FlipSpriteY
-    UN       | 0, ARG_NORM,    // FlipSpriteX
-    UN       | 0, ARG_NORM,    // RotateSpriteC
-    UN       | 0, ARG_NORM,    // RotateSpriteCC
-    UN       | 0, ARG_NORM,    // RotateSpriteHalf
-    UN       | 0, ARG_NORM,    // Polygon
-    UN       | 0, ARG_NORM,    // Polygon_NoClip
-    RET_NONE | 6, ARG_NORM,    // FillTriangle
-    RET_NONE | 6, ARG_NORM,    // FillTriangle_NoClip
-    UN       | 0, ARG_NORM,    // LZDecompressSprite
-    RET_NONE | 2, SMALL_12,    // SetTextScale
-    RET_A    | 1, SMALL_1,     // SetTransparentColor
-    RET_NONE | 0, ARG_NORM,    // ZeroScreen
-    RET_NONE | 1, SMALL_1,     // SetTextConfig
-    UN       | 0, ARG_NORM,    // GetSpriteChar
-    RET_HL   | 2, SMALL_2,     // Lighten
-    RET_HL   | 2, SMALL_2,     // Darken
-    RET_A    | 1, SMALL_1,     // SetFontHeight
-    UN       | 0, ARG_NORM,    // ScaleSprite
-    RET_NONE | 3, SMALL_12     // FloodFill
-};
  
 uint8_t parseProgram(ti_var_t currentProgram) {
     unsigned int token, size;
@@ -132,23 +45,9 @@ uint8_t parseProgram(ti_var_t currentProgram) {
         
         // This function parses per line
         ice.currentLine++;
-        
-        // Clean the expr struct
-        memset(&expr, 0, sizeof(expr));
-        
-        // Backup the program pointer, because we gonna mess with it
-        expr.programPtr = ice.programPtr;
-        
+
         if ((ret = (*functions[(uint8_t)token])(token, currentProgram)) != VALID) {
             break;
-        }
-        
-        size = (uint24_t)ice.programPtr - 0xD60294;
-        
-        // Check if it was an expression, and if so, copy to main program and restore pointer
-        if (size && (uint24_t)ice.programPtr > 0xD60000) {
-            memcpy(expr.programPtr, (uint8_t*)0xD60294, size);
-            ice.programPtr = (uint8_t*)(expr.programPtr + size);
         }
     }
 
@@ -158,12 +57,10 @@ uint8_t parseProgram(ti_var_t currentProgram) {
 /* Static functions */
 
 uint8_t parseExpression(unsigned int token, ti_var_t currentProgram) {
-    const uint24_t offset         = 0xD60000 + expr.numberArgument * 1000;
-    const uint8_t *outputStack    = (uint8_t*)offset;
-    const uint8_t *stack          = (uint8_t*)(offset + 500);
-    unsigned int outputElements   = 0;
+    const uint8_t *outputStack    = (uint8_t*)0xD62C00;
+    const uint8_t *stack          = (uint8_t*)0xD64000;
     unsigned int stackElements    = 0;
-    unsigned int loopIndex, temp, temp2;
+    unsigned int loopIndex, temp;
     uint8_t index = 0, ChainType, res, a;
     uint8_t amountOfArgumentsStack[20];
     uint8_t *amountOfArgumentsStackPtr = amountOfArgumentsStack;
@@ -174,7 +71,7 @@ uint8_t parseExpression(unsigned int token, ti_var_t currentProgram) {
     element_t *stackPtr  = (element_t*)stack;
     element_t *outputCurr, *outputPrev, *outputPrevPrev;
     element_t *stackCurr, *stackPrev = NULL;
-    ice.programPtr       = (uint8_t*)(offset + 660);
+    ice.outputElements = 0;
     
     /*
         General explanation stacks:
@@ -188,7 +85,7 @@ uint8_t parseExpression(unsigned int token, ti_var_t currentProgram) {
 
     while (token != EOF && token != tEnter) {
         uint8_t tok;
-        outputCurr = &outputPtr[outputElements];
+        outputCurr = &outputPtr[ice.outputElements];
         stackCurr  = &stackPtr[stackElements];
         tok = (uint8_t)token;
 
@@ -200,7 +97,7 @@ uint8_t parseExpression(unsigned int token, ti_var_t currentProgram) {
             }
             outputCurr->type = TYPE_NUMBER;
             outputCurr->operand = output;
-            outputElements++;
+            ice.outputElements++;
 
             // Don't grab a new token
             continue;
@@ -210,7 +107,7 @@ uint8_t parseExpression(unsigned int token, ti_var_t currentProgram) {
         else if (tok >= tA && tok <= tTheta) {
             outputCurr->type = TYPE_VARIABLE;
             outputCurr->operand = tok - tA;
-            outputElements++;
+            ice.outputElements++;
         }
         
         // Parse an operator
@@ -226,17 +123,17 @@ uint8_t parseExpression(unsigned int token, ti_var_t currentProgram) {
 stackToOutputReturn1:;
             }
             
-            // Move the stack to the output as long...
+            // Move the stack to the output as long as it's not empty
             while (stackElements) {
                 stackPrev = &stackPtr[stackElements-1];
-                outputCurr = &outputPtr[outputElements];
+                outputCurr = &outputPtr[ice.outputElements];
                 
                 // Move the last entry of the stack to the ouput if it's precedence is greater than the precedence of the current token
-                if ((stackPrev->type & 15) == TYPE_OPERATOR && operatorPrecedence[index - 1] <= operatorPrecedence[getIndexOfOperator(stackPrev->operand) - 1]) {
+                if (stackPrev->type == TYPE_OPERATOR && operatorPrecedence[index - 1] <= operatorPrecedence[getIndexOfOperator(stackPrev->operand) - 1]) {
                     outputCurr->type = stackPrev->type;
                     outputCurr->operand = stackPrev->operand;
                     stackElements--;
-                    outputElements++;
+                    ice.outputElements++;
                 } else {
                     break;
                 }
@@ -260,12 +157,12 @@ stackToOutputReturn1:;
             // Move until stack is empty or a function is encountered
             while (stackElements) {
                 stackPrev = &stackPtr[stackElements-1];
-                outputCurr = &outputPtr[outputElements];
-                if ((stackPrev->type & 15) != TYPE_FUNCTION) {
+                outputCurr = &outputPtr[ice.outputElements];
+                if (stackPrev->type != TYPE_FUNCTION) {
                     outputCurr->type = stackPrev->type;
                     outputCurr->operand = stackPrev->operand;
                     stackElements--;
-                    outputElements++;
+                    ice.outputElements++;
                 } else {
                     break;
                 }
@@ -280,6 +177,12 @@ stackToOutputReturn1:;
                 return E_EXTRA_RPAREN;
             }
             
+            // If it's a det, add an argument delimiter as well
+            if (tok == tComma && (uint8_t)stackPrev->operand == tDet) {
+                outputCurr->type = TYPE_ARG_DELIMITER;
+                ice.outputElements++;
+            }
+            
             // Increment the amount of arguments for that function
             (*amountOfArgumentsStackPtr)++;
             
@@ -288,7 +191,7 @@ stackToOutputReturn1:;
                 outputCurr->type = stackPrev->type;
                 outputCurr->operand = stackPrev->operand + ((*amountOfArgumentsStackPtr--) << 8);
                 stackElements--;
-                outputElements++;
+                ice.outputElements++;
             }
         }
         
@@ -298,13 +201,19 @@ stackToOutputReturn1:;
             stackCurr->type = TYPE_FUNCTION;
             stackCurr->operand = token;
             stackElements++;
+            
+            // Check if it's a C function
+            if (tok == tDet) {
+                outputCurr->type = TYPE_C_START;
+                ice.outputElements++;
+            }
         }
         
         // Process a function that returns something (rand, getKey(X))
         else if (tok == tRand || tok == tGetKey) {
             outputCurr->type = TYPE_FUNCTION_RETURN;
             outputCurr->operand = token;
-            outputElements++;
+            ice.outputElements++;
             
             // Check for fast key input, i.e. getKey(X)
             if (tok == tGetKey) {
@@ -320,137 +229,19 @@ stackToOutputReturn1:;
                     // The next token can be a number, but also right parenthesis or EOF
                     if ((uint8_t)(token = getc()) >= t0 && token <= t9) {
                         // Add the direct key to the operand
-                        outputCurr->operand = tGetKey | (1 << 8) | ((tok * 10 + (uint8_t)token - t0) << 16);
+                        outputCurr->operand = tGetKey | ((tok * 10 + (uint8_t)token - t0) << 8);
                         if ((token = getc()) != EOF && token != tRParen) {
                             return E_SYNTAX;
                         }
                     } else if ((uint8_t)token == tRParen || token == EOF) {
                         // Add the direct key to the operand
-                        outputCurr->operand = tGetKey | (1 << 8) | (tok << 16);
+                        outputCurr->operand = tGetKey | (tok << 8);
                     } else {
                         return E_SYNTAX;
                     }
                 } else {
                     return E_SYNTAX;
                 }
-            }
-        }
-        
-        // A C function :)
-        else if (tok == tDet) {
-            uint8_t number, neededArguments;
-            
-            // Used to return if an argument seperator is triggered
-            expr.inFunction = true;
-            
-            // Get the right C function
-            if ((uint8_t)(token = getc()) >= t0 && (uint8_t)token <= t9) {
-                number = (uint8_t)token - t0;
-                
-                // Check if the C function consists of 2 digits
-                if ((uint8_t)(token = getc()) >= t0 && (uint8_t)token <= t9) {
-                    number = number*10 + (uint8_t)token - t0;
-                    token = getc();
-                }
-                
-                // Get the amount of needed arguments for that function
-                a = CArguments[number * 2];
-                neededArguments = a & 7;
-                
-                // Check if the C function is already implemented
-                if (a & 64) {
-                    return E_NOT_IMPLEMENTED;
-                }
-                
-                // Check if the C function is deprecated
-                if (a & 16) {
-                    return E_DEPRECATED;
-                }
-                
-                // If it's a standalone C function, only EOF or enter can be after it
-                if (!neededArguments) {
-                    if (token == EOF || (uint8_t)token == tEnter) {
-                        goto insertCCall;
-                    }
-                    else {
-                        return E_SYNTAX;
-                    }
-                } else {
-                    // We need the comma as a seperator
-                    if ((uint8_t)token != tComma) {
-                        return E_ARGUMENTS;
-                    }
-                    
-                    // Grab the arguments
-                    for (a = 1; a <= neededArguments; a++) {
-                        // Get a new argument
-                        expr.numberArgument++;
-                        push((uint24_t)ice.programPtr);
-                        if ((res = parseExpression(getc(), currentProgram)) != VALID) {
-                            return res;
-                        }
-                        
-                        // Check if the last argument stops with a right parenthesis, or any other argument with a comma
-                        if (!(a == neededArguments && ice.tempToken == tRParen) && !(a != neededArguments && ice.tempToken == tComma)) {
-                            return E_ARGUMENTS;
-                        }
-                    }
-                    
-                    // Let's finally do the stuff!
-                    PUSH_HL();
-                    expr.numberArgument--;
-                    
-                    // Copy all the arguments to the memory of the last argument
-                    temp2 = 0xD60294 + expr.numberArgument * 1000;
-                    for (a = 2; a <= neededArguments; a++) {
-                        temp  = pop();
-                        memcpy(ice.programPtr, (uint8_t*)temp2, temp - temp2);
-                        ice.programPtr += temp - temp2;
-                        temp2 -= 1000;
-                        PUSH_HL();
-                        expr.numberArgument--;
-                    }
-                }
-insertCCall:
-                // Yay, we can insert the call itself
-                CALL(/*0xD1A8F5*/0xD52C74 + ice.CRoutinesStack[number]*4);
-                for (a = 1; a <= neededArguments; a++) {
-                    POP_BC();
-                }
-                
-                // Check if the output is in HL(s) or A
-                if (CArguments[number * 2] & 128) {
-                    OR_A_A();
-                    SBC_HL_HL();
-                    LD_L_A();
-                } else if (CArguments[number * 2] & 32) {
-                    CALL(_SetHLUTo0);
-                }
-                
-                // Make a temp argument to store the C function code
-                expr.numberArgument++;
-                
-                // Pointer to the memory where the code will be placed
-                temp  = 0xD60294 + expr.numberArgument * 1000;
-                
-                // Pointer where the originally code is located
-                temp2 = 0xD60294 + (expr.numberArgument + neededArguments - 1) * 1000;
-                
-                // Prepend the data with the pointer to the last byte
-                *(uint24_t*)temp = temp + (uint24_t)ice.programPtr - temp2 + 3;
-                
-                // Copy code to new location
-                memcpy((uint8_t*)temp + 3, (uint8_t*)temp2, (uint24_t)ice.programPtr - temp2);
-                
-                // ... and finally insert it in the main expression...
-                outputCurr->type = TYPE_C_FUNCTION;
-                outputCurr->operand = temp;
-                outputElements++;
-                
-                // And finally restore the program pointer
-                ice.programPtr = (uint8_t*)pop();
-            } else {
-                return E_SYNTAX;
             }
         }
         
@@ -475,7 +266,7 @@ stopParsing:
 stackToOutputReturn2:
 
     // Remove stupid things like 2+5
-    for (loopIndex = 2; loopIndex < outputElements; loopIndex++) {
+    for (loopIndex = 2; loopIndex < ice.outputElements; loopIndex++) {
         outputPrevPrev = &outputPtr[loopIndex-2];
         outputPrev = &outputPtr[loopIndex-1];
         outputCurr = &outputPtr[loopIndex];
@@ -484,124 +275,29 @@ stackToOutputReturn2:
         if (outputPrevPrev->type == TYPE_NUMBER && outputPrev->type == TYPE_NUMBER && outputCurr->type == TYPE_OPERATOR) {
             // If yes, execute the operator, and store it in the first entry, and remove the other 2
             outputPrevPrev->operand = executeOperator(outputPrevPrev->operand, outputPrev->operand, (uint8_t)outputCurr->operand);
-            memcpy(outputPrev, &outputPtr[loopIndex+1], (outputElements-1)*4);
-            outputElements -= 2;
+            memcpy(outputPrev, &outputPtr[loopIndex+1], (ice.outputElements-1)*4);
+            ice.outputElements -= 2;
             loopIndex--;
         }
     }
     
     // Check if the expression is valid
-    if (!outputElements) {
+    if (!ice.outputElements) {
         return E_SYNTAX;
     }
     
-    if (outputElements == 1) {
-        outputCurr = &outputPtr[0];
-        
-        // Expression is only a single number
-        if (outputCurr->type == TYPE_NUMBER) {
-            // This boolean is set, because loops may be optimized when the condition is a number
-            expr.outputIsNumber = true;
-            LD_HL_NUMBER(outputCurr->operand);
-        } 
-        
-        // Expression is only a variable
-        else if (outputCurr->type == TYPE_VARIABLE) {
-            LD_HL_IND_IX_OFF(outputCurr->operand);
-        } 
-        
-        // Expression is only a function without arguments that returns something (getKey, rand)
-        else if (outputCurr->type == TYPE_FUNCTION_RETURN) {
-            insertFunctionReturn(outputCurr->operand, OUTPUT_IN_HL, NO_PUSH);
-        }
-        
-        // Expression is an empty function or operator, i.e. not(, +
-        else {
-            return E_SYNTAX;
-        }
-        return VALID;
-    }
-    
-    // This can only happen with a function with a single argument, i.e. det(X), not(X)
-    else if (outputElements == 2) {
-        outputCurr = &outputPtr[1];
-        
-        // It must be a function with a single argument
-        if (outputCurr->type != TYPE_FUNCTION) {
-            return E_SYNTAX;
-        }
-        
-        // Parse the function!
-        return parseFunction(1, outputStack);
-    }
-    
-    // Parse the expression in postfix notation!
-    for (loopIndex = 1; loopIndex < outputElements; loopIndex++) {
-        uint8_t type;
-
-        outputCurr = &outputPtr[loopIndex];
-        type = outputCurr->type;
-
-        // Parse an operator with 2 arguments
-        if (type == TYPE_OPERATOR && loopIndex > 1) {
-            // Parse the operator!
-            parseOperator(&outputPtr[loopIndex-2], &outputPtr[loopIndex-1], outputCurr);
-            
-            // Remove the second argument and the operator...
-            memcpy(&outputPtr[loopIndex-1], &outputPtr[loopIndex+1], outputElements * 4);
-            loopIndex -= 2;
-            outputElements -= 2;
-        } 
-        
-        // Parse a function with X arguments
-        else if (type == TYPE_FUNCTION) {
-            // Use this to cleanup the function after parsing
-            uint8_t amountOfArguments = (uint8_t)(outputCurr->operand >> 8);
-            
-            res = parseFunction(loopIndex, outputStack);
-            if (res != VALID) {
-                return res;
-            }
-            
-            // Cleanup, and set to chaintype
-            memcpy(&outputPtr[loopIndex-amountOfArguments+1], &outputPtr[loopIndex+1], outputElements * 4);
-            loopIndex -= amountOfArguments;
-            outputElements -= amountOfArguments;
-        }
-        
-        // Whoop, we are done parsing the expression!
-        if (outputElements == 1) {
-            return VALID;
-        }
-        
-        // Set chain type
-        if ((type == TYPE_OPERATOR) || (type == TYPE_FUNCTION)) {
-            ChainType = TYPE_CHAIN_PUSH;
-            
-            // If one of the 2 next entries is either an operator or function
-            if ((outputCurr->type & 15) >= TYPE_OPERATOR || ((&outputPtr[loopIndex-1])->type & 15) >= TYPE_OPERATOR) {
-                ChainType = TYPE_CHAIN_ANS;
-            } else {
-                PUSH_HL();
-            }
-            
-            (&outputPtr[loopIndex])->type = ChainType;
-        }
-    }
-
-    // Actual return here
-    return VALID;
+    return parsePostFixFromIndexToIndex(0, ice.outputElements - 1);
 
     // Duplicated function opt
 stackToOutput:
     // Move entire stack to output
     while (stackElements) {
-        outputCurr = &outputPtr[outputElements++];
+        outputCurr = &outputPtr[ice.outputElements++];
         stackPrev = &stackPtr[--stackElements];
         
         // Don't move the left paren...
         if (stackPrev->type == TYPE_FUNCTION && (uint8_t)stackPrev->operand == tLParen) {
-            outputElements--;
+            ice.outputElements--;
             continue;
         }
         
@@ -622,6 +318,175 @@ stackToOutput:
     }
 
     goto stackToOutputReturn1;
+}
+
+uint8_t parsePostFixFromIndexToIndex(uint24_t startIndex, uint24_t endIndex) {
+    const uint8_t *outputStack = (uint8_t*)0xD62C00;
+    element_t *outputCurr;
+    element_t *outputPtr = (element_t*)outputStack;
+    uint8_t outputType, temp, operandDepth = 0;
+    uint24_t outputOperand, loopIndex, tempIndex = 0, operand1Index, operand2Index, amountOfStackElements;
+    
+    // Set some variables
+    outputCurr = &outputPtr[startIndex];
+    outputType = outputCurr->type;
+    outputOperand = outputCurr->operand;
+    
+    // Clean the expr struct
+    memset(&expr, 0, sizeof(expr));
+    
+    // Get all the indexes of the expression
+    temp = 0;
+    for (loopIndex = startIndex; loopIndex <= endIndex; loopIndex++) {
+        outputCurr = &outputPtr[loopIndex];
+        
+        // If it's the start of a det(, increment the amount of nested dets
+        if (outputCurr->type == TYPE_C_START) {
+            temp++;
+        }
+        // If it's a det(, decrement the amount of nested dets
+        if (outputCurr->type == TYPE_FUNCTION && (uint8_t)outputCurr->operand == tDet) {
+            temp--;
+        }
+        
+        // If not in a nested det(, push the index
+        if (!temp) {
+            push(loopIndex);
+        }
+    }
+    
+    amountOfStackElements = getStackSize();
+    
+    // It's a single entry
+    if (amountOfStackElements == 1) {
+        // Expression is only a single number
+        if (outputType == TYPE_NUMBER) {
+            // This boolean is set, because loops may be optimized when the condition is a number
+            expr.outputIsNumber = true;
+            expr.outputNumber = outputOperand;
+            LD_HL_NUMBER(outputOperand);
+        } 
+        
+        // Expression is only a variable
+        else if (outputType == TYPE_VARIABLE) {
+            LD_HL_IND_IX_OFF(outputOperand);
+        } 
+        
+        // Expression is only a function without arguments that returns something (getKey, rand)
+        else if (outputType == TYPE_FUNCTION_RETURN) {
+            insertFunctionReturn(outputOperand, OUTPUT_IN_HL, NO_PUSH);
+        }
+        
+        // Expression is an empty function or operator, i.e. not(, +
+        else {
+            return E_SYNTAX;
+        }
+        
+        return VALID;
+    } else if (amountOfStackElements == 2) {
+        outputCurr = &outputPtr[tempIndex = pop()];
+        
+        // It should be a function with a single argument, i.e. det(0 / not(A
+        if (outputCurr->type != TYPE_FUNCTION) {
+            return E_SYNTAX;
+        }
+        
+        return parseFunction(tempIndex);
+    }
+    
+    // 3 or more entries, full expression
+    for (loopIndex = startIndex; loopIndex <= endIndex; loopIndex++) {
+        outputCurr = &outputPtr[loopIndex];
+        
+        outputType = outputCurr->type;
+        outputOperand = outputCurr->operand;
+        
+        dbg_Debugger();
+        
+        if (outputType == TYPE_OPERATOR) {
+            // Wait, invalid operator?!
+            if (loopIndex < startIndex + 2) {
+                return E_SYNTAX;
+            }
+            
+            operand2Index = pop();
+            operand1Index = pop();
+            
+            // Parse the operator with the 2 latest operands of the stack!
+            parseOperator(&outputPtr[operand1Index], &outputPtr[operand2Index], outputCurr);
+        
+            // Remove the second argument and the operator...
+            memcpy(&outputPtr[operand1Index + 1], &outputPtr[loopIndex + 1], ice.outputElements * 4);
+            endIndex -= loopIndex - operand1Index;
+            loopIndex = operand1Index;
+            
+            // Check chain push/ans
+            operandDepth = 3;
+            tempIndex = loopIndex;
+        }
+        
+        else if (outputType == TYPE_FUNCTION) {
+            // Use this to cleanup the function after parsing
+            uint8_t amountOfArguments = (uint8_t)(outputCurr->operand >> 8);
+            
+            temp = parseFunction(loopIndex);
+            if (temp != VALID) {
+                return temp;
+            }
+            
+            // Cleanup, and set to chaintype
+            memcpy(&outputPtr[loopIndex-amountOfArguments+1], &outputPtr[loopIndex+1], ice.outputElements * 4);
+            loopIndex -= amountOfArguments;
+            endIndex -= amountOfArguments;
+            
+            // Check chain push/ans
+            operandDepth = 3;
+            tempIndex = loopIndex;
+        } else {
+            push(loopIndex);
+        }
+        
+        if (outputType == TYPE_C_START) {
+            outputCurr->type = TYPE_FUNCTION_RETURN;
+            outputCurr->operand = (uint24_t)&outputPtr[loopIndex];
+            temp = 1;
+            
+            while (temp && loopIndex <= endIndex) {
+                outputCurr = &outputPtr[++loopIndex];
+                
+                // If it's a det(, decrement the amount of nested dets
+                if (outputCurr->type == TYPE_FUNCTION && (uint8_t)outputCurr->operand == tDet) {
+                    temp--;
+                }
+                
+                // If it's the start of a new C function, increment the amount of nested dets
+                if (outputCurr->type == TYPE_C_START) {
+                    temp++;
+                }
+            }
+            loopIndex--;
+        }
+        
+        // Check if the next or next next operand is either a function operator
+        if (operandDepth == 3) {
+            (&outputPtr[tempIndex])->type = TYPE_CHAIN_ANS;
+            push(loopIndex);    
+        }
+        
+        if (operandDepth == 1) {
+            // We need to push HL since it isn't used in the next operator/function
+            (&outputPtr[tempIndex])->type = TYPE_CHAIN_PUSH;
+            PUSH_HL();
+        } else if (operandDepth) {
+            operandDepth--;
+        }
+        
+        if (startIndex == endIndex) {
+            break;
+        }
+    }
+    
+    return VALID;
 }
 
 static uint8_t functionI(unsigned int token, ti_var_t currentProgram) {

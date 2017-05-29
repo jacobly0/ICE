@@ -19,7 +19,8 @@
 #include "stack.h"
 #include "functions.h"
 
-uint8_t parseFunction(uint24_t index, uint8_t *outputStack) {
+uint8_t parseFunction(uint24_t index) {
+    const uint8_t *outputStack = (uint8_t*)0xD62C00;
     element_t *outputPtr = (element_t*)outputStack;
     element_t *outputCurr, *outputPrev;
     uint8_t function, amountOfArguments;
@@ -36,7 +37,7 @@ uint8_t parseFunction(uint24_t index, uint8_t *outputStack) {
         return E_ARGUMENTS;
     }
     
-    // Dummy thing, just to make sure we 'parsed' a function :P
+    // Dummy thing, it's great, it's true! :D
     OR_A_A();
     
     return VALID;
