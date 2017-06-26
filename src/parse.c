@@ -20,7 +20,7 @@
 #include "functions.h"
 
 extern uint8_t (*functions[256])(unsigned int token, ti_var_t currentProgram);
-const char implementedFunctions[] = {tNot, tRemainder, tMin, tMax, tMean, tSqrt, tDet};
+const char implementedFunctions[] = {tNot, tMin, tMax, tMean, tSqrt, tDet};
 
 /* First byte:  bit 7  : returns something in A
                 bit 6  : unimplemented
@@ -61,7 +61,7 @@ uint8_t parseExpression(unsigned int token, ti_var_t currentProgram) {
     const uint8_t *stack          = (uint8_t*)0xD64000;
     unsigned int stackElements    = 0;
     unsigned int loopIndex, temp;
-    uint8_t index = 0, ChainType, res, a;
+    uint8_t index = 0, a;
     uint8_t amountOfArgumentsStack[20];
     uint8_t *amountOfArgumentsStackPtr = amountOfArgumentsStack;
     uint8_t stackToOutputReturn;
@@ -265,19 +265,54 @@ stopParsing:
     goto stackToOutput;
 stackToOutputReturn2:
 
-    // Remove stupid things like 2+5
-    for (loopIndex = 2; loopIndex < ice.outputElements; loopIndex++) {
+    // Remove stupid things like 2+5, and not(1, max(2,3
+    for (loopIndex = 1; loopIndex < ice.outputElements; loopIndex++) {
         outputPrevPrev = &outputPtr[loopIndex-2];
         outputPrev = &outputPtr[loopIndex-1];
         outputCurr = &outputPtr[loopIndex];
+        index = (uint8_t)(outputCurr->operand >> 8);
         
         // Check if the types are number | number | operator
-        if (outputPrevPrev->type == TYPE_NUMBER && outputPrev->type == TYPE_NUMBER && outputCurr->type == TYPE_OPERATOR) {
+        if (loopIndex > 1 && outputPrevPrev->type == TYPE_NUMBER && outputPrev->type == TYPE_NUMBER && outputCurr->type == TYPE_OPERATOR) {
             // If yes, execute the operator, and store it in the first entry, and remove the other 2
             outputPrevPrev->operand = executeOperator(outputPrevPrev->operand, outputPrev->operand, (uint8_t)outputCurr->operand);
             memcpy(outputPrev, &outputPtr[loopIndex+1], (ice.outputElements-1)*4);
             ice.outputElements -= 2;
             loopIndex--;
+            continue;
+        }
+        
+        // Check if the types are number | number | ... | function (not det)
+        if (loopIndex >= index && outputCurr->type == TYPE_FUNCTION && (uint8_t)outputCurr->operand != tDet) {
+            for (a = 1; a <= index; a++) {
+                if ((&outputPtr[loopIndex-a])->type != TYPE_NUMBER) {
+                    goto DontDeleteFunction;
+                }
+            }
+            // The function has only numbers as argument, so remove them as well :)
+            switch ((uint8_t)outputCurr->operand) {
+                case tNot:
+                    temp = !outputPrev->operand;
+                    break;
+                case tMin:
+                    temp = (outputPrev->operand < outputPrevPrev->operand) ? outputPrev->operand : outputPrevPrev->operand;
+                    break;
+                case tMax:
+                    temp = (outputPrev->operand > outputPrevPrev->operand) ? outputPrev->operand : outputPrevPrev->operand;
+                    break;
+                case tMean:
+                    temp = (outputPrev->operand + outputPrevPrev->operand) / 2;
+                    break;
+                default:
+                    temp = sqrt(outputPrev->operand);
+            }
+            
+            // And remove everything
+            (&outputPtr[loopIndex - index])->operand = temp;
+            memcpy(&outputPtr[loopIndex - index + 1], &outputPtr[loopIndex+1], (ice.outputElements-1)*4);
+            ice.outputElements -= index;
+            loopIndex -= index - 1;
+DontDeleteFunction:;
         }
     }
     
@@ -384,7 +419,7 @@ uint8_t parsePostFixFromIndexToIndex(uint24_t startIndex, uint24_t endIndex) {
         
         return VALID;
     } else if (amountOfStackElements == 2) {
-        outputCurr = &outputPtr[tempIndex = pop()];
+        outputCurr = &outputPtr[tempIndex = getNextIndex()];
         
         // It should be a function with a single argument, i.e. det(0 / not(A
         if (outputCurr->type != TYPE_FUNCTION) {
@@ -395,13 +430,10 @@ uint8_t parsePostFixFromIndexToIndex(uint24_t startIndex, uint24_t endIndex) {
     }
     
     // 3 or more entries, full expression
-    for (loopIndex = startIndex; loopIndex <= endIndex; loopIndex++) {
-        outputCurr = &outputPtr[loopIndex];
-        
+    do {
+        outputCurr = &outputPtr[loopIndex = getNextIndex()];
         outputType = outputCurr->type;
         outputOperand = outputCurr->operand;
-        
-        dbg_Debugger();
         
         if (outputType == TYPE_OPERATOR) {
             // Wait, invalid operator?!
@@ -409,16 +441,15 @@ uint8_t parsePostFixFromIndexToIndex(uint24_t startIndex, uint24_t endIndex) {
                 return E_SYNTAX;
             }
             
-            operand2Index = pop();
-            operand1Index = pop();
+            operand2Index = getIndexOffset(-2);
+            operand1Index = getIndexOffset(-3);
             
             // Parse the operator with the 2 latest operands of the stack!
             parseOperator(&outputPtr[operand1Index], &outputPtr[operand2Index], outputCurr);
         
-            // Remove the second argument and the operator...
-            memcpy(&outputPtr[operand1Index + 1], &outputPtr[loopIndex + 1], ice.outputElements * 4);
-            endIndex -= loopIndex - operand1Index;
-            loopIndex = operand1Index;
+            // Remove the index of the first and the second argument, the index of the operator will be the chain
+            removeIndexFromStack(getCurrentIndex() - 2);
+            removeIndexFromStack(getCurrentIndex() - 2);
             
             // Check chain push/ans
             operandDepth = 3;
@@ -434,57 +465,31 @@ uint8_t parsePostFixFromIndexToIndex(uint24_t startIndex, uint24_t endIndex) {
                 return temp;
             }
             
-            // Cleanup, and set to chaintype
-            memcpy(&outputPtr[loopIndex-amountOfArguments+1], &outputPtr[loopIndex+1], ice.outputElements * 4);
-            loopIndex -= amountOfArguments;
-            endIndex -= amountOfArguments;
+            // Cleanup, only if it's NOT a det(
+            if ((uint8_t)outputCurr->operand != tDet) {
+                for (temp = 0; temp < amountOfArguments; temp++) {
+                    removeIndexFromStack(getCurrentIndex() - 2);
+                }
+            }
             
             // Check chain push/ans
             operandDepth = 3;
             tempIndex = loopIndex;
-        } else {
-            push(loopIndex);
-        }
-        
-        if (outputType == TYPE_C_START) {
-            outputCurr->type = TYPE_FUNCTION_RETURN;
-            outputCurr->operand = (uint24_t)&outputPtr[loopIndex];
-            temp = 1;
-            
-            while (temp && loopIndex <= endIndex) {
-                outputCurr = &outputPtr[++loopIndex];
-                
-                // If it's a det(, decrement the amount of nested dets
-                if (outputCurr->type == TYPE_FUNCTION && (uint8_t)outputCurr->operand == tDet) {
-                    temp--;
-                }
-                
-                // If it's the start of a new C function, increment the amount of nested dets
-                if (outputCurr->type == TYPE_C_START) {
-                    temp++;
-                }
-            }
-            loopIndex--;
         }
         
         // Check if the next or next next operand is either a function operator
         if (operandDepth == 3) {
             (&outputPtr[tempIndex])->type = TYPE_CHAIN_ANS;
-            push(loopIndex);    
-        }
-        
-        if (operandDepth == 1) {
+        } else if (operandDepth == 1) {
             // We need to push HL since it isn't used in the next operator/function
             (&outputPtr[tempIndex])->type = TYPE_CHAIN_PUSH;
             PUSH_HL();
-        } else if (operandDepth) {
-            operandDepth--;
         }
         
-        if (startIndex == endIndex) {
-            break;
+        if (operandDepth) {
+            operandDepth--;
         }
-    }
+    } while (loopIndex != endIndex);
     
     return VALID;
 }
@@ -492,7 +497,7 @@ uint8_t parsePostFixFromIndexToIndex(uint24_t startIndex, uint24_t endIndex) {
 static uint8_t functionI(unsigned int token, ti_var_t currentProgram) {
     uint8_t a = 0, b = 0, outputByte, tok;
     const char *dataString;
-    const uint8_t colorTable[16] = {255,24,224,0,248,36,227,97,9,19,230,255,181,107,106,74};
+    const uint8_t colorTable[16] = {255,24,224,0,248,36,227,97,9,19,230,255,181,107,106,74};    // Thanks Cesium :D
     unsigned int offset;
 
     // Only get the output name, icon or description at the top of your program
@@ -713,14 +718,14 @@ uint8_t (*functions[256])(unsigned int, ti_var_t) = {
     tokenUnimplemented, //23
     tokenUnimplemented, //24
     parseExpression,    //25
-    tokenUnimplemented, //26
+    parseExpression,    //26
     tokenUnimplemented, //27
     tokenUnimplemented, //28
     tokenUnimplemented, //29
     tokenUnimplemented, //30
     tokenUnimplemented, //31
     tokenUnimplemented, //32
-    tokenUnimplemented, //33
+    parseExpression,    //33
     tokenUnimplemented, //34
     tokenUnimplemented, //35
     tokenUnimplemented, //36

@@ -39,6 +39,12 @@ typedef struct {
     
     bool     usedAlreadyGetKeyFast;
     uint24_t getKeyFastAddr;
+    
+    bool     usedAlreadySqrt;
+    uint24_t SqrtAddr;
+    
+    bool     usedAlreadyMean;
+    uint24_t MeanAddr;
 } ice_t;
 
 typedef struct {
@@ -46,23 +52,32 @@ typedef struct {
     bool     inFunction;
     bool     outputIsNumber;
     
+    uint8_t  outputRegister;
+    uint8_t  outputRegister2;
+    
     uint24_t outputNumber;
 } expr_t;
 
 #define MESSAGE_HEIGHT       10
 #define iceMessageLine       (3 + (ice.messageIndex += MESSAGE_HEIGHT))
 #define iceMessageNewLine()  do { (iceMessageLine); } while(0)
+    
+#define OutputRegisterHL 0
+#define OutputRegisterDE 1
 
 extern ice_t ice;
 extern expr_t expr;
 
 void preScanProgram(ti_var_t);
+void ProgramPtrToOffsetStack(void);
 
 void CHeaderData(void);
 void CProgramHeader(void);
 void MultWithNumber(uint24_t number, uint24_t *programPtr);
 void RandRoutine(void);
 void KeypadRoutine(void);
+void MeanRoutine(void);
+void SqrtRoutine(void);
 
 extern uint8_t AndOrXorData[16];
 

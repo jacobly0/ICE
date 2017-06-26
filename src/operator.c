@@ -19,7 +19,8 @@
 #include "stack.h"
 #include "functions.h"
 
-extern void (*operatorFunctions[280])(void);
+extern void (*operatorFunctions[224])(void);
+extern void (*operatorChainPushChainAnsFunctions[14])(void);
 const char operators[] = {tStore, tAnd, tXor, tOr, tEQ, tLT, tGT, tLE, tGE, tNE, tMul, tDiv, tAdd, tSub};
 const uint8_t operatorPrecedence[] = {0, 1, 2, 2, 3, 3, 3, 3, 3, 3, 5, 5, 4, 4};
 
@@ -178,8 +179,20 @@ uint8_t parseOperator(element_t *outputPrevPrev, element_t *outputPrev, element_
     // Only call the function if both types are valid
     if ( (typeMasked1 == typeMasked2 && (typeMasked1 == TYPE_NUMBER || typeMasked1 == TYPE_CHAIN_ANS)) ||
          (typeMasked1 > TYPE_CHAIN_PUSH && typeMasked2 > TYPE_CHAIN_ANS) ||
-         (oper == tStore && typeMasked2 != TYPE_VARIABLE) ) {
+         (oper == tStore && typeMasked2 != TYPE_VARIABLE)) {
         return E_SYNTAX;
+    }
+    
+    expr.outputRegister2 = OutputRegisterHL;
+    
+    // This should not happen
+    if (typeMasked1 == TYPE_CHAIN_PUSH && oper != tStore) {
+        if (typeMasked2 != TYPE_CHAIN_ANS) {
+            return E_ICE_ERROR;
+        }
+        (*operatorChainPushChainAnsFunctions[oper])();
+        expr.outputRegister = expr.outputRegister2;
+        return VALID;
     }
     
     // If you have something like "A or 1", the output is always 1, so we can remove the "ld hl, (A)"
@@ -194,102 +207,13 @@ uint8_t parseOperator(element_t *outputPrevPrev, element_t *outputPrev, element_
     if (oper == tLE || oper == tLT) {
         swapEntries();
     }
-    (*operatorFunctions[((getIndexOfOperator(oper) - 1) * 20) + (typeMasked1 * 4) + typeMasked2])();
+    (*operatorFunctions[((getIndexOfOperator(oper) - 1) * 16) + (typeMasked1 * 4) + typeMasked2])();
+    expr.outputRegister = expr.outputRegister2;
     return VALID;
 }
 
 void insertFunctionReturn(uint24_t function, uint8_t outputRegister, bool needPush) {
-    // Parse a C function
-    if ((uint8_t)(function >> 16)) {
-        const uint8_t *outputStack = (uint8_t*)0xD62C00;
-        element_t *outputPtr = (element_t*)outputStack, *outputCurr;
-        uint8_t temp, neededArguments, a;
-        uint24_t tempIndex;
-        
-        dbg_Debugger();
-        
-        outputCurr = (element_t *)function;
-        neededArguments = (uint8_t)(outputCurr->operand >> 8);
-        expr.inFunction = true;
-        
-        // Get every argument
-        for (a = 0; a < neededArguments; a++) {
-            // This index is the right bound of the next parsing
-            tempIndex = function;
-            temp = 0;
-
-            // Find the last argument seperator
-            do {
-ForceGetNewEntry:
-                outputCurr = &outputPtr[--function];
-                
-                // If it's a det(, skip that
-                if (outputCurr->type == TYPE_FUNCTION && (uint8_t)outputCurr->operand == tDet) {
-                    temp++;
-                }
-                
-                // It it's the start of a det(, go one layer back
-                if (outputCurr->type == TYPE_C_START && temp) {
-                    temp--;
-                    goto ForceGetNewEntry;
-                }
-            } while (temp || (outputCurr->type != TYPE_ARG_DELIMITER && outputCurr->type != TYPE_C_START));
-            
-            // function is the left bound of the next parsing
-            if ((temp = parsePostFixFromIndexToIndex(function + 1, tempIndex - 1)) != VALID) {
-                //return temp;
-            }
-            
-            // Push the argument
-            PUSH_HL();
-        }
-        
-        dbg_Debugger();
-        
-        // Check if the first argument of the det( is a number (should be), and the expression should end with a right parenthesis
-        if (!expr.outputIsNumber || ice.tempToken != tRParen) {
-            //return E_SYNTAX;
-        }
-        
-        temp = CArguments[expr.outputNumber * 2];
-        
-        // Not implemented
-        if (temp & UN) {
-            //return E_NOT_IMPLEMENTED;
-        }
-        
-        // Deprecated
-        if (temp & DEPR) {
-            //return E_DEPRECATED;
-        }
-        
-        // Check the right amount of arguments, after parsing them ;)
-        if ((neededArguments - 1) != (temp & 7)) {
-            //return E_ARGUMENTS;
-        }
-        
-        // Remove the last number and push from the program
-        ice.programPtr -= 5;
-        
-        // Finally do it! :D
-        CALL(/*0xD1A8F5*/0xD52C74 + ice.CRoutinesStack[expr.outputNumber]*4);
-        
-        for (a = 1; a < neededArguments; a++) {
-            POP_BC();
-        }
-        
-        // Check if the output is in HL(s) or A
-        if (temp & RET_A) {
-            OR_A_A();
-            SBC_HL_HL();
-            LD_L_A();
-        } else if (temp & RET_HL) {
-            CALL(_SetHLUTo0);
-        }
-
-    }
-
-    else if ((uint8_t)function == tRand) {
+    if ((uint8_t)function == tRand) {
         // We need to save a register before using the routine
         if (needPush) {
             if (outputRegister == OUTPUT_IN_HL) {
@@ -300,7 +224,7 @@ ForceGetNewEntry:
         }
         
         // Store the pointer to the call to the stack, to replace later
-        ice.dataOffsetStack[ice.dataOffsetElements++] = (uint24_t*)(ice.programPtr + 1);
+        ProgramPtrToOffsetStack();
         
         // We need to add the rand routine to the data section
         if (!ice.usedAlreadyRand) {
@@ -355,7 +279,7 @@ ForceGetNewEntry:
             
             
             // Store the pointer to the call to the stack, to replace later
-            ice.dataOffsetStack[ice.dataOffsetElements++] = (uint24_t*)(ice.programPtr + 1);
+            ProgramPtrToOffsetStack();
             
             // We need to add the getKeyFast routine to the data section
             if (!ice.usedAlreadyGetKeyFast) {
@@ -433,7 +357,11 @@ void OperatorError(void) {
     displayError(E_ICE_ERROR);
 }
 void StoChainAnsVariable(void) {
-    LD_IX_OFF_IND_HL(entry2_operand);
+    if (expr.outputRegister == OutputRegisterHL) {
+        LD_IX_OFF_IND_HL(entry2_operand);
+    } else {
+        LD_IX_OFF_IND_DE(entry2_operand);
+    }
 }
 void StoNumberVariable(void) {
     LD_HL_NUMBER(entry1_operand);
@@ -445,10 +373,6 @@ void StoVariableVariable(void) {
 }
 void StoFunctionVariable(void) {
     insertFunctionReturn(entry1_operand, OUTPUT_IN_HL, NO_PUSH);
-    StoChainAnsVariable();
-}
-void StoChainPushVariable(void) {
-    POP_HL();
     StoChainAnsVariable();
 }
 void AndInsert(void) {
@@ -465,7 +389,11 @@ void AndInsert(void) {
 }
 void AndChainAnsNumber(void) {
     if (oper == tXor) {
-        LD_DE_IMM(-1);
+        if (expr.outputRegister == OutputRegisterHL) {
+            LD_DE_IMM(-1);
+        } else {
+            LD_HL_IMM(-1);
+        }
         ADD_HL_DE();
         if (!entry2_operand) {
             CCF();
@@ -477,7 +405,11 @@ void AndChainAnsNumber(void) {
             ice.programPtr = ice.programPtrBackup;
             LD_HL_NUMBER(0);
         } else {
-            LD_DE_IMM(-1);
+            if (expr.outputRegister == OutputRegisterHL) {
+                LD_DE_IMM(-1);
+            } else {
+                LD_HL_IMM(-1);
+            }
             ADD_HL_DE();
             CCF();
             SBC_HL_HL();
@@ -485,7 +417,11 @@ void AndChainAnsNumber(void) {
         }
     } else {
         if (!entry2_operand) {
-            LD_DE_IMM(-1);
+            if (expr.outputRegister == OutputRegisterHL) {
+                LD_DE_IMM(-1);
+            } else {
+                LD_HL_IMM(-1);
+            }
             ADD_HL_DE();
             CCF();
             SBC_HL_HL();
@@ -497,12 +433,15 @@ void AndChainAnsNumber(void) {
     }
 }
 void AndChainAnsVariable(void) {
-    LD_DE_IND_IX_OFF(entry2_operand);
+    if (expr.outputRegister == OutputRegisterHL) {
+        LD_DE_IND_IX_OFF(entry2_operand);
+    } else {
+        LD_HL_IND_IX_OFF(entry2_operand);
+    }
     AndInsert();
 }
 void AndChainAnsFunction(void) {
-    EX_DE_HL();
-    insertFunctionReturn(entry2_operand, OUTPUT_IN_HL, NEED_PUSH);
+    insertFunctionReturn(entry2_operand, (expr.outputRegister == OutputRegisterHL) ? OUTPUT_IN_DE : OUTPUT_IN_HL, NEED_PUSH);
     AndInsert();
 }
 void AndFunctionNumber(void) {
@@ -549,19 +488,6 @@ void AndFunctionFunction(void) {
 void AndFunctionChainAns(void) {
     swapEntries();
     AndChainAnsFunction();
-}
-void AndChainPushNumber(void) {
-    POP_HL();
-    AndChainAnsNumber();
-}
-void AndChainPushVariable(void) {
-    POP_HL();
-    AndChainAnsVariable();
-}
-void AndChainPushFunction(void) {
-    insertFunctionReturn(entry2_operand, OUTPUT_IN_HL, NO_PUSH);
-    POP_DE();
-    AndInsert();
 }
 void AndChainPushChainAns(void) {
     POP_DE();
@@ -621,11 +547,19 @@ void EQChainAnsNumber(void) {
     uint24_t number = entry2_operand;
     if (number && number < 6) {
         do {
-            DEC_HL();
+            if (expr.outputRegister == OutputRegisterHL) {
+                DEC_HL();
+            } else {
+                DEC_DE();
+            }
         } while (--number);
     }
     if (!number) {
-        LD_DE_IMM(-1);
+        if (expr.outputRegister == OutputRegisterHL) {
+            LD_DE_IMM(-1);
+        } else {
+            LD_HL_IMM(-1);
+        }
         ADD_HL_DE();
         if (oper == tNE) {
             CCF();
@@ -633,13 +567,16 @@ void EQChainAnsNumber(void) {
         SBC_HL_HL();
         INC_HL();
     } else {
-        LD_DE_IMM(number);
+        if (expr.outputRegister == OutputRegisterHL) {
+            LD_DE_IMM(number);
+        } else {
+            LD_HL_IMM(number);
+        }
         EQInsert();
     }
 }
 void EQChainAnsFunction(void) {
-    EX_DE_HL();
-    insertFunctionReturn(entry2_operand, OUTPUT_IN_HL, NEED_PUSH);
+    insertFunctionReturn(entry2_operand, (expr.outputRegister == OutputRegisterHL) ? OUTPUT_IN_DE : OUTPUT_IN_HL, NEED_PUSH);
     EQInsert();
 }
 void EQVariableNumber(void) {
@@ -647,7 +584,11 @@ void EQVariableNumber(void) {
     EQChainAnsNumber();
 }
 void EQChainAnsVariable(void) {
-    LD_DE_IND_IX_OFF(entry2_operand);
+    if (expr.outputRegister == OutputRegisterHL) {
+        LD_DE_IND_IX_OFF(entry2_operand);
+    } else {
+        LD_HL_IND_IX_OFF(entry2_operand);
+    }
     EQInsert();
 }
 void EQFunctionNumber(void) {
@@ -691,21 +632,12 @@ void EQFunctionChainAns(void) {
     swapEntries();
     EQChainAnsFunction();
 }
-void EQChainPushNumber(void) {
-    POP_HL();
-    EQChainAnsNumber();
-}
-void EQChainPushVariable(void) {
-    POP_HL();
-    EQChainAnsVariable();
-}
-void EQChainPushFunction(void) {
-    insertFunctionReturn(entry2_operand, OUTPUT_IN_HL, NO_PUSH);
-    POP_DE();
-    EQInsert();
-}
 void EQChainPushChainAns(void) {
-    POP_DE();
+    if (expr.outputRegister == OutputRegisterHL) {
+        POP_DE();
+    } else {
+        POP_HL();
+    }
     EQInsert();
 }
 void GEInsert() {
@@ -719,11 +651,19 @@ void GEInsert() {
     INC_HL();
 }
 void GEChainAnsNumber(void) {
-    LD_DE_IMM(entry2_operand);
+    if (expr.outputRegister == OutputRegisterHL) {
+        LD_DE_IMM(entry2_operand);
+    } else {
+        LD_HL_IMM(entry2_operand);
+    }
     GEInsert();
 }
 void GEChainAnsVariable(void) {
-    LD_DE_IND_IX_OFF(entry2_operand);
+    if (expr.outputRegister == OutputRegisterHL) {
+        LD_DE_IND_IX_OFF(entry2_operand);
+    } else {
+        LD_HL_IND_IX_OFF(entry2_operand);
+    }
     GEInsert();
 }
 void GENumberVariable(void) {
@@ -736,8 +676,11 @@ void GENumberFunction(void) {
     GEInsert();
 }
 void GENumberChainAns(void) {
-    EX_DE_HL();
-    LD_HL_NUMBER(entry1_operand);
+    if (expr.outputRegister == OutputRegisterHL) {
+        LD_DE_IMM(entry1_operand);
+    } else {
+        LD_HL_NUMBER(entry1_operand);
+    }
     GEInsert();
 }
 void GEVariableNumber(void) {
@@ -754,7 +697,9 @@ void GEVariableFunction(void) {
     GEInsert();
 }
 void GEVariableChainAns(void) {
-    EX_DE_HL();
+    if (expr.outputRegister == OutputRegisterHL) {
+        EX_DE_HL();
+    }
     LD_HL_IND_IX_OFF(entry1_operand);
     GEInsert();
 }
@@ -772,28 +717,22 @@ void GEFunctionFunction(void) {
     GEInsert();
 }
 void GEFunctionChainAns(void) {
-    EX_DE_HL();
+    if (expr.outputRegister == OutputRegisterHL) {
+        EX_DE_HL();
+    }
     insertFunctionReturn(entry1_operand, OUTPUT_IN_HL, NEED_PUSH);
 }
 void GEChainAnsFunction(void) {
+    if (expr.outputRegister != OutputRegisterHL) {
+        EX_DE_HL();
+    }
     insertFunctionReturn(entry2_operand, OUTPUT_IN_DE, NEED_PUSH);
     GEInsert();
 }
-void GEChainPushNumber(void) {
-    POP_HL();
-    GEChainAnsNumber();
-}
-void GEChainPushVariable(void) {
-    POP_HL();
-    GEChainAnsVariable();
-}
-void GEChainPushFunction(void) {
-    insertFunctionReturn(entry2_operand, OUTPUT_IN_DE, NO_PUSH);
-    POP_HL();
-    GEInsert();
-}
 void GEChainPushChainAns(void) {
-    EX_DE_HL();
+    if (expr.outputRegister == OutputRegisterHL) {
+        EX_DE_HL();
+    }
     POP_HL();
     GEInsert();
 }
@@ -812,9 +751,6 @@ void GEChainPushChainAns(void) {
 #define GTChainAnsNumber    GEChainAnsNumber   
 #define GTChainAnsVariable  GEChainAnsVariable 
 #define GTChainAnsFunction  GEChainAnsFunction 
-#define GTChainPushNumber   GEChainPushNumber  
-#define GTChainPushVariable GEChainPushVariable
-#define GTChainPushFunction GEChainPushFunction
 #define GTChainPushChainAns GEChainPushChainAns
 
 #define LTNumberVariable   GTVariableNumber
@@ -832,25 +768,15 @@ void GEChainPushChainAns(void) {
 #define LTChainAnsVariable GTVariableChainAns
 #define LTChainAnsFunction GTFunctionChainAns
 
-void LTChainPushNumber(void) {
-    POP_HL();
-    GTNumberChainAns();
-}
-void LTChainPushVariable(void) {
-    POP_HL();
-    GTVariableChainAns();
-}
 void LTChainPushChainAns(void) {
+    if (expr.outputRegister != OutputRegisterHL) {
+        EX_DE_HL();
+    }
     POP_DE();
-    EX_DE_HL();
     SCF();
     SBC_HL_DE();
     SBC_HL_HL();
     INC_HL();
-}
-void LTChainPushFunction(void) {
-    insertFunctionReturn(entry1_operand, OUTPUT_IN_HL, NO_PUSH);
-    LTChainPushChainAns();
 }
 
 #define LENumberVariable   GEVariableNumber
@@ -868,25 +794,15 @@ void LTChainPushFunction(void) {
 #define LEChainAnsVariable GEVariableChainAns
 #define LEChainAnsFunction GEFunctionChainAns
 
-void LEChainPushNumber(void) {
-    POP_HL();
-    GENumberChainAns();
-}
-void LEChainPushVariable(void) {
-    POP_HL();
-    GEVariableChainAns();
-}
 void LEChainPushChainAns(void) {
+    if (expr.outputRegister != OutputRegisterHL) {
+        EX_DE_HL();
+    }
     POP_DE();
-    EX_DE_HL();
     OR_A_A();
     SBC_HL_DE();
     SBC_HL_HL();
     INC_HL();
-}
-void LEChainPushFunction(void) {
-    insertFunctionReturn(entry1_operand, OUTPUT_IN_HL, NO_PUSH);
-    LEChainPushChainAns();
 }
 
 #define NENumberVariable    EQVariableNumber
@@ -903,9 +819,6 @@ void LEChainPushFunction(void) {
 #define NEChainAnsNumber    EQNumberChainAns
 #define NEChainAnsVariable  EQVariableChainAns
 #define NEChainAnsFunction  EQFunctionChainAns
-#define NEChainPushNumber   EQChainPushNumber
-#define NEChainPushVariable EQChainPushVariable
-#define NEChainPushFunction EQChainPushFunction
 #define NEChainPushChainAns EQChainPushChainAns
 
 void MulChainAnsNumber(void) {
@@ -914,6 +827,9 @@ void MulChainAnsNumber(void) {
         ice.programPtr = ice.programPtrBackup;
         LD_HL_NUMBER(0);
     } else {
+        if (expr.outputRegister != OutputRegisterHL) {
+            EX_DE_HL();
+        }
         MultWithNumber(number, (uint24_t *)&ice.programPtr);
     }
 }
@@ -965,6 +881,9 @@ void MulFunctionFunction(void) {
     CALL(__imuls);
 }
 void MulChainAnsFunction(void) {
+    if (expr.outputRegister != OutputRegisterHL) {
+        EX_DE_HL();
+    }
     insertFunctionReturn(entry2_operand, OUTPUT_IN_BC, NEED_PUSH);
     CALL(__imuls);
 }
@@ -972,32 +891,28 @@ void MulFunctionChainAns(void) {
     swapEntries();
     MulChainAnsFunction();
 }
-void MulChainPushNumber(void) {
-    POP_HL();
-    MulChainAnsNumber();
-}
-void MulChainPushVariable(void) {
-    POP_HL();
-    MulChainAnsVariable();
-}
-void MulChainPushFunction(void) {
-    insertFunctionReturn(entry2_operand, OUTPUT_IN_HL, NO_PUSH);
-    POP_BC();
-    CALL(__imuls);
-}
 void MulChainPushChainAns(void) {
+    if (expr.outputRegister != OutputRegisterHL) {
+        EX_DE_HL();
+    }
     POP_BC();
     CALL(__imuls);
 }
 void DivChainAnsNumber(void) {
+    if (expr.outputRegister != OutputRegisterHL) {
+        EX_DE_HL();
+    }
     LD_BC_IMM(entry2_operand);
     CALL(__idvrmu);
-    EX_DE_HL();
+    expr.outputRegister2 = OutputRegisterDE;
 }
 void DivChainAnsVariable(void) {
+    if (expr.outputRegister != OutputRegisterHL) {
+        EX_DE_HL();
+    }
     LD_BC_IND_IX_OFF(entry2_operand);
     CALL(__idvrmu);
-    EX_DE_HL();
+    expr.outputRegister2 = OutputRegisterDE;
 }
 void DivNumberVariable(void) {
     LD_HL_NUMBER(entry1_operand);
@@ -1007,14 +922,18 @@ void DivNumberFunction(void) {
     insertFunctionReturn(entry2_operand, OUTPUT_IN_BC, NO_PUSH);
     LD_HL_NUMBER(entry1_operand);
     CALL(__idvrmu);
-    EX_DE_HL();
+    expr.outputRegister2 = OutputRegisterDE;
 }
 void DivNumberChainAns(void) {
-    PUSH_HL();
+    if (expr.outputRegister == OutputRegisterHL) {
+        PUSH_HL();
+    } else {
+        PUSH_DE();
+    }
     POP_BC();
     LD_HL_NUMBER(entry1_operand);
     CALL(__idvrmu);
-    EX_DE_HL();
+    expr.outputRegister2 = OutputRegisterDE;
 }
 void DivVariableNumber(void) {
     LD_HL_IND_IX_OFF(entry1_operand);
@@ -1028,14 +947,18 @@ void DivVariableFunction(void) {
     insertFunctionReturn(entry2_operand, OUTPUT_IN_BC, NO_PUSH);
     LD_HL_IND_IX_OFF(entry1_operand);
     CALL(__idvrmu);
-    EX_DE_HL();
+    expr.outputRegister2 = OutputRegisterDE;
 }
 void DivVariableChainAns(void) {
-    PUSH_HL();
+    if (expr.outputRegister == OutputRegisterHL) {
+        PUSH_HL();
+    } else {
+        PUSH_DE();
+    }
     POP_BC();
     LD_HL_IND_IX_OFF(entry1_operand);
     CALL(__idvrmu);
-    EX_DE_HL();
+    expr.outputRegister2 = OutputRegisterDE;
 }
 void DivFunctionNumber(void) {
     insertFunctionReturn(entry1_operand, OUTPUT_IN_HL, NO_PUSH);
@@ -1051,50 +974,55 @@ void DivFunctionFunction(void) {
     insertFunctionReturn(entry1_operand, OUTPUT_IN_HL, NO_PUSH);
     POP_BC();
     CALL(__idvrmu);
-    EX_DE_HL();
+    expr.outputRegister2 = OutputRegisterDE;
 }
 void DivFunctionChainAns(void) {
-    PUSH_HL();
+    if (expr.outputRegister == OutputRegisterHL) {
+        PUSH_HL();
+    } else {
+        PUSH_DE();
+    }
     insertFunctionReturn(entry1_operand, OUTPUT_IN_HL, NO_PUSH);
     POP_BC();
     CALL(__idvrmu);
-    EX_DE_HL();
+    expr.outputRegister2 = OutputRegisterDE;
 }
 void DivChainAnsFunction(void) {
+    if (expr.outputRegister != OutputRegisterHL) {
+        EX_DE_HL();
+    }
     insertFunctionReturn(entry2_operand, OUTPUT_IN_BC, NEED_PUSH);
     CALL(__idvrmu);
-    EX_DE_HL();
-}
-void DivChainPushNumber(void) {
-    POP_HL();
-    DivChainAnsNumber();
-}
-void DivChainPushVariable(void) {
-    POP_HL();
-    DivChainAnsVariable();
-}
-void DivChainPushFunction(void) {
-    insertFunctionReturn(entry2_operand, OUTPUT_IN_BC, NO_PUSH);
-    POP_HL();
-    CALL(__idvrmu);
-    EX_DE_HL();
+    expr.outputRegister2 = OutputRegisterDE;
 }
 void DivChainPushChainAns(void) {
-    PUSH_HL();
+    if (expr.outputRegister == OutputRegisterHL) {
+        PUSH_HL();
+    } else {
+        PUSH_DE();
+    }
     POP_BC();
     POP_HL();
     CALL(__idvrmu);
-    EX_DE_HL();
+    expr.outputRegister2 = OutputRegisterDE;
 }
 void AddChainAnsNumber(void) {
     uint24_t number = entry2_operand;
     if (number < 5) {
         uint8_t a;
         for (a = 0; a < (uint8_t)number; a++) {
-            INC_HL();
+            if (expr.outputRegister == OutputRegisterHL) {
+                INC_HL();
+            } else {
+                INC_DE();
+            }
         }
     } else {
-        LD_DE_IMM(number);
+        if (expr.outputRegister == OutputRegisterHL) {
+            LD_DE_IMM(number);
+        } else {
+            LD_HL_IMM(number);
+        }
         ADD_HL_DE();
     }
 }
@@ -1148,25 +1076,12 @@ void AddFunctionFunction(void) {
     ADD_HL_DE();
 }
 void AddChainAnsFunction(void) {
-    insertFunctionReturn(entry2_operand, OUTPUT_IN_DE, NEED_PUSH);
+    insertFunctionReturn(entry2_operand, (expr.outputRegister == OutputRegisterHL) ? OUTPUT_IN_DE : OUTPUT_IN_HL, NEED_PUSH);
     ADD_HL_DE();
 }
 void AddFunctionChainAns(void) {
     swapEntries();
     AddChainAnsFunction();
-}
-void AddChainPushNumber(void) {
-    POP_HL();
-    AddChainAnsNumber();
-}
-void AddChainPushVariable(void) {
-    POP_HL();
-    AddChainAnsVariable();
-}
-void AddChainPushFunction(void) {
-    insertFunctionReturn(entry2_operand, OUTPUT_IN_HL, NO_PUSH);
-    POP_DE();
-    ADD_HL_DE();
 }
 void AddChainPushChainAns(void) {
     POP_DE();
@@ -1177,14 +1092,25 @@ void SubChainAnsNumber(void) {
     if (number < 5) {
         uint8_t a;
         for (a = 0; a < (uint8_t)number; a++) {
-            DEC_HL();
+            if (expr.outputRegister == OutputRegisterHL) {
+                DEC_HL();
+            } else {
+                DEC_DE();
+            }
         }
     } else {
-        LD_DE_IMM(0x1000000 - number);
+        if (expr.outputRegister == OutputRegisterHL) {
+            LD_DE_IMM(0x1000000 - number);
+        } else {
+            LD_HL_IMM(0x1000000 - number);
+        }
         ADD_HL_DE();
     }
 }
 void SubChainAnsVariable(void) {
+    if (expr.outputRegister != OutputRegisterHL) {
+        EX_DE_HL();
+    }
     LD_DE_IND_IX_OFF(entry2_operand);
     OR_A_A();
     SBC_HL_DE();
@@ -1200,7 +1126,9 @@ void SubNumberFunction(void) {
     SBC_HL_DE();
 }
 void SubNumberChainAns(void) {
-    EX_DE_HL();
+    if (expr.outputRegister == OutputRegisterHL) {
+        EX_DE_HL();
+    }
     LD_HL_NUMBER(entry1_operand);
     OR_A_A();
     SBC_HL_DE();
@@ -1218,7 +1146,9 @@ void SubVariableFunction(void) {
     LD_HL_IND_IX_OFF(entry1_operand);
 }
 void SubVariableChainAns(void) {
-    EX_DE_HL();
+    if (expr.outputRegister == OutputRegisterHL) {
+        EX_DE_HL();
+    }
     LD_HL_IND_IX_OFF(entry1_operand);
     OR_A_A();
     SBC_HL_DE();
@@ -1238,38 +1168,48 @@ void SubFunctionFunction(void) {
     SBC_HL_DE();
 }
 void SubFunctionChainAns(void) {
-    EX_DE_HL();
+    if (expr.outputRegister == OutputRegisterHL) {
+        EX_DE_HL();
+    }
     insertFunctionReturn(entry1_operand, OUTPUT_IN_HL, NEED_PUSH);
     OR_A_A();
     SBC_HL_DE();
 }
 void SubChainAnsFunction(void) {
+    if (expr.outputRegister != OutputRegisterHL) {
+        EX_DE_HL();
+    }
     insertFunctionReturn(entry2_operand, OUTPUT_IN_DE, NEED_PUSH);
     OR_A_A();
     SBC_HL_DE();
 }
-void SubChainPushNumber(void) {
-    POP_HL();
-    SubChainAnsNumber();
-}
-void SubChainPushVariable(void) {
-    POP_HL();
-    SubChainAnsVariable();
-}
-void SubChainPushFunction(void) {
-    insertFunctionReturn(entry2_operand, OUTPUT_IN_DE, NO_PUSH);
-    POP_HL();
-    OR_A_A();
-    SBC_HL_DE();
-}
 void SubChainPushChainAns(void) {
-    EX_DE_HL();
+    if (expr.outputRegister == OutputRegisterHL) {
+        EX_DE_HL();
+    }
     POP_HL();
     OR_A_A();
     SBC_HL_DE();
 }
 
-void (*operatorFunctions[280])(void) = {
+void (*operatorChainPushChainAnsFunctions[14])(void) = {
+    OperatorError,
+    AndChainPushChainAns,
+    XorChainPushChainAns,
+    OrChainPushChainAns,
+    EQChainPushChainAns,
+    LTChainPushChainAns,
+    GTChainPushChainAns,
+    LEChainPushChainAns,
+    GEChainPushChainAns,
+    NEChainPushChainAns,
+    MulChainPushChainAns,
+    DivChainPushChainAns,
+    AddChainPushChainAns,
+    SubChainPushChainAns
+};
+
+void (*operatorFunctions[224])(void) = {
     OperatorError,
     StoNumberVariable,
     OperatorError,
@@ -1284,10 +1224,6 @@ void (*operatorFunctions[280])(void) = {
     OperatorError,
     OperatorError,
     StoChainAnsVariable,
-    OperatorError,
-    OperatorError,
-    OperatorError,
-    StoChainPushVariable,
     OperatorError,
     OperatorError,
     
@@ -1307,10 +1243,6 @@ void (*operatorFunctions[280])(void) = {
     AndChainAnsVariable,
     AndChainAnsFunction,
     OperatorError,
-    AndChainPushNumber,
-    AndChainPushVariable,
-    AndChainPushFunction,
-    AndChainPushChainAns,
     
     OperatorError,
     XorNumberVariable,
@@ -1328,10 +1260,6 @@ void (*operatorFunctions[280])(void) = {
     XorChainAnsVariable,
     XorChainAnsFunction,
     OperatorError,
-    XorChainPushNumber,
-    XorChainPushVariable,
-    XorChainPushFunction,
-    XorChainPushChainAns,
     
     OperatorError,
     OrNumberVariable,
@@ -1349,10 +1277,6 @@ void (*operatorFunctions[280])(void) = {
     OrChainAnsVariable,
     OrChainAnsFunction,
     OperatorError,
-    OrChainPushNumber,
-    OrChainPushVariable,
-    OrChainPushFunction,
-    OrChainPushChainAns,
     
     OperatorError,
     EQNumberVariable,
@@ -1370,10 +1294,6 @@ void (*operatorFunctions[280])(void) = {
     EQChainAnsVariable,
     EQChainAnsFunction,
     OperatorError,
-    EQChainPushNumber,
-    EQChainPushVariable,
-    EQChainPushFunction,
-    EQChainPushChainAns,
     
     OperatorError,
     LTNumberVariable,
@@ -1391,10 +1311,6 @@ void (*operatorFunctions[280])(void) = {
     LTChainAnsVariable,
     LTChainAnsFunction,
     OperatorError,
-    LTChainPushNumber,
-    LTChainPushVariable,
-    LTChainPushFunction,
-    LTChainPushChainAns,
     
     OperatorError,
     GTNumberVariable,
@@ -1412,10 +1328,6 @@ void (*operatorFunctions[280])(void) = {
     GTChainAnsVariable,
     GTChainAnsFunction,
     OperatorError,
-    GTChainPushNumber,
-    GTChainPushVariable,
-    GTChainPushFunction,
-    GTChainPushChainAns,
     
     OperatorError,
     LENumberVariable,
@@ -1433,10 +1345,6 @@ void (*operatorFunctions[280])(void) = {
     LEChainAnsVariable,
     LEChainAnsFunction,
     OperatorError,
-    LEChainPushNumber,
-    LEChainPushVariable,
-    LEChainPushFunction,
-    LEChainPushChainAns,
     
     OperatorError,
     GENumberVariable,
@@ -1454,10 +1362,6 @@ void (*operatorFunctions[280])(void) = {
     GEChainAnsVariable,
     GEChainAnsFunction,
     OperatorError,
-    GEChainPushNumber,
-    GEChainPushVariable,
-    GEChainPushFunction,
-    GEChainPushChainAns,
     
     OperatorError,
     NENumberVariable,
@@ -1475,10 +1379,6 @@ void (*operatorFunctions[280])(void) = {
     NEChainAnsVariable,
     NEChainAnsFunction,
     OperatorError,
-    NEChainPushNumber,
-    NEChainPushVariable,
-    NEChainPushFunction,
-    NEChainPushChainAns,
     
     OperatorError,
     MulNumberVariable,
@@ -1496,10 +1396,6 @@ void (*operatorFunctions[280])(void) = {
     MulChainAnsVariable,
     MulChainAnsFunction,
     OperatorError,
-    MulChainPushNumber,
-    MulChainPushVariable,
-    MulChainPushFunction,
-    MulChainPushChainAns,
     
     OperatorError,
     DivNumberVariable,
@@ -1517,10 +1413,6 @@ void (*operatorFunctions[280])(void) = {
     DivChainAnsVariable,
     DivChainAnsFunction,
     OperatorError,
-    DivChainPushNumber,
-    DivChainPushVariable,
-    DivChainPushFunction,
-    DivChainPushChainAns,
     
     OperatorError,
     AddNumberVariable,
@@ -1538,10 +1430,6 @@ void (*operatorFunctions[280])(void) = {
     AddChainAnsVariable,
     AddChainAnsFunction,
     OperatorError,
-    AddChainPushNumber,
-    AddChainPushVariable,
-    AddChainPushFunction,
-    AddChainPushChainAns,
     
     OperatorError,
     SubNumberVariable,
@@ -1559,8 +1447,4 @@ void (*operatorFunctions[280])(void) = {
     SubChainAnsVariable,
     SubChainAnsFunction,
     OperatorError,
-    SubChainPushNumber,
-    SubChainPushVariable,
-    SubChainPushFunction,
-    SubChainPushChainAns,
 };

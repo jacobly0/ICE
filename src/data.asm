@@ -3,8 +3,10 @@ segment data
 .assume adl = 1
 
 .def _AndOrXorData
+.def _SqrtRoutine
 .def _RandRoutine
 .def _KeypadRoutine
+.def _MeanRoutine
 
 _AndOrXorData:
     ld      bc, -1           ; 0
@@ -18,6 +20,37 @@ _AndOrXorData:
     sbc     hl, hl           ; 11
     and     a, 1             ; 13
     ld      l, a             ; 15
+   
+_SqrtRoutine:
+    di
+	dec sp      ; (sp) = ?
+	push hl      ; (sp) = ?uhl
+	    dec sp      ; (sp) = ?uhl?
+	    pop iy      ; (sp) = ?u, uix = hl?
+	    dec sp      ; (sp) = ?u?
+	pop af      ; af = u?
+	or a, a
+	sbc hl, hl
+	ex de, hl   ; de = 0
+	sbc hl, hl   ; hl = 0
+	ld bc, 0C40h ; b = 12, c = 0x40
+Sqrt24Loop:
+	sub a, c
+	sbc hl, de
+	jr nc, Sqrt24Skip
+	add a, c
+	adc hl, de
+Sqrt24Skip:
+	ccf
+	rl e
+	rl d
+	add	iy, iy
+	rla
+	adc hl, hl
+	add iy, iy
+	rla
+	adc hl, hl
+	djnz Sqrt24Loop
     
 _RandRoutine:
     ld      hl, (ix+81)
@@ -67,3 +100,15 @@ CheckKeyPressLoop:
     ret     z
     inc     l
     ret
+
+_MeanRoutine:
+    ld      ix, 0
+	add     ix, sp
+	add     hl, de
+	push    hl
+            rr      (ix-1)
+	pop     hl
+	rr      h
+	rr      l
+	ld      ix, 0D1383Fh
+	ret

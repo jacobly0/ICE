@@ -217,3 +217,7 @@ void preScanProgram(ti_var_t Program) {
     // Well, we scanned the entire program, so let's rewind it
     ti_Rewind(Program);
 }
+
+void ProgramPtrToOffsetStack(void) {
+    ice.dataOffsetStack[ice.dataOffsetElements++] = (uint24_t*)(ice.programPtr + 1);
+}
