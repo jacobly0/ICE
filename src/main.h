@@ -33,6 +33,7 @@ typedef struct {
     bool     gotIconDescription;
     bool     usedCodeAfterHeader;
     bool     lastTokenIsReturn;
+    bool     modifiedIY;
     
     bool     usedAlreadyRand;
     uint24_t randAddr;

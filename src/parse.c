@@ -22,17 +22,6 @@
 extern uint8_t (*functions[256])(unsigned int token, ti_var_t currentProgram);
 const char implementedFunctions[] = {tNot, tMin, tMax, tMean, tSqrt, tDet};
 
-/* First byte:  bit 7  : returns something in A
-                bit 6  : unimplemented
-                bit 5  : returns something in HL(s)
-                bit 4  : extra bit
-                bit 2-0: amount of arguments needed
-   Second byte: bit 7  : first argument is small
-                bit 6  : second argument is small
-                bit 5  : third argument is small
-                ...
-*/
- 
 uint8_t parseProgram(ti_var_t currentProgram) {
     unsigned int token, size;
     uint8_t ret = VALID;
@@ -63,7 +52,7 @@ uint8_t parseExpression(unsigned int token, ti_var_t currentProgram) {
     unsigned int loopIndex, temp;
     uint8_t index = 0, a;
     uint8_t amountOfArgumentsStack[20];
-    uint8_t *amountOfArgumentsStackPtr = amountOfArgumentsStack;
+    uint8_t *amountOfArgumentsStackPtr = amountOfArgumentsStack - 1;
     uint8_t stackToOutputReturn;
 
     // Setup pointers
@@ -114,9 +103,6 @@ uint8_t parseExpression(unsigned int token, ti_var_t currentProgram) {
         else if ((index = getIndexOfOperator(tok))) {
             // If the token is ->, move the entire stack to the output, instead of checking the precedence
             if (tok == tStore) {
-                // The last argument is not counted yet, so increment
-                (*amountOfArgumentsStackPtr)++;
-                
                 // Move entire stack to output
                 stackToOutputReturn = 1;
                 goto stackToOutput;
@@ -197,7 +183,8 @@ stackToOutputReturn1:;
         
         // Process a function
         else if (strchr(implementedFunctions, tok)) {
-            *++amountOfArgumentsStackPtr = 0;
+            // We always have at least 1 argument
+            *++amountOfArgumentsStackPtr = 1;
             stackCurr->type = TYPE_FUNCTION;
             stackCurr->operand = token;
             stackElements++;
@@ -257,9 +244,6 @@ stackToOutputReturn1:;
     ice.tempToken = tRParen;
     
 stopParsing:
-    // The last argument is not counted yet, so increment
-    (*amountOfArgumentsStackPtr)++;
-    
     // Move entire stack to output
     stackToOutputReturn = 2;
     goto stackToOutput;
@@ -367,8 +351,9 @@ uint8_t parsePostFixFromIndexToIndex(uint24_t startIndex, uint24_t endIndex) {
     outputType = outputCurr->type;
     outputOperand = outputCurr->operand;
     
-    // Clean the expr struct
+    // Clean the expr struct and the stack
     memset(&expr, 0, sizeof(expr));
+    getNextFreeStack();
     
     // Get all the indexes of the expression
     temp = 0;
@@ -410,6 +395,11 @@ uint8_t parsePostFixFromIndexToIndex(uint24_t startIndex, uint24_t endIndex) {
         // Expression is only a function without arguments that returns something (getKey, rand)
         else if (outputType == TYPE_FUNCTION_RETURN) {
             insertFunctionReturn(outputOperand, OUTPUT_IN_HL, NO_PUSH);
+        }
+        
+        // It is a det(
+        else if (outputType == TYPE_C_START) {
+            return parseFunction(getNextIndex());
         }
         
         // Expression is an empty function or operator, i.e. not(, +

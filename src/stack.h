@@ -8,5 +8,7 @@ unsigned int getNextIndex(void);
 unsigned int getCurrentIndex(void);
 unsigned int getIndexOffset(unsigned int offset);
 void removeIndexFromStack(unsigned int index);
+void getNextFreeStack(void);
+void removeStack(void);
 
 #endif

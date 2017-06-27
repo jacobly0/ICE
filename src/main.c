@@ -128,6 +128,11 @@ void main() {
             goto stop;
         }
         
+        // If we modified IY, restore it
+        if (ice.modifiedIY) {
+            LD_IY_IMM(0xD00080);
+        }
+        
         // If the last token is not "Return", write a "ret" to the program
         if (!ice.lastTokenIsReturn) {
             RET();

@@ -9,48 +9,49 @@ segment data
 .def _MeanRoutine
 
 _AndOrXorData:
-    ld      bc, -1           ; 0
-    add     hl, bc           ; 4
-    sbc     a, a             ; 5
-    ex      de, hl           ; 6
-    ld      d, a             ; 7
-    add     hl, bc           ; 8
-    sbc     a, a             ; 9
-    nop                      ; 10
-    sbc     hl, hl           ; 11
-    and     a, 1             ; 13
-    ld      l, a             ; 15
+    ld      bc, -1
+    add     hl, bc
+    sbc     a, a
+    ex      de, hl
+    ld      d, a
+    add     hl, bc
+    sbc     a, a
+    and     a, d            ; This byte can be modified: and/or/xor
+    sbc     hl, hl
+    and     a, 1
+    ld      l, a
    
 _SqrtRoutine:
     di
-	dec sp      ; (sp) = ?
-	push hl      ; (sp) = ?uhl
-	    dec sp      ; (sp) = ?uhl?
-	    pop iy      ; (sp) = ?u, uix = hl?
-	    dec sp      ; (sp) = ?u?
-	pop af      ; af = u?
-	or a, a
-	sbc hl, hl
-	ex de, hl   ; de = 0
-	sbc hl, hl   ; hl = 0
-	ld bc, 0C40h ; b = 12, c = 0x40
+    dec     sp              ; (sp) = ?
+    push    hl              ; (sp) = ?uhl
+            dec     sp      ; (sp) = ?uhl?
+            pop     iy      ; (sp) = ?u, uix = hl?
+            dec  sp         ; (sp) = ?u?
+    pop     af              ; af = u?
+    or      a, a
+    sbc     hl, hl
+    ex      de, hl          ; de = 0
+    sbc     hl, hl          ; hl = 0
+    ld      bc, 0C40h       ; b = 12, c = 0x40
 Sqrt24Loop:
-	sub a, c
-	sbc hl, de
-	jr nc, Sqrt24Skip
-	add a, c
-	adc hl, de
+    sub     a, c
+    sbc     hl, de
+    jr      nc, Sqrt24Skip
+    add     a, c
+    adc     hl, de
 Sqrt24Skip:
-	ccf
-	rl e
-	rl d
-	add	iy, iy
-	rla
-	adc hl, hl
-	add iy, iy
-	rla
-	adc hl, hl
-	djnz Sqrt24Loop
+    ccf
+    rl      e
+    rl      d
+    add     iy, iy
+    rla
+    adc     hl, hl
+    add     iy, iy
+    rla
+    adc     hl, hl
+    djnz    Sqrt24Loop
+    ret
     
 _RandRoutine:
     ld      hl, (ix+81)
@@ -103,12 +104,12 @@ CheckKeyPressLoop:
 
 _MeanRoutine:
     ld      ix, 0
-	add     ix, sp
-	add     hl, de
-	push    hl
+    add     ix, sp
+    add     hl, de
+    push    hl
             rr      (ix-1)
-	pop     hl
-	rr      h
-	rr      l
-	ld      ix, 0D1383Fh
-	ret
+    pop     hl
+    rr      h
+    rr      l
+    ld      ix, 0D1383Fh
+    ret
