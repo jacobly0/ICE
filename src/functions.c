@@ -31,7 +31,7 @@
 */
 
 const uint8_t CArguments[] = {
-    RET_HL   | 0, ARG_NORM,    // Begin
+    RET_NONE | 0, ARG_NORM,    // Begin
     RET_NONE | 0, ARG_NORM,    // End
     RET_A    | 1, SMALL_1,     // SetColor
     RET_NONE | 0, ARG_NORM,    // SetDefaultPalette
@@ -123,6 +123,7 @@ uint8_t parseFunction(uint24_t index) {
     element_t *outputPrev, *outputPrevPrev;
     uint8_t function, amountOfArguments, tempType, temp, a;
     uint24_t output, endIndex, startIndex;
+    uint24_t *tempP1, *tempP2;
     
     outputPrev        = &outputPtr[getIndexOffset(-2)];
     outputPrevPrev    = &outputPtr[getIndexOffset(-3)];
@@ -290,11 +291,11 @@ uint8_t parseFunction(uint24_t index) {
             ice.modifiedIY = true;
             break;
         case tDet:
-            dbg_Debugger();
             endIndex = index;
-            startIndex = index - 1;
+            startIndex = index;
             
             // Get all the arguments
+            dbg_Debugger();
             for (a = 0; a < amountOfArguments; a++) {
                 temp = 0;
                 while (1) {
@@ -307,12 +308,13 @@ uint8_t parseFunction(uint24_t index) {
                         }
                         temp--;
                     }
-                    if (tempType == TYPE_ARG_DELIMITER && !temp) {
-                        break;
-                    }
                     
                     if (tempType == TYPE_FUNCTION && (uint8_t)outputPrev->operand == tDet) {
                         temp++;
+                    }
+                    
+                    if (tempType == TYPE_ARG_DELIMITER && !temp) {
+                        break;
                     }
                 }
                 
@@ -322,12 +324,21 @@ uint8_t parseFunction(uint24_t index) {
                     return E_ARGUMENTS;
                 }
                 
-                // And finally grab the argument, and return if an error occured
-                temp = parsePostFixFromIndexToIndex(startIndex + 1, endIndex - 1);
+                // Setup a new stack
+                tempP1 = getStackVar(0);
+                tempP2 = getStackVar(1);
+                ice.stackDepth++;
                 
-                if (temp != VALID) {
+                // And finally grab the argument, and return if an error occured
+                if ((temp = parsePostFixFromIndexToIndex(startIndex + 1, endIndex - 1)) != VALID) {
                     return temp;
                 }
+                
+                ice.stackDepth--;
+                
+                // And remove the stack
+                setStackVar(tempP1, 0);
+                setStackVar(tempP2, 1);
                 
                 // Push the argument
                 if (expr.outputRegister == OutputRegisterHL) {
@@ -365,7 +376,7 @@ uint8_t parseFunction(uint24_t index) {
             }
             
             // Call the function
-            CALL(ice.CRoutinesStack[expr.outputNumber] + 0xD00000);
+            CALL(ice.CRoutinesStack[expr.outputNumber]*4 + 0xD00000);
             
             // And pop the arguments
             for (a = 1; a < amountOfArguments; a++) {

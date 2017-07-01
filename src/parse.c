@@ -350,13 +350,16 @@ uint8_t parsePostFixFromIndexToIndex(uint24_t startIndex, uint24_t endIndex) {
     outputCurr = &outputPtr[startIndex];
     outputType = outputCurr->type;
     outputOperand = outputCurr->operand;
+    ice.stackStart = (uint24_t*)(ice.stackDepth * STACK_SIZE + ice.stack);
+    setStackVar(ice.stackStart, 0);
+    setStackVar(ice.stackStart, 1);
     
-    // Clean the expr struct and the stack
+    // Clean the expr struct
     memset(&expr, 0, sizeof(expr));
-    getNextFreeStack();
     
     // Get all the indexes of the expression
     temp = 0;
+    amountOfStackElements = 0;
     for (loopIndex = startIndex; loopIndex <= endIndex; loopIndex++) {
         outputCurr = &outputPtr[loopIndex];
         
@@ -372,10 +375,9 @@ uint8_t parsePostFixFromIndexToIndex(uint24_t startIndex, uint24_t endIndex) {
         // If not in a nested det(, push the index
         if (!temp) {
             push(loopIndex);
+            amountOfStackElements++;
         }
     }
-    
-    amountOfStackElements = getStackSize();
     
     // It's a single entry
     if (amountOfStackElements == 1) {
@@ -421,6 +423,7 @@ uint8_t parsePostFixFromIndexToIndex(uint24_t startIndex, uint24_t endIndex) {
     
     // 3 or more entries, full expression
     do {
+        dbg_Debugger();
         outputCurr = &outputPtr[loopIndex = getNextIndex()];
         outputType = outputCurr->type;
         outputOperand = outputCurr->operand;

@@ -1,24 +1,29 @@
+#include <stdbool.h>
+#include <stddef.h>
+#include <stdint.h>
+#include <tice.h>
+#include <math.h>
+#include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
+#include <debug.h>
 
+#include <fileioc.h>
+#include <graphx.h>
+
+#include "parse.h"
+#include "main.h"
+#include "errors.h"
+#include "output.h"
+#include "operator.h"
 #include "stack.h"
+#include "functions.h"
 
-#define STACK_SIZE 25
-
-static unsigned int stack[STACK_SIZE * 3];
-static unsigned int *p1 = stack;
-static unsigned int *p2 = stack;
-static uint8_t amountOfUsedStacks = 0;
+static unsigned int *p1;
+static unsigned int *p2;
 
 void push(unsigned int i) {
     *p1++ = i;
-}
-
-unsigned int pop(void) {
-    return *(--p1);
-}
-
-unsigned int getStackSize(void) {
-    return p1 - stack - (amountOfUsedStacks * STACK_SIZE);
 }
 
 unsigned int getNextIndex(void) {
@@ -30,20 +35,25 @@ unsigned int getIndexOffset(unsigned int offset) {
 }
 
 void removeIndexFromStack(unsigned int index) {
-    memcpy(stack + index, stack + index + 1, STACK_SIZE - index);
+    memcpy(ice.stackStart + index, ice.stackStart + index + 1, STACK_SIZE - index);
     p2--;
 }
 
 unsigned int getCurrentIndex(void) {
-    return p2 - stack;
+    return p2 - ice.stackStart;
 }
 
-void getNextFreeStack(void) {
-    push(p2);
-    push(p1);
-    p1 = stack + (++amountOfUsedStacks * STACK_SIZE);
-    p2 = p1;
+unsigned int *getStackVar(uint8_t which) {
+    if (which) {
+        return p2;
+    }
+    return p1;
 }
 
-void removeStack(void) {
+void setStackVar(uint24_t* val, uint8_t which) {
+    if (which) {
+        p2 = val;
+    } else {
+        p1 = val;
+    }
 }

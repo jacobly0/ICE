@@ -10,5 +10,7 @@ unsigned int getIndexOffset(unsigned int offset);
 void removeIndexFromStack(unsigned int index);
 void getNextFreeStack(void);
 void removeStack(void);
+unsigned int *getStackVar(uint8_t which);
+void setStackVar(uint24_t* val, uint8_t which);
 
 #endif

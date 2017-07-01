@@ -4,6 +4,8 @@
 #include <stdint.h>
 #include <fileioc.h>
 
+#define STACK_SIZE 25
+
 typedef struct {
     char     outName[9];
     char     inName[9];
@@ -19,12 +21,15 @@ typedef struct {
     uint8_t  amountOfCRoutinesUsed;
     uint8_t  CRoutinesStack[100];
     uint8_t  tempToken;
+    uint8_t  stackDepth;
     
     uint24_t *dataOffsetStack[500];
     uint24_t dataOffsetElements;
     uint24_t currentLine;
     uint24_t programSize;
     uint24_t outputElements;
+    uint24_t *stack[STACK_SIZE*5];
+    uint24_t *stackStart;
     
     ti_var_t inPrgm;
     ti_var_t outPrgm;
