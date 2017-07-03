@@ -1,6 +1,8 @@
 #ifndef OPERATOR_H
 #define OPERATOR_H
 
+#include <stdint.h>
+
 #define OUTPUT_IN_BC 0
 #define OUTPUT_IN_DE 1
 #define OUTPUT_IN_HL 2

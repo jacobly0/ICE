@@ -103,13 +103,12 @@ CheckKeyPressLoop:
     ret
 
 _MeanRoutine:
-    ld      ix, 0
-    add     ix, sp
+    ld      iy, 0
+    add     iy, sp
     add     hl, de
     push    hl
-            rr      (ix-1)
+            rr      (iy-1)
     pop     hl
     rr      h
     rr      l
-    ld      ix, 0D1383Fh
     ret

@@ -1,6 +1,8 @@
 #ifndef STACK_H
 #define STACK_H
 
+#include <stdint.h>
+
 void push(unsigned int i);
 unsigned int pop(void);
 unsigned int getStackSize(void);

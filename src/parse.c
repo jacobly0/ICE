@@ -1,3 +1,14 @@
+#include "parse.h"
+
+#include "operator.h"
+#include "main.h"
+#include "functions.h"
+#include "errors.h"
+#include "stack.h"
+#include "output.h"
+
+#include <fileioc.h>
+
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
@@ -7,17 +18,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include <debug.h>
-
-#include <fileioc.h>
-#include <graphx.h>
-
-#include "parse.h"
-#include "main.h"
-#include "errors.h"
-#include "output.h"
-#include "operator.h"
-#include "stack.h"
-#include "functions.h"
 
 extern uint8_t (*functions[256])(unsigned int token, ti_var_t currentProgram);
 const char implementedFunctions[] = {tNot, tMin, tMax, tMean, tSqrt, tDet};
@@ -423,10 +423,12 @@ uint8_t parsePostFixFromIndexToIndex(uint24_t startIndex, uint24_t endIndex) {
     
     // 3 or more entries, full expression
     do {
-        dbg_Debugger();
         outputCurr = &outputPtr[loopIndex = getNextIndex()];
         outputType = outputCurr->type;
         outputOperand = outputCurr->operand;
+        
+        // Clear this flag
+        expr.AnsSetZeroFlagReversed = false;
         
         if (outputType == TYPE_OPERATOR) {
             // Wait, invalid operator?!
@@ -613,19 +615,122 @@ static uint8_t functionCustom(unsigned int token, ti_var_t currentProgram) {
 }
 
 static uint8_t functionIf(unsigned int token, ti_var_t currentProgram) {
+    uint8_t res, temp;
+    uint8_t *IfStartAddr, *IfElseAddr;
+    uint24_t tempDataOffsetElements, tempDataOffsetElements2;
+    
     if ((token = getc()) != EOF && token != tEnter) {
+        // Parse the argument
+        if ((res = parseExpression(token, currentProgram)) != VALID) {
+            return res;
+        }
+        
+        //Check if we can optimize stuff :D
+        if (!expr.AnsSetZeroFlag) {
+            ADD_HL_DE();
+            OR_A_A();
+            SBC_HL_DE();
+        } else {
+            ice.programPtr -= expr.ZeroFlagRemoveAmountOfBytes;
+        }
+        
+        // Backup stuff
+        IfStartAddr = ice.programPtr;
+        tempDataOffsetElements = ice.dataOffsetElements;
+        temp = expr.AnsSetZeroFlagReversed;
+        
+        if (temp) {
+            JP_NZ(0);
+        } else {
+            JP_Z(0);
+        }
+        res = parseProgram(currentProgram);
+        
+        // Check if we quit the program with an 'Else'
+        if (res == E_ELSE) {
+            // Backup stuff
+            IfElseAddr = ice.programPtr;
+            tempDataOffsetElements2 = ice.dataOffsetElements;
+            
+            JP(0);
+            res = parseProgram(currentProgram);
+            if (res != E_END && res != E_VALID) {
+                return res;
+            }
+            
+            // Check if we can change the "jp" to a "jr" from the Else code
+            if (ice.programPtr - IfElseAddr <= 0x7F - 2 + 4) {
+                // Update all the pointers to the data section
+                while (ice.dataOffsetElements != tempDataOffsetElements2) {
+                    ice.dataOffsetStack[tempDataOffsetElements2] -= 2;
+                }
+                // And finally insert the "jr", and move the code
+                *IfElseAddr++ = OP_JR;
+                *IfElseAddr++ = ice.programPtr - IfElseAddr - 3;
+                memcpy(IfElseAddr, IfElseAddr+2, 0x7F);
+                ice.programPtr -= 2;
+            } else {
+                *(uint24_t*)(IfElseAddr+1) = ice.programPtr + PRGM_START - ice.programData;
+                IfElseAddr += 4;
+            }
+            
+            // Check if we can change the "jp" to a "jr" from the If code
+            if (IfElseAddr - IfStartAddr <= 0x7F + 4) {
+                // Update all the pointers to the data section
+                while (ice.dataOffsetElements != tempDataOffsetElements) {
+                    ice.dataOffsetStack[tempDataOffsetElements] -= 2;
+                }
+                // And finally insert the "jr", and move the code
+                // And finally insert the "jr (n)z", and move the code
+                if (temp) {
+                    *IfStartAddr++ = OP_JR_NZ;
+                } else {
+                    *IfStartAddr++ = OP_JR_Z;
+                }
+                *IfStartAddr++ = IfElseAddr - IfStartAddr - 3;
+                memcpy(IfStartAddr, IfStartAddr+2, ice.programPtr - IfStartAddr);
+                ice.programPtr -= 2;
+            } else {
+                *(uint24_t*)(IfStartAddr+1) = IfElseAddr + PRGM_START - ice.programData;
+                IfStartAddr += 4;
+            }
+        }
+        
+        // Check if we quit the program with an 'End' or at the end of the program
+        else if (res == E_END || res == E_VALID) {
+            // Check if we can change the "jp" to a "jr"
+            if (ice.programPtr - IfStartAddr <= 0x7F - 2 + 4) {
+                // Update all the pointers to the data section
+                while (ice.dataOffsetElements != tempDataOffsetElements) {
+                    ice.dataOffsetStack[tempDataOffsetElements] -= 2;
+                }
+                // And finally insert the "jr (n)z", and move the code
+                if (temp) {
+                    *IfStartAddr++ = OP_JR_NZ;
+                } else {
+                    *IfStartAddr++ = OP_JR_Z;
+                }
+                *IfStartAddr++ = ice.programPtr - IfStartAddr - 3;
+                memcpy(IfStartAddr, IfStartAddr+2, 0x7F);
+                ice.programPtr -= 2;
+            } else {
+                *(uint24_t*)(IfStartAddr+1) = ice.programPtr + PRGM_START - ice.programData;
+            }
+        } else {
+            return res;
+        }
         return VALID;
     } else {
         return E_NO_CONDITION;
     }
 }
 
-static uint8_t functionElseEnd(unsigned int token, ti_var_t currentProgram) {
-    // This should return if in nested block
-    if (!ice.nestedBlocks) {
-        return E_NO_NESTED_BLOCK;
-    }
-    return E_VALID;
+static uint8_t functionElse(unsigned int token, ti_var_t currentProgram) {
+    return E_ELSE;
+}
+
+static uint8_t functionEnd(unsigned int token, ti_var_t currentProgram) {
+    return E_END;
 }
 
 static uint8_t dummyReturn(unsigned int token, ti_var_t currentProgram) {
@@ -637,6 +742,7 @@ static uint8_t functionWhile(unsigned int token, ti_var_t currentProgram) {
 }
 
 static uint8_t functionRepeat(unsigned int token, ti_var_t currentProgram) {
+    while ((token = getc()) != EOF && token != tEnter);
     return VALID;
 }
 
@@ -893,11 +999,11 @@ uint8_t (*functions[256])(unsigned int, ti_var_t) = {
     tokenUnimplemented, //205
     functionIf,         //206
     tokenUnimplemented, //207
-    functionElseEnd,    //208
+    functionElse,       //208
     functionWhile,      //209
     functionRepeat,     //210
     functionFor,        //211
-    functionElseEnd,    //212
+    functionEnd,        //212
     functionReturn,     //213
     functionLbl,        //214
     functionGoto,       //215

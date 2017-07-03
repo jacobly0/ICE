@@ -1,6 +1,8 @@
 #ifndef PARSE_H
 #define PARSE_H
 
+#include <fileioc.h>
+
 #define TYPE_NUMBER          0
 #define TYPE_VARIABLE        1
 #define TYPE_FUNCTION_RETURN 2

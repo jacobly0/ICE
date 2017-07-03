@@ -1,3 +1,12 @@
+#include "stack.h"
+
+#include "parse.h"
+#include "main.h"
+#include "errors.h"
+#include "output.h"
+#include "operator.h"
+#include "functions.h"
+
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
@@ -7,17 +16,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include <debug.h>
-
-#include <fileioc.h>
-#include <graphx.h>
-
-#include "parse.h"
-#include "main.h"
-#include "errors.h"
-#include "output.h"
-#include "operator.h"
-#include "stack.h"
-#include "functions.h"
 
 static unsigned int *p1;
 static unsigned int *p2;

@@ -1,3 +1,12 @@
+#include "functions.h"
+
+#include "errors.h"
+#include "stack.h"
+#include "parse.h"
+#include "main.h"
+#include "output.h"
+#include "operator.h"
+
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
@@ -7,17 +16,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include <debug.h>
-
-#include <fileioc.h>
-#include <graphx.h>
-
-#include "parse.h"
-#include "main.h"
-#include "errors.h"
-#include "output.h"
-#include "operator.h"
-#include "stack.h"
-#include "functions.h"
 
 /* First byte:  bit 7  : returns something in A
                 bit 6  : unimplemented
@@ -132,6 +130,8 @@ uint8_t parseFunction(uint24_t index) {
     amountOfArguments = (uint8_t)(output >> 8);
     
     expr.outputRegister2 = OutputRegisterHL;
+    expr.AnsSetZeroFlag = false;
+    expr.AnsSetZeroFlagReversed = false;
     
     tempType = outputPrev->type;
     switch (function) {
@@ -251,11 +251,12 @@ uint8_t parseFunction(uint24_t index) {
                 // We need to add the mean routine to the data section
                 if (!ice.usedAlreadyMean) {
                     ice.MeanAddr = (uint24_t)ice.programDataPtr;
-                    memcpy(ice.programDataPtr, MeanRoutine, 24);
-                    ice.programDataPtr += 24;
+                    memcpy(ice.programDataPtr, MeanRoutine, 19);
+                    ice.programDataPtr += 19;
                     ice.usedAlreadyMean = true;
                 }
                 CALL(ice.MeanAddr);
+                ice.modifiedIY = true;
             } else {
                 OR_A_A();
                 SBC_HL_DE();
@@ -295,7 +296,6 @@ uint8_t parseFunction(uint24_t index) {
             startIndex = index;
             
             // Get all the arguments
-            dbg_Debugger();
             for (a = 0; a < amountOfArguments; a++) {
                 temp = 0;
                 while (1) {

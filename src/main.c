@@ -1,3 +1,15 @@
+#include "main.h"
+
+#include "functions.h"
+#include "errors.h"
+#include "stack.h"
+#include "parse.h"
+#include "output.h"
+#include "operator.h"
+
+#include <fileioc.h>
+#include <graphx.h>
+
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
@@ -7,17 +19,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include <debug.h>
-
-#include <fileioc.h>
-#include <graphx.h>
-
-#include "parse.h"
-#include "main.h"
-#include "errors.h"
-#include "output.h"
-#include "operator.h"
-#include "stack.h"
-#include "functions.h"
 
 ice_t ice;
 expr_t expr;
@@ -182,11 +183,11 @@ err:
     prgm_CleanUp();
 }
 
-void preScanProgram(ti_var_t Program) {
+void preScanProgram(ti_var_t currentProgram) {
     uint24_t token;
     
     // Scan the entire program
-    while ((token = ti_GetC(Program)) != EOF) {
+    while ((token = getc()) != EOF) {
         uint8_t tok = (uint8_t)token;
         
         if (tok == tString) {
@@ -194,10 +195,12 @@ void preScanProgram(ti_var_t Program) {
         } else if (tok == tEnter) {
             expr.inString = false;
         } else if (tok == tii) {
-            while ((token = ti_GetC(Program)) != EOF && (uint8_t)token != tEnter);
+            while ((token = getc()) != EOF && (uint8_t)token != tEnter);
+        } else if (tok == tStore) {
+            expr.inString = false;
         } else if (tok == tDet && !expr.inString) {
-            uint8_t tok1 = ti_GetC(Program);
-            uint8_t tok2 = ti_GetC(Program);
+            uint8_t tok1 = getc();
+            uint8_t tok2 = getc();
 
             // Invalid det( command
             if (tok1 < t0 || tok1 > t9) {
@@ -220,7 +223,7 @@ void preScanProgram(ti_var_t Program) {
     }
     
     // Well, we scanned the entire program, so let's rewind it
-    ti_Rewind(Program);
+    ti_Rewind(currentProgram);
 }
 
 void ProgramPtrToOffsetStack(void) {

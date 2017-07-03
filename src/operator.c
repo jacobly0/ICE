@@ -1,3 +1,12 @@
+#include "parse.h"
+#include "operator.h"
+
+#include "main.h"
+#include "functions.h"
+#include "errors.h"
+#include "stack.h"
+#include "output.h"
+
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
@@ -7,17 +16,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include <debug.h>
-
-#include <fileioc.h>
-#include <graphx.h>
-
-#include "parse.h"
-#include "main.h"
-#include "errors.h"
-#include "output.h"
-#include "operator.h"
-#include "stack.h"
-#include "functions.h"
 
 extern void (*operatorFunctions[224])(void);
 extern void (*operatorChainPushChainAnsFunctions[14])(void);
@@ -97,6 +95,8 @@ uint8_t parseOperator(element_t *outputPrevPrev, element_t *outputPrev, element_
     }
     
     expr.outputRegister2 = OutputRegisterHL;
+    expr.AnsSetZeroFlag = false;
+    expr.AnsSetZeroFlagReversed = false;
     
     // This should not happen
     if (typeMasked1 == TYPE_CHAIN_PUSH && oper != tStore) {
@@ -216,6 +216,9 @@ void insertFunctionReturn(uint24_t function, uint8_t outputRegister, bool needPu
             if (NEED_PUSH && outputRegister != OUTPUT_IN_HL) {
                 POP_HL();
             }
+            
+            expr.AnsSetZeroFlag = true;
+            expr.ZeroFlagRemoveAmountOfBytes = 0;
         }
         
         // Else, a standalone "getKey"
@@ -299,6 +302,8 @@ void AndInsert(void) {
     }
     memcpy(ice.programPtr, AndOrXorData, sizeof AndOrXorData);
     ice.programPtr += 16;
+    expr.AnsSetZeroFlag = true;
+    expr.ZeroFlagRemoveAmountOfBytes = 5;
 }
 void AndChainAnsNumber(void) {
     if (oper == tXor) {
@@ -451,10 +456,13 @@ void EQInsert() {
     LD_HL_IMM(0);
     if (oper == tEQ) {
         JR_NZ(1);
+        expr.AnsSetZeroFlagReversed = true;
     } else {
         JR_Z(1);
     }
     INC_HL();
+    expr.AnsSetZeroFlag = true;
+    expr.ZeroFlagRemoveAmountOfBytes = 7;
 }
 void EQChainAnsNumber(void) {
     uint24_t number = entry2_operand;
