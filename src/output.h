@@ -38,7 +38,9 @@
 #define OP_PUSH_BC    0xC5
 #define OP_JP_Z       0xCA
 #define OP_POP_DE     0xD1
+#define OP_JP_NC      0xD2
 #define OP_PUSH_DE    0xD5
+#define OP_JP_C       0xDA
 #define OP_POP_HL     0xE1
 #define OP_PUSH_HL    0xE5
 #define OP_EX_DE_HL   0xEB
@@ -89,6 +91,8 @@
 #define JP(addr)              do { output(uint8_t, OP_JP); output(uint24_t, addr); } while (0)
 #define JP_Z(addr)            do { output(uint8_t, OP_JP_Z); output(uint24_t, addr); } while (0)
 #define JP_NZ(addr)           do { output(uint8_t, OP_JP_NZ); output(uint24_t, addr); } while (0)
+#define JP_C(addr)            do { output(uint8_t, OP_JP_C); output(uint24_t, addr); } while (0)
+#define JP_NC(addr)           do { output(uint8_t, OP_JP_NC); output(uint24_t, addr); } while (0)
 #define CALL(addr)            do { output(uint8_t, OP_CALL); output(uint24_t, addr); } while (0)
 #define JR_NZ(off)            do { output(uint8_t, OP_JR_NZ); output(uint8_t, off); } while (0)
 #define JR_Z(off)             do { output(uint8_t, OP_JR_Z); output(uint8_t, off); } while (0)

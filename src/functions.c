@@ -132,6 +132,8 @@ uint8_t parseFunction(uint24_t index) {
     expr.outputRegister2 = OutputRegisterHL;
     expr.AnsSetZeroFlag = false;
     expr.AnsSetZeroFlagReversed = false;
+    expr.AnsSetCarryFlag = false;
+    expr.AnsSetCarryFlagReversed = false;
     
     tempType = outputPrev->type;
     switch (function) {

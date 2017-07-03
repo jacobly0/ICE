@@ -57,8 +57,10 @@ typedef struct {
     bool     outputIsNumber;
     bool     AnsSetZeroFlag;
     bool     AnsSetZeroFlagReversed;
+    bool     AnsSetCarryFlag;
+    bool     AnsSetCarryFlagReversed;
     
-    uint8_t  ZeroFlagRemoveAmountOfBytes;
+    uint8_t  ZeroCarryFlagRemoveAmountOfBytes;
     uint8_t  outputRegister;
     uint8_t  outputRegister2;
     

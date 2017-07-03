@@ -615,7 +615,7 @@ static uint8_t functionCustom(unsigned int token, ti_var_t currentProgram) {
 }
 
 static uint8_t functionIf(unsigned int token, ti_var_t currentProgram) {
-    uint8_t res, temp;
+    uint8_t res, tempZR, tempC, tempCR, insertJRCZReturn;
     uint8_t *IfStartAddr, *IfElseAddr;
     uint24_t tempDataOffsetElements, tempDataOffsetElements2;
     
@@ -626,23 +626,33 @@ static uint8_t functionIf(unsigned int token, ti_var_t currentProgram) {
         }
         
         //Check if we can optimize stuff :D
-        if (!expr.AnsSetZeroFlag) {
+        if (!expr.AnsSetZeroFlag && !expr.AnsSetCarryFlag) {
             ADD_HL_DE();
             OR_A_A();
             SBC_HL_DE();
         } else {
-            ice.programPtr -= expr.ZeroFlagRemoveAmountOfBytes;
+            ice.programPtr -= expr.ZeroCarryFlagRemoveAmountOfBytes;
         }
         
         // Backup stuff
         IfStartAddr = ice.programPtr;
         tempDataOffsetElements = ice.dataOffsetElements;
-        temp = expr.AnsSetZeroFlagReversed;
+        tempZR = expr.AnsSetZeroFlagReversed;
+        tempC  = expr.AnsSetCarryFlag;
+        tempCR = expr.AnsSetCarryFlagReversed;
         
-        if (temp) {
-            JP_NZ(0);
+        if (tempC) {
+            if (tempCR) {
+                JP_NC(0);
+            } else {
+                JP_C(0);
+            }
         } else {
-            JP_Z(0);
+            if (tempZR) {
+                JP_NZ(0);
+            } else {
+                JP_Z(0);
+            }
         }
         res = parseProgram(currentProgram);
         
@@ -680,13 +690,10 @@ static uint8_t functionIf(unsigned int token, ti_var_t currentProgram) {
                 while (ice.dataOffsetElements != tempDataOffsetElements) {
                     ice.dataOffsetStack[tempDataOffsetElements] -= 2;
                 }
-                // And finally insert the "jr", and move the code
-                // And finally insert the "jr (n)z", and move the code
-                if (temp) {
-                    *IfStartAddr++ = OP_JR_NZ;
-                } else {
-                    *IfStartAddr++ = OP_JR_Z;
-                }
+                // And finally insert the "jr (n)z/c", and move the code
+                insertJRCZReturn = 1;
+                goto insertJRCZ;
+insertJRCZReturn1:
                 *IfStartAddr++ = IfElseAddr - IfStartAddr - 3;
                 memcpy(IfStartAddr, IfStartAddr+2, ice.programPtr - IfStartAddr);
                 ice.programPtr -= 2;
@@ -704,12 +711,10 @@ static uint8_t functionIf(unsigned int token, ti_var_t currentProgram) {
                 while (ice.dataOffsetElements != tempDataOffsetElements) {
                     ice.dataOffsetStack[tempDataOffsetElements] -= 2;
                 }
-                // And finally insert the "jr (n)z", and move the code
-                if (temp) {
-                    *IfStartAddr++ = OP_JR_NZ;
-                } else {
-                    *IfStartAddr++ = OP_JR_Z;
-                }
+                // And finally insert the "jr (n)z/c", and move the code
+                insertJRCZReturn = 2;
+                goto insertJRCZ;
+insertJRCZReturn2:
                 *IfStartAddr++ = ice.programPtr - IfStartAddr - 3;
                 memcpy(IfStartAddr, IfStartAddr+2, 0x7F);
                 ice.programPtr -= 2;
@@ -723,6 +728,26 @@ static uint8_t functionIf(unsigned int token, ti_var_t currentProgram) {
     } else {
         return E_NO_CONDITION;
     }
+    
+    // Duplicated function opt
+insertJRCZ:
+    if (tempC) {
+        if (tempCR) {
+            *IfStartAddr++ = OP_JR_NC;
+        } else {
+            *IfStartAddr++ = OP_JR_C;
+        }
+    } else {
+        if (tempZR) {
+            *IfStartAddr++ = OP_JR_NZ;
+        } else {
+            *IfStartAddr++ = OP_JR_Z;
+        }
+    }
+    if (insertJRCZReturn == 1) {
+        goto insertJRCZReturn1;
+    }
+    goto insertJRCZReturn2;
 }
 
 static uint8_t functionElse(unsigned int token, ti_var_t currentProgram) {

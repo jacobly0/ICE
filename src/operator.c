@@ -86,6 +86,8 @@ uint8_t parseOperator(element_t *outputPrevPrev, element_t *outputPrev, element_
     uint8_t typeMasked1 = outputPrevPrev->type;
     uint8_t typeMasked2 = outputPrev->type;
     oper = (uint8_t)outputCurr->operand;
+    
+    dbg_Debugger();
 
     // Only call the function if both types are valid
     if ( (typeMasked1 == typeMasked2 && (typeMasked1 == TYPE_NUMBER || typeMasked1 == TYPE_CHAIN_ANS)) ||
@@ -97,13 +99,15 @@ uint8_t parseOperator(element_t *outputPrevPrev, element_t *outputPrev, element_
     expr.outputRegister2 = OutputRegisterHL;
     expr.AnsSetZeroFlag = false;
     expr.AnsSetZeroFlagReversed = false;
+    expr.AnsSetCarryFlag = false;
+    expr.AnsSetCarryFlagReversed = false;
     
     // This should not happen
     if (typeMasked1 == TYPE_CHAIN_PUSH && oper != tStore) {
         if (typeMasked2 != TYPE_CHAIN_ANS) {
             return E_ICE_ERROR;
         }
-        (*operatorChainPushChainAnsFunctions[oper])();
+        (*operatorChainPushChainAnsFunctions[getIndexOfOperator(oper) - 1])();
         expr.outputRegister = expr.outputRegister2;
         return VALID;
     }
@@ -218,7 +222,7 @@ void insertFunctionReturn(uint24_t function, uint8_t outputRegister, bool needPu
             }
             
             expr.AnsSetZeroFlag = true;
-            expr.ZeroFlagRemoveAmountOfBytes = 0;
+            expr.ZeroCarryFlagRemoveAmountOfBytes = 0;
         }
         
         // Else, a standalone "getKey"
@@ -303,7 +307,7 @@ void AndInsert(void) {
     memcpy(ice.programPtr, AndOrXorData, sizeof AndOrXorData);
     ice.programPtr += 16;
     expr.AnsSetZeroFlag = true;
-    expr.ZeroFlagRemoveAmountOfBytes = 5;
+    expr.ZeroCarryFlagRemoveAmountOfBytes = 5;
 }
 void AndChainAnsNumber(void) {
     if (oper == tXor) {
@@ -313,11 +317,16 @@ void AndChainAnsNumber(void) {
             LD_HL_IMM(-1);
         }
         ADD_HL_DE();
+        expr.ZeroCarryFlagRemoveAmountOfBytes = 0;
         if (!entry2_operand) {
             CCF();
+            expr.ZeroCarryFlagRemoveAmountOfBytes++;
+            expr.AnsSetCarryFlagReversed = true;
         }
         SBC_HL_HL();
         INC_HL();
+        expr.AnsSetCarryFlag = true;
+        expr.ZeroCarryFlagRemoveAmountOfBytes += 3;
     } else if (oper == tAnd) {
         if (!entry2_operand) {
             ice.programPtr = ice.programPtrBackup;
@@ -332,6 +341,9 @@ void AndChainAnsNumber(void) {
             CCF();
             SBC_HL_HL();
             INC_HL();
+            expr.AnsSetCarryFlag = true;
+            expr.ZeroCarryFlagRemoveAmountOfBytes = 4;
+            expr.AnsSetCarryFlagReversed = true;
         }
     } else {
         if (!entry2_operand) {
@@ -344,6 +356,9 @@ void AndChainAnsNumber(void) {
             CCF();
             SBC_HL_HL();
             INC_HL();
+            expr.AnsSetCarryFlag = true;
+            expr.ZeroCarryFlagRemoveAmountOfBytes = 4;
+            expr.AnsSetCarryFlagReversed = true;
         } else {
             ice.programPtr = ice.programPtrBackup;
             LD_HL_NUMBER(1);
@@ -462,7 +477,7 @@ void EQInsert() {
     }
     INC_HL();
     expr.AnsSetZeroFlag = true;
-    expr.ZeroFlagRemoveAmountOfBytes = 7;
+    expr.ZeroCarryFlagRemoveAmountOfBytes = 7;
 }
 void EQChainAnsNumber(void) {
     uint24_t number = entry2_operand;
@@ -482,11 +497,16 @@ void EQChainAnsNumber(void) {
             LD_HL_IMM(-1);
         }
         ADD_HL_DE();
+        expr.ZeroCarryFlagRemoveAmountOfBytes = 0;
         if (oper == tNE) {
             CCF();
+            expr.ZeroCarryFlagRemoveAmountOfBytes++;
+            expr.AnsSetCarryFlagReversed = true;
         }
         SBC_HL_HL();
         INC_HL();
+        expr.AnsSetCarryFlag = true;
+        expr.ZeroCarryFlagRemoveAmountOfBytes += 3;
     } else {
         if (expr.outputRegister == OutputRegisterHL) {
             LD_DE_IMM(number);
@@ -570,6 +590,8 @@ void GEInsert() {
     SBC_HL_DE();
     SBC_HL_HL();
     INC_HL();
+    expr.AnsSetCarryFlag = true;
+    expr.ZeroCarryFlagRemoveAmountOfBytes = 3;
 }
 void GEChainAnsNumber(void) {
     if (expr.outputRegister == OutputRegisterHL) {
@@ -698,6 +720,8 @@ void LTChainPushChainAns(void) {
     SBC_HL_DE();
     SBC_HL_HL();
     INC_HL();
+    expr.AnsSetCarryFlag = true;
+    expr.ZeroCarryFlagRemoveAmountOfBytes = 3;
 }
 
 #define LENumberVariable   GEVariableNumber
@@ -724,6 +748,8 @@ void LEChainPushChainAns(void) {
     SBC_HL_DE();
     SBC_HL_HL();
     INC_HL();
+    expr.AnsSetCarryFlag = true;
+    expr.ZeroCarryFlagRemoveAmountOfBytes = 3;
 }
 
 #define NENumberVariable    EQVariableNumber
