@@ -1,0 +1,80 @@
+<?xml version="1.0"?>
+<analyzerinfo checksum="2416777616">
+  <FileInfo check="Bounds checking">
+    <ArraySize array="AndOrXorData" size="16"/>
+  </FileInfo>
+  <FileInfo check="CheckUnusedFunctions">
+    <functiondecl functionName="main" lineNumber="26"/>
+    <functiondecl functionName="preScanProgram" lineNumber="189"/>
+    <functiondecl functionName="ProgramPtrToOffsetStack" lineNumber="232"/>
+    <functioncall functionName="CHeaderData"/>
+    <functioncall functionName="CProgramHeader"/>
+    <functioncall functionName="ICEheader"/>
+    <functioncall functionName="NULL"/>
+    <functioncall functionName="TI_PPRGM_TYPE"/>
+    <functioncall functionName="TI_PRGM_TYPE"/>
+    <functioncall functionName="amountOfCRoutinesUsed"/>
+    <functioncall functionName="amountOfPrograms"/>
+    <functioncall functionName="break"/>
+    <functioncall functionName="buf"/>
+    <functioncall functionName="currentProgram"/>
+    <functioncall functionName="dataOffsetElements"/>
+    <functioncall functionName="displayError"/>
+    <functioncall functionName="err"/>
+    <functioncall functionName="false"/>
+    <functioncall functionName="gfx_8bpp"/>
+    <functioncall functionName="gfx_Begin"/>
+    <functioncall functionName="gfx_End"/>
+    <functioncall functionName="gfx_FillRectangle_NoClip"/>
+    <functioncall functionName="gfx_HorizLine_NoClip"/>
+    <functioncall functionName="gfx_PrintStringXY"/>
+    <functioncall functionName="gfx_SetColor"/>
+    <functioncall functionName="gfx_SetTextFGColor"/>
+    <functioncall functionName="if"/>
+    <functioncall functionName="inName"/>
+    <functioncall functionName="inPrgm"/>
+    <functioncall functionName="inString"/>
+    <functioncall functionName="key"/>
+    <functioncall functionName="lastTokenIsReturn"/>
+    <functioncall functionName="memcpy"/>
+    <functioncall functionName="modifiedIY"/>
+    <functioncall functionName="os_GetCSC"/>
+    <functioncall functionName="outName"/>
+    <functioncall functionName="outPrgm"/>
+    <functioncall functionName="parseProgram"/>
+    <functioncall functionName="preScanProgram"/>
+    <functioncall functionName="prgm_CleanUp"/>
+    <functioncall functionName="programData"/>
+    <functioncall functionName="programDataData"/>
+    <functioncall functionName="programDataSize"/>
+    <functioncall functionName="programPtr"/>
+    <functioncall functionName="programSize"/>
+    <functioncall functionName="res"/>
+    <functioncall functionName="search_pos"/>
+    <functioncall functionName="selectedProgram"/>
+    <functioncall functionName="selectionOffset"/>
+    <functioncall functionName="sizeof"/>
+    <functioncall functionName="sprintf"/>
+    <functioncall functionName="stop"/>
+    <functioncall functionName="strcpy"/>
+    <functioncall functionName="t0"/>
+    <functioncall functionName="tAsm84CeCmp"/>
+    <functioncall functionName="tExtTok"/>
+    <functioncall functionName="ti_CloseAll"/>
+    <functioncall functionName="ti_DetectVar"/>
+    <functioncall functionName="ti_GetC"/>
+    <functioncall functionName="ti_OpenVar"/>
+    <functioncall functionName="ti_PutC"/>
+    <functioncall functionName="ti_Rewind"/>
+    <functioncall functionName="ti_Write"/>
+    <functioncall functionName="ti_var_t"/>
+    <functioncall functionName="tii"/>
+    <functioncall functionName="tok"/>
+    <functioncall functionName="token"/>
+    <functioncall functionName="uint16_t"/>
+    <functioncall functionName="uint24_t"/>
+    <functioncall functionName="uint8_t"/>
+    <functioncall functionName="var_name"/>
+    <functioncall functionName="while"/>
+  </FileInfo>
+</analyzerinfo>

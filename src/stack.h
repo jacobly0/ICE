@@ -3,16 +3,16 @@
 
 #include <stdint.h>
 
-void push(unsigned int i);
-unsigned int pop(void);
-unsigned int getStackSize(void);
-unsigned int getNextIndex(void);
-unsigned int getCurrentIndex(void);
-unsigned int getIndexOffset(unsigned int offset);
-void removeIndexFromStack(unsigned int index);
+void push(uint24_t i);
+uint24_t pop(void);
+uint24_t getStackSize(void);
+uint24_t getNextIndex(void);
+uint24_t getCurrentIndex(void);
+uint24_t getIndexOffset(uint24_t offset);
+void removeIndexFromStack(uint24_t index);
 void getNextFreeStack(void);
 void removeStack(void);
-unsigned int *getStackVar(uint8_t which);
+uint24_t *getStackVar(uint8_t which);
 void setStackValues(uint24_t* val1, uint24_t* val2);
 
 #endif

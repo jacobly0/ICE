@@ -122,7 +122,6 @@ uint8_t parseFunction(uint24_t index) {
     element_t *outputPrev, *outputPrevPrev;
     uint8_t function, amountOfArguments, tempType, temp, a;
     uint24_t output, endIndex, startIndex;
-    uint24_t *tempP1, *tempP2;
     
     outputPrev        = &outputPtr[getIndexOffset(-2)];
     outputPrevPrev    = &outputPtr[getIndexOffset(-3)];
@@ -302,6 +301,7 @@ uint8_t parseFunction(uint24_t index) {
             
             // Get all the arguments
             for (a = 0; a < amountOfArguments; a++) {
+                uint24_t *tempP1, *tempP2;
                 temp = 0;
                 while (1) {
                     outputPrev = &outputPtr[--startIndex];

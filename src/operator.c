@@ -179,10 +179,11 @@ void insertFunctionReturn(uint24_t function, uint8_t outputRegister, bool needPu
             uint8_t key = function >> 8;
             // This is the same as ((key-1)/8 & 7) * 2 = (key-1)/4 & (7*2) = (key-1) >> 2 & 14
             uint8_t keyAddress = 0x1E - (((key-1) >> 2) & 14);
-            uint8_t keyBit = 1, a;
+            uint8_t keyBit = 1;
             
             // Get the right bit for the keypress
             if ((key - 1) & 7) {
+                uint8_t a;
                 for (a = 0; a < ((key - 1) & 7); a++) {
                     keyBit = keyBit << 1;
                 }
@@ -958,7 +959,6 @@ void DivChainPushChainAns(void) {
 }
 void AddChainAnsNumber(void) {
     uint24_t number = entry2_operand;
-    dbg_Debugger();
     if (number < 5) {
         uint8_t a;
         for (a = 0; a < (uint8_t)number; a++) {

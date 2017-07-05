@@ -1,0 +1,6 @@
+errors.a1::C:/programming/Assembly/ICE/ICE/src/errors.c
+functions.a1::C:/programming/Assembly/ICE/ICE/src/functions.c
+main.a1::C:/programming/Assembly/ICE/ICE/src/main.c
+operator.a1::C:/programming/Assembly/ICE/ICE/src/operator.c
+parse.a1::C:/programming/Assembly/ICE/ICE/src/parse.c
+stack.a1::C:/programming/Assembly/ICE/ICE/src/stack.c

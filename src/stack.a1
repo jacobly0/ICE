@@ -1,0 +1,25 @@
+<?xml version="1.0"?>
+<analyzerinfo checksum="2113655072">
+  <FileInfo check="Bounds checking">
+    <ArraySize array="AndOrXorData" size="16"/>
+  </FileInfo>
+  <FileInfo check="CheckUnusedFunctions">
+    <functiondecl functionName="push" lineNumber="23"/>
+    <functiondecl functionName="getNextIndex" lineNumber="27"/>
+    <functiondecl functionName="getIndexOffset" lineNumber="31"/>
+    <functiondecl functionName="removeIndexFromStack" lineNumber="35"/>
+    <functiondecl functionName="getCurrentIndex" lineNumber="40"/>
+    <functiondecl functionName="getStackVar" lineNumber="44"/>
+    <functiondecl functionName="setStackValues" lineNumber="51"/>
+    <functioncall functionName="i"/>
+    <functioncall functionName="if"/>
+    <functioncall functionName="index"/>
+    <functioncall functionName="memcpy"/>
+    <functioncall functionName="offset"/>
+    <functioncall functionName="stackStart"/>
+    <functioncall functionName="ti_var_t"/>
+    <functioncall functionName="val1"/>
+    <functioncall functionName="val2"/>
+    <functioncall functionName="which"/>
+  </FileInfo>
+</analyzerinfo>

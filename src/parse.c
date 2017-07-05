@@ -53,7 +53,7 @@ uint8_t parseExpression(unsigned int token, ti_var_t currentProgram) {
     unsigned int loopIndex, temp;
     uint8_t index = 0, a;
     uint8_t amountOfArgumentsStack[20];
-    uint8_t *amountOfArgumentsStackPtr = amountOfArgumentsStack - 1;
+    uint8_t *amountOfArgumentsStackPtr = amountOfArgumentsStack;
     uint8_t stackToOutputReturn;
 
     // Setup pointers
@@ -426,7 +426,6 @@ uint8_t parsePostFixFromIndexToIndex(uint24_t startIndex, uint24_t endIndex) {
     do {
         outputCurr = &outputPtr[loopIndex = getNextIndex()];
         outputType = outputCurr->type;
-        outputOperand = outputCurr->operand;
         
         // Clear this flag
         expr.AnsSetZeroFlagReversed = false;
@@ -491,15 +490,17 @@ uint8_t parsePostFixFromIndexToIndex(uint24_t startIndex, uint24_t endIndex) {
 }
 
 static uint8_t functionI(unsigned int token, ti_var_t currentProgram) {
-    uint8_t a = 0, b = 0, outputByte, tok;
-    const char *dataString;
     const uint8_t colorTable[16] = {255,24,224,0,248,36,227,97,9,19,230,255,181,107,106,74};    // Thanks Cesium :D
-    unsigned int offset;
 
     // Only get the output name, icon or description at the top of your program
     if (!ice.usedCodeAfterHeader) {
+        uint8_t b = 0, tok, outputByte;
+        const char *dataString;
+        unsigned int offset;
+        
         // Get the output name
         if (!ice.gotName) {
+            uint8_t a = 0;
             while ((token = getc()) != EOF && (uint8_t)token != tEnter && a < 9) {
                 ice.outName[a++] = (uint8_t)token;
             }
@@ -663,7 +664,8 @@ static uint8_t functionIf(unsigned int token, ti_var_t currentProgram) {
                 }
                 // And finally insert the "jr", and move the code
                 *IfElseAddr++ = OP_JR;
-                *IfElseAddr++ = ice.programPtr - IfElseAddr - 3;
+                *IfElseAddr = ice.programPtr - IfElseAddr - 3;
+                IfElseAddr++;
                 memcpy(IfElseAddr, IfElseAddr + 2, 0x7F);
                 ice.programPtr -= 2;
             } else {
@@ -681,7 +683,8 @@ static uint8_t functionIf(unsigned int token, ti_var_t currentProgram) {
                 insertJRCZReturn = 1;
                 goto insertJRCZ;
 insertJRCZReturn1:
-                *IfStartAddr++ = IfElseAddr - IfStartAddr - 3;
+                *IfStartAddr = IfElseAddr - IfStartAddr - 3;
+                IfStartAddr++;
                 memcpy(IfStartAddr, IfStartAddr + 2, ice.programPtr - IfStartAddr);
                 ice.programPtr -= 2;
             } else {
@@ -702,7 +705,8 @@ insertJRCZReturn1:
                 insertJRCZReturn = 2;
                 goto insertJRCZ;
 insertJRCZReturn2:
-                *IfStartAddr++ = ice.programPtr - IfStartAddr - 3;
+                *IfStartAddr = ice.programPtr - IfStartAddr - 3;
+                IfStartAddr++;
                 memcpy(IfStartAddr, IfStartAddr + 2, 0x7F);
                 ice.programPtr -= 2;
             } else {

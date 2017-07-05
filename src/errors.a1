@@ -1,0 +1,22 @@
+<?xml version="1.0"?>
+<analyzerinfo checksum="579913367">
+  <FileInfo check="Bounds checking">
+    <ArraySize array="AndOrXorData" size="16"/>
+  </FileInfo>
+  <FileInfo check="CheckUnusedFunctions">
+    <functiondecl functionName="displayError" lineNumber="38"/>
+    <functioncall functionName="buf"/>
+    <functioncall functionName="c"/>
+    <functioncall functionName="currentLine"/>
+    <functioncall functionName="gfx_GetTextX"/>
+    <functioncall functionName="gfx_PrintChar"/>
+    <functioncall functionName="gfx_PrintStringXY"/>
+    <functioncall functionName="gfx_SetTextFGColor"/>
+    <functioncall functionName="gfx_SetTextXY"/>
+    <functioncall functionName="if"/>
+    <functioncall functionName="index"/>
+    <functioncall functionName="sprintf"/>
+    <functioncall functionName="ti_var_t"/>
+    <functioncall functionName="while"/>
+  </FileInfo>
+</analyzerinfo>
