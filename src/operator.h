@@ -21,5 +21,6 @@ void GEInsert();
 
 extern const char operators[];
 extern const uint8_t operatorPrecedence[];
+extern const uint8_t operatorPrecedence2[];
 
 #endif

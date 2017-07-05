@@ -34,6 +34,7 @@ uint8_t parseProgram(ti_var_t currentProgram) {
         
         // This function parses per line
         ice.currentLine++;
+        ice.lastTokenIsReturn = false;
 
         if ((ret = (*functions[(uint8_t)token])(token, currentProgram)) != VALID) {
             break;
@@ -115,7 +116,7 @@ stackToOutputReturn1:;
                 outputCurr = &outputPtr[ice.outputElements];
                 
                 // Move the last entry of the stack to the ouput if it's precedence is greater than the precedence of the current token
-                if (stackPrev->type == TYPE_OPERATOR && operatorPrecedence[index - 1] <= operatorPrecedence[getIndexOfOperator(stackPrev->operand) - 1]) {
+                if (stackPrev->type == TYPE_OPERATOR && operatorPrecedence[index - 1] <= operatorPrecedence2[getIndexOfOperator(stackPrev->operand) - 1]) {
                     outputCurr->type = stackPrev->type;
                     outputCurr->operand = stackPrev->operand;
                     stackElements--;
@@ -351,8 +352,7 @@ uint8_t parsePostFixFromIndexToIndex(uint24_t startIndex, uint24_t endIndex) {
     outputType = outputCurr->type;
     outputOperand = outputCurr->operand;
     ice.stackStart = (uint24_t*)(ice.stackDepth * STACK_SIZE + ice.stack);
-    setStackVar(ice.stackStart, 0);
-    setStackVar(ice.stackStart, 1);
+    setStackValues(ice.stackStart, ice.stackStart);
     
     // Clean the expr struct
     memset(&expr, 0, sizeof(expr));
@@ -411,6 +411,7 @@ uint8_t parsePostFixFromIndexToIndex(uint24_t startIndex, uint24_t endIndex) {
         
         return VALID;
     } else if (amountOfStackElements == 2) {
+        getNextIndex();
         outputCurr = &outputPtr[tempIndex = getNextIndex()];
         
         // It should be a function with a single argument, i.e. det(0 / not(A
@@ -601,16 +602,8 @@ static uint8_t functionI(unsigned int token, ti_var_t currentProgram) {
     }
 
     // Treat it as a comment
-    while ((token = getc()) != EOF && token != tEnter);
+    skipLine(currentProgram);
 
-    return VALID;
-}
-
-static uint8_t functionPrgm(unsigned int token, ti_var_t currentProgram) {
-    return VALID;
-}
-
-static uint8_t functionCustom(unsigned int token, ti_var_t currentProgram) {
     return VALID;
 }
 
@@ -626,13 +619,7 @@ static uint8_t functionIf(unsigned int token, ti_var_t currentProgram) {
         }
         
         //Check if we can optimize stuff :D
-        if (!expr.AnsSetZeroFlag && !expr.AnsSetCarryFlag) {
-            ADD_HL_DE();
-            OR_A_A();
-            SBC_HL_DE();
-        } else {
-            ice.programPtr -= expr.ZeroCarryFlagRemoveAmountOfBytes;
-        }
+        optimizeZeroCarryFlagOutput();
         
         // Backup stuff
         IfStartAddr = ice.programPtr;
@@ -664,12 +651,12 @@ static uint8_t functionIf(unsigned int token, ti_var_t currentProgram) {
             
             JP(0);
             res = parseProgram(currentProgram);
-            if (res != E_END && res != E_VALID) {
+            if (res != E_END && res != VALID) {
                 return res;
             }
             
             // Check if we can change the "jp" to a "jr" from the Else code
-            if (ice.programPtr - IfElseAddr <= 0x7F - 2 + 4) {
+            if (ice.programPtr - IfElseAddr - 2 < 0x80) {
                 // Update all the pointers to the data section
                 while (ice.dataOffsetElements != tempDataOffsetElements2) {
                     ice.dataOffsetStack[tempDataOffsetElements2] -= 2;
@@ -677,15 +664,15 @@ static uint8_t functionIf(unsigned int token, ti_var_t currentProgram) {
                 // And finally insert the "jr", and move the code
                 *IfElseAddr++ = OP_JR;
                 *IfElseAddr++ = ice.programPtr - IfElseAddr - 3;
-                memcpy(IfElseAddr, IfElseAddr+2, 0x7F);
+                memcpy(IfElseAddr, IfElseAddr + 2, 0x7F);
                 ice.programPtr -= 2;
             } else {
-                *(uint24_t*)(IfElseAddr+1) = ice.programPtr + PRGM_START - ice.programData;
+                *(uint24_t*)(IfElseAddr + 1) = ice.programPtr + PRGM_START - ice.programData;
                 IfElseAddr += 4;
             }
             
             // Check if we can change the "jp" to a "jr" from the If code
-            if (IfElseAddr - IfStartAddr <= 0x7F + 4) {
+            if (IfElseAddr - IfStartAddr < 0x80 + 4) {
                 // Update all the pointers to the data section
                 while (ice.dataOffsetElements != tempDataOffsetElements) {
                     ice.dataOffsetStack[tempDataOffsetElements] -= 2;
@@ -695,31 +682,31 @@ static uint8_t functionIf(unsigned int token, ti_var_t currentProgram) {
                 goto insertJRCZ;
 insertJRCZReturn1:
                 *IfStartAddr++ = IfElseAddr - IfStartAddr - 3;
-                memcpy(IfStartAddr, IfStartAddr+2, ice.programPtr - IfStartAddr);
+                memcpy(IfStartAddr, IfStartAddr + 2, ice.programPtr - IfStartAddr);
                 ice.programPtr -= 2;
             } else {
-                *(uint24_t*)(IfStartAddr+1) = IfElseAddr + PRGM_START - ice.programData;
+                *(uint24_t*)(IfStartAddr + 1) = IfElseAddr + PRGM_START - ice.programData;
                 IfStartAddr += 4;
             }
         }
         
-        // Check if we quit the program with an 'End' or at the end of the program
-        else if (res == E_END || res == E_VALID) {
+        // Check if we quit the program with an 'End' or at the end of the input program
+        else if (res == E_END || res == VALID) {
             // Check if we can change the "jp" to a "jr"
-            if (ice.programPtr - IfStartAddr <= 0x7F - 2 + 4) {
+            if (ice.programPtr - IfStartAddr - 2 < 0x80) {
                 // Update all the pointers to the data section
                 while (ice.dataOffsetElements != tempDataOffsetElements) {
-                    ice.dataOffsetStack[tempDataOffsetElements] -= 2;
+                    ice.dataOffsetStack[tempDataOffsetElements++] -= 2;
                 }
                 // And finally insert the "jr (n)z/c", and move the code
                 insertJRCZReturn = 2;
                 goto insertJRCZ;
 insertJRCZReturn2:
                 *IfStartAddr++ = ice.programPtr - IfStartAddr - 3;
-                memcpy(IfStartAddr, IfStartAddr+2, 0x7F);
+                memcpy(IfStartAddr, IfStartAddr + 2, 0x7F);
                 ice.programPtr -= 2;
             } else {
-                *(uint24_t*)(IfStartAddr+1) = ice.programPtr + PRGM_START - ice.programData;
+                *(uint24_t*)(IfStartAddr + 1) = ice.programPtr + PRGM_START - ice.programData;
             }
         } else {
             return res;
@@ -763,48 +750,201 @@ static uint8_t dummyReturn(unsigned int token, ti_var_t currentProgram) {
 }
 
 static uint8_t functionWhile(unsigned int token, ti_var_t currentProgram) {
+    uint24_t tempDataOffsetElements = ice.dataOffsetElements;
+    uint16_t WhileCondStart = ti_Tell(currentProgram), WhileCondEnd;
+    uint8_t *WhileAddrStart, *WhileAddrEnd, res, *WhileCondAddrStart;
+
+    // Jump directly to the condition checking
+    JP(0);
+    WhileAddrStart = ice.programPtr;
+    
+    // Skip the condition for now
+    skipLine(currentProgram);
+    
+    // Parse the code
+    res = parseProgram(currentProgram);
+    if (res != E_END && res != VALID) {
+        return res;
+    }
+    
+    // Now remind the offset in the input program, and parse the condition
+    WhileCondAddrStart = ice.programPtr;
+    WhileCondEnd = ti_Tell(currentProgram);
+    ti_Seek(WhileCondStart, SEEK_SET, currentProgram);
+    if ((res = parseExpression(getc(), currentProgram)) != VALID) {
+        return res;
+    }
+    
+    ti_Seek(WhileCondEnd, SEEK_SET, currentProgram);
+    
+    optimizeZeroCarryFlagOutput();
+    
+    WhileAddrEnd = ice.programPtr;
+    
+    if (expr.AnsSetCarryFlag) {
+        if (expr.AnsSetCarryFlagReversed) {
+            JP_C(0);
+        } else {
+            JP_NC(0);
+        }
+    } else {
+        if (expr.AnsSetZeroFlagReversed) {
+            JP_Z(0);
+        } else {
+            JP_NZ(0);
+        }
+    }
+    
+    // Check if we can replace the "jp" with a "jr"
+    if (ice.programPtr - WhileAddrStart < 0x80 + 4 - 2) {
+        if (expr.AnsSetCarryFlag) {
+            if (expr.AnsSetCarryFlagReversed) {
+                *WhileAddrEnd++ = OP_JR_C;
+            } else {
+                *WhileAddrEnd++ = OP_JR_NC;
+            }
+        } else {
+            if (expr.AnsSetZeroFlagReversed) {
+                *WhileAddrEnd++ = OP_JR_Z;
+            } else {
+                *WhileAddrEnd++ = OP_JR_NZ;
+            }
+        }
+        
+        // Insert the jr offset
+        *WhileAddrEnd++ = WhileAddrStart - ice.programPtr + 4 - 2;
+        ice.programPtr -= 2;
+    } else {
+        *(uint24_t*)(WhileAddrEnd+1) = ice.programPtr + PRGM_START - ice.programData;
+    }
+    
+    // Check if we can replace the "jp" with a "jr" before the code begins
+    if (WhileCondAddrStart - WhileAddrStart - 2 < 0x80) {
+        // Replace the "jp" with a "jr" and change the pointers to the output
+        *(WhileAddrStart - 4) = OP_JR;
+        *(WhileAddrStart - 3) = WhileCondAddrStart - WhileAddrStart;
+        memcpy(WhileAddrStart - 2, WhileAddrStart, ice.programPtr - WhileAddrStart);
+        // Update all the pointers to the data section
+        while (ice.dataOffsetElements != tempDataOffsetElements) {
+            ice.dataOffsetStack[tempDataOffsetElements++] -= 2;
+        }
+        ice.programPtr -= 2;
+    } else {
+        *(uint24_t*)(WhileAddrStart-3) = (uint24_t)(WhileCondAddrStart + PRGM_START - ice.programData);
+    }
+    
     return VALID;
 }
 
 static uint8_t functionRepeat(unsigned int token, ti_var_t currentProgram) {
-    while ((token = getc()) != EOF && token != tEnter);
+    uint16_t RepeatCondStart = ti_Tell(currentProgram), RepeatCondEnd;
+    uint8_t *RepeatAddrStart = ice.programPtr, res, *RepeatAddrEnd;
+    
+    // Skip the condition for now
+    skipLine(currentProgram);
+    
+    // Parse the code
+    res = parseProgram(currentProgram);
+    if (res != E_END && res != VALID) {
+        return res;
+    }
+    
+    // Now remind the offset in the input program, and parse the condition
+    RepeatCondEnd = ti_Tell(currentProgram);
+    ti_Seek(RepeatCondStart, SEEK_SET, currentProgram);
+    if ((res = parseExpression(getc(), currentProgram)) != VALID) {
+        return res;
+    }
+    
+    ti_Seek(RepeatCondEnd, SEEK_SET, currentProgram);
+    
+    optimizeZeroCarryFlagOutput();
+    
+    RepeatAddrEnd = ice.programPtr;
+    
+    if (expr.AnsSetCarryFlag) {
+        if (expr.AnsSetCarryFlagReversed) {
+            JP_NC(0);
+        } else {
+            JP_C(0);
+        }
+    } else {
+        if (expr.AnsSetZeroFlagReversed) {
+            JP_NZ(0);
+        } else {
+            JP_Z(0);
+        }
+    }
+    
+    // Check if we can replace the "jp" with a "jr"
+    if (ice.programPtr - RepeatAddrStart < 0x80 + 4 - 2) {
+        if (expr.AnsSetCarryFlag) {
+            if (expr.AnsSetCarryFlagReversed) {
+                *RepeatAddrEnd++ = OP_JR_NC;
+            } else {
+                *RepeatAddrEnd++ = OP_JR_C;
+            }
+        } else {
+            if (expr.AnsSetZeroFlagReversed) {
+                *RepeatAddrEnd++ = OP_JR_NZ;
+            } else {
+                *RepeatAddrEnd++ = OP_JR_Z;
+            }
+        }
+        
+        // Insert the jr offset
+        *RepeatAddrEnd++ = RepeatAddrStart - ice.programPtr + 4 - 2;
+        ice.programPtr -= 2;
+    } else {
+        *(uint24_t*)(RepeatAddrEnd+1) = ice.programPtr + PRGM_START - ice.programData;
+    }
     return VALID;
 }
 
 static uint8_t functionFor(unsigned int token, ti_var_t currentProgram) {
-    return VALID;
+    return E_UNIMPLEMENTED;
 }
 
 static uint8_t functionReturn(unsigned int token, ti_var_t currentProgram) {
+    RET();
+    ice.lastTokenIsReturn = true;
     return VALID;
+}
+
+static uint8_t functionPrgm(unsigned int token, ti_var_t currentProgram) {
+    return E_UNIMPLEMENTED;
+}
+
+static uint8_t functionCustom(unsigned int token, ti_var_t currentProgram) {
+    return E_UNIMPLEMENTED;
 }
 
 static uint8_t functionLbl(unsigned int token, ti_var_t currentProgram) {
-    return VALID;
+    return E_UNIMPLEMENTED;
 }
 
 static uint8_t functionGoto(unsigned int token, ti_var_t currentProgram) {
-    return VALID;
+    return E_UNIMPLEMENTED;
 }
 
 static uint8_t functionPause(unsigned int token, ti_var_t currentProgram) {
-    return VALID;
+    return E_UNIMPLEMENTED;
 }
 
 static uint8_t functionInput(unsigned int token, ti_var_t currentProgram) {
-    return VALID;
+    return E_UNIMPLEMENTED;
 }
 
 static uint8_t functionDisp(unsigned int token, ti_var_t currentProgram) {
-    return VALID;
+    return E_UNIMPLEMENTED;
 }
 
 static uint8_t functionOutput(unsigned int token, ti_var_t currentProgram) {
-    return VALID;
+    return E_UNIMPLEMENTED;
 }
 
 static uint8_t functionClrHome(unsigned int token, ti_var_t currentProgram) {
-    return VALID;
+    return E_UNIMPLEMENTED;
 }
 
 static uint8_t tokenWrongPlace(unsigned int token, ti_var_t currentProgram) {
@@ -813,6 +953,25 @@ static uint8_t tokenWrongPlace(unsigned int token, ti_var_t currentProgram) {
 
 static uint8_t tokenUnimplemented(unsigned int token, ti_var_t currentProgram) {
     return E_UNIMPLEMENTED;
+}
+
+void optimizeZeroCarryFlagOutput(void) {
+    if (!expr.AnsSetZeroFlag && !expr.AnsSetCarryFlag) {
+        if (expr.outputRegister != OutputRegisterHL) {
+            EX_DE_HL();
+        }
+        ADD_HL_DE();
+        OR_A_A();
+        SBC_HL_DE();
+    } else {
+        ice.programPtr -= expr.ZeroCarryFlagRemoveAmountOfBytes;
+    }
+    return;
+}
+
+void skipLine(ti_var_t currentProgram) {
+    uint24_t token;
+    while ((token = getc()) != EOF && token != tEnter);
 }
 
 uint8_t (*functions[256])(unsigned int, ti_var_t) = {

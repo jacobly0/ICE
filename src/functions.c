@@ -113,6 +113,7 @@ const uint8_t CArguments[] = {
     RET_A    | 1, SMALL_1,     // SetFontHeight
     UN       | 0, ARG_NORM,    // ScaleSprite
     RET_NONE | 3, SMALL_12     // FloodFill
+    // Time for the RLET sprites! :)
 };
 
 uint8_t parseFunction(uint24_t index) {
@@ -153,6 +154,8 @@ uint8_t parseFunction(uint24_t index) {
             ADD_HL_DE();
             SBC_HL_HL();
             INC_HL();
+            expr.AnsSetCarryFlag = true;
+            expr.ZeroCarryFlagRemoveAmountOfBytes = 3;
             break;
         case tMin:
         case tMax:
@@ -338,9 +341,8 @@ uint8_t parseFunction(uint24_t index) {
                 
                 ice.stackDepth--;
                 
-                // And remove the stack
-                setStackVar(tempP1, 0);
-                setStackVar(tempP2, 1);
+                // And restore the stack
+                setStackValues(tempP1, tempP2);
                 
                 // Push the argument
                 if (expr.outputRegister == OutputRegisterHL) {

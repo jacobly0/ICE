@@ -25,6 +25,8 @@
 
 uint8_t parseProgram(ti_var_t);
 uint8_t parsePostFixFromIndexToIndex(uint24_t startIndex, uint24_t endIndex);
+void optimizeZeroCarryFlagOutput(void);
+void skipLine(ti_var_t);
 
 typedef struct {
     uint8_t type;

@@ -48,10 +48,7 @@ unsigned int *getStackVar(uint8_t which) {
     return p1;
 }
 
-void setStackVar(uint24_t* val, uint8_t which) {
-    if (which) {
-        p2 = val;
-    } else {
-        p1 = val;
-    }
+void setStackValues(uint24_t* val1, uint24_t* val2) {
+    p1 = val1;
+    p2 = val2;
 }

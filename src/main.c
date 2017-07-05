@@ -154,7 +154,7 @@ void main() {
         ti_PutC(tAsm84CeCmp, ice.outPrgm);
         
         // Write ICE header to be recognized by Cesium
-        ti_PutC(0x7F, ice.outPrgm);
+        //ti_PutC(0x7F, ice.outPrgm);
         
         // Write the header, main program, and data to output :D
         if (ice.programSize) ti_Write(ice.programData, ice.programSize, 1, ice.outPrgm);

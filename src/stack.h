@@ -13,6 +13,6 @@ void removeIndexFromStack(unsigned int index);
 void getNextFreeStack(void);
 void removeStack(void);
 unsigned int *getStackVar(uint8_t which);
-void setStackVar(uint24_t* val, uint8_t which);
+void setStackValues(uint24_t* val1, uint24_t* val2);
 
 #endif

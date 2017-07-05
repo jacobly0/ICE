@@ -21,6 +21,7 @@ extern void (*operatorFunctions[224])(void);
 extern void (*operatorChainPushChainAnsFunctions[14])(void);
 const char operators[] = {tStore, tAnd, tXor, tOr, tEQ, tLT, tGT, tLE, tGE, tNE, tMul, tDiv, tAdd, tSub};
 const uint8_t operatorPrecedence[] = {0, 1, 2, 2, 3, 3, 3, 3, 3, 3, 5, 5, 4, 4};
+const uint8_t operatorPrecedence2[] = {6, 1, 2, 2, 3, 3, 3, 3, 3, 3, 5, 5, 4, 4};
 
 static element_t *entry1;
 static element_t *entry2;
@@ -86,8 +87,6 @@ uint8_t parseOperator(element_t *outputPrevPrev, element_t *outputPrev, element_
     uint8_t typeMasked1 = outputPrevPrev->type;
     uint8_t typeMasked2 = outputPrev->type;
     oper = (uint8_t)outputCurr->operand;
-    
-    dbg_Debugger();
 
     // Only call the function if both types are valid
     if ( (typeMasked1 == typeMasked2 && (typeMasked1 == TYPE_NUMBER || typeMasked1 == TYPE_CHAIN_ANS)) ||
@@ -107,6 +106,7 @@ uint8_t parseOperator(element_t *outputPrevPrev, element_t *outputPrev, element_
         if (typeMasked2 != TYPE_CHAIN_ANS) {
             return E_ICE_ERROR;
         }
+        // Call the right CHAIN_PUSH | CHAIN_ANS function
         (*operatorChainPushChainAnsFunctions[getIndexOfOperator(oper) - 1])();
         expr.outputRegister = expr.outputRegister2;
         return VALID;
@@ -115,7 +115,7 @@ uint8_t parseOperator(element_t *outputPrevPrev, element_t *outputPrev, element_
     // If you have something like "A or 1", the output is always 1, so we can remove the "ld hl, (A)"
     ice.programPtrBackup = ice.programPtr;
     
-    // Call the right function!
+    // Get the right arguments
     entry1 = outputPrevPrev;
     entry2 = outputPrev;
     getEntryOperands();
@@ -124,6 +124,8 @@ uint8_t parseOperator(element_t *outputPrevPrev, element_t *outputPrev, element_
     if (oper == tLE || oper == tLT) {
         swapEntries();
     }
+    
+    // Call the right function!
     (*operatorFunctions[((getIndexOfOperator(oper) - 1) * 16) + (typeMasked1 * 4) + typeMasked2])();
     expr.outputRegister = expr.outputRegister2;
     return VALID;
@@ -221,6 +223,7 @@ void insertFunctionReturn(uint24_t function, uint8_t outputRegister, bool needPu
                 POP_HL();
             }
             
+            // This routine sets or resets the zero flag, which can be used to optimize conditions
             expr.AnsSetZeroFlag = true;
             expr.ZeroCarryFlagRemoveAmountOfBytes = 0;
         }
@@ -955,6 +958,7 @@ void DivChainPushChainAns(void) {
 }
 void AddChainAnsNumber(void) {
     uint24_t number = entry2_operand;
+    dbg_Debugger();
     if (number < 5) {
         uint8_t a;
         for (a = 0; a < (uint8_t)number; a++) {
@@ -974,8 +978,14 @@ void AddChainAnsNumber(void) {
     }
 }
 void AddVariableNumber(void) {
-    LD_HL_IND_IX_OFF(entry1_operand);
-    AddChainAnsNumber();
+    if (entry2_operand < 128 && entry2_operand > 3) {
+        LD_IY_IND_IX_OFF(entry1_operand);
+        LEA_HL_IY_OFF(entry2_operand);
+        ice.modifiedIY = true;
+    } else {
+        LD_HL_IND_IX_OFF(entry1_operand);
+        AddChainAnsNumber();
+    }
 }
 void AddFunctionNumber(void) {
     insertFunctionReturn(entry1_operand, OUTPUT_IN_HL, NO_PUSH);
@@ -1081,8 +1091,14 @@ void SubNumberChainAns(void) {
     SBC_HL_DE();
 }
 void SubVariableNumber(void) {
-    LD_HL_IND_IX_OFF(entry1_operand);
-    SubChainAnsNumber();
+    if (entry2_operand < 129 && entry2_operand > 3) {
+        LD_IY_IND_IX_OFF(entry1_operand);
+        LEA_HL_IY_OFF(-entry2_operand);
+        ice.modifiedIY = true;
+    } else {
+        LD_HL_IND_IX_OFF(entry1_operand);
+        SubChainAnsNumber();
+    }
 }
 void SubVariableVariable(void) {
     LD_HL_IND_IX_OFF(entry1_operand);
