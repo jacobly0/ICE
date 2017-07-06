@@ -21,7 +21,7 @@
 #define TYPE_OPERATOR        254
 #define TYPE_FUNCTION        255
 
-#define getc() ti_GetC(currentProgram)
+#define getc() getNextToken(currentProgram)
 
 uint8_t parseProgram(ti_var_t);
 uint8_t parsePostFixFromIndexToIndex(uint24_t startIndex, uint24_t endIndex);

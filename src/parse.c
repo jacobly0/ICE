@@ -610,7 +610,7 @@ static uint8_t functionI(unsigned int token, ti_var_t currentProgram) {
 
 static uint8_t functionIf(unsigned int token, ti_var_t currentProgram) {
     uint8_t res, tempZR, tempC, tempCR, insertJRCZReturn;
-    uint8_t *IfStartAddr, *IfElseAddr;
+    uint8_t *IfStartAddr, *IfElseAddr = NULL;
     uint24_t tempDataOffsetElements, tempDataOffsetElements2;
     
     if ((token = getc()) != EOF && token != tEnter) {

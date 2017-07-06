@@ -90,6 +90,16 @@ void main() {
     
     sprintf(buf, "Compiling program %s...", var_name);
     gfx_PrintStringXY(buf, 1, iceMessageLine);
+    
+    // Display fancy loading bar during compiling ;)
+    gfx_SetColor(0);
+    gfx_Circle_NoClip(50, 200, 10);
+    gfx_Circle_NoClip(319-50, 200, 10);
+    gfx_HorizLine_NoClip(50, 190, 319-50-50);
+    gfx_HorizLine_NoClip(50, 210, 319-50-50);
+    gfx_SetColor(255);
+    gfx_FillRectangle_NoClip(50, 191, 11, 19);
+    gfx_FillRectangle_NoClip(319-50-10, 191, 11, 19);
 
     // Find program
     ti_CloseAll();
@@ -231,4 +241,17 @@ void preScanProgram(ti_var_t currentProgram) {
 
 void ProgramPtrToOffsetStack(void) {
     ice.dataOffsetStack[ice.dataOffsetElements++] = (uint24_t*)(ice.programPtr + 1);
+}
+
+void displayLoadingBar(ti_var_t currentProgram) {
+    gfx_SetClipRegion(41, 191, 41 + ti_Tell(currentProgram) * (320-50-50+9+9) / ti_GetSize(currentProgram), 210);
+    gfx_SetColor(4);
+    gfx_FillCircle(50, 200, 9);
+    gfx_FillCircle(319-50, 200, 9);
+    gfx_FillRectangle(50, 191, 238 - 9 - 9, 19);
+}
+
+unsigned int getNextToken(ti_var_t currentProgram) {
+    displayLoadingBar(currentProgram);
+    return ti_GetC(currentProgram);
 }

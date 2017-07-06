@@ -79,6 +79,8 @@ extern expr_t expr;
 
 void preScanProgram(ti_var_t);
 void ProgramPtrToOffsetStack(void);
+void displayLoadingBar(ti_var_t);
+unsigned int getNextToken(ti_var_t);
 
 void CHeaderData(void);
 void CProgramHeader(void);
