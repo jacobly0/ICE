@@ -23,6 +23,12 @@
 ice_t ice;
 expr_t expr;
 
+#define LB_X 40
+#define LB_Y 200
+#define LB_W 240
+#define LB_H 14
+#define LB_R (LB_H / 2)
+
 void main() {
     uint8_t a = 0, selectedProgram = 0, key, amountOfPrograms, res, *outputDataPtr, *search_pos = NULL;
     char *var_name;
@@ -93,13 +99,13 @@ void main() {
     
     // Display fancy loading bar during compiling ;)
     gfx_SetColor(0);
-    gfx_Circle_NoClip(50, 200, 10);
-    gfx_Circle_NoClip(319-50, 200, 10);
-    gfx_HorizLine_NoClip(50, 190, 319-50-50);
-    gfx_HorizLine_NoClip(50, 210, 319-50-50);
+    gfx_Circle_NoClip(LB_X, LB_Y, LB_R);
+    gfx_Circle_NoClip(LB_X + LB_W, LB_Y, LB_R);
+    gfx_HorizLine_NoClip(LB_X, LB_Y - LB_R, LB_W);
+    gfx_HorizLine_NoClip(LB_X, LB_Y + LB_R, LB_W);
     gfx_SetColor(255);
-    gfx_FillRectangle_NoClip(50, 191, 11, 19);
-    gfx_FillRectangle_NoClip(319-50-10, 191, 11, 19);
+    gfx_FillRectangle_NoClip(LB_X, LB_Y - LB_R + 1, LB_R + 1, LB_H - 1);
+    gfx_FillRectangle_NoClip(LB_X + LB_W - LB_R, LB_Y - LB_R + 1, LB_R + 1, LB_H - 1);
 
     // Find program
     ti_CloseAll();
@@ -164,7 +170,7 @@ void main() {
         ti_PutC(tAsm84CeCmp, ice.outPrgm);
         
         // Write ICE header to be recognized by Cesium
-        //ti_PutC(0x7F, ice.outPrgm);
+        ti_PutC(0x7F, ice.outPrgm);
         
         // Write the header, main program, and data to output :D
         if (ice.programSize) ti_Write(ice.programData, ice.programSize, 1, ice.outPrgm);
@@ -207,7 +213,7 @@ void preScanProgram(ti_var_t currentProgram) {
             expr.inString = !expr.inString;
         } else if (tok == tEnter) {
             expr.inString = false;
-        } else if (tok == tii) {
+        } else if (tok == tii && !expr.inString) {
             while ((token = getc()) != EOF && (uint8_t)token != tEnter);
         } else if (tok == tStore) {
             expr.inString = false;
@@ -244,14 +250,20 @@ void ProgramPtrToOffsetStack(void) {
 }
 
 void displayLoadingBar(ti_var_t currentProgram) {
-    gfx_SetClipRegion(41, 191, 41 + ti_Tell(currentProgram) * (320-50-50+9+9) / ti_GetSize(currentProgram), 210);
+    gfx_SetClipRegion(
+        LB_X - LB_R + 1, 
+        LB_Y - LB_R, 
+        LB_X - LB_R + 2 + ti_Tell(currentProgram) * (LB_W + LB_R - 1 + LB_R - 1) / ti_GetSize(currentProgram), 
+        LB_Y + LB_R
+    );
     gfx_SetColor(4);
-    gfx_FillCircle(50, 200, 9);
-    gfx_FillCircle(319-50, 200, 9);
-    gfx_FillRectangle(50, 191, 238 - 9 - 9, 19);
+    gfx_FillCircle(LB_X, LB_Y, LB_R - 1);
+    gfx_FillCircle(LB_X + LB_W, LB_Y, LB_R - 1);
+    gfx_FillRectangle(LB_X, LB_Y - LB_R + 1, LB_W, LB_H);
 }
 
 unsigned int getNextToken(ti_var_t currentProgram) {
+    // Display loading bar
     displayLoadingBar(currentProgram);
     return ti_GetC(currentProgram);
 }

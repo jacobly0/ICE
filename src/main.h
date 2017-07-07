@@ -69,7 +69,7 @@ typedef struct {
 
 #define MESSAGE_HEIGHT       10
 #define iceMessageLine       ((ice.messageIndex += MESSAGE_HEIGHT) + 3)
-#define iceMessageNewLine()  do { (iceMessageLine); } while(0)
+#define iceMessageNewLine()  do { (iceMessageLine); } while(0);
     
 #define OutputRegisterHL 0
 #define OutputRegisterDE 1

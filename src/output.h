@@ -1,7 +1,7 @@
 #ifndef OUTPUT_H
 #define OUTPUT_H
 
-#define PRGM_START    0xD1A881
+#define PRGM_START    0xD1A882
 #define _GetCSC       0x02014C
 #define _os_GetCSC    0x021D3C
 #define _SetHLUTo0    0x021D8C
