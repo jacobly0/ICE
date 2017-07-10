@@ -1,9 +1,6 @@
-segment data
-
 .assume adl = 1
-
+segment data
 .def _CHeaderData
-.def _CProgramHeader
 
 _CHeaderData:
 	ld      hl, LibLoadAppVar - $ + 0D1A881h
@@ -44,5 +41,3 @@ LibLoadAppVar:
 	db "tiny.cc/clibs", 0
 RelocationStart:
 	db 0C0h, "GRAPHX", 0, 5
-_CProgramHeader:
-	ld ix, 0D1383Fh

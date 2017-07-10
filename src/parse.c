@@ -7,27 +7,31 @@
 #include "stack.h"
 #include "output.h"
 
+#ifndef COMPUTER_ICE
 #include <fileioc.h>
+#include <debug.h>
+#endif
 
+#include <tice.h>
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
-#include <tice.h>
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <debug.h>
 
 extern uint8_t (*functions[256])(unsigned int token, ti_var_t currentProgram);
 const char implementedFunctions[] = {tNot, tMin, tMax, tMean, tSqrt, tDet};
 
+uint8_t outputStack[4096];
+
 uint8_t parseProgram(ti_var_t currentProgram) {
-    unsigned int token, size;
+    unsigned int token;
     uint8_t ret = VALID;
 
     // Do things based on the token
-    while ((token = getc()) != EOF) {
+    while ((int)(token = __getc()) != EOF) {
         if ((uint8_t)token != tii) {
             ice.usedCodeAfterHeader = true;
         }
@@ -47,9 +51,8 @@ uint8_t parseProgram(ti_var_t currentProgram) {
 /* Static functions */
 
 uint8_t parseExpression(unsigned int token, ti_var_t currentProgram) {
-    const uint8_t *outputStack    = (uint8_t*)0xD62C00;
-    const uint8_t *stack          = (uint8_t*)0xD64000;
-    unsigned int stackElements    = 0;
+    uint8_t stack[1500];
+    unsigned int stackElements = 0;
     unsigned int loopIndex, temp;
     uint8_t index = 0, a;
     uint8_t amountOfArgumentsStack[20];
@@ -73,7 +76,7 @@ uint8_t parseExpression(unsigned int token, ti_var_t currentProgram) {
             - If it's a getKeyFast, the second byte is 1, the third byte is the key
     */
 
-    while (token != EOF && token != tEnter) {
+    while ((int)token != EOF && (uint8_t)token != tEnter) {
         uint8_t tok;
         outputCurr = &outputPtr[ice.outputElements];
         stackCurr  = &stackPtr[stackElements];
@@ -82,7 +85,7 @@ uint8_t parseExpression(unsigned int token, ti_var_t currentProgram) {
         // Process a number
         if (tok >= t0 && tok <= t9) {
             uint24_t output = token - t0;
-            while ((uint8_t)(token = getc()) >= t0 && (uint8_t)token <= t9) {
+            while ((uint8_t)(token = __getc()) >= t0 && (uint8_t)token <= t9) {
                 output = output*10 + (uint8_t)token - t0;
             }
             outputCurr->type = TYPE_NUMBER;
@@ -206,22 +209,22 @@ stackToOutputReturn1:;
             // Check for fast key input, i.e. getKey(X)
             if (tok == tGetKey) {
                 // The next token must be a left parenthesis
-                if ((uint8_t)(token = getc()) != tLParen) {
+                if ((uint8_t)(token = __getc()) != tLParen) {
                     continue;
                 }
                 
                 // The next token must be a number
-                if ((uint8_t)(token = getc()) >= t0 && token <= t9) {
+                if ((uint8_t)(token = __getc()) >= t0 && (uint8_t)token <= t9) {
                     tok = (uint8_t)token - t0;
                     
                     // The next token can be a number, but also right parenthesis or EOF
-                    if ((uint8_t)(token = getc()) >= t0 && token <= t9) {
+                    if ((uint8_t)(token = __getc()) >= t0 && (uint8_t)token <= t9) {
                         // Add the direct key to the operand
                         outputCurr->operand = tGetKey | ((tok * 10 + (uint8_t)token - t0) << 8);
-                        if ((token = getc()) != EOF && token != tRParen) {
+                        if ((int)(token = __getc()) != EOF && (uint8_t)token != tRParen) {
                             return E_SYNTAX;
                         }
-                    } else if ((uint8_t)token == tRParen || token == EOF) {
+                    } else if ((uint8_t)token == tRParen || (int)token == EOF) {
                         // Add the direct key to the operand
                         outputCurr->operand = tGetKey | (tok << 8);
                     } else {
@@ -238,7 +241,7 @@ stackToOutputReturn1:;
             return E_UNIMPLEMENTED;
         }
        
-        token = getc();
+        token = __getc();
     }
     
     // If the expression quits normally, rather than an argument seperator, pretend as it's a right paren
@@ -341,7 +344,6 @@ stackToOutput:
 }
 
 uint8_t parsePostFixFromIndexToIndex(uint24_t startIndex, uint24_t endIndex) {
-    const uint8_t *outputStack = (uint8_t*)0xD62C00;
     element_t *outputCurr;
     element_t *outputPtr = (element_t*)outputStack;
     uint8_t outputType, temp, operandDepth = 0;
@@ -355,7 +357,7 @@ uint8_t parsePostFixFromIndexToIndex(uint24_t startIndex, uint24_t endIndex) {
     setStackValues(ice.stackStart, ice.stackStart);
     
     // Clean the expr struct
-    memset(&expr, 0, sizeof(expr));
+    memset(&expr, 0, sizeof expr);
     
     // Get all the indexes of the expression
     temp = 0;
@@ -501,7 +503,7 @@ static uint8_t functionI(unsigned int token, ti_var_t currentProgram) {
         // Get the output name
         if (!ice.gotName) {
             uint8_t a = 0;
-            while ((token = getc()) != EOF && (uint8_t)token != tEnter && a < 9) {
+            while ((int)(token = __getc()) != EOF && (uint8_t)token != tEnter && a < 9) {
                 ice.outName[a++] = (uint8_t)token;
             }
             ice.gotName = true;
@@ -516,17 +518,17 @@ static uint8_t functionI(unsigned int token, ti_var_t currentProgram) {
             
             // Insert "jp <random>" and Cesium header
             *ice.programPtr = OP_JP;
-            *(uint24_t*)(ice.programPtr+4) = 0x101001;
+            w24(ice.programPtr + 4, 0x101001);
             ice.programPtr += 7;
             
             // Icon should start with a "
-            if ((uint8_t)getc() != tString) {
+            if ((uint8_t)__getc() != tString) {
                 return E_WRONG_ICON;
             }
 
             // Get hexadecimal
             do {
-                tok = (uint8_t)getc();
+                tok = (uint8_t)__getc();
                 if (tok >= t0 && tok <= t9) {
                     outputByte = tok - t0;
                 } else if (tok >= tA && tok <= tF) {
@@ -538,22 +540,23 @@ static uint8_t functionI(unsigned int token, ti_var_t currentProgram) {
             } while (++b);
             
             // Move on to the description
-            if ((uint8_t)(token = getc()) == tString) {
-                token = getc();
+            if ((uint8_t)(token = __getc()) == tString) {
+                token = __getc();
             }
 
-            if (token != EOF) {
+            if ((int)token != EOF) {
                 
                 if ((uint8_t)token != tEnter) {
                     return E_INVALID_ICON;
                 }
                 
                 // Check if there is a description
-                if ((token = getc()) == tii) {
+                if ((token = __getc()) == tii) {
+#ifndef COMPUTER_ICE
                     uint8_t *dataPtr = ti_GetDataPtr(ice.inPrgm);
                     
                     // Grab description
-                    while ((token = getc()) != EOF && (uint8_t)token != tEnter) {
+                    while ((int)(token = __getc()) != EOF && (uint8_t)token != tEnter) {
                         unsigned int strLength;
                         uint8_t tokSize;
                         
@@ -564,11 +567,20 @@ static uint8_t functionI(unsigned int token, ti_var_t currentProgram) {
                         
                         // If it's a 2-byte token, we also need to get the second byte of it
                         if (tokSize == 2) {
-                            getc();
+                            __getc();
                         }
                     }
-                } else if (token != EOF) {
-                    ti_Seek(-1, SEEK_CUR, ice.inPrgm);
+#else
+                    while ((int)(token = __getc()) != EOF && (uint8_t)token != tEnter) {
+                        const uint8_t token2byte[] = { 0x5C, 0x5D, 0x5E, 0x60, 0x61, 0x62, 0x63, 0x7E, 0xBB, 0xAA, 0xEF };
+                        *ice.programPtr++ = (uint8_t)token;
+                        if (memchr(token2byte, token, sizeof token2byte)) {
+                            __getc();
+                        }
+                    }
+#endif
+                } else if ((int)token != EOF) {
+                    setCurrentOffset(-1, SEEK_CUR, ice.inPrgm);
                 }
             }
 
@@ -579,16 +591,16 @@ static uint8_t functionI(unsigned int token, ti_var_t currentProgram) {
             offset = ice.programPtr - ice.programData + 1;
 
             // Write the right jp offset
-            *(uint24_t*)(ice.programData+1) = offset + PRGM_START;
+            w24(ice.programData + 1, offset + PRGM_START);
             
             // Copy header back
             memcpy(ice.programPtr + 1, ice.programData + 600, ice.programSize);
             
             // If C functions were detected, update the pointers
             if (ice.programSize > 10) {
-                *(uint24_t*)(ice.programPtr+2)  += offset;
-                *(uint24_t*)(ice.programPtr+53) += offset;
-                *(uint24_t*)(ice.programPtr+66) += offset;
+                w24(ice.programPtr + 2, r24(ice.programPtr + 2) + offset);
+                w24(ice.programPtr + 53, r24(ice.programPtr + 53) + offset);
+                w24(ice.programPtr + 66, r24(ice.programPtr + 66) + offset);
             }
             ice.programPtr += ice.programSize + 1;
             
@@ -613,7 +625,7 @@ static uint8_t functionIf(unsigned int token, ti_var_t currentProgram) {
     uint8_t *IfStartAddr, *IfElseAddr = NULL;
     uint24_t tempDataOffsetElements, tempDataOffsetElements2;
     
-    if ((token = getc()) != EOF && token != tEnter) {
+    if ((int)(token = __getc()) != EOF && token != tEnter) {
         // Parse the argument
         if ((res = parseExpression(token, currentProgram)) != VALID) {
             return res;
@@ -669,7 +681,7 @@ static uint8_t functionIf(unsigned int token, ti_var_t currentProgram) {
                 memcpy(IfElseAddr, IfElseAddr + 2, 0x7F);
                 ice.programPtr -= 2;
             } else {
-                *(uint24_t*)(IfElseAddr + 1) = ice.programPtr + PRGM_START - ice.programData;
+                w24(IfElseAddr + 1, ice.programPtr + PRGM_START - ice.programData);
                 IfElseAddr += 4;
             }
             
@@ -688,7 +700,7 @@ insertJRCZReturn1:
                 memcpy(IfStartAddr, IfStartAddr + 2, ice.programPtr - IfStartAddr);
                 ice.programPtr -= 2;
             } else {
-                *(uint24_t*)(IfStartAddr + 1) = IfElseAddr + PRGM_START - ice.programData;
+                w24(IfStartAddr + 1, IfElseAddr + PRGM_START - ice.programData);
                 IfStartAddr += 4;
             }
         }
@@ -710,7 +722,7 @@ insertJRCZReturn2:
                 memcpy(IfStartAddr, IfStartAddr + 2, 0x7F);
                 ice.programPtr -= 2;
             } else {
-                *(uint24_t*)(IfStartAddr + 1) = ice.programPtr + PRGM_START - ice.programData;
+                w24(IfStartAddr + 1, ice.programPtr + PRGM_START - ice.programData);
             }
         } else {
             return res;
@@ -755,7 +767,7 @@ static uint8_t dummyReturn(unsigned int token, ti_var_t currentProgram) {
 
 static uint8_t functionWhile(unsigned int token, ti_var_t currentProgram) {
     uint24_t tempDataOffsetElements = ice.dataOffsetElements;
-    uint16_t WhileCondStart = ti_Tell(currentProgram), WhileCondEnd;
+    uint16_t WhileCondStart = getCurrentOffset(currentProgram), WhileCondEnd;
     uint8_t *WhileAddrStart, *WhileAddrEnd, res, *WhileCondAddrStart;
 
     // Jump directly to the condition checking
@@ -773,13 +785,13 @@ static uint8_t functionWhile(unsigned int token, ti_var_t currentProgram) {
     
     // Now remind the offset in the input program, and parse the condition
     WhileCondAddrStart = ice.programPtr;
-    WhileCondEnd = ti_Tell(currentProgram);
-    ti_Seek(WhileCondStart, SEEK_SET, currentProgram);
-    if ((res = parseExpression(getc(), currentProgram)) != VALID) {
+    WhileCondEnd = getCurrentOffset(currentProgram);
+    setCurrentOffset(WhileCondStart, SEEK_SET, currentProgram);
+    if ((res = parseExpression(__getc(), currentProgram)) != VALID) {
         return res;
     }
     
-    ti_Seek(WhileCondEnd, SEEK_SET, currentProgram);
+    setCurrentOffset(WhileCondEnd, SEEK_SET, currentProgram);
     
     optimizeZeroCarryFlagOutput();
     
@@ -819,14 +831,14 @@ static uint8_t functionWhile(unsigned int token, ti_var_t currentProgram) {
         *WhileAddrEnd++ = WhileAddrStart - ice.programPtr + 4 - 2;
         ice.programPtr -= 2;
     } else {
-        *(uint24_t*)(WhileAddrEnd+1) = ice.programPtr + PRGM_START - ice.programData;
+        w24(WhileAddrEnd + 1, ice.programPtr + PRGM_START - ice.programData);
     }
     
     // Check if we can replace the "jp" with a "jr" before the code begins
     if (WhileCondAddrStart - WhileAddrStart - 2 < 0x80) {
         // Replace the "jp" with a "jr" and change the pointers to the output
-        *(WhileAddrStart - 4) = OP_JR;
-        *(WhileAddrStart - 3) = WhileCondAddrStart - WhileAddrStart;
+        w24(WhileAddrStart - 4, OP_JR);
+        w24(WhileAddrStart - 3, WhileCondAddrStart - WhileAddrStart);
         memcpy(WhileAddrStart - 2, WhileAddrStart, ice.programPtr - WhileAddrStart);
         // Update all the pointers to the data section
         while (ice.dataOffsetElements != tempDataOffsetElements) {
@@ -834,14 +846,14 @@ static uint8_t functionWhile(unsigned int token, ti_var_t currentProgram) {
         }
         ice.programPtr -= 2;
     } else {
-        *(uint24_t*)(WhileAddrStart-3) = (uint24_t)(WhileCondAddrStart + PRGM_START - ice.programData);
+        w24(WhileAddrStart-3, WhileCondAddrStart + PRGM_START - ice.programData);
     }
     
     return VALID;
 }
 
 static uint8_t functionRepeat(unsigned int token, ti_var_t currentProgram) {
-    uint16_t RepeatCondStart = ti_Tell(currentProgram), RepeatCondEnd;
+    uint16_t RepeatCondStart = getCurrentOffset(currentProgram), RepeatCondEnd;
     uint8_t *RepeatAddrStart = ice.programPtr, res, *RepeatAddrEnd;
     
     // Skip the condition for now
@@ -854,13 +866,13 @@ static uint8_t functionRepeat(unsigned int token, ti_var_t currentProgram) {
     }
     
     // Now remind the offset in the input program, and parse the condition
-    RepeatCondEnd = ti_Tell(currentProgram);
-    ti_Seek(RepeatCondStart, SEEK_SET, currentProgram);
-    if ((res = parseExpression(getc(), currentProgram)) != VALID) {
+    RepeatCondEnd = getCurrentOffset(currentProgram);
+    setCurrentOffset(RepeatCondStart, SEEK_SET, currentProgram);
+    if ((res = parseExpression(__getc(), currentProgram)) != VALID) {
         return res;
     }
     
-    ti_Seek(RepeatCondEnd, SEEK_SET, currentProgram);
+    setCurrentOffset(RepeatCondEnd, SEEK_SET, currentProgram);
     
     optimizeZeroCarryFlagOutput();
     
@@ -900,7 +912,7 @@ static uint8_t functionRepeat(unsigned int token, ti_var_t currentProgram) {
         *RepeatAddrEnd++ = RepeatAddrStart - ice.programPtr + 4 - 2;
         ice.programPtr -= 2;
     } else {
-        *(uint24_t*)(RepeatAddrEnd+1) = ice.programPtr + PRGM_START - ice.programData;
+        w24(RepeatAddrEnd+1, ice.programPtr + PRGM_START - ice.programData);
     }
     return VALID;
 }
@@ -974,8 +986,8 @@ void optimizeZeroCarryFlagOutput(void) {
 }
 
 void skipLine(ti_var_t currentProgram) {
-    uint24_t token;
-    while ((token = getc()) != EOF && token != tEnter);
+    int token;
+    while ((token = __getc()) != EOF && (uint8_t)token != tEnter);
 }
 
 uint8_t (*functions[256])(unsigned int, ti_var_t) = {

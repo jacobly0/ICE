@@ -1,7 +1,15 @@
 #ifndef PARSE_H
 #define PARSE_H
 
+#include <stdint.h>
+
+#ifndef COMPUTER_ICE
 #include <fileioc.h>
+#else
+#include <stdio.h>
+typedef uint32_t uint24_t;
+typedef FILE* ti_var_t;
+#endif
 
 #define TYPE_NUMBER          0
 #define TYPE_VARIABLE        1
@@ -21,12 +29,12 @@
 #define TYPE_OPERATOR        254
 #define TYPE_FUNCTION        255
 
-#define getc() getNextToken(currentProgram)
+#define __getc() getNextToken(currentProgram)
 
-uint8_t parseProgram(ti_var_t);
 uint8_t parsePostFixFromIndexToIndex(uint24_t startIndex, uint24_t endIndex);
 void optimizeZeroCarryFlagOutput(void);
 void skipLine(ti_var_t);
+uint8_t parseProgram(ti_var_t);
 
 typedef struct {
     uint8_t type;

@@ -1,7 +1,26 @@
 #ifndef MAIN_H
 #define MAIN_H
 
+#include <stdbool.h>
+#include <stdint.h>
+
+#ifndef COMPUTER_ICE
+#define w24(x, y) (*(uint24_t*)(x) = y)
+#define r24(x) (*(uint24_t*)(x))
+#else
+void w24(void *x, uint32_t val);
+uint32_t r24(void *x);
+#endif
+
+#ifndef COMPUTER_ICE
 #include <fileioc.h>
+#define resetFileOrigin(x) ti_Rewind(x)
+#else
+#include <stdio.h>
+typedef uint32_t uint24_t;
+typedef FILE* ti_var_t;
+#define resetFileOrigin(x) fseek(x, 0x4A, SEEK_SET)
+#endif
 
 #define STACK_SIZE 25
 
@@ -82,14 +101,17 @@ void ProgramPtrToOffsetStack(void);
 void displayLoadingBar(ti_var_t);
 unsigned int getNextToken(ti_var_t);
 
+#ifndef COMPUTER_ICE
 void CHeaderData(void);
-void CProgramHeader(void);
-void MultWithNumber(uint24_t number, uint24_t *programPtr);
-void RandRoutine(void);
-void KeypadRoutine(void);
-void MeanRoutine(void);
-void SqrtRoutine(void);
+void CProgramHeaderData(void);
+void AndOrXorData(void);
+void RandData(void);
+void KeypadData(void);
+void MeanData(void);
+void SqrtData(void);
+#endif
 
-extern uint8_t AndOrXorData[16];
+void setCurrentOffset(int offset, int origin, ti_var_t stream);
+unsigned int getCurrentOffset(ti_var_t current);
 
 #endif
