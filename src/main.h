@@ -57,17 +57,20 @@ typedef struct {
     bool     lastTokenIsReturn;                             // Last token is a "Return", so we can omit our "ret" :)
     bool     modifiedIY;                                    // Some routines modify IY, and some routines needs it
     
-    bool     usedAlreadyRand;
+    bool     usedAlreadyRand;                               // Only once the "rand" routine in the program data
     uint24_t randAddr;
     
-    bool     usedAlreadyGetKeyFast;
+    bool     usedAlreadyGetKeyFast;                         // Only once the "getKey(X)" routine in the program data
     uint24_t getKeyFastAddr;
     
-    bool     usedAlreadySqrt;
+    bool     usedAlreadySqrt;                               // Only once the "sqrt(" routine in the program data
     uint24_t SqrtAddr;
     
-    bool     usedAlreadyMean;
+    bool     usedAlreadyMean;                               // Only once the "mean(" routine in the program data
     uint24_t MeanAddr;
+#ifdef COMPUTER_ICE
+    int      programLength;                                 // Size of input program
+#endif
 } ice_t;
 
 typedef struct {

@@ -150,11 +150,16 @@ int main(int argc, char **argv) {
         exit(1);
     }
     fprintf(stdout, "%s\n", infoStr);
-    fprintf(stdout, "Compiling program %s\n", var_name);
+    fprintf(stdout, "Compiling program %s...\n", var_name);
     ice.inPrgm = fopen(var_name, "rb");
     if (!ice.inPrgm) {
+        fprintf(stdout, "Can't find input program");
         goto stop;
     }
+    
+    fseek(ice.inPrgm, 0, SEEK_END);
+    ice.programLength = ftell(ice.inPrgm);
+    fseek(ice.inPrgm, 0, SEEK_SET);
     
 #endif
     
@@ -356,7 +361,10 @@ unsigned int getNextToken(ti_var_t currentProgram) {
     displayLoadingBar(currentProgram);
     return ti_GetC(currentProgram);
 #else
-    return getc(currentProgram);
+    if (ftell(ice.inPrgm) < ice.programLength - 2) {
+        return getc(currentProgram);
+    }
+    return EOF;
 #endif
 }
 
