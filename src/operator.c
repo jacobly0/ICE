@@ -7,15 +7,18 @@
 #include "stack.h"
 #include "output.h"
 
+#ifndef COMPUTER_ICE
+#include <debug.h>
+#endif
+
+#include <tice.h>
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
-#include <tice.h>
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <debug.h>
 
 extern void (*operatorFunctions[224])(void);
 extern void (*operatorChainPushChainAnsFunctions[14])(void);
@@ -28,6 +31,56 @@ static element_t *entry2;
 static uint24_t entry1_operand;
 static uint24_t entry2_operand;
 static uint8_t oper;
+
+#define SIZEOF_ANDORXOR_DATA 16
+#define SIZEOF_KEYPAD_DATA 19
+#define SIZEOF_RAND_DATA 54
+
+#ifdef COMPUTER_ICE
+#define INCBIN_PREFIX
+#include "incbin.h"
+INCBIN(AndOrXor, "src/asm/andorxor.bin");
+INCBIN(Rand, "src/asm/rand.bin");
+INCBIN(Keypad, "src/asm/keypad.bin");
+#endif
+
+#ifdef COMPUTER_ICE
+static uint8_t clz(uint24_t x) {
+    uint8_t n = 0;
+    if (!x) {
+        return 24;
+    }
+    while (!(x & (1 << 23))) {
+        n++;
+        x <<= 1;
+    }
+    return n;
+}
+
+void MultWithNumber(uint24_t num, uint8_t *programPtr) {
+    (void)programPtr;
+    unsigned int bit;
+    uint8_t po2 = !(num & (num - 1));
+    if (24 - clz(num) + __builtin_popcount(num) - 3 * po2 < 10) {
+        if(!po2) {
+            PUSH_HL();
+            POP_DE();
+        }
+        for (bit = 1 << (23 - clz(num)); bit; bit >>= 1) {
+            ADD_HL_HL();
+            if(num & bit) {
+                ADD_HL_DE();
+            }
+        }
+    } else if (num < 0x100) {
+        CALL(0x00003E | num << 8);
+        output(uint24_t, 0x150);
+    } else {
+        LD_BC_IMM(num);
+        CALL(0x154);
+    }
+}
+#endif
 
 uint8_t getIndexOfOperator(uint8_t operator) {
     char *index;
@@ -147,8 +200,8 @@ void insertFunctionReturn(uint24_t function, uint8_t outputRegister, bool needPu
         
         // We need to add the rand routine to the data section
         if (!ice.usedAlreadyRand) {
-            ice.randAddr = (uint24_t)ice.programDataPtr;
-            memcpy(ice.programDataPtr, RandRoutine, 54);
+            ice.randAddr = (uintptr_t)ice.programDataPtr;
+            memcpy(ice.programDataPtr, RandData, SIZEOF_RAND_DATA);
             ice.programDataPtr += 54;
             ice.usedAlreadyRand = true;
         }
@@ -203,8 +256,8 @@ void insertFunctionReturn(uint24_t function, uint8_t outputRegister, bool needPu
             
             // We need to add the getKeyFast routine to the data section
             if (!ice.usedAlreadyGetKeyFast) {
-                ice.getKeyFastAddr = (uint24_t)ice.programDataPtr;
-                memcpy(ice.programDataPtr, KeypadRoutine, 19);
+                ice.getKeyFastAddr = (uintptr_t)ice.programDataPtr;
+                memcpy(ice.programDataPtr, KeypadData, SIZEOF_KEYPAD_DATA);
                 ice.programDataPtr += 19;
                 ice.usedAlreadyGetKeyFast = true;
             }
@@ -300,7 +353,7 @@ void StoFunctionVariable(void) {
     StoChainAnsVariable();
 }
 void AndInsert(void) {
-    uint8_t *op = AndOrXorData + 10;
+    uint8_t *op = (uint8_t*)AndOrXorData + 10;
     if (oper == tAnd) {
         *op = OP_AND_A_D;
     } else if (oper == tOr) {
@@ -308,7 +361,7 @@ void AndInsert(void) {
     } else {
         *op = OP_XOR_A_D;
     }
-    memcpy(ice.programPtr, AndOrXorData, sizeof AndOrXorData);
+    memcpy(ice.programPtr, AndOrXorData, 16);
     ice.programPtr += 16;
     expr.AnsSetZeroFlag = true;
     expr.ZeroCarryFlagRemoveAmountOfBytes = 5;
@@ -781,7 +834,7 @@ void MulChainAnsNumber(void) {
         if (expr.outputRegister != OutputRegisterHL) {
             EX_DE_HL();
         }
-        MultWithNumber(number, (uint24_t *)&ice.programPtr);
+        MultWithNumber(number, (uint8_t*)&ice.programPtr);
     }
 }
 void MulVariableNumber(void) {

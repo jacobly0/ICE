@@ -7,17 +7,19 @@
 #include "operator.h"
 #include "functions.h"
 
+#ifndef COMPUTER_ICE
 #include <graphx.h>
+#include <debug.h>
+#endif
 
+#include <tice.h>
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
-#include <tice.h>
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <debug.h>
 
 static const char *errors[] = {
     "This token is not implemented (yet)",
@@ -36,9 +38,10 @@ static const char *errors[] = {
 };
 
 void displayError(unsigned int index) {
-    signed char buf[30];
-    signed char c;
-    signed char *str = errors[index];
+    const char *str = errors[index];
+#ifndef COMPUTER_ICE
+    char buf[30];
+    char c;
     
     gfx_SetTextFGColor(224);
     gfx_SetTextXY(1, iceMessageLine);
@@ -53,4 +56,8 @@ void displayError(unsigned int index) {
     gfx_SetTextFGColor(0);
     sprintf(buf, "Error at line %u", ice.currentLine);
     gfx_PrintStringXY(buf, 1, iceMessageLine);
+#else
+    fprintf(stdout, "%s\n", str);
+    fprintf(stdout, "Error at line %u\n", ice.currentLine);
+#endif
 }

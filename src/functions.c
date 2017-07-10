@@ -7,15 +7,25 @@
 #include "output.h"
 #include "operator.h"
 
+#ifndef COMPUTER_ICE
+#include <debug.h>
+#endif
+
+#include <tice.h>
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
-#include <tice.h>
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <debug.h>
+
+#ifdef COMPUTER_ICE
+#define INCBIN_PREFIX
+#include "incbin.h"
+INCBIN(Sqrt, "src/asm/sqrt.bin");
+INCBIN(Mean, "src/asm/mean.bin");
+#endif
 
 /* First byte:  bit 7  : returns something in A
                 bit 6  : unimplemented
@@ -254,8 +264,8 @@ uint8_t parseFunction(uint24_t index) {
         
                 // We need to add the mean routine to the data section
                 if (!ice.usedAlreadyMean) {
-                    ice.MeanAddr = (uint24_t)ice.programDataPtr;
-                    memcpy(ice.programDataPtr, MeanRoutine, 19);
+                    ice.MeanAddr = (uintptr_t)ice.programDataPtr;
+                    memcpy(ice.programDataPtr, MeanData, 19);
                     ice.programDataPtr += 19;
                     ice.usedAlreadyMean = true;
                 }
@@ -286,8 +296,8 @@ uint8_t parseFunction(uint24_t index) {
         
             // We need to add the sqrt routine to the data section
             if (!ice.usedAlreadySqrt) {
-                ice.SqrtAddr = (uint24_t)ice.programDataPtr;
-                memcpy(ice.programDataPtr, SqrtRoutine, 44);
+                ice.SqrtAddr = (uintptr_t)ice.programDataPtr;
+                memcpy(ice.programDataPtr, SqrtData, 44);
                 ice.programDataPtr += 44;
                 ice.usedAlreadySqrt = true;
             }

@@ -1,7 +1,5 @@
-segment data
-
 .assume adl = 1
-
+segment data
 .def _MultWithNumber
 
 _MultWithNumber:

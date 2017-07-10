@@ -10,38 +10,36 @@
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
-#include <tice.h>
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <debug.h>
 
-static unsigned int *p1;
-static unsigned int *p2;
+static uint24_t *p1;
+static uint24_t *p2;
 
-void push(unsigned int i) {
+void push(uint24_t i) {
     *p1++ = i;
 }
 
-unsigned int getNextIndex(void) {
+uint24_t getNextIndex(void) {
     return *(p2++);
 }
 
-unsigned int getIndexOffset(unsigned int offset) {
+uint24_t getIndexOffset(uint24_t offset) {
     return *(p2 + offset);
 }
 
-void removeIndexFromStack(unsigned int index) {
+void removeIndexFromStack(uint24_t index) {
     memcpy(ice.stackStart + index, ice.stackStart + index + 1, STACK_SIZE - index);
     p2--;
 }
 
-unsigned int getCurrentIndex(void) {
+uint24_t getCurrentIndex(void) {
     return p2 - ice.stackStart;
 }
 
-unsigned int *getStackVar(uint8_t which) {
+uint24_t *getStackVar(uint8_t which) {
     if (which) {
         return p2;
     }
