@@ -8,9 +8,10 @@ ASMSOURCES := $(wildcard src/asm/*.asm)
 ifeq ($(OS),Windows_NT)
 SHELL = cmd.exe
 NATIVEPATH = $(subst /,\,$(1))
-RM = del /f 2>nul
+RM = del /f
 SOURCES := $(call NATIVEPATH,$(SOURCES))
 else
+NATIVEPATH = $(subst \,/,$(1))
 RM = rm -f
 endif
 
@@ -31,7 +32,7 @@ $(TARGET): .FORCE $(OBJECTS)
 	spasm -E $< -D.def=\; -Ddata=\; -Ddb=.db
 
 clean:
-	$(RM) $(TARGET) $(OBJECTS) $(BINOBJECTS)
+	$(RM) $(call NATIVEPATH,$(TARGET) $(OBJECTS) $(BINOBJECTS))
 
 .PHONY: clean all
 
