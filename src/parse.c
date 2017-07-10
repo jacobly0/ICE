@@ -221,12 +221,18 @@ stackToOutputReturn1:;
                     if ((uint8_t)(token = __getc()) >= t0 && (uint8_t)token <= t9) {
                         // Add the direct key to the operand
                         outputCurr->operand = tGetKey | ((tok * 10 + (uint8_t)token - t0) << 8);
-                        if ((int)(token = __getc()) != EOF && (uint8_t)token != tRParen) {
+                        if ((uint8_t)(token = __getc()) == tStore || (uint8_t)token == tEnter) {
+                            // Don't grab new token
+                            continue;
+                        } else if ((int)token != EOF && (uint8_t)token != tRParen) {
                             return E_SYNTAX;
                         }
                     } else if ((uint8_t)token == tRParen || (int)token == EOF) {
                         // Add the direct key to the operand
-                        outputCurr->operand = tGetKey | (tok << 8);
+                        outputCurr->operand = tGetKey + (tok << 8);
+                    } else if ((uint8_t)token == tStore || (uint8_t)token == tEnter) {
+                        // Don't grab new token
+                        continue;
                     } else {
                         return E_SYNTAX;
                     }
