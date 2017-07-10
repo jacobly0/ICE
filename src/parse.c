@@ -220,19 +220,20 @@ stackToOutputReturn1:;
                     // The next token can be a number, but also right parenthesis or EOF
                     if ((uint8_t)(token = __getc()) >= t0 && (uint8_t)token <= t9) {
                         // Add the direct key to the operand
-                        outputCurr->operand = tGetKey | ((tok * 10 + (uint8_t)token - t0) << 8);
+                        outputCurr->operand = tGetKey + ((tok * 10 + (uint8_t)token - t0) << 8);
                         if ((uint8_t)(token = __getc()) == tStore || (uint8_t)token == tEnter) {
                             // Don't grab new token
                             continue;
                         } else if ((int)token != EOF && (uint8_t)token != tRParen) {
                             return E_SYNTAX;
                         }
-                    } else if ((uint8_t)token == tRParen || (int)token == EOF) {
+                    } else if ((uint8_t)token == tRParen || (int)token == EOF || (uint8_t)token == tStore || (uint8_t)token == tEnter) {
                         // Add the direct key to the operand
                         outputCurr->operand = tGetKey + (tok << 8);
-                    } else if ((uint8_t)token == tStore || (uint8_t)token == tEnter) {
-                        // Don't grab new token
-                        continue;
+                        if ((uint8_t)token == tStore || (uint8_t)token == tEnter) {
+                            // Don't grab new token
+                            continue;
+                        }
                     } else {
                         return E_SYNTAX;
                     }
@@ -717,7 +718,8 @@ insertJRCZReturn1:
             if (ice.programPtr - IfStartAddr - 2 < 0x80) {
                 // Update all the pointers to the data section
                 while (ice.dataOffsetElements != tempDataOffsetElements) {
-                    ice.dataOffsetStack[tempDataOffsetElements++] -= 2;
+                    ice.dataOffsetStack[tempDataOffsetElements] = (uint24_t*)(((uint8_t*)ice.dataOffsetStack[tempDataOffsetElements]) - 2);
+                    tempDataOffsetElements++;
                 }
                 // And finally insert the "jr (n)z/c", and move the code
                 insertJRCZReturn = 2;
