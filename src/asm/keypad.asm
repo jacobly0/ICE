@@ -10,7 +10,6 @@ _KeypadData:
 CheckKeyPressLoop:
     cp      a, (hl)
     jr      nz, CheckKeyPressLoop
-    ei
     ld      l, b
     ld      a, (hl)
     sbc     hl, hl

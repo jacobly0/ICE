@@ -678,9 +678,8 @@ static uint8_t functionIf(unsigned int token, ti_var_t currentProgram) {
             // Check if we can change the "jp" to a "jr" from the Else code
             if (ice.programPtr - IfElseAddr - 2 < 0x80) {
                 // Update all the pointers to the data section
-                while (ice.dataOffsetElements != tempDataOffsetElements2) {
-                    ice.dataOffsetStack[tempDataOffsetElements2] -= 2;
-                }
+                UpdatePointersToData(tempDataOffsetElements2);
+
                 // And finally insert the "jr", and move the code
                 *IfElseAddr++ = OP_JR;
                 *IfElseAddr = ice.programPtr - IfElseAddr - 3;
@@ -717,10 +716,8 @@ insertJRCZReturn1:
             // Check if we can change the "jp" to a "jr"
             if (ice.programPtr - IfStartAddr - 2 < 0x80) {
                 // Update all the pointers to the data section
-                while (ice.dataOffsetElements != tempDataOffsetElements) {
-                    ice.dataOffsetStack[tempDataOffsetElements] = (uint24_t*)(((uint8_t*)ice.dataOffsetStack[tempDataOffsetElements]) - 2);
-                    tempDataOffsetElements++;
-                }
+                UpdatePointersToData(tempDataOffsetElements);
+
                 // And finally insert the "jr (n)z/c", and move the code
                 insertJRCZReturn = 2;
                 goto insertJRCZ;
@@ -773,96 +770,45 @@ static uint8_t dummyReturn(unsigned int token, ti_var_t currentProgram) {
     return VALID;
 }
 
+uint8_t *WhileRepeatCondStart = NULL;
+
+void UpdatePointersToData(uint24_t tempDataOffsetElements) {
+    while (ice.dataOffsetElements != tempDataOffsetElements) {
+        ice.dataOffsetStack[tempDataOffsetElements] = (uint24_t*)(((uint8_t*)ice.dataOffsetStack[tempDataOffsetElements]) - 2);
+        tempDataOffsetElements++;
+    }
+    return;
+}
+
 static uint8_t functionWhile(unsigned int token, ti_var_t currentProgram) {
     uint24_t tempDataOffsetElements = ice.dataOffsetElements;
-    uint16_t WhileCondStart = getCurrentOffset(currentProgram), WhileCondEnd;
-    uint8_t *WhileAddrStart, *WhileAddrEnd, res, *WhileCondAddrStart;
-
-    // Jump directly to the condition checking
+    uint8_t *WhileStartAddr = ice.programPtr;
+    uint8_t *TempStartAddr = WhileStartAddr;
+    
+    // Basically the same as "Repeat", but jump to condition checking first
     JP(0);
-    WhileAddrStart = ice.programPtr;
-    
-    // Skip the condition for now
-    skipLine(currentProgram);
-    
-    // Parse the code
-    res = parseProgram(currentProgram);
-    if (res != E_END && res != VALID) {
-        return res;
-    }
-    
-    // Now remind the offset in the input program, and parse the condition
-    WhileCondAddrStart = ice.programPtr;
-    WhileCondEnd = getCurrentOffset(currentProgram);
-    setCurrentOffset(WhileCondStart, SEEK_SET, currentProgram);
-    if ((res = parseExpression(__getc(), currentProgram)) != VALID) {
-        return res;
-    }
-    
-    setCurrentOffset(WhileCondEnd, SEEK_SET, currentProgram);
-    
-    optimizeZeroCarryFlagOutput();
-    
-    WhileAddrEnd = ice.programPtr;
-    
-    if (expr.AnsSetCarryFlag) {
-        if (expr.AnsSetCarryFlagReversed) {
-            JP_C(0);
-        } else {
-            JP_NC(0);
-        }
-    } else {
-        if (expr.AnsSetZeroFlagReversed) {
-            JP_Z(0);
-        } else {
-            JP_NZ(0);
-        }
-    }
+    functionRepeat(token, currentProgram);
     
     // Check if we can replace the "jp" with a "jr"
-    if (ice.programPtr - WhileAddrStart < 0x80 + 4 - 2) {
-        if (expr.AnsSetCarryFlag) {
-            if (expr.AnsSetCarryFlagReversed) {
-                *WhileAddrEnd++ = OP_JR_C;
-            } else {
-                *WhileAddrEnd++ = OP_JR_NC;
-            }
-        } else {
-            if (expr.AnsSetZeroFlagReversed) {
-                *WhileAddrEnd++ = OP_JR_Z;
-            } else {
-                *WhileAddrEnd++ = OP_JR_NZ;
-            }
-        }
-        
-        // Insert the jr offset
-        *WhileAddrEnd++ = WhileAddrStart - ice.programPtr + 4 - 2;
+    if (WhileRepeatCondStart - WhileStartAddr + 2 < 0x80) {
+        *WhileStartAddr++ = OP_JR;
+        *WhileStartAddr++ = WhileRepeatCondStart - TempStartAddr - 4;
+        UpdatePointersToData(tempDataOffsetElements);                       // Don't blame me for this strange order of functions
+        memcpy(WhileStartAddr, WhileStartAddr + 2, 0x80);
         ice.programPtr -= 2;
     } else {
-        w24(WhileAddrEnd + 1, ice.programPtr + PRGM_START - ice.programData);
-    }
-    
-    // Check if we can replace the "jp" with a "jr" before the code begins
-    if (WhileCondAddrStart - WhileAddrStart - 2 < 0x80) {
-        // Replace the "jp" with a "jr" and change the pointers to the output
-        w24(WhileAddrStart - 4, OP_JR);
-        w24(WhileAddrStart - 3, WhileCondAddrStart - WhileAddrStart);
-        memcpy(WhileAddrStart - 2, WhileAddrStart, ice.programPtr - WhileAddrStart);
-        // Update all the pointers to the data section
-        while (ice.dataOffsetElements != tempDataOffsetElements) {
-            ice.dataOffsetStack[tempDataOffsetElements++] -= 2;
-        }
-        ice.programPtr -= 2;
-    } else {
-        w24(WhileAddrStart-3, WhileCondAddrStart + PRGM_START - ice.programData);
+        w24(WhileStartAddr + 1, WhileRepeatCondStart + PRGM_START - ice.programData);
     }
     
     return VALID;
 }
 
-static uint8_t functionRepeat(unsigned int token, ti_var_t currentProgram) {
-    uint16_t RepeatCondStart = getCurrentOffset(currentProgram), RepeatCondEnd;
-    uint8_t *RepeatAddrStart = ice.programPtr, res, *RepeatAddrEnd;
+uint8_t functionRepeat(unsigned int token, ti_var_t currentProgram) {
+    uint16_t RepeatCondStart, RepeatProgEnd;
+    uint8_t *RepeatCodeStart, *RepeatCondEnd, res;
+    
+    RepeatCondStart = getCurrentOffset(currentProgram);
+    RepeatCodeStart = ice.programPtr;
     
     // Skip the condition for now
     skipLine(currentProgram);
@@ -873,19 +819,22 @@ static uint8_t functionRepeat(unsigned int token, ti_var_t currentProgram) {
         return res;
     }
     
-    // Now remind the offset in the input program, and parse the condition
-    RepeatCondEnd = getCurrentOffset(currentProgram);
+    // Remind where the "End" is
+    RepeatProgEnd = getCurrentOffset(currentProgram);
+    WhileRepeatCondStart = ice.programPtr;
+    
+    // Parse the condition
     setCurrentOffset(RepeatCondStart, SEEK_SET, currentProgram);
     if ((res = parseExpression(__getc(), currentProgram)) != VALID) {
         return res;
     }
     
-    setCurrentOffset(RepeatCondEnd, SEEK_SET, currentProgram);
-    
+    // And set the pointer after the "End"
+    setCurrentOffset(RepeatProgEnd, SEEK_SET, currentProgram);
     optimizeZeroCarryFlagOutput();
-    
-    RepeatAddrEnd = ice.programPtr;
-    
+    RepeatCondEnd = ice.programPtr;
+
+
     if (expr.AnsSetCarryFlag) {
         if (expr.AnsSetCarryFlagReversed) {
             JP_NC(0);
@@ -901,26 +850,26 @@ static uint8_t functionRepeat(unsigned int token, ti_var_t currentProgram) {
     }
     
     // Check if we can replace the "jp" with a "jr"
-    if (ice.programPtr - RepeatAddrStart < 0x80 + 4 - 2) {
+    if (ice.programPtr - RepeatCodeStart < 0x80 + 4 - 2) {
         if (expr.AnsSetCarryFlag) {
             if (expr.AnsSetCarryFlagReversed) {
-                *RepeatAddrEnd++ = OP_JR_NC;
+                *RepeatCondEnd++ = OP_JR_NC;
             } else {
-                *RepeatAddrEnd++ = OP_JR_C;
+                *RepeatCondEnd++ = OP_JR_C;
             }
         } else {
             if (expr.AnsSetZeroFlagReversed) {
-                *RepeatAddrEnd++ = OP_JR_NZ;
+                *RepeatCondEnd++ = OP_JR_NZ;
             } else {
-                *RepeatAddrEnd++ = OP_JR_Z;
+                *RepeatCondEnd++ = OP_JR_Z;
             }
         }
         
         // Insert the jr offset
-        *RepeatAddrEnd++ = RepeatAddrStart - ice.programPtr + 4 - 2;
+        *RepeatCondEnd++ = RepeatCodeStart - ice.programPtr + 2;
         ice.programPtr -= 2;
     } else {
-        w24(RepeatAddrEnd+1, ice.programPtr + PRGM_START - ice.programData);
+        w24(RepeatCondEnd+1, ice.programPtr + PRGM_START - ice.programData);
     }
     return VALID;
 }

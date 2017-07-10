@@ -33,7 +33,7 @@ static uint24_t entry2_operand;
 static uint8_t oper;
 
 #define SIZEOF_ANDXOR_DATA 16
-#define SIZEOF_KEYPAD_DATA 19
+#define SIZEOF_KEYPAD_DATA 18
 #define SIZEOF_RAND_DATA 54
 
 #ifdef COMPUTER_ICE
@@ -231,7 +231,11 @@ void insertFunctionReturn(uint24_t function, uint8_t outputRegister, bool needPu
         // Check if the getKey has a fast direct key argument; if so, the second byte is 1
         if ((uint8_t)(function >> 8)) {
             uint8_t key = function >> 8;
-            // This is the same as ((key-1)/8 & 7) * 2 = (key-1)/4 & (7*2) = (key-1) >> 2 & 14
+            /* This is the same as 
+                ((key-1)/8 & 7) * 2 = 
+                (key-1)/4 & (7*2) = 
+                (key-1) >> 2 & 14 
+            */
             uint8_t keyAddress = 0x1E - (((key-1) >> 2) & 14);
             uint8_t keyBit = 1;
             
@@ -259,7 +263,7 @@ void insertFunctionReturn(uint24_t function, uint8_t outputRegister, bool needPu
             if (!ice.usedAlreadyGetKeyFast) {
                 ice.getKeyFastAddr = (uintptr_t)ice.programDataPtr;
                 memcpy(ice.programDataPtr, KeypadData, SIZEOF_KEYPAD_DATA);
-                ice.programDataPtr += 19;
+                ice.programDataPtr += SIZEOF_KEYPAD_DATA;
                 ice.usedAlreadyGetKeyFast = true;
             }
             
