@@ -782,12 +782,13 @@ void UpdatePointersToData(uint24_t tempDataOffsetElements) {
 
 static uint8_t functionWhile(unsigned int token, ti_var_t currentProgram) {
     uint24_t tempDataOffsetElements = ice.dataOffsetElements;
-    uint8_t *WhileStartAddr = ice.programPtr;
-    uint8_t *TempStartAddr = WhileStartAddr;
+    uint8_t *WhileStartAddr = ice.programPtr, *TempStartAddr = WhileStartAddr, res;
     
     // Basically the same as "Repeat", but jump to condition checking first
     JP(0);
-    functionRepeat(token, currentProgram);
+    if ((res = functionRepeat(token, currentProgram)) != VALID) {
+        return res;
+    }
     
     // Check if we can replace the "jp" with a "jr"
     if (WhileRepeatCondStart - WhileStartAddr + 2 < 0x80) {
@@ -833,7 +834,6 @@ uint8_t functionRepeat(unsigned int token, ti_var_t currentProgram) {
     setCurrentOffset(RepeatProgEnd, SEEK_SET, currentProgram);
     optimizeZeroCarryFlagOutput();
     RepeatCondEnd = ice.programPtr;
-
 
     if (expr.AnsSetCarryFlag) {
         if (expr.AnsSetCarryFlagReversed) {

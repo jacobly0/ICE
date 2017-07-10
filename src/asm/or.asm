@@ -2,11 +2,12 @@
 segment data
 .def _OrData
 
-_OrData:
-    ld      bc, -1
-    add     hl, bc
-    ex      de, hl
-    adc     hl, bc
+_OrData:                                        ; Credits to Runer112
+    or      a, a
+    adc     hl, de
     ccf
+    jr      z, Return
+    or      a, a
+Return:
     sbc     hl, hl
     inc     hl

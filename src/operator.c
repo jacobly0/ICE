@@ -32,15 +32,15 @@ static uint24_t entry1_operand;
 static uint24_t entry2_operand;
 static uint8_t oper;
 
-#define SIZEOF_ANDXOR_DATA 16
 #define SIZEOF_KEYPAD_DATA 18
 #define SIZEOF_RAND_DATA 54
 
 #ifdef COMPUTER_ICE
 #define INCBIN_PREFIX
 #include "incbin.h"
-INCBIN(AndXor, "src/asm/andxor.bin");
+INCBIN(And, "src/asm/and.bin");
 INCBIN(Or, "src/asm/or.bin");
+INCBIN(Xor, "src/asm/xor.bin");
 INCBIN(Rand, "src/asm/rand.bin");
 INCBIN(Keypad, "src/asm/keypad.bin");
 #endif
@@ -359,23 +359,17 @@ void StoFunctionVariable(void) {
 }
 void AndInsert(void) {
     if (oper == tOr) {
-        memcpy(ice.programPtr, OrData, 12);
-        ice.programPtr += 12;
-        expr.AnsSetCarryFlag = true;
-        expr.AnsSetCarryFlagReversed = true;
-        expr.ZeroCarryFlagRemoveAmountOfBytes = 4;
+        memcpy(ice.programPtr, OrData, 10);
+        ice.programPtr += 10;
+    } else if (oper == tAnd) {
+        memcpy(ice.programPtr, AndData, 11);
+        ice.programPtr += 11;
     } else {
-        uint8_t *op = (uint8_t*)AndXorData + 10;
-        if (oper == tAnd) {
-            *op = OP_AND_A_L;
-        } else {
-            *op = OP_XOR_A_L;
-        }
-        memcpy(ice.programPtr, AndXorData, SIZEOF_ANDXOR_DATA);
-        ice.programPtr += SIZEOF_ANDXOR_DATA;
-        expr.AnsSetZeroFlag = true;
-        expr.ZeroCarryFlagRemoveAmountOfBytes = 4;
+        memcpy(ice.programPtr, XorData, 13);
+        ice.programPtr += 13;
     }
+    expr.AnsSetCarryFlag = true;
+    expr.ZeroCarryFlagRemoveAmountOfBytes = 3;
 }
 void AndChainAnsNumber(void) {
     if (oper == tXor) {

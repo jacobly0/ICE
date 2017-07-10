@@ -108,11 +108,12 @@ unsigned int getNextToken(ti_var_t);
 void CHeaderData(void);
 void CProgramHeaderData(void);
 void OrData(void);
+void AndData(void);
+void XorData(void);
 void RandData(void);
 void KeypadData(void);
 void MeanData(void);
 void SqrtData(void);
-extern uint8_t AndXorData[15];
 #endif
 
 void setCurrentOffset(int offset, int origin, ti_var_t stream);
