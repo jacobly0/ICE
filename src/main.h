@@ -104,11 +104,12 @@ unsigned int getNextToken(ti_var_t);
 #ifndef COMPUTER_ICE
 void CHeaderData(void);
 void CProgramHeaderData(void);
-void AndOrXorData(void);
+void OrData(void);
 void RandData(void);
 void KeypadData(void);
 void MeanData(void);
 void SqrtData(void);
+extern uint8_t AndXorData[15];
 #endif
 
 void setCurrentOffset(int offset, int origin, ti_var_t stream);
