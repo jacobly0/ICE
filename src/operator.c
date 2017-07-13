@@ -41,7 +41,6 @@ static uint8_t oper;
 INCBIN(And, "src/asm/and.bin");
 INCBIN(Or, "src/asm/or.bin");
 INCBIN(Xor, "src/asm/xor.bin");
-INCBIN(String, "src/asm/string.bin");
 INCBIN(Rand, "src/asm/rand.bin");
 INCBIN(Keypad, "src/asm/keypad.bin");
 #endif
@@ -349,21 +348,6 @@ void LD_HL_NUMBER(uint24_t number) {
     } else {
         LD_HL_IMM(number);
     }
-}
-
-void ConcatenateStrings(void) {
-    // Store the pointer to the call to the stack, to replace later
-    ProgramPtrToOffsetStack();
-    
-    // We need to add the rand routine to the data section
-    if (!ice.usedAlreadyStringConcatenate) {
-        ice.StringConcatenateAddr = (uintptr_t)ice.programDataPtr;
-        memcpy(ice.programDataPtr, StringConcatenateData, 28);
-        ice.programDataPtr += 28;
-        ice.usedAlreadyStringConcatenate = true;
-    }
-    
-    CALL(ice.StringConcatenateAddr);
 }
 
 void OperatorError(void) {

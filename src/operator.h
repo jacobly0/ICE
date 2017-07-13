@@ -24,7 +24,6 @@ void EQInsert();
 void GEInsert();
 void AddStringString(void);
 void StoStringString(void);
-void ConcatenateStrings(void);
 
 void MultWithNumber(uint24_t number, uint8_t *programPtr);
 
