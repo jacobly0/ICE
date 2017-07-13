@@ -4,11 +4,19 @@
 #include "main.h"
 
 #define PRGM_START    0xD1A882
+#define flags         0xD00080
+#define pixelShadow   0xD031F6
+
 #define _GetCSC       0x02014C
+#define _ClrLCDFull   0x020808
+#define _HomeUp       0x020828
 #define _os_GetCSC    0x021D3C
 #define _SetHLUTo0    0x021D8C
-#define __imuls       0x000154
+#define __strcat      0x0000C0
+#define __strcpy      0x0000CC
+#define __strlen      0x0000D4
 #define __idvrmu      0x000144
+#define __imuls       0x000154
 
 #define OP_LD_B       0x06
 #define OP_LD_C       0x0E
@@ -28,8 +36,10 @@
 #define OP_LD_C_A     0x4F
 #define OP_LD_E_A     0x5F
 #define OP_LD_L_A     0x6F
+#define OP_LD_A_B     0x78
 #define OP_AND_A_L    0xA5
 #define OP_XOR_A_L    0xAD
+#define OP_OR_A_C     0xB1
 #define OP_OR_A_D     0xB2
 #define OP_OR_A_A     0xB7
 #define OP_JP         0xC3
@@ -44,6 +54,7 @@
 #define OP_PUSH_DE    0xD5
 #define OP_JP_C       0xDA
 #define OP_POP_HL     0xE1
+#define OP_EX_SP_HL   0xE3
 #define OP_PUSH_HL    0xE5
 #define OP_EX_DE_HL   0xEB
 
@@ -86,6 +97,7 @@
 #define LD_C_A()              do { output(uint8_t, OP_LD_C_A); } while (0)
 #define LD_E_A()              do { output(uint8_t, OP_LD_E_A); } while (0)
 #define LD_L_A()              do { output(uint8_t, OP_LD_L_A); } while (0)
+#define LD_A_B()              do { output(uint8_t, OP_LD_A_B); } while (0)
 
 #define INC_DE()              do { output(uint8_t, OP_INC_DE); } while (0)
 #define INC_HL()              do { output(uint8_t, OP_INC_HL); } while (0)
@@ -107,6 +119,7 @@
 
 #define EX_DE_HL()            do { output(uint8_t, OP_EX_DE_HL); } while (0)
 #define EX_S_DE_HL()          do { output(uint16_t, 0xEB52); } while (0)
+#define EX_SP_HL()            do { output(uint8_t, OP_EX_SP_HL); } while (0)
 
 #define RET()                 do { output(uint8_t, OP_RET); } while (0);
 #define JP(addr)              do { output(uint8_t, OP_JP); output(uint24_t, addr); } while (0)
@@ -119,8 +132,11 @@
 #define JR_Z(off)             do { output(uint8_t, OP_JR_Z); output(uint8_t, off); } while (0)
 #define JR_NC(off)            do { output(uint8_t, OP_JR_NC); output(uint8_t, off); } while (0)
 #define JR_C(off)             do { output(uint8_t, OP_JR_C); output(uint8_t, off); } while (0)
+    
+#define LDIR()                do { output(uint16_t, 0xB0ED); } while (0)
 
 #define OR_A_A()              do { output(uint8_t, OP_OR_A_A); } while (0)
+#define OR_A_C()              do { output(uint8_t, OP_OR_A_C); } while (0)
 #define CCF()                 do { output(uint8_t, OP_CCF); } while (0)
 #define SCF()                 do { output(uint8_t, OP_SCF); } while (0)
 

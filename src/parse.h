@@ -17,12 +17,11 @@ typedef FILE* ti_var_t;
 #define TYPE_C_FUNCTION      2
 #define TYPE_CHAIN_ANS       3
 #define TYPE_CHAIN_PUSH      4
-// Don't change up to here!
-
-#define TYPE_LIST            5
-#define TYPE_OS_LIST         6
-#define TYPE_STRING          7
-#define TYPE_OS_STRING       8
+// ----------------------------
+#define TYPE_STRING          5
+#define TYPE_OS_STRING       6
+#define TYPE_LIST            7
+#define TYPE_OS_LIST         8
 
 #define TYPE_C_START         252
 #define TYPE_ARG_DELIMITER   253
@@ -31,12 +30,13 @@ typedef FILE* ti_var_t;
 
 #define __getc() getNextToken(currentProgram)
 
-uint8_t parsePostFixFromIndexToIndex(uint24_t startIndex, uint24_t endIndex);
+void UpdatePointersToData(uint24_t tempDataOffsetElements);
 void optimizeZeroCarryFlagOutput(void);
 void skipLine(ti_var_t);
-uint8_t parseProgram(ti_var_t);
+
+uint8_t parsePostFixFromIndexToIndex(uint24_t startIndex, uint24_t endIndex);
 uint8_t functionRepeat(unsigned int token, ti_var_t);
-void UpdatePointersToData(uint24_t tempDataOffsetElements);
+uint8_t parseProgram(ti_var_t);
 
 typedef struct {
     uint8_t type;

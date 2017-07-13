@@ -195,7 +195,7 @@ int main(int argc, char **argv) {
     if (res == VALID) {
         // If we modified IY, restore it
         if (ice.modifiedIY) {
-            LD_IY_IMM(0xD00080);
+            LD_IY_IMM(flags);
         }
         
         // If the last token is not "Return", write a "ret" to the program
@@ -244,7 +244,6 @@ int main(int argc, char **argv) {
         sprintf(buf, "Output size: %u bytes", totalSize);
         gfx_PrintStringXY(buf, 1, iceMessageLine);
 #else
-        char *name = argv[1];
         uint8_t *export = malloc(0x10000);
         
         // Write ASM header

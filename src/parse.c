@@ -23,6 +23,18 @@
 
 extern uint8_t (*functions[256])(unsigned int token, ti_var_t currentProgram);
 const char implementedFunctions[] = {tNot, tMin, tMax, tMean, tSqrt, tDet};
+const uint24_t OSString[]= {
+    pixelShadow + 54000,
+    pixelShadow + 55000,
+    pixelShadow + 56000,
+    pixelShadow + 57000,
+    pixelShadow + 58000,
+    pixelShadow + 59000,
+    pixelShadow + 60000,
+    pixelShadow + 61000,
+    pixelShadow + 62000,
+    pixelShadow + 63000
+};
 
 uint8_t outputStack[4096];
 
@@ -243,6 +255,28 @@ stackToOutputReturn1:;
             }
         }
         
+        // Parse a string
+        else if (tok == tString) {
+            outputCurr->type = TYPE_STRING;
+            outputCurr->operand = (uint24_t)ice.programDataPtr;
+            ice.outputElements++;
+            while ((int)(token = __getc()) != EOF && (uint8_t)token != tString && (uint8_t)token != tStore && (uint8_t)token != tEnter) {
+                *ice.programDataPtr++ = (uint8_t)token;
+            }
+            *ice.programDataPtr++ = 0;
+            if ((uint8_t)token == tStore || (uint8_t)token == tEnter) {
+                continue;
+            }
+
+        }
+        
+        // Parse an OS string
+        else if (tok == tVarStrng) {
+            outputCurr->type = TYPE_OS_STRING;
+            outputCurr->operand = OSString[(uint8_t)__getc()];
+            ice.outputElements++;
+        }
+        
         // Oops, unknown token...
         else {
             return E_UNIMPLEMENTED;
@@ -440,6 +474,7 @@ uint8_t parsePostFixFromIndexToIndex(uint24_t startIndex, uint24_t endIndex) {
         expr.AnsSetZeroFlagReversed = false;
         
         if (outputType == TYPE_OPERATOR) {
+            element_t *outputPrev, *outputPrevPrev;
             // Wait, invalid operator?!
             if (loopIndex < startIndex + 2) {
                 return E_SYNTAX;
@@ -448,15 +483,25 @@ uint8_t parsePostFixFromIndexToIndex(uint24_t startIndex, uint24_t endIndex) {
             operand2Index = getIndexOffset(-2);
             operand1Index = getIndexOffset(-3);
             
+            outputPrev = &outputPtr[operand2Index];
+            outputPrevPrev = &outputPtr[operand1Index];
+            
             // Parse the operator with the 2 latest operands of the stack!
-            parseOperator(&outputPtr[operand1Index], &outputPtr[operand2Index], outputCurr);
+            if ((temp = parseOperator(outputPrevPrev, outputPrev, outputCurr)) != VALID) {
+                return temp;
+            }
         
             // Remove the index of the first and the second argument, the index of the operator will be the chain
             removeIndexFromStack(getCurrentIndex() - 2);
             removeIndexFromStack(getCurrentIndex() - 2);
             
-            // Check chain push/ans
-            operandDepth = 3;
+            // Check if it was a command with 2 strings
+            if (outputCurr->operand == tAdd && outputPrevPrev->type >= TYPE_STRING && outputPrev->type >= TYPE_STRING) {
+                outputCurr->type = TYPE_STRING;
+                outputCurr->operand = (outputPrevPrev->operand == TempString2 || outputPrev->operand == TempString1) ? TempString2 : TempString1;
+            } else {
+                operandDepth = 3;
+            }
             tempIndex = loopIndex;
         }
         
@@ -464,8 +509,7 @@ uint8_t parsePostFixFromIndexToIndex(uint24_t startIndex, uint24_t endIndex) {
             // Use this to cleanup the function after parsing
             uint8_t amountOfArguments = (uint8_t)(outputCurr->operand >> 8);
             
-            temp = parseFunction(loopIndex);
-            if (temp != VALID) {
+            if ((temp = parseFunction(loopIndex)) != VALID) {
                 return temp;
             }
             
@@ -483,7 +527,7 @@ uint8_t parsePostFixFromIndexToIndex(uint24_t startIndex, uint24_t endIndex) {
         
         // Check if the next or next next operand is either a function operator
         if (operandDepth == 3) {
-            (&outputPtr[tempIndex])->type = TYPE_CHAIN_ANS;
+            outputCurr->type = TYPE_CHAIN_ANS;
         } else if (operandDepth == 1) {
             // We need to push HL since it isn't used in the next operator/function
             (&outputPtr[tempIndex])->type = TYPE_CHAIN_PUSH;
@@ -504,7 +548,6 @@ static uint8_t functionI(unsigned int token, ti_var_t currentProgram) {
     // Only get the output name, icon or description at the top of your program
     if (!ice.usedCodeAfterHeader) {
         uint8_t b = 0, tok, outputByte;
-        const char *dataString;
         unsigned int offset;
         
         // Get the output name
@@ -565,6 +608,7 @@ static uint8_t functionI(unsigned int token, ti_var_t currentProgram) {
                     // Grab description
                     while ((int)(token = __getc()) != EOF && (uint8_t)token != tEnter) {
                         unsigned int strLength;
+                        const char *dataString;
                         uint8_t tokSize;
                         
                         // Get the token in characters, and copy to the output
@@ -917,7 +961,13 @@ static uint8_t functionOutput(unsigned int token, ti_var_t currentProgram) {
 }
 
 static uint8_t functionClrHome(unsigned int token, ti_var_t currentProgram) {
-    return E_UNIMPLEMENTED;
+    if (ice.modifiedIY) {
+        LD_IY_IMM(flags);
+    }
+    CALL(_HomeUp);
+    CALL(_ClrLCDFull);
+    ice.modifiedIY = false;
+    return VALID;
 }
 
 static uint8_t tokenWrongPlace(unsigned int token, ti_var_t currentProgram) {

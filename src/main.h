@@ -58,16 +58,19 @@ typedef struct {
     bool     modifiedIY;                                    // Some routines modify IY, and some routines needs it
     
     bool     usedAlreadyRand;                               // Only once the "rand" routine in the program data
-    uint24_t randAddr;
+    uint24_t randAddr;                                      // Address of the "rand" routine in the program data
     
     bool     usedAlreadyGetKeyFast;                         // Only once the "getKey(X)" routine in the program data
-    uint24_t getKeyFastAddr;
+    uint24_t getKeyFastAddr;                                // Address of the "getKey(X)" routine in the program data
     
     bool     usedAlreadySqrt;                               // Only once the "sqrt(" routine in the program data
-    uint24_t SqrtAddr;
+    uint24_t SqrtAddr;                                      // Address of the "sqrt(" routine in the program data
     
     bool     usedAlreadyMean;                               // Only once the "mean(" routine in the program data
-    uint24_t MeanAddr;
+    uint24_t MeanAddr;                                      // Address of the "mean(" routine in the program data
+    
+    bool     usedAlreadyStringConcatenate;                  // Only once the string concatenation routine in the program data
+    uint24_t StringConcatenateAddr;                         // Address of the string concatenation routine in the program data
 #ifdef COMPUTER_ICE
     int      programLength;                                 // Size of input program
 #endif
@@ -112,6 +115,7 @@ void AndData(void);
 void XorData(void);
 void RandData(void);
 void KeypadData(void);
+void StringConcatenateData(void);
 void MeanData(void);
 void SqrtData(void);
 #endif

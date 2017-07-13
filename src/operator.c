@@ -41,6 +41,7 @@ static uint8_t oper;
 INCBIN(And, "src/asm/and.bin");
 INCBIN(Or, "src/asm/or.bin");
 INCBIN(Xor, "src/asm/xor.bin");
+INCBIN(String, "src/asm/string.bin");
 INCBIN(Rand, "src/asm/rand.bin");
 INCBIN(Keypad, "src/asm/keypad.bin");
 #endif
@@ -141,11 +142,19 @@ uint8_t parseOperator(element_t *outputPrevPrev, element_t *outputPrev, element_
     uint8_t typeMasked1 = outputPrevPrev->type;
     uint8_t typeMasked2 = outputPrev->type;
     oper = (uint8_t)outputCurr->operand;
-
+    
     // Only call the function if both types are valid
-    if ( (typeMasked1 == typeMasked2 && (typeMasked1 == TYPE_NUMBER || typeMasked1 == TYPE_CHAIN_ANS)) ||
-         (typeMasked1 > TYPE_CHAIN_PUSH && typeMasked2 > TYPE_CHAIN_ANS) ||
-         (oper == tStore && typeMasked2 != TYPE_VARIABLE)) {
+    if ((typeMasked1 == typeMasked2 &&
+            (typeMasked1 == TYPE_NUMBER || typeMasked1 == TYPE_CHAIN_ANS)
+        ) ||
+        (oper == tStore &&
+            ((typeMasked2 != TYPE_VARIABLE && typeMasked2 != TYPE_OS_STRING) ||
+                (typeMasked2 != TYPE_OS_STRING || typeMasked1 < TYPE_STRING)
+            )
+        ) ||
+        (typeMasked2 == TYPE_CHAIN_PUSH) ||
+        (typeMasked1 >= TYPE_STRING && typeMasked2 >= TYPE_STRING && oper != tAdd && oper != tStore)
+    ) {
         return E_SYNTAX;
     }
     
@@ -179,8 +188,16 @@ uint8_t parseOperator(element_t *outputPrevPrev, element_t *outputPrev, element_
         swapEntries();
     }
     
-    // Call the right function!
-    (*operatorFunctions[((getIndexOfOperator(oper) - 1) * 16) + (typeMasked1 * 4) + typeMasked2])();
+    if (typeMasked1 < TYPE_STRING) {
+        // Call the right function!
+        (*operatorFunctions[((getIndexOfOperator(oper) - 1) * 16) + (typeMasked1 * 4) + typeMasked2])();
+    } else {
+        if (oper == tAdd) {
+            AddStringString();
+        } else {
+            StoStringString();
+        }
+    }
     expr.outputRegister = expr.outputRegister2;
     return VALID;
 }
@@ -334,6 +351,21 @@ void LD_HL_NUMBER(uint24_t number) {
     }
 }
 
+void ConcatenateStrings(void) {
+    // Store the pointer to the call to the stack, to replace later
+    ProgramPtrToOffsetStack();
+    
+    // We need to add the rand routine to the data section
+    if (!ice.usedAlreadyStringConcatenate) {
+        ice.StringConcatenateAddr = (uintptr_t)ice.programDataPtr;
+        memcpy(ice.programDataPtr, StringConcatenateData, 28);
+        ice.programDataPtr += 28;
+        ice.usedAlreadyStringConcatenate = true;
+    }
+    
+    CALL(ice.StringConcatenateAddr);
+}
+
 void OperatorError(void) {
     // This *should* never be triggered
     displayError(E_ICE_ERROR);
@@ -356,6 +388,20 @@ void StoVariableVariable(void) {
 void StoFunctionVariable(void) {
     insertFunctionReturn(entry1_operand, OUTPUT_IN_HL, NO_PUSH);
     StoChainAnsVariable();
+}
+void StoStringString(void) {
+    if (entry1->type == TYPE_STRING && entry1_operand != TempString1 && entry1_operand != TempString2) {
+        ProgramPtrToOffsetStack();
+    }
+    LD_HL_IMM(entry1_operand);
+    PUSH_HL();
+    CALL(__strlen);
+    INC_HL();
+    PUSH_HL();
+    POP_BC();
+    POP_HL();
+    LD_DE_IMM(entry2_operand);
+    LDIR();
 }
 void AndInsert(void) {
     if (oper == tOr) {
@@ -1101,6 +1147,56 @@ void AddFunctionChainAns(void) {
 void AddChainPushChainAns(void) {
     POP_DE();
     ADD_HL_DE();
+}
+void AddStringString(void) {
+    /*
+        Cases:
+            <string1>+<string2>             --> strcpy(<TempString1>, <string1>) strcat(<TempString1>, <string2>)
+            <string1>+<TempString1>         --> strcpy(<TempString2>, <string1>) strcat(<TempString2>, <TempString1>)
+            <string1>+<TempString2>         --> strcpy(<TempString1>, <string1>) strcat(<TempString1>, <TempString2>)
+            <TempString1>+<string2>         --> strcat(<TempString1>, <string2>)
+            <TempString1>+<TempString2>     --> strcat(<TempString1>, <TempString2>)
+            <TempString2>+<string2>         --> strcat(<TempString2>, <string2>)
+            <TempString2>+<TempString1>     --> strcat(<TempString2>, <TempString1>)
+            
+        Output in TempString2 if:
+            <TempString2>+X
+            X+<TempString1>
+    */
+    
+    if (entry1->type == TYPE_STRING) {
+        ProgramPtrToOffsetStack();
+        LD_HL_IMM(entry1_operand);
+        PUSH_HL();
+        if (entry2_operand == TempString1) {
+            LD_HL_IMM(TempString2);
+        } else {
+            LD_HL_IMM(TempString1);
+        }
+        PUSH_HL();
+        CALL(__strcpy);
+        POP_DE();
+        if (entry2->type == TYPE_STRING) {
+            ProgramPtrToOffsetStack();
+        }
+        LD_HL_IMM(entry2_operand);
+        EX_SP_HL();
+        PUSH_DE();
+        CALL(__strcat);
+        POP_BC();
+        POP_BC();
+    } else {
+        if (entry2->type == TYPE_STRING) {
+            ProgramPtrToOffsetStack();
+        }
+        LD_HL_IMM(entry2_operand);
+        PUSH_HL();
+        LD_HL_IMM(entry1_operand);
+        PUSH_HL();
+        CALL(__strcat);
+        POP_BC();
+        POP_BC();
+    }
 }
 void SubChainAnsNumber(void) {
     uint24_t number = entry2_operand;
