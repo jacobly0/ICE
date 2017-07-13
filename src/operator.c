@@ -148,7 +148,7 @@ uint8_t parseOperator(element_t *outputPrevPrev, element_t *outputPrev, element_
         ) ||
         (oper == tStore &&
             ((typeMasked2 != TYPE_VARIABLE && typeMasked2 != TYPE_OS_STRING) ||
-                (typeMasked2 != TYPE_OS_STRING || typeMasked1 < TYPE_STRING)
+                (typeMasked2 == TYPE_STRING && typeMasked1 < TYPE_STRING)
             )
         ) ||
         (typeMasked2 == TYPE_CHAIN_PUSH) ||

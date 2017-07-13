@@ -126,17 +126,19 @@ const uint8_t CArguments[] = {
     // Time for the RLET sprites! :)
 };
 
+extern uint8_t outputStack[4096];
+
 uint8_t parseFunction(uint24_t index) {
-    const uint8_t *outputStack = (uint8_t*)0xD62C00;
     element_t *outputPtr = (element_t*)outputStack;
     element_t *outputPrev, *outputPrevPrev;
-    uint8_t function, amountOfArguments, tempType, temp, a;
+    uint8_t function, function2, amountOfArguments, tempType, temp, a;
     uint24_t output, endIndex, startIndex;
     
     outputPrev        = &outputPtr[getIndexOffset(-2)];
     outputPrevPrev    = &outputPtr[getIndexOffset(-3)];
     output            = (&outputPtr[index])->operand;
     function          = (uint8_t)output;
+    function2         = (uint8_t)(output >> 16);
     amountOfArguments = (uint8_t)(output >> 8);
     
     expr.outputRegister2 = OutputRegisterHL;
@@ -147,6 +149,34 @@ uint8_t parseFunction(uint24_t index) {
     
     tempType = outputPrev->type;
     switch (function) {
+        case t2ByteTok:
+            switch (function2) {
+                case tSub:
+                case tLength:
+                    if (tempType < TYPE_STRING) {
+                        return E_SYNTAX;
+                    }
+                    if (tempType == TYPE_STRING && outputPrev->operand != TempString1 && TempString2) {
+                        LD_HL_NUMBER(strlen((char *)outputPrev->operand));
+                    } else {
+                        LD_HL_IMM(outputPrev->operand);
+                        PUSH_HL();
+                        CALL(__strlen);
+                        POP_BC();
+                    }
+                    return VALID;
+                default:
+                    return E_ICE_ERROR;
+            }
+            break;
+        case tExtTok:
+            switch (function2) {
+                case tRemainder:
+                case 0x97 /* toString( */:
+                default:
+                    return E_ICE_ERROR;
+            }
+            break;
         case tNot:
             if (tempType == TYPE_VARIABLE) {
                 LD_HL_IND_IX_OFF(outputPrev->operand);

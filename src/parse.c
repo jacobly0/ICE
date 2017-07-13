@@ -23,6 +23,7 @@
 
 extern uint8_t (*functions[256])(unsigned int token, ti_var_t currentProgram);
 const char implementedFunctions[] = {tNot, tMin, tMax, tMean, tSqrt, tDet};
+const char implementedFunctions2[] = {tRemainder, tSub, tLength, 0x97 /* toString( */};
 const uint24_t OSString[]= {
     pixelShadow + 54000,
     pixelShadow + 55000,
@@ -198,7 +199,13 @@ stackToOutputReturn1:;
         }
         
         // Process a function
-        else if (strchr(implementedFunctions, tok)) {
+        else if (strchr(implementedFunctions, tok) || tok == t2ByteTok || tok == tExtTok) {
+            if (tok == t2ByteTok || tok == tExtTok) {
+                if (!strchr(implementedFunctions2, tok = (uint8_t)__getc())) {
+                    return E_SYNTAX;
+                }
+                token = token + (tok << 16);
+            }
             // We always have at least 1 argument
             *++amountOfArgumentsStackPtr = 1;
             stackCurr->type = TYPE_FUNCTION;
@@ -1185,7 +1192,7 @@ uint8_t (*functions[256])(unsigned int, ti_var_t) = {
     parseExpression,    //184
     tokenUnimplemented, //185
     tokenUnimplemented, //186
-    tokenUnimplemented, //187
+    parseExpression,    //187
     parseExpression,    //188
     tokenUnimplemented, //189
     tokenUnimplemented, //190
@@ -1237,7 +1244,7 @@ uint8_t (*functions[256])(unsigned int, ti_var_t) = {
     tokenUnimplemented, //236
     tokenUnimplemented, //237
     tokenUnimplemented, //238
-    tokenUnimplemented, //239
+    parseExpression,    //239
     tokenUnimplemented, //240
     tokenUnimplemented, //241
     tokenUnimplemented, //242
