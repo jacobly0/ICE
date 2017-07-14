@@ -127,15 +127,7 @@ int main(int argc, char **argv) {
     sprintf(buf, "Compiling program %s...", var_name);
     gfx_PrintStringXY(buf, 1, iceMessageLine);
     
-    // Display a fancy loading bar during compiling ;)
-    gfx_SetColor(0);
-    gfx_Circle_NoClip(LB_X, LB_Y, LB_R);
-    gfx_Circle_NoClip(LB_X + LB_W, LB_Y, LB_R);
-    gfx_HorizLine_NoClip(LB_X, LB_Y - LB_R, LB_W);
-    gfx_HorizLine_NoClip(LB_X, LB_Y + LB_R, LB_W);
-    gfx_SetColor(255);
-    gfx_FillRectangle_NoClip(LB_X, LB_Y - LB_R + 1, LB_R + 1, LB_H - 1);
-    gfx_FillRectangle_NoClip(LB_X + LB_W - LB_R, LB_Y - LB_R + 1, LB_R + 1, LB_H - 1);
+    displayLoadingBarFrame();
 
     // Find program
     ti_CloseAll();
@@ -174,6 +166,9 @@ int main(int argc, char **argv) {
     
     memcpy(ice.programData, CHeaderData, 116);
     
+#ifndef COMPUTER_ICE
+    gfx_PrintStringXY("Compiling 1/2...", 1, iceMessageLine);
+#endif
     // Pre-scan program (and subprograms) and find all the C routines
     preScanProgram(ice.inPrgm);
     
@@ -189,6 +184,10 @@ int main(int argc, char **argv) {
    
     // Do the stuff
     resetFileOrigin(ice.inPrgm);
+#ifndef COMPUTER_ICE
+    displayLoadingBarFrame();
+    gfx_PrintStringXY("Compiling 2/2...", 1, iceMessageLine);
+#endif
     res = parseProgram(ice.inPrgm);
     
     // Create or empty the output program if parsing succeeded
@@ -337,8 +336,22 @@ void ProgramPtrToOffsetStack(void) {
     ice.dataOffsetStack[ice.dataOffsetElements++] = (uint24_t*)(ice.programPtr + 1);
 }
 
-void displayLoadingBar(ti_var_t currentProgram) {
 #ifndef COMPUTER_ICE
+void displayLoadingBarFrame(void) {
+    // Display a fancy loading bar during compiling ;)
+    gfx_SetColor(255);
+    gfx_FillRectangle_NoClip(LB_X - LB_R, LB_Y - LB_R, LB_W + LB_H, LB_H);
+    gfx_SetColor(0);
+    gfx_Circle_NoClip(LB_X, LB_Y, LB_R);
+    gfx_Circle_NoClip(LB_X + LB_W, LB_Y, LB_R);
+    gfx_HorizLine_NoClip(LB_X, LB_Y - LB_R, LB_W);
+    gfx_HorizLine_NoClip(LB_X, LB_Y + LB_R, LB_W);
+    gfx_SetColor(255);
+    gfx_FillRectangle_NoClip(LB_X, LB_Y - LB_R + 1, LB_R + 1, LB_H - 1);
+    gfx_FillRectangle_NoClip(LB_X + LB_W - LB_R, LB_Y - LB_R + 1, LB_R + 1, LB_H - 1);
+}
+
+void displayLoadingBar(ti_var_t currentProgram) {
     gfx_SetClipRegion(
         LB_X - LB_R + 1, 
         LB_Y - LB_R, 
@@ -349,10 +362,8 @@ void displayLoadingBar(ti_var_t currentProgram) {
     gfx_FillCircle(LB_X, LB_Y, LB_R - 1);
     gfx_FillCircle(LB_X + LB_W, LB_Y, LB_R - 1);
     gfx_FillRectangle(LB_X, LB_Y - LB_R + 1, LB_W, LB_H);
-#else
-    (void)currentProgram;
-#endif
 }
+#endif
 
 unsigned int getNextToken(ti_var_t currentProgram) {
 #ifndef COMPUTER_ICE

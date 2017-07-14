@@ -6,12 +6,16 @@
 #define PRGM_START    0xD1A882
 #define flags         0xD00080
 #define pixelShadow   0xD031F6
+#define curCol        0xD00596
 
 #define _GetCSC       0x02014C
+#define _PutS         0x0207C0
+#define _NewLine      0x0207F0
 #define _ClrLCDFull   0x020808
 #define _HomeUp       0x020828
 #define _os_GetCSC    0x021D3C
 #define _SetHLUTo0    0x021D8C
+#define _DispHL       0x021EE0
 #define __strcat      0x0000C0
 #define __strcpy      0x0000CC
 #define __strlen      0x0000D4
@@ -32,6 +36,7 @@
 #define OP_JR_NC      0x30
 #define OP_SCF        0x37
 #define OP_JR_C       0x38
+#define OP_LD_A       0x3E
 #define OP_CCF        0x3F
 #define OP_LD_C_A     0x4F
 #define OP_LD_E_A     0x5F
@@ -39,6 +44,7 @@
 #define OP_LD_A_B     0x78
 #define OP_AND_A_L    0xA5
 #define OP_XOR_A_L    0xAD
+#define OP_XOR_A_A    0xAF
 #define OP_OR_A_C     0xB1
 #define OP_OR_A_D     0xB2
 #define OP_OR_A_A     0xB7
@@ -91,7 +97,9 @@
 #define LD_BC_IMM(val)        do { output(uint8_t, 0x01); output(uint24_t, val); } while (0)
 #define LD_DE_IMM(val)        do { output(uint8_t, 0x11); output(uint24_t, val); } while (0)
 #define LD_HL_IMM(val)        do { output(uint8_t, 0x21); output(uint24_t, val); } while (0)
-    
+#define LD_IMM_A(val)         do { output(uint8_t, 0x32); output(uint24_t, val); } while (0)
+
+#define LD_A(val)             do { output(uint8_t, OP_LD_A); output(uint8_t, val); } while (0)    
 #define LD_B(val)             do { output(uint8_t, OP_LD_B); output(uint8_t, val); } while (0)
 #define LD_C(val)             do { output(uint8_t, OP_LD_C); output(uint8_t, val); } while (0)
 #define LD_C_A()              do { output(uint8_t, OP_LD_C_A); } while (0)
@@ -137,6 +145,7 @@
 
 #define OR_A_A()              do { output(uint8_t, OP_OR_A_A); } while (0)
 #define OR_A_C()              do { output(uint8_t, OP_OR_A_C); } while (0)
+#define XOR_A_A()             do { output(uint8_t, OP_XOR_A_A); } while (0)
 #define CCF()                 do { output(uint8_t, OP_CCF); } while (0)
 #define SCF()                 do { output(uint8_t, OP_SCF); } while (0)
 

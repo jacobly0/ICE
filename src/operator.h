@@ -17,6 +17,7 @@
 uint8_t getIndexOfOperator(uint8_t operator);
 uint24_t executeOperator(uint24_t operand1, uint24_t operand2, uint8_t operator);
 void LD_HL_NUMBER(uint24_t number);
+void LD_HL_STRING(uint24_t StringPtr);
 uint8_t parseOperator(element_t *outputPrevPrev, element_t *outputPrev, element_t *outputCurr);
 
 void insertFunctionReturn(uint24_t function, uint8_t outputRegister, bool needPush);

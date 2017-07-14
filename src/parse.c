@@ -292,8 +292,8 @@ stackToOutputReturn1:;
         token = __getc();
     }
     
-    // If the expression quits normally, rather than an argument seperator, pretend as it's a right paren
-    ice.tempToken = tRParen;
+    // If the expression quits normally, rather than an argument seperator
+    ice.tempToken = tEnter;
     
 stopParsing:
     // Move entire stack to output
@@ -452,6 +452,12 @@ uint8_t parsePostFixFromIndexToIndex(uint24_t startIndex, uint24_t endIndex) {
         // It is a det(
         else if (outputType == TYPE_C_START) {
             return parseFunction(getNextIndex());
+        }
+        
+        // It's a string
+        else if (outputType == TYPE_STRING || outputType == TYPE_OS_STRING) {
+            expr.outputIsString = true;
+            LD_HL_STRING(outputOperand);
         }
         
         // Expression is an empty function or operator, i.e. not(, +
@@ -960,7 +966,42 @@ static uint8_t functionInput(unsigned int token, ti_var_t currentProgram) {
 }
 
 static uint8_t functionDisp(unsigned int token, ti_var_t currentProgram) {
-    return E_UNIMPLEMENTED;
+    do {
+        uint8_t res;
+        uint24_t token;
+        
+        if ((uint8_t)(token = __getc()) == tii) {
+            if ((uint8_t)__getc() != tComma) {
+                return E_SYNTAX;
+            }
+            CALL(_NewLine);
+            continue;
+        }
+        
+        expr.inFunction = true;
+        if ((res = parseExpression(token, currentProgram)) != VALID) {
+            return res;
+        }
+        
+        // Display string
+        if (expr.outputIsString) {
+            XOR_A_A();
+            LD_IMM_A(curCol);
+            CALL(_PutS);
+        }
+        
+        // Display outcome of expression
+        else {
+            LD_A(18);
+            LD_IMM_A(curCol);
+            CALL(_DispHL);
+        }
+        
+        if (ice.tempToken == tRParen) {
+            return E_SYNTAX;
+        }
+    } while (ice.tempToken != tEnter);
+    return VALID;
 }
 
 static uint8_t functionOutput(unsigned int token, ti_var_t currentProgram) {

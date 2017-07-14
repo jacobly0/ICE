@@ -75,10 +75,10 @@ void MultWithNumber(uint24_t num, uint8_t *programPtr) {
         }
     } else if (num < 0x100) {
         CALL(0x00003E | num << 8);
-        output(uint24_t, 0x150);
+        output(uint24_t, 0x000150);
     } else {
         LD_BC_IMM(num);
-        CALL(0x154);
+        CALL(0x000154);
     }
 }
 #endif
@@ -350,6 +350,13 @@ void LD_HL_NUMBER(uint24_t number) {
     }
 }
 
+void LD_HL_STRING(uint24_t StringPtr) {
+    if (StringPtr != TempString1 && StringPtr != TempString2) {
+        ProgramPtrToOffsetStack();
+    }
+    LD_HL_IMM(StringPtr);
+}
+
 void OperatorError(void) {
     // This *should* never be triggered
     displayError(E_ICE_ERROR);
@@ -374,10 +381,7 @@ void StoFunctionVariable(void) {
     StoChainAnsVariable();
 }
 void StoStringString(void) {
-    if (entry1->type == TYPE_STRING && entry1_operand != TempString1 && entry1_operand != TempString2) {
-        ProgramPtrToOffsetStack();
-    }
-    LD_HL_IMM(entry1_operand);
+    LD_HL_STRING(entry1_operand);
     PUSH_HL();
     CALL(__strlen);
     INC_HL();
@@ -1149,8 +1153,7 @@ void AddStringString(void) {
     */
     
     if (entry1->type == TYPE_STRING) {
-        ProgramPtrToOffsetStack();
-        LD_HL_IMM(entry1_operand);
+        LD_HL_STRING(entry1_operand);
         PUSH_HL();
         if (entry2_operand == TempString1) {
             LD_HL_IMM(TempString2);
@@ -1160,20 +1163,14 @@ void AddStringString(void) {
         PUSH_HL();
         CALL(__strcpy);
         POP_DE();
-        if (entry2->type == TYPE_STRING) {
-            ProgramPtrToOffsetStack();
-        }
-        LD_HL_IMM(entry2_operand);
+        LD_HL_STRING(entry2_operand);
         EX_SP_HL();
         PUSH_DE();
         CALL(__strcat);
         POP_BC();
         POP_BC();
     } else {
-        if (entry2->type == TYPE_STRING) {
-            ProgramPtrToOffsetStack();
-        }
-        LD_HL_IMM(entry2_operand);
+        LD_HL_STRING(entry2_operand);
         PUSH_HL();
         LD_HL_IMM(entry1_operand);
         PUSH_HL();

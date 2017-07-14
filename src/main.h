@@ -77,6 +77,7 @@ typedef struct {
     bool     inString;
     bool     inFunction;
     bool     outputIsNumber;
+    bool     outputIsString;
     bool     AnsSetZeroFlag;
     bool     AnsSetZeroFlagReversed;
     bool     AnsSetCarryFlag;
@@ -101,6 +102,7 @@ extern expr_t expr;
 
 void preScanProgram(ti_var_t);
 void ProgramPtrToOffsetStack(void);
+void displayLoadingBarFrame(void);
 void displayLoadingBar(ti_var_t);
 unsigned int getNextToken(ti_var_t);
 
@@ -117,7 +119,7 @@ void MeanData(void);
 void SqrtData(void);
 #endif
 
-void setCurrentOffset(int offset, int origin, ti_var_t stream);
-unsigned int getCurrentOffset(ti_var_t current);
+void setCurrentOffset(int, int, ti_var_t);
+unsigned int getCurrentOffset(ti_var_t);
 
 #endif
