@@ -15,6 +15,7 @@
 #define E_NOT_IMPLEMENTED  11
 #define E_DEPRECATED       12
 #define E_NO_LABEL         13
+#define E_UNKNOWN_C        14
 
 #define E_VALID            254
 #define VALID              255

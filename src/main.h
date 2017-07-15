@@ -110,6 +110,10 @@ void ProgramPtrToOffsetStack(void);
 void displayLoadingBarFrame(void);
 void displayLoadingBar(ti_var_t);
 unsigned int getNextToken(ti_var_t);
+void MaybeDEToHL(void);
+void MaybeHLToDE(void);
+void PushHLDE(void);
+uint8_t GetHexadecimal(ti_var_t);
 
 #ifndef COMPUTER_ICE
 void CHeaderData(void);

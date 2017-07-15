@@ -222,7 +222,7 @@ int main(int argc, char **argv) {
                 uint24_t LblAddr = *temp++;
                 
                 // Compare the Goto and the Lbl labels
-                if (!memcmp((char*)GotoAddr, (char*)LblAddr, (uint24_t)memchr((char*)LblAddr, tEnter, -1) - LblAddr)) {
+                if (!memcmp((char*)GotoAddr, (char*)LblAddr, (uint24_t)strchr((char*)LblAddr, tEnter) - LblAddr)) {
                     *(uint24_t*)(GotoPtr + 1) = LblPtr - (uint24_t)ice.programData + PRGM_START;
                     goto findNextLabel;
                 }
@@ -356,6 +356,37 @@ void preScanProgram(ti_var_t currentProgram) {
 
 void ProgramPtrToOffsetStack(void) {
     ice.dataOffsetStack[ice.dataOffsetElements++] = (uint24_t*)(ice.programPtr + 1);
+}
+
+void MaybeDEToHL(void) {
+    if (expr.outputRegister != OutputRegisterHL) {
+        EX_DE_HL();
+    }
+}
+
+void MaybeHLToDE(void) {
+    if (expr.outputRegister == OutputRegisterHL) {
+        EX_DE_HL();
+    }
+}
+
+void PushHLDE(void) {
+    if (expr.outputRegister == OutputRegisterHL) {
+        PUSH_HL();
+    } else {
+        PUSH_DE();
+    }
+}
+
+uint8_t GetHexadecimal(ti_var_t currentProgram) {
+    uint8_t tok = (uint8_t)__getc();
+    if (tok >= t0 && tok <= t9) {
+        return tok - t0;
+    } else if (tok >= tA && tok <= tF) {
+        return tok - tA + 10;
+    } else {
+        return 16;
+    }
 }
 
 #ifndef COMPUTER_ICE

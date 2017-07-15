@@ -40,6 +40,11 @@ static const char *errors[] = {
     "This C function is not implemented (yet)",
     "Warning: this C function is deprecated",
     "Label not found",
+#ifndef COMPUTER_ICE
+    "Unknown C function. If you are sure this              function exists, please contact me!",
+#else
+    "Unknown C function. If you are sure this function exists, please contact me!",
+#endif
 };
 
 void displayError(unsigned int index) {

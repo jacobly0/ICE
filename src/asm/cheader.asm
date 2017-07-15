@@ -40,4 +40,4 @@ LibLoadAppVar:
 	db " LibLoad", 0
 	db "tiny.cc/clibs", 0
 RelocationStart:
-	db 0C0h, "GRAPHX", 0, 5
+	db 0C0h, "GRAPHX", 0, 6

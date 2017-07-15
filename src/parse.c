@@ -562,7 +562,6 @@ static uint8_t functionI(unsigned int token, ti_var_t currentProgram) {
 
     // Only get the output name, icon or description at the top of your program
     if (!ice.usedCodeAfterHeader) {
-        uint8_t b = 0, tok, outputByte;
         unsigned int offset;
         
         // Get the output name
@@ -577,6 +576,7 @@ static uint8_t functionI(unsigned int token, ti_var_t currentProgram) {
 
         // Get the icon and description
         else if (!ice.gotIconDescription) {
+            uint8_t b = 0;
             // Move header to take place for the icon and description, setup pointer
             memcpy(ice.programData + 600, ice.programData, ice.programSize);
             ice.programPtr = ice.programData;
@@ -593,15 +593,11 @@ static uint8_t functionI(unsigned int token, ti_var_t currentProgram) {
 
             // Get hexadecimal
             do {
-                tok = (uint8_t)__getc();
-                if (tok >= t0 && tok <= t9) {
-                    outputByte = tok - t0;
-                } else if (tok >= tA && tok <= tF) {
-                    outputByte = tok - tA + 10;
-                } else {
+                uint8_t tok;
+                if ((tok = GetHexadecimal(currentProgram)) == 16) {
                     return E_INVALID_HEX;
                 }
-                *ice.programPtr++ = colorTable[outputByte];
+                *ice.programPtr++ = colorTable[tok];
             } while (++b);
             
             // Move on to the description
@@ -1158,21 +1154,12 @@ static uint8_t functionBB(unsigned int token, ti_var_t currentProgram) {
             tok1 = (uint8_t)token;
             
             // Get hexadecimal 1
-            if (tok1 >= t0 && tok1 <= t9) {
-                tok1 = tok1 - t0;
-            } else if (tok1 >= tA && tok1 <= tF) {
-                tok1 = tok1 - tA + 10;
-            } else {
+            if ((tok1 = GetHexadecimal(currentProgram)) == 16) {
                 return E_INVALID_HEX;
             }
             
             // Get hexadecimal 2
-            tok2 = (uint8_t)__getc();
-            if (tok2 >= t0 && tok2 <= t9) {
-                tok2 = tok2 - t0;
-            } else if (tok2 >= tA && tok2 <= tF) {
-                tok2 = tok2 - tA + 10;
-            } else {
+            if ((tok2 = GetHexadecimal(currentProgram)) == 16) {
                 return E_INVALID_HEX;
             }
             
@@ -1200,9 +1187,7 @@ static uint8_t tokenUnimplemented(unsigned int token, ti_var_t currentProgram) {
 
 void optimizeZeroCarryFlagOutput(void) {
     if (!expr.AnsSetZeroFlag && !expr.AnsSetCarryFlag) {
-        if (expr.outputRegister != OutputRegisterHL) {
-            EX_DE_HL();
-        }
+        MaybeDEToHL();
         ADD_HL_DE();
         OR_A_A();
         SBC_HL_DE();

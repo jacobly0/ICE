@@ -736,9 +736,7 @@ void GEVariableFunction(void) {
     GEInsert();
 }
 void GEVariableChainAns(void) {
-    if (expr.outputRegister == OutputRegisterHL) {
-        EX_DE_HL();
-    }
+    MaybeHLToDE();
     LD_HL_IND_IX_OFF(entry1_operand);
     GEInsert();
 }
@@ -756,22 +754,16 @@ void GEFunctionFunction(void) {
     GEInsert();
 }
 void GEFunctionChainAns(void) {
-    if (expr.outputRegister == OutputRegisterHL) {
-        EX_DE_HL();
-    }
+    MaybeHLToDE();
     insertFunctionReturn(entry1_operand, OUTPUT_IN_HL, NEED_PUSH);
 }
 void GEChainAnsFunction(void) {
-    if (expr.outputRegister != OutputRegisterHL) {
-        EX_DE_HL();
-    }
+    MaybeDEToHL();
     insertFunctionReturn(entry2_operand, OUTPUT_IN_DE, NEED_PUSH);
     GEInsert();
 }
 void GEChainPushChainAns(void) {
-    if (expr.outputRegister == OutputRegisterHL) {
-        EX_DE_HL();
-    }
+    MaybeHLToDE();
     POP_HL();
     GEInsert();
 }
@@ -808,9 +800,7 @@ void GEChainPushChainAns(void) {
 #define LTChainAnsFunction GTFunctionChainAns
 
 void LTChainPushChainAns(void) {
-    if (expr.outputRegister != OutputRegisterHL) {
-        EX_DE_HL();
-    }
+    MaybeDEToHL();
     POP_DE();
     SCF();
     SBC_HL_DE();
@@ -836,9 +826,7 @@ void LTChainPushChainAns(void) {
 #define LEChainAnsFunction GEFunctionChainAns
 
 void LEChainPushChainAns(void) {
-    if (expr.outputRegister != OutputRegisterHL) {
-        EX_DE_HL();
-    }
+    MaybeDEToHL();
     POP_DE();
     OR_A_A();
     SBC_HL_DE();
@@ -924,9 +912,7 @@ void MulFunctionFunction(void) {
     CALL(__imuls);
 }
 void MulChainAnsFunction(void) {
-    if (expr.outputRegister != OutputRegisterHL) {
-        EX_DE_HL();
-    }
+    MaybeDEToHL();
     insertFunctionReturn(entry2_operand, OUTPUT_IN_BC, NEED_PUSH);
     CALL(__imuls);
 }
@@ -935,24 +921,18 @@ void MulFunctionChainAns(void) {
     MulChainAnsFunction();
 }
 void MulChainPushChainAns(void) {
-    if (expr.outputRegister != OutputRegisterHL) {
-        EX_DE_HL();
-    }
+    MaybeDEToHL();
     POP_BC();
     CALL(__imuls);
 }
 void DivChainAnsNumber(void) {
-    if (expr.outputRegister != OutputRegisterHL) {
-        EX_DE_HL();
-    }
+    MaybeDEToHL();
     LD_BC_IMM(entry2_operand);
     CALL(__idvrmu);
     expr.outputRegister2 = OutputRegisterDE;
 }
 void DivChainAnsVariable(void) {
-    if (expr.outputRegister != OutputRegisterHL) {
-        EX_DE_HL();
-    }
+    MaybeDEToHL();
     LD_BC_IND_IX_OFF(entry2_operand);
     CALL(__idvrmu);
     expr.outputRegister2 = OutputRegisterDE;
@@ -968,11 +948,7 @@ void DivNumberFunction(void) {
     expr.outputRegister2 = OutputRegisterDE;
 }
 void DivNumberChainAns(void) {
-    if (expr.outputRegister == OutputRegisterHL) {
-        PUSH_HL();
-    } else {
-        PUSH_DE();
-    }
+    PushHLDE();
     POP_BC();
     LD_HL_NUMBER(entry1_operand);
     CALL(__idvrmu);
@@ -993,11 +969,7 @@ void DivVariableFunction(void) {
     expr.outputRegister2 = OutputRegisterDE;
 }
 void DivVariableChainAns(void) {
-    if (expr.outputRegister == OutputRegisterHL) {
-        PUSH_HL();
-    } else {
-        PUSH_DE();
-    }
+    PushHLDE();
     POP_BC();
     LD_HL_IND_IX_OFF(entry1_operand);
     CALL(__idvrmu);
@@ -1020,30 +992,20 @@ void DivFunctionFunction(void) {
     expr.outputRegister2 = OutputRegisterDE;
 }
 void DivFunctionChainAns(void) {
-    if (expr.outputRegister == OutputRegisterHL) {
-        PUSH_HL();
-    } else {
-        PUSH_DE();
-    }
+    PushHLDE();
     insertFunctionReturn(entry1_operand, OUTPUT_IN_HL, NO_PUSH);
     POP_BC();
     CALL(__idvrmu);
     expr.outputRegister2 = OutputRegisterDE;
 }
 void DivChainAnsFunction(void) {
-    if (expr.outputRegister != OutputRegisterHL) {
-        EX_DE_HL();
-    }
+    MaybeDEToHL();
     insertFunctionReturn(entry2_operand, OUTPUT_IN_BC, NEED_PUSH);
     CALL(__idvrmu);
     expr.outputRegister2 = OutputRegisterDE;
 }
 void DivChainPushChainAns(void) {
-    if (expr.outputRegister == OutputRegisterHL) {
-        PUSH_HL();
-    } else {
-        PUSH_DE();
-    }
+    PushHLDE();
     POP_BC();
     POP_HL();
     CALL(__idvrmu);
@@ -1200,9 +1162,7 @@ void SubChainAnsNumber(void) {
     }
 }
 void SubChainAnsVariable(void) {
-    if (expr.outputRegister != OutputRegisterHL) {
-        EX_DE_HL();
-    }
+    MaybeDEToHL();
     LD_DE_IND_IX_OFF(entry2_operand);
     OR_A_A();
     SBC_HL_DE();
@@ -1218,9 +1178,7 @@ void SubNumberFunction(void) {
     SBC_HL_DE();
 }
 void SubNumberChainAns(void) {
-    if (expr.outputRegister == OutputRegisterHL) {
-        EX_DE_HL();
-    }
+    MaybeHLToDE();
     LD_HL_NUMBER(entry1_operand);
     OR_A_A();
     SBC_HL_DE();
@@ -1244,9 +1202,7 @@ void SubVariableFunction(void) {
     LD_HL_IND_IX_OFF(entry1_operand);
 }
 void SubVariableChainAns(void) {
-    if (expr.outputRegister == OutputRegisterHL) {
-        EX_DE_HL();
-    }
+    MaybeHLToDE();
     LD_HL_IND_IX_OFF(entry1_operand);
     OR_A_A();
     SBC_HL_DE();
@@ -1266,25 +1222,19 @@ void SubFunctionFunction(void) {
     SBC_HL_DE();
 }
 void SubFunctionChainAns(void) {
-    if (expr.outputRegister == OutputRegisterHL) {
-        EX_DE_HL();
-    }
+    MaybeHLToDE();
     insertFunctionReturn(entry1_operand, OUTPUT_IN_HL, NEED_PUSH);
     OR_A_A();
     SBC_HL_DE();
 }
 void SubChainAnsFunction(void) {
-    if (expr.outputRegister != OutputRegisterHL) {
-        EX_DE_HL();
-    }
+    MaybeDEToHL();
     insertFunctionReturn(entry2_operand, OUTPUT_IN_DE, NEED_PUSH);
     OR_A_A();
     SBC_HL_DE();
 }
 void SubChainPushChainAns(void) {
-    if (expr.outputRegister == OutputRegisterHL) {
-        EX_DE_HL();
-    }
+    MaybeHLToDE();
     POP_HL();
     OR_A_A();
     SBC_HL_DE();
