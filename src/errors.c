@@ -34,7 +34,7 @@ static const char *errors[] = {
     "You have an extra \")\" or \",\"",
     "You have an invalid expression",
     "Your icon should start with a quote",
-    "Your icon has invalid syntax or not the right length",
+    "Invalid hexadecimal",
     "ICE ERROR: please report it!",
     "You have the wrong number or arguments",
     "This C function is not implemented (yet)",

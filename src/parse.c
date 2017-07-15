@@ -82,11 +82,12 @@ uint8_t parseExpression(unsigned int token, ti_var_t currentProgram) {
     /*
         General explanation stacks:
         - Each entry consists of 4 bytes, the type and the operand
-        - Type: lowest 4 bits is the type, like number, variable, function, operator etc
+        - Type: number, variable, function, operator etc
         - The operand is either a 3-byte number or consists of 3 bytes:
-            - The first byte = the operan: function/variable/operator
+            - The first byte = the operand: function/variable/operator
             - If it's a function then the second byte is the amount of arguments for that function
-            - If it's a getKeyFast, the second byte is 1, the third byte is the key
+            - If it's a getKeyFast, the second byte is the key
+            - If it's a 2-byte function, the third byte is the second byte of the function
     */
 
     while ((int)token != EOF && (uint8_t)token != tEnter) {
@@ -598,7 +599,7 @@ static uint8_t functionI(unsigned int token, ti_var_t currentProgram) {
                 } else if (tok >= tA && tok <= tF) {
                     outputByte = tok - tA + 10;
                 } else {
-                    return E_INVALID_ICON;
+                    return E_INVALID_HEX;
                 }
                 *ice.programPtr++ = colorTable[outputByte];
             } while (++b);
@@ -611,7 +612,7 @@ static uint8_t functionI(unsigned int token, ti_var_t currentProgram) {
             if ((int)token != EOF) {
                 
                 if ((uint8_t)token != tEnter) {
-                    return E_INVALID_ICON;
+                    return E_SYNTAX;
                 }
                 
                 // Check if there is a description
@@ -938,44 +939,43 @@ uint8_t functionRepeat(unsigned int token, ti_var_t currentProgram) {
     return VALID;
 }
 
-static uint8_t functionFor(unsigned int token, ti_var_t currentProgram) {
-    return E_UNIMPLEMENTED;
-}
-
 static uint8_t functionReturn(unsigned int token, ti_var_t currentProgram) {
-    RET();
-    ice.lastTokenIsReturn = true;
+    uint8_t res;
+    
+    if ((uint8_t)(token = __getc()) == tEnter) {
+        RET();
+        ice.lastTokenIsReturn = true;
+    } else if (token == tIf) {
+        if ((res = parseExpression(__getc(), currentProgram)) != VALID) {
+            return res;
+        }
+        if (expr.outputIsString) {
+            return E_SYNTAX;
+        }
+        
+        //Check if we can optimize stuff :D
+        optimizeZeroCarryFlagOutput();
+        
+        if (expr.AnsSetCarryFlag) {
+            if (expr.AnsSetCarryFlagReversed) {
+                RET_C();
+            } else {
+                RET_NC();
+            }
+        } else {
+            if (expr.AnsSetZeroFlagReversed) {
+                RET_Z();
+            } else {
+                RET_NZ();
+            }
+        }
+    }
     return VALID;
-}
-
-static uint8_t functionPrgm(unsigned int token, ti_var_t currentProgram) {
-    return E_UNIMPLEMENTED;
-}
-
-static uint8_t functionCustom(unsigned int token, ti_var_t currentProgram) {
-    return E_UNIMPLEMENTED;
-}
-
-static uint8_t functionLbl(unsigned int token, ti_var_t currentProgram) {
-    return E_UNIMPLEMENTED;
-}
-
-static uint8_t functionGoto(unsigned int token, ti_var_t currentProgram) {
-    return E_UNIMPLEMENTED;
-}
-
-static uint8_t functionPause(unsigned int token, ti_var_t currentProgram) {
-    return E_UNIMPLEMENTED;
-}
-
-static uint8_t functionInput(unsigned int token, ti_var_t currentProgram) {
-    return E_UNIMPLEMENTED;
 }
 
 static uint8_t functionDisp(unsigned int token, ti_var_t currentProgram) {
     do {
         uint8_t res;
-        uint24_t token;
         
         if ((uint8_t)(token = __getc()) == tii) {
             if ((uint8_t)__getc() != tComma) {
@@ -1110,6 +1110,75 @@ static uint8_t functionClrHome(unsigned int token, ti_var_t currentProgram) {
     CALL(_HomeUp);
     CALL(_ClrLCDFull);
     ice.modifiedIY = false;
+    return VALID;
+}
+
+static uint8_t functionFor(unsigned int token, ti_var_t currentProgram) {
+    return E_UNIMPLEMENTED;
+}
+
+static uint8_t functionPrgm(unsigned int token, ti_var_t currentProgram) {
+    return E_UNIMPLEMENTED;
+}
+
+static uint8_t functionCustom(unsigned int token, ti_var_t currentProgram) {
+    return E_UNIMPLEMENTED;
+}
+
+static uint8_t functionLbl(unsigned int token, ti_var_t currentProgram) {
+    return E_UNIMPLEMENTED;
+}
+
+static uint8_t functionGoto(unsigned int token, ti_var_t currentProgram) {
+    return E_UNIMPLEMENTED;
+}
+
+static uint8_t functionPause(unsigned int token, ti_var_t currentProgram) {
+    return E_UNIMPLEMENTED;
+}
+
+static uint8_t functionInput(unsigned int token, ti_var_t currentProgram) {
+    return E_UNIMPLEMENTED;
+}
+
+static uint8_t functionBB(unsigned int token, ti_var_t currentProgram) {
+    uint8_t tok1, tok2;
+    
+    // Asm(
+    if ((uint8_t)(token = __getc()) == tAsm) {
+        while ((token = __getc()) != EOF && (uint8_t)token != tEnter && (uint8_t)token != tRParen) {
+            tok1 = (uint8_t)token;
+            
+            // Get hexadecimal 1
+            if (tok1 >= t0 && tok1 <= t9) {
+                tok1 = tok1 - t0;
+            } else if (tok1 >= tA && tok1 <= tF) {
+                tok1 = tok1 - tA + 10;
+            } else {
+                return E_INVALID_HEX;
+            }
+            
+            // Get hexadecimal 2
+            tok2 = (uint8_t)__getc();
+            if (tok2 >= t0 && tok2 <= t9) {
+                tok2 = tok2 - t0;
+            } else if (tok2 >= tA && tok2 <= tF) {
+                tok2 = tok2 - tA + 10;
+            } else {
+                return E_INVALID_HEX;
+            }
+            
+            *ice.programPtr++ = (tok1 << 4) + tok2;
+        }
+        if ((uint8_t)token == tRParen) {
+            if ((uint8_t)__getc() != tEnter) {
+                return E_SYNTAX;
+            }
+        }
+    } else {
+        setCurrentOffset(-1, SEEK_CUR, currentProgram);
+        return parseExpression(token, currentProgram);
+    }
     return VALID;
 }
 
@@ -1328,7 +1397,7 @@ uint8_t (*functions[256])(unsigned int, ti_var_t) = {
     parseExpression,    //184
     tokenUnimplemented, //185
     tokenUnimplemented, //186
-    parseExpression,    //187
+    functionBB,         //187
     parseExpression,    //188
     tokenUnimplemented, //189
     tokenUnimplemented, //190

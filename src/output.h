@@ -51,16 +51,20 @@
 #define OP_OR_A_C     0xB1
 #define OP_OR_A_D     0xB2
 #define OP_OR_A_A     0xB7
-#define OP_JP         0xC3
-#define OP_RET        0xC9
-#define OP_CALL       0xCD
+#define OP_RET_NZ     0xC0
 #define OP_POP_BC     0xC1
 #define OP_JP_NZ      0xC2
+#define OP_JP         0xC3
 #define OP_PUSH_BC    0xC5
+#define OP_RET_Z      0xC8
+#define OP_RET        0xC9
+#define OP_CALL       0xCD
 #define OP_JP_Z       0xCA
+#define OP_RET_NC     0xD0
 #define OP_POP_DE     0xD1
 #define OP_JP_NC      0xD2
 #define OP_PUSH_DE    0xD5
+#define OP_RET_C      0xD8
 #define OP_JP_C       0xDA
 #define OP_POP_HL     0xE1
 #define OP_EX_SP_HL   0xE3
@@ -136,7 +140,11 @@
 #define EX_S_DE_HL()          do { output(uint16_t, 0xEB52); } while (0)
 #define EX_SP_HL()            do { output(uint8_t, OP_EX_SP_HL); } while (0)
 
-#define RET()                 do { output(uint8_t, OP_RET); } while (0);
+#define RET()                 do { output(uint8_t, OP_RET); } while (0)
+#define RET_Z()               do { output(uint8_t, OP_RET_Z); } while (0)
+#define RET_NZ()              do { output(uint8_t, OP_RET_NZ); } while (0)
+#define RET_C()               do { output(uint8_t, OP_RET_C); } while (0)
+#define RET_NC()              do { output(uint8_t, OP_RET_NC); } while (0)
 #define JP(addr)              do { output(uint8_t, OP_JP); output(uint24_t, addr); } while (0)
 #define JP_Z(addr)            do { output(uint8_t, OP_JP_Z); output(uint24_t, addr); } while (0)
 #define JP_NZ(addr)           do { output(uint8_t, OP_JP_NZ); output(uint24_t, addr); } while (0)
