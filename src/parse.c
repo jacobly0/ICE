@@ -1151,11 +1151,10 @@ static uint8_t functionInput(unsigned int token, ti_var_t currentProgram) {
 }
 
 static uint8_t functionBB(unsigned int token, ti_var_t currentProgram) {
-    uint8_t tok1, tok2;
-    
     // Asm(
     if ((uint8_t)(token = __getc()) == tAsm) {
         while ((int)(token = __getc()) != EOF && (uint8_t)token != tEnter && (uint8_t)token != tRParen) {
+            uint8_t tok1, tok2;
             tok1 = (uint8_t)token;
             
             // Get hexadecimal 1

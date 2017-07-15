@@ -172,7 +172,96 @@ uint8_t parseFunction(uint24_t index) {
         case tExtTok:
             switch (function2) {
                 case tRemainder:
+                    switch (outputPrevPrev->type) {
+                        case TYPE_NUMBER:
+                            if (tempType == TYPE_VARIABLE) {
+                                LD_DE_IND_IX_OFF(outputPrev->operand);
+                            } else if (tempType == TYPE_FUNCTION_RETURN) {
+                                insertFunctionReturn(outputPrev->operand, OUTPUT_IN_DE, NO_PUSH);
+                            } else if (tempType == TYPE_CHAIN_ANS) {
+                                if (expr.outputRegister == OutputRegisterHL) {
+                                    EX_DE_HL();
+                                }
+                            } else {
+                                return E_SYNTAX;
+                            }
+                            LD_HL_NUMBER(outputPrevPrev->operand);
+                            break;
+                        case TYPE_VARIABLE:
+                            if (tempType == TYPE_NUMBER) {
+                                LD_DE_IMM(outputPrev->operand);
+                            } else if (tempType == TYPE_VARIABLE) {
+                                LD_DE_IND_IX_OFF(outputPrev->operand);
+                            } else if (tempType == TYPE_FUNCTION_RETURN) {
+                                insertFunctionReturn(outputPrev->operand, OUTPUT_IN_DE, NO_PUSH);
+                            } else if (tempType == TYPE_CHAIN_ANS) {
+                                if (expr.outputRegister == OutputRegisterHL) {
+                                    EX_DE_HL();
+                                }
+                            } else {
+                                return E_SYNTAX;
+                            }
+                            LD_HL_IND_IX_OFF(outputPrevPrev->operand);
+                            break;
+                        case TYPE_FUNCTION_RETURN:
+                            if (tempType == TYPE_NUMBER) {
+                                insertFunctionReturn(outputPrevPrev->operand, OUTPUT_IN_HL, NO_PUSH);
+                                LD_DE_IMM(outputPrev->operand);
+                            } else if (tempType == TYPE_VARIABLE) {
+                                insertFunctionReturn(outputPrevPrev->operand, OUTPUT_IN_HL, NO_PUSH);
+                                LD_DE_IND_IX_OFF(outputPrev->operand);
+                            } else if (tempType == TYPE_FUNCTION_RETURN) {
+                                insertFunctionReturn(outputPrev->operand, OUTPUT_IN_DE, NO_PUSH);
+                                insertFunctionReturn(outputPrevPrev->operand, OUTPUT_IN_HL, NEED_PUSH);
+                            } else if (tempType == TYPE_CHAIN_ANS) {
+                                if (expr.outputRegister == OutputRegisterHL) {
+                                    EX_DE_HL();
+                                }
+                                insertFunctionReturn(outputPrevPrev->operand, OUTPUT_IN_HL, NEED_PUSH);
+                            } else {
+                                return E_SYNTAX;
+                            }
+                            break;
+                        case TYPE_CHAIN_ANS:
+                            if (tempType == TYPE_NUMBER) {
+                                if (expr.outputRegister != OutputRegisterHL) {
+                                    LD_HL_NUMBER(outputPrev->operand);
+                                    EX_DE_HL();
+                                } else {
+                                    LD_DE_IMM(outputPrev->operand);
+                                }
+                            } else if (tempType == TYPE_VARIABLE) {
+                                if (expr.outputRegister != OutputRegisterHL) {
+                                    EX_DE_HL();
+                                }
+                                LD_DE_IND_IX_OFF(outputPrev->operand);
+                            } else if (tempType == TYPE_FUNCTION_RETURN) {
+                                if (expr.outputRegister == OutputRegisterHL) {
+                                    PUSH_HL();
+                                } else {
+                                    PUSH_DE();
+                                }
+                                insertFunctionReturn(outputPrev->operand, OUTPUT_IN_DE, NO_PUSH);
+                                POP_HL();
+                            } else {
+                                return E_SYNTAX;
+                            }
+                            break;
+                        case TYPE_CHAIN_PUSH:
+                            if (tempType != TYPE_CHAIN_ANS) {
+                                return E_ICE_ERROR;
+                            }
+                            
+                            if (expr.outputRegister == OutputRegisterHL) {
+                                EX_DE_HL();
+                            }
+                            POP_HL();
+                            break;
+                    }
+                    CALL(__idvrmu);
+                    break;
                 case 0x97 /* toString( */:
+                    break;
                 default:
                     return E_ICE_ERROR;
             }
@@ -250,36 +339,38 @@ uint8_t parseFunction(uint24_t index) {
                         } else {
                             insertFunctionReturn(outputPrevPrev->operand, OUTPUT_IN_HL, NEED_PUSH);
                         }
+                    } else {
+                        return E_SYNTAX;
                     }
                     break;
                 case TYPE_CHAIN_ANS:
-                    switch (tempType) {
-                        case TYPE_NUMBER:
-                            if (expr.outputRegister == OutputRegisterHL) {
-                                LD_DE_IMM(outputPrev->operand);
-                            } else {
-                                LD_HL_NUMBER(outputPrev->operand);
-                            }
-                        case TYPE_VARIABLE:
-                            if (expr.outputRegister == OutputRegisterHL) {
-                                LD_DE_IND_IX_OFF(outputPrev->operand);
-                            } else {
-                                LD_HL_IND_IX_OFF(outputPrev->operand);
-                            }
-                        case TYPE_FUNCTION_RETURN:
-                            if (expr.outputRegister == OutputRegisterHL) {
-                                PUSH_HL();
-                            } else {
-                                PUSH_DE();
-                            }
-                            insertFunctionReturn(outputPrev->operand, OUTPUT_IN_HL, NO_PUSH);
-                            POP_DE();
-                            break;
+                    if (tempType == TYPE_NUMBER) {
+                        if (expr.outputRegister == OutputRegisterHL) {
+                            LD_DE_IMM(outputPrev->operand);
+                        } else {
+                            LD_HL_NUMBER(outputPrev->operand);
+                        }
+                    } else if (tempType == TYPE_VARIABLE) {
+                        if (expr.outputRegister == OutputRegisterHL) {
+                            LD_DE_IND_IX_OFF(outputPrev->operand);
+                        } else {
+                            LD_HL_IND_IX_OFF(outputPrev->operand);
+                        }
+                    } else if (tempType == TYPE_FUNCTION_RETURN) {
+                        if (expr.outputRegister == OutputRegisterHL) {
+                            PUSH_HL();
+                        } else {
+                            PUSH_DE();
+                        }
+                        insertFunctionReturn(outputPrev->operand, OUTPUT_IN_HL, NO_PUSH);
+                        POP_DE();
+                    } else {
+                        return E_SYNTAX;
                     }
                     break;
                 case TYPE_CHAIN_PUSH:
                     if (tempType != TYPE_CHAIN_ANS) {
-                        return E_SYNTAX;
+                        return E_ICE_ERROR;
                     }
                     
                     if (expr.outputRegister == OutputRegisterHL) {
@@ -432,9 +523,7 @@ uint8_t parseFunction(uint24_t index) {
                 OR_A_A();
                 SBC_HL_HL();
                 LD_L_A();
-            }
-            
-            else if (temp & RET_HL) {
+            } else if (temp & RET_HL) {
                 EX_S_DE_HL();
                 expr.outputRegister = OutputRegisterDE;
             }
