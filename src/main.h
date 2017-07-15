@@ -47,6 +47,10 @@ typedef struct {
     uint24_t outputElements;                                // 
     uint24_t *stack[STACK_SIZE*5];                          // Stacks for compiling arguments
     uint24_t *stackStart;                                   // Start of the stack
+    uint24_t LblStack[200];                                 // Label stack
+    uint24_t *LblPtr;                                       // Pointer to the label stack
+    uint24_t GotoStack[200];                                // Goto stack
+    uint24_t *GotoPtr;                                      // Pointer to the goto stack
     
     ti_var_t inPrgm;                                        // Used for getting tokens
     ti_var_t outPrgm;                                       // Used for writing bytes

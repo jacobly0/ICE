@@ -39,6 +39,7 @@ static const char *errors[] = {
     "You have the wrong number or arguments",
     "This C function is not implemented (yet)",
     "Warning: this C function is deprecated",
+    "Label not found",
 };
 
 void displayError(unsigned int index) {

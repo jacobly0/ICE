@@ -163,6 +163,8 @@ int main(int argc, char **argv) {
 #endif
     ice.programPtr     = ice.programData + 116;
     ice.programDataPtr = ice.programDataData;
+    ice.LblPtr         = ice.LblStack;
+    ice.GotoPtr        = ice.GotoStack;
     
     memcpy(ice.programData, CHeaderData, 116);
     
@@ -206,6 +208,30 @@ int main(int argc, char **argv) {
         offset = PRGM_START + ice.programSize - (uintptr_t)ice.programDataData;
         while (ice.dataOffsetElements--) {
             *ice.dataOffsetStack[ice.dataOffsetElements] += offset;
+        }
+        
+        // Find all the matching Goto's/Lbl's
+        while (ice.GotoPtr != ice.GotoStack) {
+            uint24_t GotoAddr  = *--ice.GotoPtr;
+            uint24_t GotoPtr = *--ice.GotoPtr;
+            uint24_t *temp;
+            
+            // Check for every label if it matches the Goto
+            for (temp = ice.LblStack; temp < ice.LblPtr;) {
+                uint24_t LblPtr = *temp++;
+                uint24_t LblAddr = *temp++;
+                
+                // Compare the Goto and the Lbl labels
+                if (!memcmp((char*)GotoAddr, (char*)LblAddr, (uint24_t)memchr((char*)LblAddr, tEnter, -1) - LblAddr)) {
+                    *(uint24_t*)(GotoPtr + 1) = LblPtr - (uint24_t)ice.programData + PRGM_START;
+                    goto findNextLabel;
+                }
+            }
+            
+            // Lbl not found
+            displayError(E_NO_LABEL);
+            goto stop;
+findNextLabel:;
         }
         
         totalSize = ice.programSize + programDataSize + 3;

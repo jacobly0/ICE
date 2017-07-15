@@ -1126,11 +1126,20 @@ static uint8_t functionCustom(unsigned int token, ti_var_t currentProgram) {
 }
 
 static uint8_t functionLbl(unsigned int token, ti_var_t currentProgram) {
-    return E_UNIMPLEMENTED;
+    // Add the label to the stack, and skip the line
+    *ice.LblPtr++ = (uint24_t)ice.programPtr;
+    *ice.LblPtr++ = (uint24_t)ti_GetDataPtr(currentProgram);
+    skipLine(currentProgram);
+    return VALID;
 }
 
 static uint8_t functionGoto(unsigned int token, ti_var_t currentProgram) {
-    return E_UNIMPLEMENTED;
+    // Add the goto to the stack, and skip the line
+    *ice.GotoPtr++ = (uint24_t)ice.programPtr;
+    *ice.GotoPtr++ = (uint24_t)ti_GetDataPtr(currentProgram);
+    JP(0);
+    skipLine(currentProgram);
+    return VALID;
 }
 
 static uint8_t functionPause(unsigned int token, ti_var_t currentProgram) {
@@ -1146,7 +1155,7 @@ static uint8_t functionBB(unsigned int token, ti_var_t currentProgram) {
     
     // Asm(
     if ((uint8_t)(token = __getc()) == tAsm) {
-        while ((token = __getc()) != EOF && (uint8_t)token != tEnter && (uint8_t)token != tRParen) {
+        while ((int)(token = __getc()) != EOF && (uint8_t)token != tEnter && (uint8_t)token != tRParen) {
             tok1 = (uint8_t)token;
             
             // Get hexadecimal 1
@@ -1206,6 +1215,7 @@ void optimizeZeroCarryFlagOutput(void) {
 
 void skipLine(ti_var_t currentProgram) {
     int token;
+    
     while ((token = __getc()) != EOF && (uint8_t)token != tEnter);
 }
 
