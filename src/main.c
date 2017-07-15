@@ -166,9 +166,6 @@ int main(int argc, char **argv) {
     
     memcpy(ice.programData, CHeaderData, 116);
     
-#ifndef COMPUTER_ICE
-    gfx_PrintStringXY("Compiling 1/2...", 1, iceMessageLine);
-#endif
     // Pre-scan program (and subprograms) and find all the C routines
     preScanProgram(ice.inPrgm);
     
@@ -186,7 +183,6 @@ int main(int argc, char **argv) {
     resetFileOrigin(ice.inPrgm);
 #ifndef COMPUTER_ICE
     displayLoadingBarFrame();
-    gfx_PrintStringXY("Compiling 2/2...", 1, iceMessageLine);
 #endif
     res = parseProgram(ice.inPrgm);
     

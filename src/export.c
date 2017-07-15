@@ -85,7 +85,7 @@ void export_program(const char *name, uint8_t *data, size_t size) {
     char *file_name = str_dupcat(name, ".8xp");
     
     if (!(out_file = fopen(file_name, "wb"))) {
-        fprintf(stderr, "unable to open output program file.");
+        fprintf(stderr, "Unable to open output program file.");
         exit(1);
     }
     

@@ -441,6 +441,7 @@ uint8_t parsePostFixFromIndexToIndex(uint24_t startIndex, uint24_t endIndex) {
         
         // Expression is only a variable
         else if (outputType == TYPE_VARIABLE) {
+            expr.outputIsVariable = true;
             LD_HL_IND_IX_OFF(outputOperand);
         } 
         
@@ -695,6 +696,10 @@ static uint8_t functionIf(unsigned int token, ti_var_t currentProgram) {
             return res;
         }
         
+        if (expr.outputIsString) {
+            return E_SYNTAX;
+        }
+        
         //Check if we can optimize stuff :D
         optimizeZeroCarryFlagOutput();
         
@@ -834,7 +839,6 @@ void UpdatePointersToData(uint24_t tempDataOffsetElements) {
         ice.dataOffsetStack[tempDataOffsetElements] = (uint24_t*)(((uint8_t*)ice.dataOffsetStack[tempDataOffsetElements]) - 2);
         tempDataOffsetElements++;
     }
-    return;
 }
 
 static uint8_t functionWhile(unsigned int token, ti_var_t currentProgram) {
@@ -851,7 +855,7 @@ static uint8_t functionWhile(unsigned int token, ti_var_t currentProgram) {
     if (WhileRepeatCondStart - WhileStartAddr + 2 < 0x80) {
         *WhileStartAddr++ = OP_JR;
         *WhileStartAddr++ = WhileRepeatCondStart - TempStartAddr - 4;
-        UpdatePointersToData(tempDataOffsetElements);                       // Don't blame me for this strange order of functions
+        UpdatePointersToData(tempDataOffsetElements);
         memcpy(WhileStartAddr, WhileStartAddr + 2, 0x80);
         ice.programPtr -= 2;
     } else {
@@ -872,11 +876,14 @@ uint8_t functionRepeat(unsigned int token, ti_var_t currentProgram) {
     skipLine(currentProgram);
     
     // Parse the code
-    res = parseProgram(currentProgram);
-    if (res != E_END && res != VALID) {
+    if ((res = parseProgram(currentProgram)) != E_END && res != VALID) {
         return res;
     }
     
+    if (expr.outputIsString) {
+        return E_SYNTAX;
+    }
+
     // Remind where the "End" is
     RepeatProgEnd = getCurrentOffset(currentProgram);
     WhileRepeatCondStart = ice.programPtr;
@@ -978,25 +985,21 @@ static uint8_t functionDisp(unsigned int token, ti_var_t currentProgram) {
             continue;
         }
         
+        // Get the argument, and display it, based on whether it's a string or the outcome of an expression
         expr.inFunction = true;
         if ((res = parseExpression(token, currentProgram)) != VALID) {
             return res;
         }
-        
-        // Display string
         if (expr.outputIsString) {
-            XOR_A_A();
-            LD_IMM_A(curCol);
             CALL(_PutS);
-        }
-        
-        // Display outcome of expression
-        else {
-            LD_A(18);
-            LD_IMM_A(curCol);
+        } else {
+            if (expr.outputRegister != OutputRegisterHL) {
+                EX_DE_HL();
+            }
             CALL(_DispHL);
         }
         
+        // Oops, there was a ")" after the expression
         if (ice.tempToken == tRParen) {
             return E_SYNTAX;
         }
@@ -1005,7 +1008,99 @@ static uint8_t functionDisp(unsigned int token, ti_var_t currentProgram) {
 }
 
 static uint8_t functionOutput(unsigned int token, ti_var_t currentProgram) {
-    return E_UNIMPLEMENTED;
+    uint8_t res;
+    
+    // Get the first argument = column
+    expr.inFunction = true;
+    if ((res = parseExpression(__getc(), currentProgram)) != VALID) {
+        return res;
+    }
+    
+    // Return syntax error if the expression was a string or the token after the expression wasn't a comma
+    if (expr.outputIsString || ice.tempToken != tComma) {
+        return E_SYNTAX;
+    }
+    
+    if (expr.outputIsNumber) {
+        *(ice.programPtr - 4) = OP_LD_A;
+        ice.programPtr -= 2;
+        LD_IMM_A(curCol);
+        
+        // Get the second argument = row
+        expr.inFunction = true;
+        if ((res = parseExpression(__getc(), currentProgram)) != VALID) {
+            return res;
+        }
+        if (expr.outputIsString) {
+            return E_SYNTAX;
+        }
+        
+        // Yay, we can optimize things!
+        if (expr.outputIsNumber) {
+            uint16_t outputCoordinates;
+            ice.programPtr -= 10;
+            outputCoordinates = (*(ice.programPtr + 1) << 8) + *(ice.programPtr + 7);
+            LD_SIS_HL(outputCoordinates);
+            LD_SIS_IMM_HL(curRow & 0xFFFF);
+        } else {
+            if (expr.outputIsVariable) {
+                *(ice.programPtr - 2) = 0x7E;
+            } else if (expr.outputRegister == OutputRegisterHL) {
+                LD_A_L();
+            } else {
+                LD_A_E();
+            }
+            LD_IMM_A(curRow);
+        }
+    } else {
+        if (expr.outputIsVariable) {
+            *(ice.programPtr - 2) = 0x7E;
+        } else if (expr.outputRegister == OutputRegisterHL) {
+            LD_A_L();
+        } else {
+            LD_A_E();
+        }
+        LD_IMM_A(curCol);
+        
+        // Get the second argument = row
+        expr.inFunction = true;
+        if ((res = parseExpression(__getc(), currentProgram)) != VALID) {
+            return res;
+        }
+        if (expr.outputIsString) {
+            return E_SYNTAX;
+        }
+        
+        if (expr.outputIsVariable) {
+            *(ice.programPtr - 2) = 0x7E;
+        } else if (expr.outputRegister == OutputRegisterHL) {
+            LD_A_L();
+        } else {
+            LD_A_E();
+        }
+        LD_IMM_A(curRow);
+    }
+    
+    // Get the third argument = output thing
+    if (ice.tempToken == tComma) {
+        if ((res = parseExpression(__getc(), currentProgram)) != VALID) {
+            return res;
+        }
+        
+        // Call the right function to display it
+        if (expr.outputIsString) {
+            CALL(_PutS);
+        } else {
+            if (expr.outputRegister != OutputRegisterHL) {
+                EX_DE_HL();
+            }
+            CALL(_DispHL);
+        }
+    } else if (ice.tempToken != tEnter) {
+        return E_SYNTAX;
+    }
+    
+    return VALID;
 }
 
 static uint8_t functionClrHome(unsigned int token, ti_var_t currentProgram) {

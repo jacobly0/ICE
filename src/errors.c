@@ -23,18 +23,22 @@
 
 static const char *errors[] = {
     "This token is not implemented (yet)",
+#ifndef COMPUTER_ICE
     "This operator cannot be used at the start of   the line",
+#else
+    "This operator cannot be used at the start of the line",
+#endif
     "This token doesn't have a condition",
     "You used 'Else' outside an If-statement",
     "You used 'End' outside a condition block",
-    "You have an extra right paren",
+    "You have an extra \")\" or \",\"",
     "You have an invalid expression",
     "Your icon should start with a quote",
     "Your icon has invalid syntax or not the right length",
     "ICE ERROR: please report it!",
     "You have the wrong number or arguments",
     "This C function is not implemented (yet)",
-    "This C function is deprecated",
+    "Warning: this C function is deprecated",
 };
 
 void displayError(unsigned int index) {

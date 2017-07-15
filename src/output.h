@@ -6,6 +6,7 @@
 #define PRGM_START    0xD1A882
 #define flags         0xD00080
 #define pixelShadow   0xD031F6
+#define curRow        0xD00595
 #define curCol        0xD00596
 
 #define _GetCSC       0x02014C
@@ -42,6 +43,8 @@
 #define OP_LD_E_A     0x5F
 #define OP_LD_L_A     0x6F
 #define OP_LD_A_B     0x78
+#define OP_LD_A_E     0x7B
+#define OP_LD_A_L     0x7D
 #define OP_AND_A_L    0xA5
 #define OP_XOR_A_L    0xAD
 #define OP_XOR_A_A    0xAF
@@ -98,6 +101,8 @@
 #define LD_DE_IMM(val)        do { output(uint8_t, 0x11); output(uint24_t, val); } while (0)
 #define LD_HL_IMM(val)        do { output(uint8_t, 0x21); output(uint24_t, val); } while (0)
 #define LD_IMM_A(val)         do { output(uint8_t, 0x32); output(uint24_t, val); } while (0)
+#define LD_SIS_IMM_HL(val)    do { output(uint16_t, 0x2240); output(uint16_t, val); } while (0)
+#define LD_SIS_HL(val)        do { output(uint16_t, 0x2140); output(uint16_t, val); } while (0)
 
 #define LD_A(val)             do { output(uint8_t, OP_LD_A); output(uint8_t, val); } while (0)    
 #define LD_B(val)             do { output(uint8_t, OP_LD_B); output(uint8_t, val); } while (0)
@@ -106,6 +111,8 @@
 #define LD_E_A()              do { output(uint8_t, OP_LD_E_A); } while (0)
 #define LD_L_A()              do { output(uint8_t, OP_LD_L_A); } while (0)
 #define LD_A_B()              do { output(uint8_t, OP_LD_A_B); } while (0)
+#define LD_A_E()              do { output(uint8_t, OP_LD_A_E); } while (0)
+#define LD_A_L()              do { output(uint8_t, OP_LD_A_L); } while (0)
 
 #define INC_DE()              do { output(uint8_t, OP_INC_DE); } while (0)
 #define INC_HL()              do { output(uint8_t, OP_INC_HL); } while (0)

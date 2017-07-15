@@ -77,6 +77,7 @@ typedef struct {
     bool     inString;
     bool     inFunction;
     bool     outputIsNumber;
+    bool     outputIsVariable;
     bool     outputIsString;
     bool     AnsSetZeroFlag;
     bool     AnsSetZeroFlagReversed;
