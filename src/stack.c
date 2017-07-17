@@ -31,7 +31,7 @@ uint24_t getIndexOffset(uint24_t offset) {
 }
 
 void removeIndexFromStack(uint24_t index) {
-    memcpy(ice.stackStart + index, ice.stackStart + index + 1, STACK_SIZE - index);
+    memcpy(ice.stackStart + index, ice.stackStart + index + 1, (STACK_SIZE - index) * 3);
     p2--;
 }
 

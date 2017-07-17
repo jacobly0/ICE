@@ -92,6 +92,7 @@ uint8_t parseExpression(unsigned int token, ti_var_t currentProgram) {
 
     while ((int)token != EOF && (uint8_t)token != tEnter) {
         uint8_t tok;
+        
         outputCurr = &outputPtr[ice.outputElements];
         stackCurr  = &stackPtr[stackElements];
         tok = (uint8_t)token;
@@ -187,15 +188,17 @@ stackToOutputReturn1:;
                 ice.outputElements++;
             }
             
-            // Increment the amount of arguments for that function
-            (*amountOfArgumentsStackPtr)++;
-            
             // If the right parenthesis belongs to a function, move the function as well
             if (tok == tRParen && stackPrev->operand != tLParen) {
                 outputCurr->type = stackPrev->type;
                 outputCurr->operand = stackPrev->operand + ((*amountOfArgumentsStackPtr--) << 8);
                 stackElements--;
                 ice.outputElements++;
+            }
+            
+            // Increment the amount of arguments for that function
+            else {
+                (*amountOfArgumentsStackPtr)++;
             }
         }
         
@@ -546,7 +549,7 @@ uint8_t parsePostFixFromIndexToIndex(uint24_t startIndex, uint24_t endIndex) {
         } else if (operandDepth == 1) {
             // We need to push HL since it isn't used in the next operator/function
             (&outputPtr[tempIndex])->type = TYPE_CHAIN_PUSH;
-            PUSH_HL();
+            PushHLDE();
         }
         
         if (operandDepth) {
@@ -594,7 +597,7 @@ static uint8_t functionI(unsigned int token, ti_var_t currentProgram) {
             // Get hexadecimal
             do {
                 uint8_t tok;
-                if ((tok = GetHexadecimal(currentProgram)) == 16) {
+                if ((tok = IsHexadecimal(__getc())) == 16) {
                     return E_INVALID_HEX;
                 }
                 *ice.programPtr++ = colorTable[tok];
@@ -722,6 +725,11 @@ static uint8_t functionIf(unsigned int token, ti_var_t currentProgram) {
         }
         res = parseProgram(currentProgram);
         
+        // Needs to be the end of a line
+        if (!CheckEOL(currentProgram)) {
+            return E_SYNTAX;
+        }
+        
         // Check if we quit the program with an 'Else'
         if (res == E_ELSE) {
             // Backup stuff
@@ -732,6 +740,11 @@ static uint8_t functionIf(unsigned int token, ti_var_t currentProgram) {
             res = parseProgram(currentProgram);
             if (res != E_END && res != VALID) {
                 return res;
+            }
+            
+            // Needs to be the end of a line
+            if (!CheckEOL(currentProgram)) {
+                return E_SYNTAX;
             }
             
             // Check if we can change the "jp" to a "jr" from the Else code
@@ -877,7 +890,8 @@ uint8_t functionRepeat(unsigned int token, ti_var_t currentProgram) {
         return res;
     }
     
-    if (expr.outputIsString) {
+    // Needs to be the end of a line
+    if (!CheckEOL(currentProgram)) {
         return E_SYNTAX;
     }
 
@@ -889,6 +903,10 @@ uint8_t functionRepeat(unsigned int token, ti_var_t currentProgram) {
     setCurrentOffset(RepeatCondStart, SEEK_SET, currentProgram);
     if ((res = parseExpression(__getc(), currentProgram)) != VALID) {
         return res;
+    }
+    
+    if (expr.outputIsString) {
+        return E_SYNTAX;
     }
     
     // And set the pointer after the "End"
@@ -972,13 +990,15 @@ static uint8_t functionReturn(unsigned int token, ti_var_t currentProgram) {
 static uint8_t functionDisp(unsigned int token, ti_var_t currentProgram) {
     do {
         uint8_t res;
-        
+
         if ((uint8_t)(token = __getc()) == tii) {
-            if ((uint8_t)__getc() != tComma) {
-                return E_SYNTAX;
+            if ((int)(token = __getc()) == EOF) {
+                ice.tempToken = tEnter;
+            } else {
+                ice.tempToken = (uint8_t)token;
             }
             CALL(_NewLine);
-            continue;
+            goto checkArgument;
         }
         
         // Get the argument, and display it, based on whether it's a string or the outcome of an expression
@@ -995,6 +1015,7 @@ static uint8_t functionDisp(unsigned int token, ti_var_t currentProgram) {
             CALL(_DispHL);
         }
         
+checkArgument:
         // Oops, there was a ")" after the expression
         if (ice.tempToken == tRParen) {
             return E_SYNTAX;
@@ -1151,15 +1172,14 @@ static uint8_t functionBB(unsigned int token, ti_var_t currentProgram) {
     if ((uint8_t)(token = __getc()) == tAsm) {
         while ((int)(token = __getc()) != EOF && (uint8_t)token != tEnter && (uint8_t)token != tRParen) {
             uint8_t tok1, tok2;
-            tok1 = (uint8_t)token;
             
             // Get hexadecimal 1
-            if ((tok1 = GetHexadecimal(currentProgram)) == 16) {
+            if ((tok1 = IsHexadecimal(token)) == 16) {
                 return E_INVALID_HEX;
             }
             
             // Get hexadecimal 2
-            if ((tok2 = GetHexadecimal(currentProgram)) == 16) {
+            if ((tok2 = IsHexadecimal(__getc())) == 16) {
                 return E_INVALID_HEX;
             }
             
@@ -1171,8 +1191,8 @@ static uint8_t functionBB(unsigned int token, ti_var_t currentProgram) {
             }
         }
     } else {
-        setCurrentOffset(-1, SEEK_CUR, currentProgram);
-        return parseExpression(token, currentProgram);
+        setCurrentOffset(-2, SEEK_CUR, currentProgram);
+        return parseExpression(__getc(), currentProgram);
     }
     return VALID;
 }

@@ -378,8 +378,8 @@ void PushHLDE(void) {
     }
 }
 
-uint8_t GetHexadecimal(ti_var_t currentProgram) {
-    uint8_t tok = (uint8_t)__getc();
+uint8_t IsHexadecimal(uint24_t token) {
+    uint8_t tok = (uint8_t)token;
     if (tok >= t0 && tok <= t9) {
         return tok - t0;
     } else if (tok >= tA && tok <= tF) {
@@ -387,6 +387,14 @@ uint8_t GetHexadecimal(ti_var_t currentProgram) {
     } else {
         return 16;
     }
+}
+
+bool CheckEOL(ti_var_t currentProgram) {
+    uint24_t token = __getc();
+    if ((int)token == EOF || (uint8_t)token == tEnter) {
+        return true;
+    }
+    return false;
 }
 
 #ifndef COMPUTER_ICE

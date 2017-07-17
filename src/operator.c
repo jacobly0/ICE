@@ -836,20 +836,20 @@ void LEChainPushChainAns(void) {
     expr.ZeroCarryFlagRemoveAmountOfBytes = 3;
 }
 
-#define NENumberVariable    EQVariableNumber
-#define NENumberFunction    EQFunctionNumber
-#define NENumberChainAns    EQChainAnsNumber
-#define NEVariableNumber    EQNumberVariable
+#define NENumberVariable    EQNumberVariable
+#define NENumberFunction    EQNumberFunction
+#define NENumberChainAns    EQNumberChainAns
+#define NEVariableNumber    EQVariableNumber
 #define NEVariableVariable  EQVariableVariable
-#define NEVariableFunction  EQFunctionVariable
+#define NEVariableFunction  EQVariableFunction
 #define NEVariableChainAns  EQChainAnsVariable
-#define NEFunctionNumber    EQNumberFunction
-#define NEFunctionVariable  EQVariableFunction
+#define NEFunctionNumber    EQFunctionNumber
+#define NEFunctionVariable  EQFunctionVariable
 #define NEFunctionFunction  EQFunctionFunction
-#define NEFunctionChainAns  EQChainAnsFunction
-#define NEChainAnsNumber    EQNumberChainAns
-#define NEChainAnsVariable  EQVariableChainAns
-#define NEChainAnsFunction  EQFunctionChainAns
+#define NEFunctionChainAns  EQFunctionChainAns
+#define NEChainAnsNumber    EQChainAnsNumber
+#define NEChainAnsVariable  EQChainAnsVariable
+#define NEChainAnsFunction  EQChainAnsFunction
 #define NEChainPushChainAns EQChainPushChainAns
 
 void MulChainAnsNumber(void) {

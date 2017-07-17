@@ -466,6 +466,7 @@ uint8_t parseFunction(uint24_t index) {
             // Get all the arguments
             for (a = 0; a < amountOfArguments; a++) {
                 uint24_t *tempP1, *tempP2;
+                
                 temp = 0;
                 while (1) {
                     outputPrev = &outputPtr[--startIndex];
@@ -544,8 +545,19 @@ uint8_t parseFunction(uint24_t index) {
                 return E_ARGUMENTS;
             }
             
+            // If it's Begin, push gfx_Bpp8 as well
+            if (!expr.outputNumber) {
+                LD_L(0x27);
+                PUSH_HL();
+            }
+            
             // Call the function
             CALL(ice.CRoutinesStack[expr.outputNumber]*4 + 0xD00000);
+            
+            // If it's Begin, pop gfx_Bpp8 as well
+            if (!expr.outputNumber) {
+                POP_BC();
+            }
             
             // And pop the arguments
             for (a = 1; a < amountOfArguments; a++) {

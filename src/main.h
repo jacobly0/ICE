@@ -113,7 +113,8 @@ unsigned int getNextToken(ti_var_t);
 void MaybeDEToHL(void);
 void MaybeHLToDE(void);
 void PushHLDE(void);
-uint8_t GetHexadecimal(ti_var_t);
+uint8_t IsHexadecimal(uint24_t token);
+bool CheckEOL(ti_var_t currentProgram);
 
 #ifndef COMPUTER_ICE
 void CHeaderData(void);

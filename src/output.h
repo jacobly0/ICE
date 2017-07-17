@@ -34,6 +34,7 @@
 #define OP_JR_Z       0x28
 #define OP_ADD_HL_HL  0x29
 #define OP_DEC_HL     0x2B
+#define OP_LD_L       0x2E
 #define OP_JR_NC      0x30
 #define OP_SCF        0x37
 #define OP_JR_C       0x38
@@ -111,6 +112,7 @@
 #define LD_A(val)             do { output(uint8_t, OP_LD_A); output(uint8_t, val); } while (0)    
 #define LD_B(val)             do { output(uint8_t, OP_LD_B); output(uint8_t, val); } while (0)
 #define LD_C(val)             do { output(uint8_t, OP_LD_C); output(uint8_t, val); } while (0)
+#define LD_L(val)             do { output(uint8_t, OP_LD_L); output(uint8_t, val); } while (0)
 #define LD_C_A()              do { output(uint8_t, OP_LD_C_A); } while (0)
 #define LD_E_A()              do { output(uint8_t, OP_LD_E_A); } while (0)
 #define LD_L_A()              do { output(uint8_t, OP_LD_L_A); } while (0)
