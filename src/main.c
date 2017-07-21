@@ -55,13 +55,32 @@ void main(void) {
 void export_program(const char *name, uint8_t *data, size_t size);
 int main(int argc, char **argv) {
 #endif
-    uint8_t a = 0, selectedProgram = 0, key, amountOfPrograms, res, *outputDataPtr, *search_pos = NULL;
+    uint8_t a = 0, selectedProgram = 0, key, amountOfPrograms, res, *hooksPtr, *search_pos = NULL;
     char *var_name;
     uint24_t token, headerSize, programDataSize, offset, totalSize;
     const char ICEheader[] = {tii, 0};
     char buf[30];
     
-#ifndef COMPUTER_ICE    
+#ifndef COMPUTER_ICE  
+    // Install hooks
+    ti_CloseAll();
+    ice.inPrgm = ti_OpenVar("ICEAPPV", "r", TI_APPVAR_TYPE);
+    if (ice.inPrgm) {
+        ti_SetArchiveStatus(true, ice.inPrgm);
+        hooksPtr = ti_GetDataPtr(ice.inPrgm);
+        
+        // Manually set the hooks
+        asm("ld de, 17");
+        asm("add hl, de");
+        asm("call 00213CCh");
+        asm("ld de, 1992");
+        asm("add hl, de");
+        asm("call 00213F8h");
+        asm("ld de, 49");
+        asm("add hl, de");
+        asm("call 00213C4h");
+    }
+    
     // Yay, GUI! :)
     gfx_Begin(gfx_8bpp);
     
@@ -133,7 +152,6 @@ int main(int argc, char **argv) {
     displayLoadingBarFrame();
 
     // Find program
-    ti_CloseAll();
     ice.inPrgm = ti_OpenVar(ice.inName, "r", TI_PRGM_TYPE);
     if (!ice.inPrgm) {
         goto stop;
@@ -228,7 +246,7 @@ int main(int argc, char **argv) {
                 // Compare the Goto and the Lbl labels
 #ifndef COMPUTER_ICE
                 if (!memcmp((char*)GotoAddr, (char*)LblAddr, (uint24_t)strchr((char*)LblAddr, tEnter) - LblAddr)) {
-                    *(uint24_t*)(GotoPtr + 1) = LblPtr - (uint24_t)ice.programData + PRGM_START;
+                    w24(GotoPtr + 1, LblPtr - (uint24_t)ice.programData + PRGM_START);
                     goto findNextLabel;
                 }
 #else

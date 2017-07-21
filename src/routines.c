@@ -64,8 +64,8 @@ uint8_t IsHexadecimal(uint24_t token) {
 }
 
 bool CheckEOL(ti_var_t currentProgram) {
-    uint24_t token = __getc();
-    if ((int)token == EOF || (uint8_t)token == tEnter) {
+    uint24_t token;
+    if ((int)(token = __getc()) == EOF || (uint8_t)token == tEnter) {
         return true;
     }
     return false;
