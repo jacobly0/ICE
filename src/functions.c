@@ -6,6 +6,8 @@
 #include "main.h"
 #include "output.h"
 #include "operator.h"
+#include "routines.h"
+#include "gfx/gfx_logos.h"
 
 #ifndef COMPUTER_ICE
 #include <debug.h>
@@ -274,7 +276,7 @@ uint8_t parseFunction(uint24_t index) {
                     }
                     CALL(__idvrmu);
                     break;
-                case 0x97 /* toString( */:
+                case tToString:
                     break;
                 default:
                     return E_ICE_ERROR;

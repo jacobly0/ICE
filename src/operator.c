@@ -6,6 +6,8 @@
 #include "errors.h"
 #include "stack.h"
 #include "output.h"
+#include "routines.h"
+#include "gfx/gfx_logos.h"
 
 #ifndef COMPUTER_ICE
 #include <debug.h>

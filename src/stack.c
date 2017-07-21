@@ -6,6 +6,8 @@
 #include "output.h"
 #include "operator.h"
 #include "functions.h"
+#include "routines.h"
+#include "gfx/gfx_logos.h"
 
 #include <stdbool.h>
 #include <stddef.h>

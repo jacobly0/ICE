@@ -6,6 +6,8 @@
 #include "parse.h"
 #include "output.h"
 #include "operator.h"
+#include "routines.h"
+#include "gfx/gfx_logos.h"
 
 #ifndef COMPUTER_ICE
 #include <fileioc.h>
@@ -24,12 +26,6 @@
 
 ice_t ice;
 expr_t expr;
-
-#define LB_X 40
-#define LB_Y 200
-#define LB_W 240
-#define LB_H 14
-#define LB_R (LB_H / 2)
 
 const char *infoStr = "ICE Compiler v1.6 - By Peter \"PT_\" Tillema";
 
@@ -65,9 +61,16 @@ int main(int argc, char **argv) {
     const char ICEheader[] = {tii, 0};
     char buf[30];
     
-#ifndef COMPUTER_ICE
+#ifndef COMPUTER_ICE    
     // Yay, GUI! :)
     gfx_Begin(gfx_8bpp);
+    
+    // Display flash screen
+    gfx_ZeroScreen();
+    gfx_RLETSprite_NoClip(logo, 53, 70);
+    delay(2000);
+    gfx_FillScreen(0xFF);
+
     gfx_SetColor(189);
     gfx_FillRectangle_NoClip(0, 0, 320, 10);
     gfx_SetColor(0);
@@ -143,7 +146,8 @@ int main(int argc, char **argv) {
     }
     fprintf(stdout, "%s\n", infoStr);
     fprintf(stdout, "Compiling program %s...\n", var_name);
-    ice.inPrgm = fopen(var_name, "rb");
+    ice.inPrgm = fopen(var_name, "r");
+    ice.inPrgm2 = fopen(var_name, "r");
     if (!ice.inPrgm) {
         fprintf(stdout, "Can't find input program");
         goto stop;
@@ -222,10 +226,26 @@ int main(int argc, char **argv) {
                 uint24_t LblAddr = *temp++;
                 
                 // Compare the Goto and the Lbl labels
+#ifndef COMPUTER_ICE
                 if (!memcmp((char*)GotoAddr, (char*)LblAddr, (uint24_t)strchr((char*)LblAddr, tEnter) - LblAddr)) {
                     *(uint24_t*)(GotoPtr + 1) = LblPtr - (uint24_t)ice.programData + PRGM_START;
                     goto findNextLabel;
                 }
+#else
+                int tempTok;
+
+                setCurrentOffset(LblAddr, SEEK_SET, ice.inPrgm);
+                setCurrentOffset(GotoAddr, SEEK_SET, ice.inPrgm2);
+                
+                while ((tempTok = fgetc(ice.inPrgm)) != tEnter) {
+                    if (tempTok != fgetc(ice.inPrgm2)) {
+                        goto labelNotTrue;
+                    }
+                }
+                w24((uint8_t*)GotoPtr + 1, LblPtr - (uint24_t)ice.programData + PRGM_START);
+                goto findNextLabel;
+labelNotTrue:;
+#endif
             }
             
             // Lbl not found
@@ -283,7 +303,7 @@ findNextLabel:;
         free(export);
         
         // Display the size
-        fprintf(stdout, "Succesfully compiled %s.8xp!\n", ice.outName);
+        fprintf(stdout, "Succesfully compiled to %s.8xp!\n", ice.outName);
         fprintf(stdout, "Output size: %u bytes\n", totalSize);
 #endif
     } else {
@@ -353,105 +373,3 @@ void preScanProgram(ti_var_t currentProgram) {
     // Well, we scanned the entire program, so let's rewind it
     resetFileOrigin(currentProgram);
 }
-
-void ProgramPtrToOffsetStack(void) {
-    ice.dataOffsetStack[ice.dataOffsetElements++] = (uint24_t*)(ice.programPtr + 1);
-}
-
-void MaybeDEToHL(void) {
-    if (expr.outputRegister != OutputRegisterHL) {
-        EX_DE_HL();
-    }
-}
-
-void MaybeHLToDE(void) {
-    if (expr.outputRegister == OutputRegisterHL) {
-        EX_DE_HL();
-    }
-}
-
-void PushHLDE(void) {
-    if (expr.outputRegister == OutputRegisterHL) {
-        PUSH_HL();
-    } else {
-        PUSH_DE();
-    }
-}
-
-uint8_t IsHexadecimal(uint24_t token) {
-    uint8_t tok = (uint8_t)token;
-    if (tok >= t0 && tok <= t9) {
-        return tok - t0;
-    } else if (tok >= tA && tok <= tF) {
-        return tok - tA + 10;
-    } else {
-        return 16;
-    }
-}
-
-bool CheckEOL(ti_var_t currentProgram) {
-    uint24_t token = __getc();
-    if ((int)token == EOF || (uint8_t)token == tEnter) {
-        return true;
-    }
-    return false;
-}
-
-#ifndef COMPUTER_ICE
-void displayLoadingBarFrame(void) {
-    // Display a fancy loading bar during compiling ;)
-    gfx_SetColor(255);
-    gfx_FillRectangle_NoClip(LB_X - LB_R, LB_Y - LB_R, LB_W + LB_H, LB_H);
-    gfx_SetColor(0);
-    gfx_Circle_NoClip(LB_X, LB_Y, LB_R);
-    gfx_Circle_NoClip(LB_X + LB_W, LB_Y, LB_R);
-    gfx_HorizLine_NoClip(LB_X, LB_Y - LB_R, LB_W);
-    gfx_HorizLine_NoClip(LB_X, LB_Y + LB_R, LB_W);
-    gfx_SetColor(255);
-    gfx_FillRectangle_NoClip(LB_X, LB_Y - LB_R + 1, LB_R + 1, LB_H - 1);
-    gfx_FillRectangle_NoClip(LB_X + LB_W - LB_R, LB_Y - LB_R + 1, LB_R + 1, LB_H - 1);
-}
-
-void displayLoadingBar(ti_var_t currentProgram) {
-    gfx_SetClipRegion(
-        LB_X - LB_R + 1, 
-        LB_Y - LB_R, 
-        LB_X - LB_R + 2 + ti_Tell(currentProgram) * (LB_W + LB_R - 1 + LB_R - 1) / ti_GetSize(currentProgram), 
-        LB_Y + LB_R
-    );
-    gfx_SetColor(4);
-    gfx_FillCircle(LB_X, LB_Y, LB_R - 1);
-    gfx_FillCircle(LB_X + LB_W, LB_Y, LB_R - 1);
-    gfx_FillRectangle(LB_X, LB_Y - LB_R + 1, LB_W, LB_H);
-}
-#endif
-
-unsigned int getNextToken(ti_var_t currentProgram) {
-#ifndef COMPUTER_ICE
-    // Display loading bar
-    displayLoadingBar(currentProgram);
-    return ti_GetC(currentProgram);
-#else
-    if (ftell(ice.inPrgm) < ice.programLength - 2) {
-        return getc(currentProgram);
-    }
-    return EOF;
-#endif
-}
-
-void setCurrentOffset(int offset, int origin, ti_var_t stream) {
-#ifndef COMPUTER_ICE
-    ti_Seek(offset, origin, stream);
-#else
-    fseek(stream, offset, origin);
-#endif
-}
-
-unsigned int getCurrentOffset(ti_var_t current) {
-#ifndef COMPUTER_ICE
-    return ti_Tell(current);
-#else
-    return ftell(current);
-#endif
-}
-    

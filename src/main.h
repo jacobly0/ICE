@@ -53,6 +53,9 @@ typedef struct {
     uint24_t *GotoPtr;                                      // Pointer to the goto stack
     
     ti_var_t inPrgm;                                        // Used for getting tokens
+#ifdef COMPUTER_ICE
+    ti_var_t inPrgm2;                                       // Another input program
+#endif
     ti_var_t outPrgm;                                       // Used for writing bytes
     
     bool     gotName;                                       // Already got the output name
@@ -106,15 +109,6 @@ extern ice_t ice;
 extern expr_t expr;
 
 void preScanProgram(ti_var_t);
-void ProgramPtrToOffsetStack(void);
-void displayLoadingBarFrame(void);
-void displayLoadingBar(ti_var_t);
-unsigned int getNextToken(ti_var_t);
-void MaybeDEToHL(void);
-void MaybeHLToDE(void);
-void PushHLDE(void);
-uint8_t IsHexadecimal(uint24_t token);
-bool CheckEOL(ti_var_t currentProgram);
 
 #ifndef COMPUTER_ICE
 void CHeaderData(void);
@@ -128,8 +122,5 @@ void StringConcatenateData(void);
 void MeanData(void);
 void SqrtData(void);
 #endif
-
-void setCurrentOffset(int, int, ti_var_t);
-unsigned int getCurrentOffset(ti_var_t);
 
 #endif

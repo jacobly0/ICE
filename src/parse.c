@@ -6,6 +6,8 @@
 #include "errors.h"
 #include "stack.h"
 #include "output.h"
+#include "routines.h"
+#include "gfx/gfx_logos.h"
 
 #ifndef COMPUTER_ICE
 #include <fileioc.h>
@@ -23,7 +25,7 @@
 
 extern uint8_t (*functions[256])(unsigned int token, ti_var_t currentProgram);
 const char implementedFunctions[] = {tNot, tMin, tMax, tMean, tSqrt, tDet};
-const char implementedFunctions2[] = {tRemainder, tSub, tLength, 0x97 /* toString( */};
+const char implementedFunctions2[] = {tRemainder, tSub, tLength, tToString};
 const uint24_t OSString[]= {
     pixelShadow + 54000,
     pixelShadow + 55000,
@@ -1145,7 +1147,11 @@ static uint8_t functionCustom(unsigned int token, ti_var_t currentProgram) {
 static uint8_t functionLbl(unsigned int token, ti_var_t currentProgram) {
     // Add the label to the stack, and skip the line
     *ice.LblPtr++ = (uint24_t)ice.programPtr;
+#ifndef COMPUTER_ICE
     *ice.LblPtr++ = (uint24_t)ti_GetDataPtr(currentProgram);
+#else
+    *ice.LblPtr++ = ftell(currentProgram);
+#endif
     skipLine(currentProgram);
     return VALID;
 }
@@ -1153,7 +1159,11 @@ static uint8_t functionLbl(unsigned int token, ti_var_t currentProgram) {
 static uint8_t functionGoto(unsigned int token, ti_var_t currentProgram) {
     // Add the goto to the stack, and skip the line
     *ice.GotoPtr++ = (uint24_t)ice.programPtr;
+#ifndef COMPUTER_ICE
     *ice.GotoPtr++ = (uint24_t)ti_GetDataPtr(currentProgram);
+#else
+    *ice.GotoPtr++ = ftell(currentProgram);
+#endif
     JP(0);
     skipLine(currentProgram);
     return VALID;
