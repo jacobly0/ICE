@@ -28,15 +28,15 @@ typedef FILE* ti_var_t;
 #define TYPE_OPERATOR        254
 #define TYPE_FUNCTION        255
 
-#define __getc() getNextToken(currentProgram)
+#define __getc() getNextToken()
 
 void UpdatePointersToData(uint24_t tempDataOffsetElements);
 void optimizeZeroCarryFlagOutput(void);
-void skipLine(ti_var_t);
+void skipLine(void);
 
 uint8_t parsePostFixFromIndexToIndex(uint24_t startIndex, uint24_t endIndex);
-uint8_t functionRepeat(unsigned int token, ti_var_t);
-uint8_t parseProgram(ti_var_t);
+uint8_t functionRepeat(unsigned int token);
+uint8_t parseProgram(void);
 
 typedef struct {
     uint8_t type;

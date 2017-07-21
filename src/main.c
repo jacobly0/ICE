@@ -73,10 +73,10 @@ int main(int argc, char **argv) {
         asm("ld de, 17");
         asm("add hl, de");
         asm("call 00213CCh");
-        asm("ld de, 1992");
+        asm("ld de, 473");
         asm("add hl, de");
         asm("call 00213F8h");
-        asm("ld de, 49");
+        asm("ld de, 31");
         asm("add hl, de");
         asm("call 00213C4h");
     }
@@ -85,10 +85,10 @@ int main(int argc, char **argv) {
     gfx_Begin(gfx_8bpp);
     
     // Display flash screen
-    gfx_ZeroScreen();
+    /*gfx_ZeroScreen();
     gfx_RLETSprite_NoClip(logo, 53, 70);
     delay(2000);
-    gfx_FillScreen(0xFF);
+    gfx_FillScreen(0xFF);*/
 
     gfx_SetColor(189);
     gfx_FillRectangle_NoClip(0, 0, 320, 10);
@@ -144,15 +144,12 @@ int main(int argc, char **argv) {
     // Grab the right program
     search_pos = NULL;
     while(((var_name = ti_DetectVar(&search_pos, ICEheader, TI_PRGM_TYPE)) != NULL) && --selectedProgram);
-    strcpy(ice.inName, var_name);
     
-    sprintf(buf, "Compiling program %s...", var_name);
-    gfx_PrintStringXY(buf, 1, iceMessageLine);
-    
+    gfx_PrintStringXY("Prescanning...", 1, iceMessageLine);
     displayLoadingBarFrame();
 
     // Find program
-    ice.inPrgm = ti_OpenVar(ice.inName, "r", TI_PRGM_TYPE);
+    ice.inPrgm = ti_OpenVar(var_name, "r", TI_PRGM_TYPE);
     if (!ice.inPrgm) {
         goto stop;
     }
@@ -162,8 +159,7 @@ int main(int argc, char **argv) {
         fprintf(stderr, "Error: Missing program as input\n");
         exit(1);
     }
-    fprintf(stdout, "%s\n", infoStr);
-    fprintf(stdout, "Compiling program %s...\n", var_name);
+    fprintf(stdout, "%s\nPrescanning...\n", infoStr);
     ice.inPrgm = fopen(var_name, "r");
     ice.inPrgm2 = fopen(var_name, "r");
     if (!ice.inPrgm) {
@@ -191,7 +187,7 @@ int main(int argc, char **argv) {
     memcpy(ice.programData, CHeaderData, 116);
     
     // Pre-scan program (and subprograms) and find all the C routines
-    preScanProgram(ice.inPrgm);
+    preScanProgram();
     
     // If there are no C functions, remove the entire header
     if (!ice.amountOfCRoutinesUsed) {
@@ -204,11 +200,15 @@ int main(int argc, char **argv) {
     ice.programSize = (uintptr_t)ice.programPtr - (uintptr_t)ice.programData;
    
     // Do the stuff
-    resetFileOrigin(ice.inPrgm);
+    resetFileOrigin();
 #ifndef COMPUTER_ICE
+    sprintf(buf, "Compiling program %s...", var_name);
+    gfx_PrintStringXY(buf, 1, iceMessageLine);
     displayLoadingBarFrame();
+#else
+    fprintf(stdout, "Compiling program %s...\n", var_name);
 #endif
-    res = parseProgram(ice.inPrgm);
+    res = parseProgram();
     
     // Create or empty the output program if parsing succeeded
     if (res == VALID) {
@@ -252,8 +252,8 @@ int main(int argc, char **argv) {
 #else
                 int tempTok;
 
-                setCurrentOffset(LblAddr, SEEK_SET, ice.inPrgm);
-                setCurrentOffset(GotoAddr, SEEK_SET, ice.inPrgm2);
+                setCurrentOffset(LblAddr, SEEK_SET);
+                fseek(ice.inPrgm2, GotoAddr, SEEK_SET);
                 
                 while ((tempTok = fgetc(ice.inPrgm)) != tEnter) {
                     if (tempTok != fgetc(ice.inPrgm2)) {
@@ -345,11 +345,11 @@ stop:
 #endif
 }
 
-void preScanProgram(ti_var_t currentProgram) {
+void preScanProgram(void) {
     uint24_t token;
     
 #ifdef COMPUTER_ICE
-    resetFileOrigin(currentProgram);
+    resetFileOrigin();
 #endif
     
     // Scan the entire program
@@ -361,9 +361,33 @@ void preScanProgram(ti_var_t currentProgram) {
         } else if (tok == tEnter) {
             expr.inString = false;
         } else if (tok == tii && !expr.inString) {
-            while ((int)(token = __getc()) != EOF && (uint8_t)token != tEnter);
+            skipLine();
         } else if (tok == tStore) {
             expr.inString = false;
+        } else if (tok == tVarOut && !expr.inString) {
+            // CompilePrgm(
+            if ((uint8_t)__getc() == 0x0D) {
+                char tempName[9];
+                uint8_t a = 0;
+                ti_var_t tempProg = ice.inPrgm;
+                
+                while ((int)(token = __getc()) != EOF && (tok = (uint8_t)token) != tEnter && a < 9) {
+                    tempName[a++] = (char)tok;
+                }
+                tempName[a] = 0;
+                
+                if ((ice.inPrgm = ti_OpenVar(tempName, "r", TI_PRGM_TYPE))) {
+#ifndef COMPUTER_ICE
+                    displayLoadingBarFrame();
+                    preScanProgram();
+                    ti_Close(ice.inPrgm);
+                    displayLoadingBarFrame();
+#else
+                    preScanProgram();
+#endif
+                }
+                ice.inPrgm = tempProg;
+            }
         } else if (tok == tDet && !expr.inString) {
             uint8_t tok1 = __getc();
             uint8_t tok2 = __getc();
@@ -389,5 +413,5 @@ void preScanProgram(ti_var_t currentProgram) {
     }
     
     // Well, we scanned the entire program, so let's rewind it
-    resetFileOrigin(currentProgram);
+    resetFileOrigin();
 }

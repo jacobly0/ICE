@@ -63,7 +63,7 @@ uint8_t IsHexadecimal(uint24_t token) {
     }
 }
 
-bool CheckEOL(ti_var_t currentProgram) {
+bool CheckEOL(void) {
     uint24_t token;
     if ((int)(token = __getc()) == EOF || (uint8_t)token == tEnter) {
         return true;
@@ -87,11 +87,11 @@ void displayLoadingBarFrame(void) {
     gfx_FillRectangle_NoClip(LB_X + LB_W - LB_R, LB_Y - LB_R + 1, LB_R + 1, LB_H - 1);
 }
 
-void displayLoadingBar(ti_var_t currentProgram) {
+void displayLoadingBar(void) {
     gfx_SetClipRegion(
         LB_X - LB_R + 1, 
         LB_Y - LB_R, 
-        LB_X - LB_R + 2 + ti_Tell(currentProgram) * (LB_W + LB_R - 1 + LB_R - 1) / ti_GetSize(currentProgram), 
+        LB_X - LB_R + 2 + ti_Tell(ice.inPrgm) * (LB_W + LB_R - 1 + LB_R - 1) / ti_GetSize(ice.inPrgm), 
         LB_Y + LB_R
     );
     gfx_SetColor(4);
@@ -100,35 +100,35 @@ void displayLoadingBar(ti_var_t currentProgram) {
     gfx_FillRectangle(LB_X, LB_Y - LB_R + 1, LB_W, LB_H);
 }
 
-unsigned int getNextToken(ti_var_t currentProgram) {
+unsigned int getNextToken(void) {
     // Display loading bar
-    displayLoadingBar(currentProgram);
-    return ti_GetC(currentProgram);
+    displayLoadingBar();
+    return ti_GetC(ice.inPrgm);
 }
 
-void setCurrentOffset(int offset, int origin, ti_var_t stream) {
-    ti_Seek(offset, origin, stream);
+void setCurrentOffset(int offset, int origin) {
+    ti_Seek(offset, origin, ice.inPrgm);
 }
 
-unsigned int getCurrentOffset(ti_var_t current) {
-    return ti_Tell(current);
+unsigned int getCurrentOffset(void) {
+    return ti_Tell(ice.inPrgm);
 }
 
 #else
     
-unsigned int getNextToken(ti_var_t currentProgram) {
+unsigned int getNextToken(void) {
     if (ftell(ice.inPrgm) < ice.programLength - 2) {
-        return getc(currentProgram);
+        return getc(ice.inPrgm);
     }
     return EOF;
 }
 
-void setCurrentOffset(int offset, int origin, ti_var_t stream) {
-    fseek(stream, offset, origin);
+void setCurrentOffset(int offset, int origin) {
+    fseek(ice.inPrgm, offset, origin);
 }
 
-unsigned int getCurrentOffset(ti_var_t current) {
-    return ftell(current);
+unsigned int getCurrentOffset() {
+    return ftell(ice.inPrgm);
 }
 
 #endif

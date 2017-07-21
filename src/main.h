@@ -5,28 +5,29 @@
 #include <stdint.h>
 
 #ifndef COMPUTER_ICE
+
 #define w24(x, y) (*(uint24_t*)(x) = y)
 #define r24(x) (*(uint24_t*)(x))
-#else
-void w24(void *x, uint32_t val);
-uint32_t r24(void *x);
-#endif
-
-#ifndef COMPUTER_ICE
 #include <fileioc.h>
-#define resetFileOrigin(x) ti_Rewind(x)
+#define resetFileOrigin() ti_Rewind(ice.inPrgm)
+
 #else
+    
 #include <stdio.h>
 typedef uint32_t uint24_t;
 typedef FILE* ti_var_t;
-#define resetFileOrigin(x) fseek(x, 0x4A, SEEK_SET)
+#define resetFileOrigin() fseek(ice.inPrgm, 0x4A, SEEK_SET)
+#define ti_OpenVar(x,y,z)  fopen(x,y)
+
+void w24(void *x, uint32_t val);
+uint32_t r24(void *x);
+
 #endif
 
 #define STACK_SIZE 25
 
 typedef struct {
     char     outName[9];                                    // Output variable name
-    char     inName[9];                                     // Input variable name
     
     uint8_t  nestedBlocks;                                  // Amount of nested If/Repeat/While
     uint8_t  *programData;                                  // Address of the program
@@ -108,7 +109,7 @@ typedef struct {
 extern ice_t ice;
 extern expr_t expr;
 
-void preScanProgram(ti_var_t);
+void preScanProgram(void);
 
 #ifndef COMPUTER_ICE
 void CHeaderData(void);

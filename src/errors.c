@@ -47,6 +47,7 @@ static const char *errors[] = {
 #else
     "Unknown C function. If you are sure this function exists, please contact me!",
 #endif
+    "Subprogram not found",
 };
 
 void displayError(unsigned int index) {

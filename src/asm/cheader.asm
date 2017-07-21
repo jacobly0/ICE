@@ -3,7 +3,7 @@ segment data
 .def _CHeaderData
 
 _CHeaderData:
-	ld      hl, LibLoadAppVar - $ + 0D1A881h
+	ld      hl, LibLoadAppVar - $ + 0D1A882h
 	call	0020320h
 	ld      a, 015h
 	ld      (0D005F8h), a
@@ -25,12 +25,12 @@ InArc:
 	inc     hl
 	inc     hl
 	inc     hl
-	ld      de, RelocationStart - $ + 0D1A881h
+	ld      de, RelocationStart - _CHeaderData + 0D1A882h
 	jp      (hl)
 NotFound:
 	call	0020814h
 	call	0020828h
-	ld      hl, MissingAppVar - $ + 0D1A881h
+	ld      hl, MissingAppVar - _CHeaderData + 0D1A882h
 	call	00207C0h
 	call	00207F0h
 	jp	    00207C0h

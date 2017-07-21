@@ -1,5 +1,8 @@
 #include "hooks/ti84pce.inc"
 
+#define AMOUNT_OF_CUSTOM_TOKENS 6
+#define AMOUNT_OF_C_FUNCTIONS   89
+
 KeyHook_start:
     .db    83h
     or      a, a
@@ -247,212 +250,9 @@ ReturnToEditor:
     inc     a                                                                    ;    reset zero flag
     ld      a, 0
     ret
-CustomTokensData:
-Tab1:
-C1:     .db "ExecHex(", 0
-C2:     .db "DefineSprite(", 0
-C3:     .db "Call ", 0
-C4:     .db "CompilePrgm(", 0
-C5:     .db "SetBASICVar(", 0
-C6:     .db "GetBASICVar(", 0
-
-#define AMOUNT_OF_C_FUNCTIONS 84
-
-C6_:   .db "Begin", 0
-C7_:   .db "End", 0
-C8_:   .db "SetColor", 0
-C9_:   .db "SetDefaultPalette", 0
-C10_:  .db "SetPalette", 0
-C11_:  .db "FillScreen", 0
-C12_:  .db "SetPixel", 0
-C13_:  .db "GetPixel", 0
-C14_:  .db "GetDraw", 0
-C15_:  .db "SetDraw", 0
-Tab2:
-C16_:  .db "SwapDraw", 0
-C17_:  .db "Blit", 0
-C18_:  .db "BlitLines", 0
-C19_:  .db "BlitArea", 0
-C20_:  .db "PrintChar", 0
-C21_:  .db "PrintInt", 0
-C22_:  .db "PrintUInt", 0
-C23_:  .db "PrintString", 0
-C24_:  .db "PrintStringXY", 0
-C25_:  .db "SetTextXY", 0
-C26_:  .db "SetTextBGColor", 0
-C27_:  .db "SetTextFGColor", 0
-C28_:  .db "SetTextTransparentColor", 0
-C29_:  .db "SetCustomFontData", 0
-C30_:  .db "SetCustomFontSpacing", 0
-C31_:  .db "SetMonospaceFont", 0
-Tab3:
-C32_:  .db "GetStringWidth", 0
-C33_:  .db "GetCharWidth", 0
-C34_:  .db "GetTextX", 0
-C35_:  .db "GetTextY", 0
-C36_:  .db "Line", 0
-C37_:  .db "HorizLine", 0
-C38_:  .db "VertLine", 0
-C39_:  .db "Circle", 0
-C40_:  .db "FillCircle", 0
-C41_:  .db "Rectangle", 0
-C42_:  .db "FillRectangle", 0
-C43_:  .db "Line_NoClip", 0
-C44_:  .db "HorizLine_NoClip", 0
-C45_:  .db "VertLine_NoClip", 0
-C46_:  .db "FillCircle_NoClip", 0
-C47_:  .db "Rectangle_NoClip", 0
-Tab4:
-C48_:  .db "FillRectangle_NoClip", 0
-C49_:  .db "SetClipRegion", 0
-C50_:  .db "GetClipRegion", 0
-C51_:  .db "ShiftDown", 0
-C52_:  .db "ShiftUp", 0
-C53_:  .db "ShiftLeft", 0
-C54_:  .db "ShiftRight", 0
-C55_:  .db "Tilemap", 0
-C56_:  .db "Tilemap_NoClip", 0
-C57_:  .db "TransparentTilemap", 0
-C58_:  .db "TransparentTilemap_NoClip", 0
-C59_:  .db "TilePtr", 0
-C60_:  .db "TilePtrMapped", 0
-C61_:  .db "LZDecompress", 0
-C62_:  .db "AllocSprite", 0
-C63_:  .db "Sprite", 0
-Tab5:
-C64_:  .db "TransparentSprite", 0
-C65_:  .db "Sprite_NoClip", 0
-C66_:  .db "TransparentSprite_NoClip", 0
-C67_:  .db "GetSprite_NoClip", 0
-C68_:  .db "ScaledSprite_NoClip", 0
-C69_:  .db "ScaledTransparentSprite_NoClip", 0
-C70_:  .db "FlipSpriteY", 0
-C71_:  .db "FlipSpriteX", 0
-C72_:  .db "RotateSpriteC", 0
-C73_:  .db "RotateSpriteCC", 0
-C74_:  .db "RotateSpriteHalf", 0
-C75_:  .db "Polygon", 0
-C76_:  .db "Polygon_NoClip", 0
-C77_:  .db "FillTriangle", 0
-C78_:  .db "FillTriangle_NoClip", 0
-C79_:  .db "LZDecompressSprite", 0
-Tab6:
-C80_:  .db "SetTextScale", 0
-C81_:  .db "SetTransparentColor", 0
-C82_:  .db "ZeroScreen", 0
-C83_:  .db "SetTextConfig", 0
-C84_:  .db "GetSpriteChar", 0
-C85_:  .db "Lighten", 0
-C86_:  .db "Darken", 0
-C87_:  .db "SetFontHeight", 0
-C88_:  .db "ScaledSprite", 0
-C89_:  .db "FloodFill", 0
-       .db 0
-TabData:
-    .dl Tab1 - KeyHook_start
-    .dl Tab2 - KeyHook_start
-    .dl Tab3 - KeyHook_start
-    .dl Tab4 - KeyHook_start
-    .dl Tab5 - KeyHook_start
-    .dl Tab6 - KeyHook_start
-    
-CData5:
-    .dl C6_ - KeyHook_start
-    .dl C7_ - KeyHook_start
-    .dl C8_ - KeyHook_start
-    .dl C9_ - KeyHook_start
-    .dl C10_ - KeyHook_start
-    .dl C11_ - KeyHook_start
-    .dl C12_ - KeyHook_start
-    .dl C13_ - KeyHook_start
-    .dl C14_ - KeyHook_start
-    .dl C15_ - KeyHook_start
-    .dl C16_ - KeyHook_start
-    .dl C17_ - KeyHook_start
-    .dl C18_ - KeyHook_start
-    .dl C19_ - KeyHook_start
-    .dl C20_ - KeyHook_start
-    .dl C21_ - KeyHook_start
-    .dl C22_ - KeyHook_start
-    .dl C23_ - KeyHook_start
-    .dl C24_ - KeyHook_start
-    .dl C25_ - KeyHook_start
-    .dl C26_ - KeyHook_start
-    .dl C27_ - KeyHook_start
-    .dl C28_ - KeyHook_start
-    .dl C29_ - KeyHook_start
-    .dl C30_ - KeyHook_start
-    .dl C31_ - KeyHook_start
-    .dl C32_ - KeyHook_start
-    .dl C33_ - KeyHook_start
-    .dl C34_ - KeyHook_start
-    .dl C35_ - KeyHook_start
-    .dl C36_ - KeyHook_start
-    .dl C37_ - KeyHook_start
-    .dl C38_ - KeyHook_start
-    .dl C39_ - KeyHook_start
-    .dl C40_ - KeyHook_start
-    .dl C41_ - KeyHook_start
-    .dl C42_ - KeyHook_start
-    .dl C43_ - KeyHook_start
-    .dl C44_ - KeyHook_start
-    .dl C45_ - KeyHook_start
-    .dl C46_ - KeyHook_start
-    .dl C47_ - KeyHook_start
-    .dl C48_ - KeyHook_start
-    .dl C49_ - KeyHook_start
-    .dl C50_ - KeyHook_start
-    .dl C51_ - KeyHook_start
-    .dl C52_ - KeyHook_start
-    .dl C53_ - KeyHook_start
-    .dl C54_ - KeyHook_start
-    .dl C55_ - KeyHook_start
-    .dl C56_ - KeyHook_start
-    .dl C57_ - KeyHook_start
-    .dl C58_ - KeyHook_start
-    .dl C59_ - KeyHook_start
-    .dl C60_ - KeyHook_start
-    .dl C61_ - KeyHook_start
-    .dl C62_ - KeyHook_start
-    .dl C63_ - KeyHook_start
-    .dl C64_ - KeyHook_start
-    .dl C65_ - KeyHook_start
-    .dl C66_ - KeyHook_start
-    .dl C67_ - KeyHook_start
-    .dl C68_ - KeyHook_start
-    .dl C69_ - KeyHook_start
-    .dl C70_ - KeyHook_start
-    .dl C71_ - KeyHook_start
-    .dl C72_ - KeyHook_start
-    .dl C73_ - KeyHook_start
-    .dl C74_ - KeyHook_start
-    .dl C75_ - KeyHook_start
-    .dl C76_ - KeyHook_start
-    .dl C77_ - KeyHook_start
-    .dl C78_ - KeyHook_start
-    .dl C79_ - KeyHook_start
-    .dl C80_ - KeyHook_start
-    .dl C81_ - KeyHook_start
-    .dl C82_ - KeyHook_start
-    .dl C83_ - KeyHook_start
-    .dl C84_ - KeyHook_start
-    .dl C85_ - KeyHook_start
-    .dl C86_ - KeyHook_start
-    .dl C87_ - KeyHook_start
-    .dl C88_ - KeyHook_start
-    .dl C89_ - KeyHook_start
-    
-#define AMOUNT_OF_CUSTOM_TOKENS 6
-Token1: .db 8,  "ExecHex(", 0
-Token2: .db 13, "DefineSprite(", 0
-Token3: .db 5,  "Call ", 0
-Token4: .db 12, "CompilePrgm(", 0
-Token5: .db 12, "SetBASICVar(", 0
-Token6: .db 12, "GetBASICVar(", 0
-
-CustomTokensProgramText:
-    .db    "PROGRAM:", 0
 KeyHook_end:
+
+.echo "Key hook: ",$-KeyHook_start, " bytes"
 
 TokenHook_start:
     .db     83h
@@ -472,100 +272,317 @@ TokenHook_start:
     ld      hl, (hl)
     add     hl, de
     ret
-TokenHook_data:
-    .dl    Token1 - KeyHook_start - 1
-    .dl    Token2 - KeyHook_start - 1
-    .dl    Token3 - KeyHook_start - 1
-    .dl    Token4 - KeyHook_start - 1
-    .dl    Token5 - KeyHook_start - 1
-    .dl    Token6 - KeyHook_start - 1
 TokenHook_end:
 
+.echo "Token hook: ",$-TokenHook_start, " bytes"
+
 CursorHook_start:
-    .db    83h
-    cp    a, 24h
-    jr    nz, +_
-    inc    a
-    ld    a, (curUnder)
+    .db     83h
+    cp      a, 24h
+    jr      nz, +_
+    inc     a
+    ld      a, (curUnder)
     ret
-_:    cp    a, 22h
-    ret    nz
-    ld    a, (cxCurApp)
-    cp    a, cxPrgmEdit
-    ret    nz
-    ld    hl, (editCursor)
-    ld    a, (hl)
-    cp    a, tDet
-    ret    nz
+_:  cp      a, 22h
+    ret     nz
+    ld      a, (cxCurApp)
+    cp      a, cxPrgmEdit
+    ret     nz
+    ld      hl, (editCursor)
+    ld      a, (hl)
+    cp      a, tDet
+    ret     nz
 DrawDetText:
-    bit    0, (iy-41h)
-    ret    nz
-    ld    hl, (editTail)
-    inc    hl
-    ld    a, (hl)
-    sub    a, t0
-    ret    c
-    cp    a, t9-t0+1
-    ld    bc, (editBtm)
-    ld    de, 0
-    ld    e, a
-    jr    c, GetDetValueLoop
+    bit     0, (iy-41h)
+    ret     nz
+    ld      hl, (editTail)
+    inc     hl
+    ld      a, (hl)
+    sub     a, t0
+    ret     c
+    cp      a, t9-t0+1
+    ld      bc, (editBtm)
+    ld      de, 0
+    ld      e, a
+    jr      c, GetDetValueLoop
 WrongDetValue:
-    inc    a
+    inc     a
     ret
 GetDetValueLoop:
-    inc    hl
-    or    a, a
-    sbc    hl, bc
-    jr    z, GetDetValueStop
-    add    hl, bc
-    ld    a, (hl)
-    sub    a, t0
-    jr    c, GetDetValueStop
-    cp    a, t9-t0+1
-    jr    nc, GetDetValueStop
+    inc     hl
+    or      a, a
+    sbc     hl, bc
+    jr      z, GetDetValueStop
+    add     hl, bc
+    ld      a, (hl)
+    sub     a, t0
+    jr      c, GetDetValueStop
+    cp      a, t9-t0+1
+    jr      nc, GetDetValueStop
     push    hl
-        ex    de, hl
-        add    hl, hl
-        push    hl
-        pop    de
-        add    hl, hl
-        add    hl, hl
-        add    hl, de
-        ld    de, 0
-        ld    e, a
-        add    hl, de
-        ex    de, hl
-    pop    hl
-    jr    GetDetValueLoop
+            ex      de, hl
+            add     hl, hl
+            push    hl
+            pop     de
+            add     hl, hl
+            add     hl, hl
+            add     hl, de
+            ld      de, 0
+            ld      e, a
+            add     hl, de
+            ex      de, hl
+    pop     hl
+    jr     GetDetValueLoop
 GetDetValueStop:
-    ex    de, hl
-    ld    de, AMOUNT_OF_C_FUNCTIONS
-    or    a, a
-    sbc    hl, de
-    jr    nc, WrongDetValue
-    add    hl, de
-    ld    h, 3
-    mlt    hl
-    ld    de, CData5 - KeyHook_start
-    add    hl, de
-    ld    de, (rawKeyHookPtr)
-    add    hl, de
-    ld    hl, (hl)
-    add    hl, de
-    ld    de, 000E71Ch
-    ld.sis    (drawFGColor - 0D00000h), de
-    ld.sis    de, (statusBarBGColor - 0D00000h)
-    ld.sis    (drawBGColor - 0D00000h), de
-    ld    a, 14
-    ld    (penRow),a
-    ld    de, 2
-    ld.sis    (penCol - 0D00000h), de
+    ex      de, hl
+    ld      de, AMOUNT_OF_C_FUNCTIONS
+    or      a, a
+    sbc     hl, de
+    jr      nc, WrongDetValue
+    add     hl, de
+    ld      h, 3
+    mlt     hl
+    ld      de, CData5 - KeyHook_start
+    add     hl, de
+    ld      de, (rawKeyHookPtr)
+    add     hl, de
+    ld      hl, (hl)
+    add     hl, de
+    ld      de, 000E71Ch
+    ld.sis  (drawFGColor & 0FFFFh), de
+    ld.sis  de, (statusBarBGColor & 0FFFFh)
+    ld.sis  (drawBGColor & 0FFFFh), de
+    ld      a, 14
+    ld      (penRow),a
+    ld      de, 2
+    ld.sis  (penCol & 0FFFFh), de
     call    _VPutS
-    ld    de, $FFFF
-    ld.sis    (drawBGColor - 0D00000h), de
-    set    0, (iy-41h)
+    ld      de, 0FFFFh
+    ld.sis  (drawBGColor & 0FFFFh), de
+    set     0, (iy-41h)
     ret
-CursorHook_end:
+    
+.echo "Cursor hook: ",$-CursorHook_start, " bytes"
+
+Tab1:
+C1:   .db "ExecHex(", 0
+C2:   .db "DefineSprite(", 0
+C3:   .db "Call ", 0
+C4:   .db "CompilePrgm(", 0
+C5:   .db "SetBASICVar(", 0
+C6:   .db "GetBASICVar(", 0
+      
+G01:  .db "Begin", 0
+G02:  .db "End", 0
+G03:  .db "SetColor", 0
+G04:  .db "SetDefaultPalette", 0
+G05:  .db "SetPalette", 0
+G06:  .db "FillScreen", 0
+G07:  .db "SetPixel", 0
+G08:  .db "GetPixel", 0
+G09:  .db "GetDraw", 0
+G10:  .db "SetDraw", 0
+Tab2:
+G11:  .db "SwapDraw", 0
+G12:  .db "Blit", 0
+G13:  .db "BlitLines", 0
+G14:  .db "BlitArea", 0
+G15:  .db "PrintChar", 0
+G16:  .db "PrintInt", 0
+G17:  .db "PrintUInt", 0
+G18:  .db "PrintString", 0
+G19:  .db "PrintStringXY", 0
+G20:  .db "SetTextXY", 0
+G21:  .db "SetTextBGColor", 0
+G22:  .db "SetTextFGColor", 0
+G23:  .db "SetTextTransparentColor", 0
+G24:  .db "SetCustomFontData", 0
+G25:  .db "SetCustomFontSpacing", 0
+G26:  .db "SetMonospaceFont", 0
+Tab3:
+G27:  .db "GetStringWidth", 0
+G28:  .db "GetCharWidth", 0
+G29:  .db "GetTextX", 0
+G30:  .db "GetTextY", 0
+G31:  .db "Line", 0
+G32:  .db "HorizLine", 0
+G33:  .db "VertLine", 0
+G34:  .db "Circle", 0
+G35:  .db "FillCircle", 0
+G36:  .db "Rectangle", 0
+G37:  .db "FillRectangle", 0
+G38:  .db "Line_NoClip", 0
+G39:  .db "HorizLine_NoClip", 0
+G40:  .db "VertLine_NoClip", 0
+G41:  .db "FillCircle_NoClip", 0
+G42:  .db "Rectangle_NoClip", 0
+Tab4:
+G43:  .db "FillRectangle_NoClip", 0
+G44:  .db "SetClipRegion", 0
+G45:  .db "GetClipRegion", 0
+G46:  .db "ShiftDown", 0
+G47:  .db "ShiftUp", 0
+G48:  .db "ShiftLeft", 0
+G49:  .db "ShiftRight", 0
+G50:  .db "Tilemap", 0
+G51:  .db "Tilemap_NoClip", 0
+G52:  .db "TransparentTilemap", 0
+G53:  .db "TransparentTilemap_NoClip", 0
+G54:  .db "TilePtr", 0
+G55:  .db "TilePtrMapped", 0
+G56:  .db "LZDecompress", 0
+G57:  .db "AllocSprite", 0
+G58:  .db "Sprite", 0
+Tab5:
+G59:  .db "TransparentSprite", 0
+G60:  .db "Sprite_NoClip", 0
+G61:  .db "TransparentSprite_NoClip", 0
+G62:  .db "GetSprite_NoClip", 0
+G63:  .db "ScaledSprite_NoClip", 0
+G64:  .db "ScaledTransparentSprite_NoClip", 0
+G65:  .db "FlipSpriteY", 0
+G66:  .db "FlipSpriteX", 0
+G67:  .db "RotateSpriteC", 0
+G68:  .db "RotateSpriteCC", 0
+G69:  .db "RotateSpriteHalf", 0
+G70:  .db "Polygon", 0
+G71:  .db "Polygon_NoClip", 0
+G72:  .db "FillTriangle", 0
+G73:  .db "FillTriangle_NoClip", 0
+G74:  .db "LZDecompressSprite", 0
+Tab6:
+G75:  .db "SetTextScale", 0
+G76:  .db "SetTransparentColor", 0
+G77:  .db "ZeroScreen", 0
+G78:  .db "SetTextConfig", 0
+G79:  .db "GetSpriteChar", 0
+G80:  .db "Lighten", 0
+G81:  .db "Darken", 0
+G82:  .db "SetFontHeight", 0
+G83:  .db "ScaledSprite", 0
+G84:  .db "FloodFill", 0
+G85:  .db "RLETSprite", 0
+G86:  .db "RLETSprite_NoClip", 0
+G87:  .db "ConvertFromRLETSprite", 0
+G88:  .db "ConvertToRLETSprite", 0
+G89:  .db "ConvertToNewRLETSprite", 0
+      .db 0
+      
+Tok1: .db 8,  "ExecHex(", 0
+Tok2: .db 13, "DefineSprite(", 0
+Tok3: .db 5,  "Call ", 0
+Tok4: .db 12, "CompilePrgm(", 0
+Tok5: .db 12, "SetBASICVar(", 0
+Tok6: .db 12, "GetBASICVar(", 0
+
+TabData:
+    .dl Tab1 - KeyHook_start
+    .dl Tab2 - KeyHook_start
+    .dl Tab3 - KeyHook_start
+    .dl Tab4 - KeyHook_start
+    .dl Tab5 - KeyHook_start
+    .dl Tab6 - KeyHook_start
+    
+CData5:
+    .dl G01 - KeyHook_start
+    .dl G02 - KeyHook_start
+    .dl G03 - KeyHook_start
+    .dl G04 - KeyHook_start
+    .dl G05 - KeyHook_start
+    .dl G06 - KeyHook_start
+    .dl G07 - KeyHook_start
+    .dl G08 - KeyHook_start
+    .dl G09 - KeyHook_start
+    .dl G10 - KeyHook_start
+    .dl G11 - KeyHook_start
+    .dl G12 - KeyHook_start
+    .dl G13 - KeyHook_start
+    .dl G14 - KeyHook_start
+    .dl G15 - KeyHook_start
+    .dl G16 - KeyHook_start
+    .dl G17 - KeyHook_start
+    .dl G18 - KeyHook_start
+    .dl G19 - KeyHook_start
+    .dl G20 - KeyHook_start
+    .dl G21 - KeyHook_start
+    .dl G22 - KeyHook_start
+    .dl G23 - KeyHook_start
+    .dl G24 - KeyHook_start
+    .dl G25 - KeyHook_start
+    .dl G26 - KeyHook_start
+    .dl G27 - KeyHook_start
+    .dl G28 - KeyHook_start
+    .dl G29 - KeyHook_start
+    .dl G30 - KeyHook_start
+    .dl G31 - KeyHook_start
+    .dl G32 - KeyHook_start
+    .dl G33 - KeyHook_start
+    .dl G34 - KeyHook_start
+    .dl G35 - KeyHook_start
+    .dl G36 - KeyHook_start
+    .dl G37 - KeyHook_start
+    .dl G38 - KeyHook_start
+    .dl G39 - KeyHook_start
+    .dl G40 - KeyHook_start
+    .dl G41 - KeyHook_start
+    .dl G42 - KeyHook_start
+    .dl G43 - KeyHook_start
+    .dl G44 - KeyHook_start
+    .dl G45 - KeyHook_start
+    .dl G46 - KeyHook_start
+    .dl G47 - KeyHook_start
+    .dl G48 - KeyHook_start
+    .dl G49 - KeyHook_start
+    .dl G50 - KeyHook_start
+    .dl G51 - KeyHook_start
+    .dl G52 - KeyHook_start
+    .dl G53 - KeyHook_start
+    .dl G54 - KeyHook_start
+    .dl G55 - KeyHook_start
+    .dl G56 - KeyHook_start
+    .dl G57 - KeyHook_start
+    .dl G58 - KeyHook_start
+    .dl G59 - KeyHook_start
+    .dl G60 - KeyHook_start
+    .dl G61 - KeyHook_start
+    .dl G62 - KeyHook_start
+    .dl G63 - KeyHook_start
+    .dl G64 - KeyHook_start
+    .dl G65 - KeyHook_start
+    .dl G66 - KeyHook_start
+    .dl G67 - KeyHook_start
+    .dl G68 - KeyHook_start
+    .dl G69 - KeyHook_start
+    .dl G70 - KeyHook_start
+    .dl G71 - KeyHook_start
+    .dl G72 - KeyHook_start
+    .dl G73 - KeyHook_start
+    .dl G74 - KeyHook_start
+    .dl G75 - KeyHook_start
+    .dl G76 - KeyHook_start
+    .dl G77 - KeyHook_start
+    .dl G78 - KeyHook_start
+    .dl G79 - KeyHook_start
+    .dl G80 - KeyHook_start
+    .dl G81 - KeyHook_start
+    .dl G82 - KeyHook_start
+    .dl G83 - KeyHook_start
+    .dl G84 - KeyHook_start
+    .dl G85 - KeyHook_start
+    .dl G86 - KeyHook_start
+    .dl G87 - KeyHook_start
+    .dl G88 - KeyHook_start
+    .dl G89 - KeyHook_start
+    
+TokenHook_data:
+    .dl Tok1 - KeyHook_start - 1
+    .dl Tok2 - KeyHook_start - 1
+    .dl Tok3 - KeyHook_start - 1
+    .dl Tok4 - KeyHook_start - 1
+    .dl Tok5 - KeyHook_start - 1
+    .dl Tok6 - KeyHook_start - 1
+
+CustomTokensProgramText:
+    .db    "PROGRAM:", 0
 
 Hooks_end:
