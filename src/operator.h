@@ -14,19 +14,19 @@
 #define TempString1 pixelShadow + 64000
 #define TempString2 pixelShadow + 65000
 
-uint8_t getIndexOfOperator(uint8_t operator);
-uint24_t executeOperator(uint24_t operand1, uint24_t operand2, uint8_t operator);
-void LD_HL_NUMBER(uint24_t number);
-void LD_HL_STRING(uint24_t StringPtr);
-uint8_t parseOperator(element_t *outputPrevPrev, element_t *outputPrev, element_t *outputCurr);
+uint8_t getIndexOfOperator(uint8_t);
+uint24_t executeOperator(uint24_t, uint24_t, uint8_t);
+void LD_HL_NUMBER(uint24_t);
+void LD_HL_STRING(uint24_t);
+uint8_t parseOperator(element_t*, element_t*, element_t*);
 
-void insertFunctionReturn(uint24_t function, uint8_t outputRegister, bool needPush);
-void EQInsert();
-void GEInsert();
+void insertFunctionReturn(uint24_t, uint8_t, bool);
+void EQInsert(void);
+void GEInsert(void);
 void AddStringString(void);
 void StoStringString(void);
 
-void MultWithNumber(uint24_t number, uint8_t *programPtr);
+void MultWithNumber(uint24_t, uint8_t*);
 
 extern const char operators[];
 extern const uint8_t operatorPrecedence[];

@@ -140,8 +140,7 @@ const uint8_t CArguments[] = {
 extern uint8_t outputStack[4096];
 
 uint8_t parseFunction(uint24_t index) {
-    element_t *outputPtr = (element_t*)outputStack;
-    element_t *outputPrev, *outputPrevPrev;
+    element_t *outputPtr = (element_t*)outputStack, *outputPrev, *outputPrevPrev;
     uint8_t function, function2, amountOfArguments, temp, a, outputPrevType, outputPrevPrevType;
     uint24_t output, endIndex, startIndex, outputPrevOperand, outputPrevPrevOperand;
     

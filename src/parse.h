@@ -17,9 +17,9 @@ typedef FILE* ti_var_t;
 #define TYPE_C_FUNCTION      2
 #define TYPE_CHAIN_ANS       3
 #define TYPE_CHAIN_PUSH      4
-// ----------------------------
 #define TYPE_STRING          5
 #define TYPE_OS_STRING       6
+// ---------------------------
 #define TYPE_LIST            7
 #define TYPE_OS_LIST         8
 
@@ -30,12 +30,12 @@ typedef FILE* ti_var_t;
 
 #define __getc() getNextToken()
 
-void UpdatePointersToData(uint24_t tempDataOffsetElements);
+void UpdatePointersToData(uint24_t);
 void optimizeZeroCarryFlagOutput(void);
 void skipLine(void);
 
-uint8_t parsePostFixFromIndexToIndex(uint24_t startIndex, uint24_t endIndex);
-uint8_t functionRepeat(unsigned int token);
+uint8_t parsePostFixFromIndexToIndex(uint24_t, uint24_t);
+uint8_t functionRepeat(uint24_t);
 uint8_t parseProgram(void);
 
 typedef struct {

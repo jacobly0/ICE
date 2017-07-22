@@ -15,13 +15,13 @@ typedef FILE* ti_var_t;
 void ProgramPtrToOffsetStack(void);
 void displayLoadingBarFrame(void);
 void displayLoadingBar(void);
-unsigned int getNextToken(void);
+uint24_t getNextToken(void);
 void MaybeDEToHL(void);
 void MaybeHLToDE(void);
 void PushHLDE(void);
-uint8_t IsHexadecimal(uint24_t token);
+uint8_t IsHexadecimal(uint24_t);
 bool CheckEOL(void);
-void setCurrentOffset(int, int);
-unsigned int getCurrentOffset(void);
+void setCurrentOffset(uint24_t, uint24_t);
+uint24_t getCurrentOffset(void);
 
 #endif

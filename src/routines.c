@@ -100,34 +100,34 @@ void displayLoadingBar(void) {
     gfx_FillRectangle(LB_X, LB_Y - LB_R + 1, LB_W, LB_H);
 }
 
-unsigned int getNextToken(void) {
+uint24_t getNextToken(void) {
     // Display loading bar
     displayLoadingBar();
     return ti_GetC(ice.inPrgm);
 }
 
-void setCurrentOffset(int offset, int origin) {
+void setCurrentOffset(uint24_t offset, uint24_t origin) {
     ti_Seek(offset, origin, ice.inPrgm);
 }
 
-unsigned int getCurrentOffset(void) {
+uint24_t getCurrentOffset(void) {
     return ti_Tell(ice.inPrgm);
 }
 
 #else
     
-unsigned int getNextToken(void) {
+uint24_t getNextToken(void) {
     if (ftell(ice.inPrgm) < ice.programLength - 2) {
         return getc(ice.inPrgm);
     }
     return EOF;
 }
 
-void setCurrentOffset(int offset, int origin) {
+void setCurrentOffset(uint24_t offset, uint24_t origin) {
     fseek(ice.inPrgm, offset, origin);
 }
 
-unsigned int getCurrentOffset() {
+uint24_t getCurrentOffset(void) {
     return ftell(ice.inPrgm);
 }
 

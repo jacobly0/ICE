@@ -50,7 +50,7 @@ static const char *errors[] = {
     "Subprogram not found",
 };
 
-void displayError(unsigned int index) {
+void displayError(uint24_t index) {
     const char *str = errors[index];
 #ifndef COMPUTER_ICE
     char buf[30];

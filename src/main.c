@@ -56,10 +56,9 @@ void export_program(const char *name, uint8_t *data, size_t size);
 int main(int argc, char **argv) {
 #endif
     uint8_t a = 0, selectedProgram = 0, key, amountOfPrograms, res, *hooksPtr, *search_pos = NULL;
-    char *var_name;
     uint24_t token, headerSize, programDataSize, offset, totalSize;
     const char ICEheader[] = {tii, 0};
-    char buf[30];
+    char buf[30], *var_name;
     
 #ifndef COMPUTER_ICE  
     // Install hooks

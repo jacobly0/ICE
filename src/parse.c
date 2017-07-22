@@ -24,7 +24,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-extern uint8_t (*functions[256])(unsigned int token);
+extern uint8_t (*functions[256])(uint24_t token);
 const char implementedFunctions[] = {tNot, tMin, tMax, tMean, tSqrt, tDet};
 const char implementedFunctions2[] = {tRemainder, tSub, tLength, tToString};
 const uint24_t OSString[]= {
@@ -43,7 +43,7 @@ const uint24_t OSString[]= {
 uint8_t outputStack[4096];
 
 uint8_t parseProgram(void) {
-    unsigned int token;
+    uint24_t token;
     uint8_t ret = VALID;
 
     // Do things based on the token
@@ -64,14 +64,12 @@ uint8_t parseProgram(void) {
 
 /* Static functions */
 
-uint8_t parseExpression(unsigned int token) {
-    uint8_t stack[1500];
-    unsigned int stackElements = 0;
-    unsigned int loopIndex, temp;
-    uint8_t index = 0, a;
-    uint8_t amountOfArgumentsStack[20];
+uint8_t parseExpression(uint24_t token) {
+    uint24_t stackElements = 0;
+    uint24_t loopIndex, temp;
+    uint8_t stack[1500], amountOfArgumentsStack[20];
+    uint8_t index = 0, a, stackToOutputReturn;
     uint8_t *amountOfArgumentsStackPtr = amountOfArgumentsStack;
-    uint8_t stackToOutputReturn;
 
     // Setup pointers
     element_t *outputPtr = (element_t*)outputStack;
@@ -84,7 +82,7 @@ uint8_t parseExpression(unsigned int token) {
         General explanation stacks:
         - Each entry consists of 4 bytes, the type and the operand
         - Type: number, variable, function, operator etc
-        - The operand is either a 3-byte number or consists of 3 bytes:
+        - The operand is either a 3-byte number or consists of these 3 bytes:
             - The first byte = the operand: function/variable/operator
             - If it's a function then the second byte is the amount of arguments for that function
             - If it's a getKeyFast, the second byte is the key
@@ -92,17 +90,31 @@ uint8_t parseExpression(unsigned int token) {
     */
 
     while ((int)token != EOF && (uint8_t)token != tEnter) {
-        uint8_t tok;
+        uint8_t tok = (uint8_t)token;
         
         outputCurr = &outputPtr[ice.outputElements];
         stackCurr  = &stackPtr[stackElements];
-        tok = (uint8_t)token;
 
         // Process a number
         if (tok >= t0 && tok <= t9) {
             uint24_t output = token - t0;
             while ((uint8_t)(token = __getc()) >= t0 && (uint8_t)token <= t9) {
-                output = output*10 + (uint8_t)token - t0;
+                output = output * 10 + (uint8_t)token - t0;
+            }
+            outputCurr->type = TYPE_NUMBER;
+            outputCurr->operand = output;
+            ice.outputElements++;
+
+            // Don't grab a new token
+            continue;
+        }
+        
+        // Process a hexadecimal number
+        else if (tok == tee) {
+            uint24_t output = 0;
+            
+            while ((tok = IsHexadecimal(__getc())) != 16) {
+                output = (output << 4) + tok;
             }
             outputCurr->type = TYPE_NUMBER;
             outputCurr->operand = output;
@@ -562,12 +574,12 @@ uint8_t parsePostFixFromIndexToIndex(uint24_t startIndex, uint24_t endIndex) {
     return VALID;
 }
 
-static uint8_t functionI(unsigned int token) {
+static uint8_t functionI(uint24_t token) {
     const uint8_t colorTable[16] = {255,24,224,0,248,36,227,97,9,19,230,255,181,107,106,74};    // Thanks Cesium :D
 
     // Only get the output name, icon or description at the top of your program
     if (!ice.usedCodeAfterHeader) {
-        unsigned int offset;
+        uint24_t offset;
         
         // Get the output name
         if (!ice.gotName) {
@@ -623,7 +635,7 @@ static uint8_t functionI(unsigned int token) {
                     
                     // Grab description
                     while ((int)(token = __getc()) != EOF && (uint8_t)token != tEnter) {
-                        unsigned int strLength;
+                        uint24_t strLength;
                         const char *dataString;
                         uint8_t tokSize;
                         
@@ -687,7 +699,7 @@ static uint8_t functionI(unsigned int token) {
     return VALID;
 }
 
-static uint8_t functionIf(unsigned int token) {
+static uint8_t functionIf(uint24_t token) {
     uint8_t res, tempZR, tempC, tempCR, insertJRCZReturn;
     uint8_t *IfStartAddr, *IfElseAddr = NULL;
     uint24_t tempDataOffsetElements, tempDataOffsetElements2;
@@ -832,15 +844,15 @@ insertJRCZ:
     goto insertJRCZReturn2;
 }
 
-static uint8_t functionElse(unsigned int token) {
+static uint8_t functionElse(uint24_t token) {
     return E_ELSE;
 }
 
-static uint8_t functionEnd(unsigned int token) {
+static uint8_t functionEnd(uint24_t token) {
     return E_END;
 }
 
-static uint8_t dummyReturn(unsigned int token) {
+static uint8_t dummyReturn(uint24_t token) {
     return VALID;
 }
 
@@ -853,7 +865,7 @@ void UpdatePointersToData(uint24_t tempDataOffsetElements) {
     }
 }
 
-static uint8_t functionWhile(unsigned int token) {
+static uint8_t functionWhile(uint24_t token) {
     uint24_t tempDataOffsetElements = ice.dataOffsetElements;
     uint8_t *WhileStartAddr = ice.programPtr, *TempStartAddr = WhileStartAddr, res;
     
@@ -877,7 +889,7 @@ static uint8_t functionWhile(unsigned int token) {
     return VALID;
 }
 
-uint8_t functionRepeat(unsigned int token) {
+uint8_t functionRepeat(uint24_t token) {
     uint16_t RepeatCondStart, RepeatProgEnd;
     uint8_t *RepeatCodeStart, *RepeatCondEnd, res;
     
@@ -955,7 +967,7 @@ uint8_t functionRepeat(unsigned int token) {
     return VALID;
 }
 
-static uint8_t functionReturn(unsigned int token) {
+static uint8_t functionReturn(uint24_t token) {
     uint8_t res;
     
     if ((int)(token = __getc()) == EOF || (uint8_t)token == tEnter) {
@@ -989,7 +1001,7 @@ static uint8_t functionReturn(unsigned int token) {
     return VALID;
 }
 
-static uint8_t functionDisp(unsigned int token) {
+static uint8_t functionDisp(uint24_t token) {
     do {
         uint8_t res;
 
@@ -1026,7 +1038,7 @@ checkArgument:
     return VALID;
 }
 
-static uint8_t functionOutput(unsigned int token) {
+static uint8_t functionOutput(uint24_t token) {
     uint8_t res;
     
     // Get the first argument = column
@@ -1122,7 +1134,7 @@ static uint8_t functionOutput(unsigned int token) {
     return VALID;
 }
 
-static uint8_t functionClrHome(unsigned int token) {
+static uint8_t functionClrHome(uint24_t token) {
     if (ice.modifiedIY) {
         LD_IY_IMM(flags);
     }
@@ -1132,18 +1144,26 @@ static uint8_t functionClrHome(unsigned int token) {
     return VALID;
 }
 
-static uint8_t functionFor(unsigned int token) {
+static uint8_t functionFor(uint24_t token) {
+    
+    
+    
+    
+    
+    
+    
     return E_UNIMPLEMENTED;
 }
 
-static uint8_t functionPrgm(unsigned int token) {
+static uint8_t functionPrgm(uint24_t token) {
     return E_UNIMPLEMENTED;
 }
 
-static uint8_t functionCustom(unsigned int token) {
+static uint8_t functionCustom(uint24_t token) {
     uint8_t tok, res;
     tok = (uint8_t)(token = __getc());
     
+    // CompilePrgm(
     if ((uint8_t)token == 0x0D) {
         char tempName[9];
         char buf[30];
@@ -1165,22 +1185,34 @@ static uint8_t functionCustom(unsigned int token) {
             res = parseProgram();
             displayLoadingBarFrame();
             ti_Close(ice.inPrgm);
-            ice.inPrgm = tempProg;
-            return res;
 #else
             res = parseProgram();
-            ice.inPrgm = tempProg;
-            return res;
 #endif
         } else {
             return E_PROG_NOT_FOUND;
         }
+        ice.inPrgm = tempProg;
+        return res;
+    }
+    
+    // Call
+    else if ((uint8_t)token == 0x0C) {
+        // Add the goto to the stack, and skip the line
+        *ice.GotoPtr++ = (uint24_t)ice.programPtr;
+#ifndef COMPUTER_ICE
+        *ice.GotoPtr++ = (uint24_t)ti_GetDataPtr(ice.inPrgm);
+#else
+        *ice.GotoPtr++ = ftell(ice.inPrgm);
+#endif
+        CALL(0);
+        skipLine();
+        return VALID;
     } else {
         return E_UNIMPLEMENTED;
     }
 }
 
-static uint8_t functionLbl(unsigned int token) {
+static uint8_t functionLbl(uint24_t token) {
     // Add the label to the stack, and skip the line
     *ice.LblPtr++ = (uint24_t)ice.programPtr;
 #ifndef COMPUTER_ICE
@@ -1192,7 +1224,7 @@ static uint8_t functionLbl(unsigned int token) {
     return VALID;
 }
 
-static uint8_t functionGoto(unsigned int token) {
+static uint8_t functionGoto(uint24_t token) {
     // Add the goto to the stack, and skip the line
     *ice.GotoPtr++ = (uint24_t)ice.programPtr;
 #ifndef COMPUTER_ICE
@@ -1205,15 +1237,15 @@ static uint8_t functionGoto(unsigned int token) {
     return VALID;
 }
 
-static uint8_t functionPause(unsigned int token) {
+static uint8_t functionPause(uint24_t token) {
     return E_UNIMPLEMENTED;
 }
 
-static uint8_t functionInput(unsigned int token) {
+static uint8_t functionInput(uint24_t token) {
     return E_UNIMPLEMENTED;
 }
 
-static uint8_t functionBB(unsigned int token) {
+static uint8_t functionBB(uint24_t token) {
     // Asm(
     if ((uint8_t)(token = __getc()) == tAsm) {
         while ((int)(token = __getc()) != EOF && (uint8_t)token != tEnter && (uint8_t)token != tRParen) {
@@ -1243,11 +1275,11 @@ static uint8_t functionBB(unsigned int token) {
     return VALID;
 }
 
-static uint8_t tokenWrongPlace(unsigned int token) {
+static uint8_t tokenWrongPlace(uint24_t token) {
     return E_WRONG_PLACE;
 }
 
-static uint8_t tokenUnimplemented(unsigned int token) {
+static uint8_t tokenUnimplemented(uint24_t token) {
     return E_UNIMPLEMENTED;
 }
 
@@ -1269,7 +1301,7 @@ void skipLine(void) {
     while ((int)(token = __getc()) != EOF && (uint8_t)token != tEnter);
 }
 
-uint8_t (*functions[256])(unsigned int) = {
+uint8_t (*functions[256])(uint24_t) = {
     tokenUnimplemented, //0
     tokenUnimplemented, //1
     tokenUnimplemented, //2
@@ -1329,7 +1361,7 @@ uint8_t (*functions[256])(unsigned int) = {
     parseExpression,    //56
     parseExpression,    //57
     tokenUnimplemented, //58
-    tokenUnimplemented, //59
+    parseExpression,    //59
     tokenWrongPlace,    //60
     tokenWrongPlace,    //61
     tokenUnimplemented, //62

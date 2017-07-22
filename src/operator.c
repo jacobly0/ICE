@@ -62,7 +62,7 @@ static uint8_t clz(uint24_t x) {
 
 void MultWithNumber(uint24_t num, uint8_t *programPtr) {
     (void)programPtr;
-    unsigned int bit;
+    uint24_t bit;
     uint8_t po2 = !(num & (num - 1));
     if (24 - clz(num) + __builtin_popcount(num) - 3 * po2 < 10) {
         if(!po2) {

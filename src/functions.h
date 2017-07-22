@@ -25,6 +25,6 @@ typedef uint32_t uint24_t;
 #define SMALL_14      (SMALL_1 | SMALL_4)
 #define SMALL_45      (SMALL_4 | SMALL_5)
 
-uint8_t parseFunction(uint24_t index);
+uint8_t parseFunction(uint24_t);
 
 #endif

@@ -1,6 +1,8 @@
 #ifndef ERRORS_H
 #define ERRORS_H
 
+#include <stdint.h>
+
 #define E_UNIMPLEMENTED    0
 #define E_WRONG_PLACE      1
 #define E_NO_CONDITION     2
@@ -21,6 +23,6 @@
 #define E_VALID            254
 #define VALID              255
 
-void displayError(unsigned int index);
+void displayError(uint24_t);
 
 #endif
