@@ -64,20 +64,21 @@ void MultWithNumber(uint24_t num, uint8_t *programPtr) {
     (void)programPtr;
     uint24_t bit;
     uint8_t po2 = !(num & (num - 1));
+    
     if (24 - clz(num) + __builtin_popcount(num) - 3 * po2 < 10) {
         if(!po2) {
             PUSH_HL();
             POP_DE();
         }
-        for (bit = 1 << (23 - clz(num)); bit; bit >>= 1) {
+        for (bit = 1 << (22 - clz(num)); bit; bit >>= 1) {
             ADD_HL_HL();
             if(num & bit) {
                 ADD_HL_DE();
             }
         }
     } else if (num < 0x100) {
-        CALL(0x00003E | num << 8);
-        output(uint24_t, 0x000150);
+        LD_A(num);
+        CALL(0x000150);
     } else {
         LD_BC_IMM(num);
         CALL(0x000154);
@@ -860,9 +861,7 @@ void MulChainAnsNumber(void) {
         ice.programPtr = ice.programPtrBackup;
         LD_HL_NUMBER(0);
     } else {
-        if (expr.outputRegister != OutputRegisterHL) {
-            EX_DE_HL();
-        }
+        MaybeDEToHL();
         MultWithNumber(number, (uint8_t*)&ice.programPtr);
     }
 }

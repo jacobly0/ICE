@@ -76,6 +76,9 @@ typedef struct {
     
     bool     usedAlreadyMean;                               // Only once the "mean(" routine in the program data
     uint24_t MeanAddr;                                      // Address of the "mean(" routine in the program data
+    
+    bool     usedAlreadyPause;                              // Only once the "Pause " routine in the program data
+    uint24_t PauseAddr;                                     // Address of the "Pause " routine in the program data
 #ifdef COMPUTER_ICE
     int      programLength;                                 // Size of input program
 #endif
@@ -122,6 +125,7 @@ void KeypadData(void);
 void StringConcatenateData(void);
 void MeanData(void);
 void SqrtData(void);
+void PauseData(void);
 #endif
 
 #endif

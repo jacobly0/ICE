@@ -24,6 +24,12 @@
 #include <stdlib.h>
 #include <string.h>
 
+#ifdef COMPUTER_ICE
+#define INCBIN_PREFIX
+#include "incbin.h"
+INCBIN(Pause, "src/asm/pause.bin");
+#endif
+
 extern uint8_t (*functions[256])(uint24_t token);
 const char implementedFunctions[] = {tNot, tMin, tMax, tMean, tSqrt, tDet};
 const char implementedFunctions2[] = {tRemainder, tSub, tLength, tToString};
@@ -297,7 +303,7 @@ stackToOutputReturn1:;
         // Parse an OS string
         else if (tok == tVarStrng) {
             outputCurr->type = TYPE_OS_STRING;
-            outputCurr->operand = OSString[(uint8_t)__getc()];
+            outputCurr->operand = OSString[__getc()];
             ice.outputElements++;
         }
         
@@ -1023,9 +1029,7 @@ static uint8_t functionDisp(uint24_t token) {
         if (expr.outputIsString) {
             CALL(_PutS);
         } else {
-            if (expr.outputRegister != OutputRegisterHL) {
-                EX_DE_HL();
-            }
+            MaybeDEToHL();
             CALL(_DispHL);
         }
         
@@ -1122,9 +1126,7 @@ static uint8_t functionOutput(uint24_t token) {
         if (expr.outputIsString) {
             CALL(_PutS);
         } else {
-            if (expr.outputRegister != OutputRegisterHL) {
-                EX_DE_HL();
-            }
+            MaybeDEToHL();
             CALL(_DispHL);
         }
     } else if (ice.tempToken != tEnter) {
@@ -1135,6 +1137,9 @@ static uint8_t functionOutput(uint24_t token) {
 }
 
 static uint8_t functionClrHome(uint24_t token) {
+    if (!CheckEOL()) {
+        return E_SYNTAX;
+    }
     if (ice.modifiedIY) {
         LD_IY_IMM(flags);
     }
@@ -1160,14 +1165,12 @@ static uint8_t functionPrgm(uint24_t token) {
 }
 
 static uint8_t functionCustom(uint24_t token) {
-    uint8_t tok, res;
-    tok = (uint8_t)(token = __getc());
+    uint8_t tok = (uint8_t)(token = __getc());
     
     // CompilePrgm(
     if ((uint8_t)token == 0x0D) {
         char tempName[9];
-        char buf[30];
-        uint8_t a = 0;
+        uint8_t a = 0, res;
         ti_var_t tempProg = ice.inPrgm;
         
         while ((int)(token = __getc()) != EOF && (tok = (uint8_t)token) != tEnter && a < 9) {
@@ -1177,6 +1180,7 @@ static uint8_t functionCustom(uint24_t token) {
         
         if ((ice.inPrgm = ti_OpenVar(tempName, "r", TI_PRGM_TYPE))) {
 #ifndef COMPUTER_ICE
+            char buf[30];
             displayLoadingBarFrame();
             sprintf(buf, "Compiling program %s...", tempName);
             gfx_PrintStringXY(buf, 1, iceMessageLine);
@@ -1238,7 +1242,34 @@ static uint8_t functionGoto(uint24_t token) {
 }
 
 static uint8_t functionPause(uint24_t token) {
-    return E_UNIMPLEMENTED;
+    if (CheckEOL()) {
+        CALL(_GetCSC);
+        CP_A(9);
+        JR_NZ(-8);
+    } else {
+        uint8_t res;
+        
+        setCurrentOffset(-1, SEEK_CUR);
+        if ((res = parseExpression(__getc())) != VALID) {
+            return res;
+        }
+        
+        MaybeDEToHL();
+        
+        // Store the pointer to the call to the stack, to replace later
+        ProgramPtrToOffsetStack();
+        
+        // We need to add the rand routine to the data section
+        if (!ice.usedAlreadyPause) {
+            ice.PauseAddr = (uintptr_t)ice.programDataPtr;
+            memcpy(ice.programDataPtr, PauseData, 20);
+            ice.programDataPtr += 20;
+            ice.usedAlreadyPause = true;
+        }
+        
+        CALL(ice.PauseAddr);
+    }
+    return VALID;
 }
 
 static uint8_t functionInput(uint24_t token) {
