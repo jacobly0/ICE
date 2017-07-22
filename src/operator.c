@@ -60,15 +60,20 @@ static uint8_t clz(uint24_t x) {
     return n;
 }
 
-void MultWithNumber(uint24_t num, uint8_t *programPtr) {
+void MultWithNumber(uint24_t num, uint8_t *programPtr, bool ChangeRegisters) {
     (void)programPtr;
     uint24_t bit;
     uint8_t po2 = !(num & (num - 1));
     
-    if (24 - clz(num) + __builtin_popcount(num) - 3 * po2 < 10) {
+    if (24 - clz(num) + __builtin_popcount(num) - 2 * po2 < 10) {
         if(!po2) {
-            PUSH_HL();
-            POP_DE();
+            if (!ChangeRegisters) {
+                PUSH_HL();
+                POP_DE();
+            } else {
+                PUSH_DE();
+                POP_HL();
+            }
         }
         for (bit = 1 << (22 - clz(num)); bit; bit >>= 1) {
             ADD_HL_HL();
@@ -861,8 +866,7 @@ void MulChainAnsNumber(void) {
         ice.programPtr = ice.programPtrBackup;
         LD_HL_NUMBER(0);
     } else {
-        MaybeDEToHL();
-        MultWithNumber(number, (uint8_t*)&ice.programPtr);
+        MultWithNumber(number, (uint8_t*)&ice.programPtr, 16*expr.outputRegister);
     }
 }
 void MulVariableNumber(void) {

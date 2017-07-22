@@ -26,7 +26,7 @@ void GEInsert(void);
 void AddStringString(void);
 void StoStringString(void);
 
-void MultWithNumber(uint24_t, uint8_t*);
+void MultWithNumber(uint24_t, uint8_t*, bool);
 
 extern const char operators[];
 extern const uint8_t operatorPrecedence[];

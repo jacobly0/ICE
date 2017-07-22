@@ -600,6 +600,7 @@ static uint8_t functionI(uint24_t token) {
         // Get the icon and description
         else if (!ice.gotIconDescription) {
             uint8_t b = 0;
+            
             // Move header to take place for the icon and description, setup pointer
             memcpy(ice.programData + 600, ice.programData, ice.programSize);
             ice.programPtr = ice.programData;
@@ -629,13 +630,12 @@ static uint8_t functionI(uint24_t token) {
             }
 
             if ((int)token != EOF) {
-                
                 if ((uint8_t)token != tEnter) {
                     return E_SYNTAX;
                 }
                 
                 // Check if there is a description
-                if ((token = __getc()) == tii) {
+                if ((uint8_t)(token = __getc()) == tii) {
 #ifndef COMPUTER_ICE
                     uint8_t *dataPtr = ti_GetDataPtr(ice.inPrgm);
                     

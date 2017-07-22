@@ -166,9 +166,8 @@ int main(int argc, char **argv) {
         goto stop;
     }
     
-    fseek(ice.inPrgm, 0, SEEK_END);
-    ice.programLength = ftell(ice.inPrgm);
-    fseek(ice.inPrgm, 0, SEEK_SET);
+    fseek(ice.inPrgm2, 0, SEEK_END);
+    ice.programLength = ftell(ice.inPrgm2);
     
 #endif
     

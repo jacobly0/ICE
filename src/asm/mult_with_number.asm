@@ -41,10 +41,19 @@ MultiplyLarge:
 DoInsertHLDE:
     djnz    DontNeedPushHLPopDE
     ld      a, 0E5h
+    sub     a, (iy+9)
     call    InsertA
     ld      a, 0D1h
+    add     a, (iy+9)
     call    InsertA
+    jr      DontInsertEXDEHL
 DontNeedPushHLPopDE:
+    ld      a, (iy+9)
+    or      a, a
+    jr      z, DontInsertEXDEHL
+    ld      a, 0EBh
+    call    InsertA
+DontInsertEXDEHL:
     ex      de, hl
     scf
 GetFirstSetBit2Loop:
