@@ -23,6 +23,7 @@
 #define E_VALID            254
 #define VALID              255
 
-void displayError(uint24_t);
+void displayError(uint8_t);
+void PrintChar(char);
 
 #endif

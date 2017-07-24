@@ -59,6 +59,7 @@ uint8_t parseProgram(void) {
         }
         
         ice.lastTokenIsReturn = false;
+        ice.currentLine++;
 
         if ((ret = (*functions[(uint8_t)token])(token)) != VALID) {
             break;
@@ -332,7 +333,8 @@ stackToOutputReturn2:
         index = (uint8_t)(outputCurr->operand >> 8);
         
         // Check if the types are number | number | operator
-        if (loopIndex > 1 && outputPrevPrev->type == TYPE_NUMBER && outputPrev->type == TYPE_NUMBER && outputCurr->type == TYPE_OPERATOR) {
+        if (loopIndex > 1 && outputPrevPrev->type == TYPE_NUMBER && outputPrev->type == TYPE_NUMBER && 
+               outputCurr->type == TYPE_OPERATOR && (uint8_t)outputCurr->operand != tStore) {
             // If yes, execute the operator, and store it in the first entry, and remove the other 2
             outputPrevPrev->operand = executeOperator(outputPrevPrev->operand, outputPrev->operand, (uint8_t)outputCurr->operand);
             memcpy(outputPrev, &outputPtr[loopIndex+1], (ice.outputElements-1)*4);
@@ -896,11 +898,13 @@ static uint8_t functionWhile(uint24_t token) {
 }
 
 uint8_t functionRepeat(uint24_t token) {
+    uint24_t tempCurrentLine, tempCurrentLine2;
     uint16_t RepeatCondStart, RepeatProgEnd;
     uint8_t *RepeatCodeStart, *RepeatCondEnd, res;
     
     RepeatCondStart = getCurrentOffset();
     RepeatCodeStart = ice.programPtr;
+    tempCurrentLine = ice.currentLine;
     
     // Skip the condition for now
     skipLine();
@@ -921,9 +925,12 @@ uint8_t functionRepeat(uint24_t token) {
     
     // Parse the condition
     setCurrentOffset(RepeatCondStart, SEEK_SET);
+    tempCurrentLine2 = ice.currentLine;
+    ice.currentLine = tempCurrentLine;
     if ((res = parseExpression(__getc())) != VALID) {
         return res;
     }
+    ice.currentLine = tempCurrentLine2;
     
     if (expr.outputIsString) {
         return E_SYNTAX;

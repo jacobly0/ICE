@@ -174,6 +174,7 @@ int main(int argc, char **argv) {
     // Setup pointers and header
 #ifndef COMPUTER_ICE
     ice.programData    = (uint8_t*)0xD52C00;
+    ice.programAddrStart = ti_GetDataPtr(ice.inPrgm);
 #else
     ice.programData    = malloc(50000);
 #endif
@@ -236,6 +237,10 @@ int main(int argc, char **argv) {
             uint24_t GotoPtr = *--ice.GotoPtr;
             uint24_t *temp;
             
+#ifndef COMPUTER_ICE
+            setCurrentOffset(GotoAddr - (uint24_t)ice.programAddrStart, SEEK_SET);
+#endif
+            
             // Check for every label if it matches the Goto
             for (temp = ice.LblStack; temp < ice.LblPtr;) {
                 uint24_t LblPtr = *temp++;
@@ -250,7 +255,6 @@ int main(int argc, char **argv) {
 #else
                 int tempTok;
 
-                setCurrentOffset(GotoAddr, SEEK_SET);
                 fseek(ice.inPrgm2, LblAddr, SEEK_SET);
                 
                 while ((tempTok = fgetc(ice.inPrgm)) != tEnter) {

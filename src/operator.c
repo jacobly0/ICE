@@ -126,10 +126,8 @@ uint24_t executeOperator(uint24_t operand1, uint24_t operand2, uint8_t operator)
             return operand1 || operand2;
         case tXor:
             return !operand1 != !operand2;
-        case tAnd:
-            return operand1 && operand2;
         default:
-            return operand1;
+            return operand1 && operand2;
     }
 }
 

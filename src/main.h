@@ -45,6 +45,9 @@ typedef struct {
     uint24_t dataOffsetElements;                            // Amount of stack elements of above
     uint24_t currentLine;                                   // The amount of parsed lines, useful for displaying it when an error occurs
     uint24_t programSize;                                   // Size of the output program
+#ifndef COMPUTER_ICE
+    uint8_t *programAddrStart;                              // The pointer to the start of the program
+#endif
     uint24_t outputElements;                                // 
     uint24_t *stack[STACK_SIZE*5];                          // Stacks for compiling arguments
     uint24_t *stackStart;                                   // Start of the stack
