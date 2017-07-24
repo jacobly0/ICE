@@ -24,9 +24,10 @@
 
 extern void (*operatorFunctions[224])(void);
 extern void (*operatorChainPushChainAnsFunctions[14])(void);
-const char operators[] = {tStore, tAnd, tXor, tOr, tEQ, tLT, tGT, tLE, tGE, tNE, tMul, tDiv, tAdd, tSub};
-const uint8_t operatorPrecedence[] = {0, 1, 2, 2, 3, 3, 3, 3, 3, 3, 5, 5, 4, 4};
+const char operators[]              = {tStore, tAnd, tXor, tOr, tEQ, tLT, tGT, tLE, tGE, tNE, tMul, tDiv, tAdd, tSub};
+const uint8_t operatorPrecedence[]  = {0, 1, 2, 2, 3, 3, 3, 3, 3, 3, 5, 5, 4, 4};
 const uint8_t operatorPrecedence2[] = {6, 1, 2, 2, 3, 3, 3, 3, 3, 3, 5, 5, 4, 4};
+const uint8_t operatorCanSwap[]     = {0, 1, 1, 1, 1, 0, 0, 0, 0, 1, 1, 0, 1, 0};        // Used for operators which can swap the operands, i.e. A*B = B*A
 
 static element_t *entry1;
 static element_t *entry2;
@@ -156,7 +157,7 @@ uint8_t parseOperator(element_t *outputPrevPrev, element_t *outputPrev, element_
         ) ||
         (oper == tStore &&
             ((typeMasked2 != TYPE_VARIABLE && typeMasked2 != TYPE_OS_STRING) ||
-                (typeMasked2 == TYPE_STRING && typeMasked1 < TYPE_STRING)
+             (typeMasked2 == TYPE_OS_STRING && typeMasked1 < TYPE_STRING)
             )
         ) ||
         (typeMasked2 == TYPE_CHAIN_PUSH) ||
@@ -171,7 +172,6 @@ uint8_t parseOperator(element_t *outputPrevPrev, element_t *outputPrev, element_
     expr.AnsSetCarryFlag = false;
     expr.AnsSetCarryFlagReversed = false;
     
-    // This should not happen
     if (typeMasked1 == TYPE_CHAIN_PUSH && oper != tStore) {
         if (typeMasked2 != TYPE_CHAIN_ANS) {
             return E_ICE_ERROR;
@@ -190,8 +190,12 @@ uint8_t parseOperator(element_t *outputPrevPrev, element_t *outputPrev, element_
     entry2 = outputPrev;
     getEntryOperands();
 
-    // Swap operands for optimizations
-    if (oper == tLE || oper == tLT) {
+    // Swap operands for compiler optimizations
+    if (oper == tLE || oper == tLT || (operatorCanSwap[getIndexOfOperator(oper) - 1] && 
+         (typeMasked1 == TYPE_NUMBER || typeMasked2 == TYPE_CHAIN_ANS || 
+           (typeMasked1 == TYPE_VARIABLE && typeMasked2 == TYPE_FUNCTION)
+         ))
+       ) {
         swapEntries();
     }
     
@@ -205,6 +209,22 @@ uint8_t parseOperator(element_t *outputPrevPrev, element_t *outputPrev, element_
             StoStringString();
         }
     }
+    
+    // If the operator is /, the routine ALWAYS ends with call __idvrmu \ expr.outputRegister2 == OutputRegisterDE
+    if (oper == tDiv) {
+        CALL(__idvrmu);
+        expr.outputRegister2 = OutputRegisterDE;
+    }
+    
+    // If the operator is *, and both operands not a number, it always ends with call __imuls
+    if (oper == tMul && typeMasked1 != TYPE_NUMBER && typeMasked2 != TYPE_NUMBER) {
+        CALL(__imuls);
+    }
+    
+    // If the operator is -, and the second operand not a number, it always ends with or a, a \ sbc hl, de
+    if (oper == tSub && typeMasked2 != TYPE_NUMBER) {
+    }
+    
     expr.outputRegister = expr.outputRegister2;
     return VALID;
 }
@@ -421,16 +441,14 @@ void AndChainAnsNumber(void) {
             LD_HL_IMM(-1);
         }
         ADD_HL_DE();
-        expr.ZeroCarryFlagRemoveAmountOfBytes = 0;
         if (!entry2_operand) {
             CCF();
-            expr.ZeroCarryFlagRemoveAmountOfBytes++;
             expr.AnsSetCarryFlagReversed = true;
         }
         SBC_HL_HL();
         INC_HL();
         expr.AnsSetCarryFlag = true;
-        expr.ZeroCarryFlagRemoveAmountOfBytes += 3;
+        expr.ZeroCarryFlagRemoveAmountOfBytes = 3 + !entry2_operand;
     } else if (oper == tAnd) {
         if (!entry2_operand) {
             ice.programPtr = ice.programPtrBackup;
@@ -493,28 +511,8 @@ void AndFunctionVariable(void) {
     insertFunctionReturn(entry1_operand, OUTPUT_IN_HL, NO_PUSH);
     AndChainAnsVariable();
 }
-void AndNumberVariable(void) {
-    swapEntries();
-    AndVariableNumber();
-}
-void AndNumberFunction(void) {
-    swapEntries();
-    AndFunctionNumber();
-}
-void AndNumberChainAns(void) {
-    swapEntries();
-    AndChainAnsNumber();
-}
 void AndVariableVariable(void) {
     LD_HL_IND_IX_OFF(entry1_operand);
-    AndChainAnsVariable();
-}
-void AndVariableFunction(void) {
-    swapEntries();
-    AndFunctionVariable();
-}
-void AndVariableChainAns() {
-    swapEntries();
     AndChainAnsVariable();
 }
 void AndFunctionFunction(void) {
@@ -522,51 +520,31 @@ void AndFunctionFunction(void) {
     insertFunctionReturn(entry2_operand, OUTPUT_IN_HL, NEED_PUSH);
     AndInsert();
 }
-void AndFunctionChainAns(void) {
-    swapEntries();
-    AndChainAnsFunction();
-}
 void AndChainPushChainAns(void) {
     POP_DE();
     AndInsert();
 }
 
-#define XorNumberVariable    AndNumberVariable   
-#define XorNumberFunction    AndNumberFunction   
-#define XorNumberChainAns    AndNumberChainAns   
 #define XorVariableNumber    AndVariableNumber   
 #define XorVariableVariable  AndVariableVariable 
 #define XorVariableFunction  AndVariableFunction 
-#define XorVariableChainAns  AndVariableChainAns 
 #define XorFunctionNumber    AndFunctionNumber   
 #define XorFunctionVariable  AndFunctionVariable 
 #define XorFunctionFunction  AndFunctionFunction 
-#define XorFunctionChainAns  AndFunctionChainAns 
 #define XorChainAnsNumber    AndChainAnsNumber   
 #define XorChainAnsVariable  AndChainAnsVariable 
 #define XorChainAnsFunction  AndChainAnsFunction 
-#define XorChainPushNumber   AndChainPushNumber  
-#define XorChainPushVariable AndChainPushVariable
-#define XorChainPushFunction AndChainPushFunction
 #define XorChainPushChainAns AndChainPushChainAns
 
-#define OrNumberVariable    AndNumberVariable   
-#define OrNumberFunction    AndNumberFunction   
-#define OrNumberChainAns    AndNumberChainAns   
 #define OrVariableNumber    AndVariableNumber   
 #define OrVariableVariable  AndVariableVariable 
 #define OrVariableFunction  AndVariableFunction 
-#define OrVariableChainAns  AndVariableChainAns 
 #define OrFunctionNumber    AndFunctionNumber   
 #define OrFunctionVariable  AndFunctionVariable 
 #define OrFunctionFunction  AndFunctionFunction 
-#define OrFunctionChainAns  AndFunctionChainAns 
 #define OrChainAnsNumber    AndChainAnsNumber   
 #define OrChainAnsVariable  AndChainAnsVariable 
 #define OrChainAnsFunction  AndChainAnsFunction 
-#define OrChainPushNumber   AndChainPushNumber  
-#define OrChainPushVariable AndChainPushVariable
-#define OrChainPushFunction AndChainPushFunction
 #define OrChainPushChainAns AndChainPushChainAns
 
 void EQInsert() {
@@ -644,38 +622,14 @@ void EQFunctionVariable(void) {
     insertFunctionReturn(entry1_operand, OUTPUT_IN_HL, NO_PUSH);
     EQChainAnsVariable();
 }
-void EQNumberVariable(void) {
-    swapEntries();
-    EQVariableNumber();
-}
-void EQNumberFunction(void) {
-    swapEntries();
-    EQFunctionNumber();
-}
-void EQNumberChainAns(void) {
-    swapEntries();
-    EQChainAnsNumber();
-}
 void EQVariableVariable(void) {
     LD_HL_IND_IX_OFF(entry1_operand);
-    EQChainAnsVariable();
-}
-void EQVariableFunction(void) {
-    swapEntries();
-    EQFunctionVariable();
-}
-void EQVariableChainAns(void) {
-    swapEntries();
     EQChainAnsVariable();
 }
 void EQFunctionFunction(void) {
     insertFunctionReturn(entry1_operand, OUTPUT_IN_DE, NO_PUSH);
     insertFunctionReturn(entry2_operand, OUTPUT_IN_HL, NEED_PUSH);
     EQInsert();
-}
-void EQFunctionChainAns(void) {
-    swapEntries();
-    EQChainAnsFunction();
 }
 void EQChainPushChainAns(void) {
     if (expr.outputRegister == OutputRegisterHL) {
@@ -844,17 +798,11 @@ void LEChainPushChainAns(void) {
     expr.ZeroCarryFlagRemoveAmountOfBytes = 3;
 }
 
-#define NENumberVariable    EQNumberVariable
-#define NENumberFunction    EQNumberFunction
-#define NENumberChainAns    EQNumberChainAns
 #define NEVariableNumber    EQVariableNumber
 #define NEVariableVariable  EQVariableVariable
-#define NEVariableFunction  EQVariableFunction
-#define NEVariableChainAns  EQChainAnsVariable
 #define NEFunctionNumber    EQFunctionNumber
 #define NEFunctionVariable  EQFunctionVariable
 #define NEFunctionFunction  EQFunctionFunction
-#define NEFunctionChainAns  EQFunctionChainAns
 #define NEChainAnsNumber    EQChainAnsNumber
 #define NEChainAnsVariable  EQChainAnsVariable
 #define NEChainAnsFunction  EQChainAnsFunction
@@ -879,34 +827,13 @@ void MulFunctionNumber(void) {
 }
 void MulChainAnsVariable(void) {
     LD_BC_IND_IX_OFF(entry2_operand);
-    CALL(__imuls);
 }
 void MulFunctionVariable(void) {
     insertFunctionReturn(entry1_operand, OUTPUT_IN_HL, NO_PUSH);
     MulChainAnsVariable();
 }
-void MulNumberVariable(void) {
-    swapEntries();
-    MulVariableNumber();
-}
-void MulNumberFunction(void) {
-    swapEntries();
-    MulFunctionNumber();
-}
-void MulNumberChainAns(void) {
-    swapEntries();
-    MulChainAnsNumber();
-}
 void MulVariableVariable(void) {
     LD_HL_IND_IX_OFF(entry1_operand);
-    MulChainAnsVariable();
-}
-void MulVariableFunction(void) {
-    swapEntries();
-    MulFunctionVariable();
-}
-void MulVariableChainAns(void) {
-    swapEntries();
     MulChainAnsVariable();
 }
 void MulFunctionFunction(void) {
@@ -914,33 +841,22 @@ void MulFunctionFunction(void) {
     PUSH_HL();
     insertFunctionReturn(entry2_operand, OUTPUT_IN_HL, NO_PUSH);
     POP_BC();
-    CALL(__imuls);
 }
 void MulChainAnsFunction(void) {
     MaybeDEToHL();
     insertFunctionReturn(entry2_operand, OUTPUT_IN_BC, NEED_PUSH);
-    CALL(__imuls);
-}
-void MulFunctionChainAns(void) {
-    swapEntries();
-    MulChainAnsFunction();
 }
 void MulChainPushChainAns(void) {
     MaybeDEToHL();
     POP_BC();
-    CALL(__imuls);
 }
 void DivChainAnsNumber(void) {
     MaybeDEToHL();
     LD_BC_IMM(entry2_operand);
-    CALL(__idvrmu);
-    expr.outputRegister2 = OutputRegisterDE;
 }
 void DivChainAnsVariable(void) {
     MaybeDEToHL();
     LD_BC_IND_IX_OFF(entry2_operand);
-    CALL(__idvrmu);
-    expr.outputRegister2 = OutputRegisterDE;
 }
 void DivNumberVariable(void) {
     LD_HL_NUMBER(entry1_operand);
@@ -949,15 +865,11 @@ void DivNumberVariable(void) {
 void DivNumberFunction(void) {
     insertFunctionReturn(entry2_operand, OUTPUT_IN_BC, NO_PUSH);
     LD_HL_NUMBER(entry1_operand);
-    CALL(__idvrmu);
-    expr.outputRegister2 = OutputRegisterDE;
 }
 void DivNumberChainAns(void) {
     PushHLDE();
     POP_BC();
     LD_HL_NUMBER(entry1_operand);
-    CALL(__idvrmu);
-    expr.outputRegister2 = OutputRegisterDE;
 }
 void DivVariableNumber(void) {
     LD_HL_IND_IX_OFF(entry1_operand);
@@ -970,15 +882,11 @@ void DivVariableVariable(void) {
 void DivVariableFunction(void) {
     insertFunctionReturn(entry2_operand, OUTPUT_IN_BC, NO_PUSH);
     LD_HL_IND_IX_OFF(entry1_operand);
-    CALL(__idvrmu);
-    expr.outputRegister2 = OutputRegisterDE;
 }
 void DivVariableChainAns(void) {
     PushHLDE();
     POP_BC();
     LD_HL_IND_IX_OFF(entry1_operand);
-    CALL(__idvrmu);
-    expr.outputRegister2 = OutputRegisterDE;
 }
 void DivFunctionNumber(void) {
     insertFunctionReturn(entry1_operand, OUTPUT_IN_HL, NO_PUSH);
@@ -993,28 +901,20 @@ void DivFunctionFunction(void) {
     PUSH_HL();
     insertFunctionReturn(entry1_operand, OUTPUT_IN_HL, NO_PUSH);
     POP_BC();
-    CALL(__idvrmu);
-    expr.outputRegister2 = OutputRegisterDE;
 }
 void DivFunctionChainAns(void) {
     PushHLDE();
     insertFunctionReturn(entry1_operand, OUTPUT_IN_HL, NO_PUSH);
     POP_BC();
-    CALL(__idvrmu);
-    expr.outputRegister2 = OutputRegisterDE;
 }
 void DivChainAnsFunction(void) {
     MaybeDEToHL();
     insertFunctionReturn(entry2_operand, OUTPUT_IN_BC, NEED_PUSH);
-    CALL(__idvrmu);
-    expr.outputRegister2 = OutputRegisterDE;
 }
 void DivChainPushChainAns(void) {
     PushHLDE();
     POP_BC();
     POP_HL();
-    CALL(__idvrmu);
-    expr.outputRegister2 = OutputRegisterDE;
 }
 void AddChainAnsNumber(void) {
     uint24_t number = entry2_operand;
@@ -1058,18 +958,6 @@ void AddFunctionVariable(void) {
     insertFunctionReturn(entry1_operand, OUTPUT_IN_HL, NO_PUSH);
     AddChainAnsVariable();
 }
-void AddNumberVariable(void) {
-    swapEntries();
-    AddVariableNumber();
-}
-void AddNumberFunction(void) {
-    swapEntries();
-    AddFunctionNumber();
-}
-void AddNumberChainAns(void) {
-    swapEntries();
-    AddChainAnsNumber();
-}
 void AddVariableVariable(void) {
     LD_HL_IND_IX_OFF(entry1_operand);
     if (entry1_operand == entry2_operand) {
@@ -1077,14 +965,6 @@ void AddVariableVariable(void) {
     } else {
         AddChainAnsVariable();
     }
-}
-void AddVariableFunction(void) {
-    swapEntries();
-    AddFunctionVariable();
-}
-void AddVariableChainAns(void) {
-    swapEntries();
-    AddChainAnsVariable();
 }
 void AddFunctionFunction(void) {
     insertFunctionReturn(entry1_operand, OUTPUT_IN_DE, NO_PUSH);
@@ -1094,10 +974,6 @@ void AddFunctionFunction(void) {
 void AddChainAnsFunction(void) {
     insertFunctionReturn(entry2_operand, (expr.outputRegister == OutputRegisterHL) ? OUTPUT_IN_DE : OUTPUT_IN_HL, NEED_PUSH);
     ADD_HL_DE();
-}
-void AddFunctionChainAns(void) {
-    swapEntries();
-    AddChainAnsFunction();
 }
 void AddChainPushChainAns(void) {
     POP_DE();
@@ -1169,8 +1045,6 @@ void SubChainAnsNumber(void) {
 void SubChainAnsVariable(void) {
     MaybeDEToHL();
     LD_DE_IND_IX_OFF(entry2_operand);
-    OR_A_A();
-    SBC_HL_DE();
 }
 void SubNumberVariable(void) {
     LD_HL_NUMBER(entry1_operand);
@@ -1179,14 +1053,10 @@ void SubNumberVariable(void) {
 void SubNumberFunction(void) {
     insertFunctionReturn(entry2_operand, OUTPUT_IN_DE, NO_PUSH);
     LD_HL_NUMBER(entry1_operand);
-    OR_A_A();
-    SBC_HL_DE();
 }
 void SubNumberChainAns(void) {
     MaybeHLToDE();
     LD_HL_NUMBER(entry1_operand);
-    OR_A_A();
-    SBC_HL_DE();
 }
 void SubVariableNumber(void) {
     if (entry2_operand < 129 && entry2_operand > 3) {
@@ -1209,8 +1079,6 @@ void SubVariableFunction(void) {
 void SubVariableChainAns(void) {
     MaybeHLToDE();
     LD_HL_IND_IX_OFF(entry1_operand);
-    OR_A_A();
-    SBC_HL_DE();
 }
 void SubFunctionNumber(void) {
     insertFunctionReturn(entry1_operand, OUTPUT_IN_HL, NO_PUSH);
@@ -1223,20 +1091,14 @@ void SubFunctionVariable(void) {
 void SubFunctionFunction(void) {
     insertFunctionReturn(entry2_operand, OUTPUT_IN_DE, NO_PUSH);
     insertFunctionReturn(entry1_operand, OUTPUT_IN_HL, NEED_PUSH);
-    OR_A_A();
-    SBC_HL_DE();
 }
 void SubFunctionChainAns(void) {
     MaybeHLToDE();
     insertFunctionReturn(entry1_operand, OUTPUT_IN_HL, NEED_PUSH);
-    OR_A_A();
-    SBC_HL_DE();
 }
 void SubChainAnsFunction(void) {
     MaybeDEToHL();
     insertFunctionReturn(entry2_operand, OUTPUT_IN_DE, NEED_PUSH);
-    OR_A_A();
-    SBC_HL_DE();
 }
 void SubChainPushChainAns(void) {
     MaybeHLToDE();
@@ -1281,68 +1143,68 @@ void (*operatorFunctions[224])(void) = {
     OperatorError,
     
     OperatorError,
-    AndNumberVariable,
-    AndNumberFunction,
-    AndNumberChainAns,
+    OperatorError,
+    OperatorError,
+    OperatorError,
     AndVariableNumber,
     AndVariableVariable,
-    AndVariableFunction,
-    AndVariableChainAns,
+    OperatorError,
+    OperatorError,
     AndFunctionNumber,
     AndFunctionVariable,
     AndFunctionFunction,
-    AndFunctionChainAns,
+    OperatorError,
     AndChainAnsNumber,
     AndChainAnsVariable,
     AndChainAnsFunction,
     OperatorError,
     
     OperatorError,
-    XorNumberVariable,
-    XorNumberFunction,
-    XorNumberChainAns,
+    OperatorError,
+    OperatorError,
+    OperatorError,
     XorVariableNumber,
     XorVariableVariable,
-    XorVariableFunction,
-    XorVariableChainAns,
+    OperatorError,
+    OperatorError,
     XorFunctionNumber,
     XorFunctionVariable,
     XorFunctionFunction,
-    XorFunctionChainAns,
+    OperatorError,
     XorChainAnsNumber,
     XorChainAnsVariable,
     XorChainAnsFunction,
     OperatorError,
     
     OperatorError,
-    OrNumberVariable,
-    OrNumberFunction,
-    OrNumberChainAns,
+    OperatorError,
+    OperatorError,
+    OperatorError,
     OrVariableNumber,
     OrVariableVariable,
-    OrVariableFunction,
-    OrVariableChainAns,
+    OperatorError,
+    OperatorError,
     OrFunctionNumber,
     OrFunctionVariable,
     OrFunctionFunction,
-    OrFunctionChainAns,
+    OperatorError,
     OrChainAnsNumber,
     OrChainAnsVariable,
     OrChainAnsFunction,
     OperatorError,
     
     OperatorError,
-    EQNumberVariable,
-    EQNumberFunction,
-    EQNumberChainAns,
+    OperatorError,
+    OperatorError,
+    OperatorError,
     EQVariableNumber,
     EQVariableVariable,
-    EQVariableFunction,
-    EQVariableChainAns,
+    OperatorError,
+    OperatorError,
     EQFunctionNumber,
     EQFunctionVariable,
     EQFunctionFunction,
-    EQFunctionChainAns,
+    OperatorError,
     EQChainAnsNumber,
     EQChainAnsVariable,
     EQChainAnsFunction,
@@ -1417,34 +1279,34 @@ void (*operatorFunctions[224])(void) = {
     OperatorError,
     
     OperatorError,
-    NENumberVariable,
-    NENumberFunction,
-    NENumberChainAns,
+    OperatorError,
+    OperatorError,
+    OperatorError,
     NEVariableNumber,
     NEVariableVariable,
-    NEVariableFunction,
-    NEVariableChainAns,
+    OperatorError,
+    OperatorError,
     NEFunctionNumber,
     NEFunctionVariable,
     NEFunctionFunction,
-    NEFunctionChainAns,
+    OperatorError,
     NEChainAnsNumber,
     NEChainAnsVariable,
     NEChainAnsFunction,
     OperatorError,
     
     OperatorError,
-    MulNumberVariable,
-    MulNumberFunction,
-    MulNumberChainAns,
+    OperatorError,
+    OperatorError,
+    OperatorError,
     MulVariableNumber,
     MulVariableVariable,
-    MulVariableFunction,
-    MulVariableChainAns,
+    OperatorError,
+    OperatorError,
     MulFunctionNumber,
     MulFunctionVariable,
     MulFunctionFunction,
-    MulFunctionChainAns,
+    OperatorError,
     MulChainAnsNumber,
     MulChainAnsVariable,
     MulChainAnsFunction,
@@ -1468,17 +1330,17 @@ void (*operatorFunctions[224])(void) = {
     OperatorError,
     
     OperatorError,
-    AddNumberVariable,
-    AddNumberFunction,
-    AddNumberChainAns,
+    OperatorError,
+    OperatorError,
+    OperatorError,
     AddVariableNumber,
     AddVariableVariable,
-    AddVariableFunction,
-    AddVariableChainAns,
+    OperatorError,
+    OperatorError,
     AddFunctionNumber,
     AddFunctionVariable,
     AddFunctionFunction,
-    AddFunctionChainAns,
+    OperatorError,
     AddChainAnsNumber,
     AddChainAnsVariable,
     AddChainAnsFunction,
