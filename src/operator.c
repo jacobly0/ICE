@@ -223,6 +223,8 @@ uint8_t parseOperator(element_t *outputPrevPrev, element_t *outputPrev, element_
     
     // If the operator is -, and the second operand not a number, it always ends with or a, a \ sbc hl, de
     if (oper == tSub && typeMasked2 != TYPE_NUMBER) {
+        OR_A_A();
+        SBC_HL_DE();
     }
     
     expr.outputRegister = expr.outputRegister2;

@@ -250,8 +250,8 @@ int main(int argc, char **argv) {
 #else
                 int tempTok;
 
-                setCurrentOffset(LblAddr, SEEK_SET);
-                fseek(ice.inPrgm2, GotoAddr, SEEK_SET);
+                setCurrentOffset(GotoAddr, SEEK_SET);
+                fseek(ice.inPrgm2, LblAddr, SEEK_SET);
                 
                 while ((tempTok = fgetc(ice.inPrgm)) != tEnter) {
                     if (tempTok != fgetc(ice.inPrgm2)) {
