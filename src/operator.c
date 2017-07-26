@@ -25,8 +25,8 @@
 extern void (*operatorFunctions[224])(void);
 extern void (*operatorChainPushChainAnsFunctions[14])(void);
 const char operators[]              = {tStore, tAnd, tXor, tOr, tEQ, tLT, tGT, tLE, tGE, tNE, tMul, tDiv, tAdd, tSub};
-const uint8_t operatorPrecedence[]  = {0, 1, 2, 2, 3, 3, 3, 3, 3, 3, 5, 5, 4, 4};
-const uint8_t operatorPrecedence2[] = {6, 1, 2, 2, 3, 3, 3, 3, 3, 3, 5, 5, 4, 4};
+const uint8_t operatorPrecedence[]  = {0, 2, 1, 1, 3, 3, 3, 3, 3, 3, 5, 5, 4, 4};
+const uint8_t operatorPrecedence2[] = {6, 2, 1, 1, 3, 3, 3, 3, 3, 3, 5, 5, 4, 4};
 const uint8_t operatorCanSwap[]     = {0, 1, 1, 1, 1, 0, 0, 0, 0, 1, 1, 0, 1, 0};        // Used for operators which can swap the operands, i.e. A*B = B*A
 
 static element_t *entry1;
@@ -194,6 +194,9 @@ uint8_t parseOperator(element_t *outputPrevPrev, element_t *outputPrev, element_
            (typeMasked1 == TYPE_VARIABLE && typeMasked2 == TYPE_FUNCTION)
          ))
        ) {
+        uint8_t temp = typeMasked1;
+        typeMasked1 = typeMasked2;
+        typeMasked2 = temp;
         swapEntries();
     }
     
