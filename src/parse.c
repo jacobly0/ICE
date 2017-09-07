@@ -59,12 +59,11 @@ uint8_t parseExpression(uint24_t token) {
     
     /*
         General explanation stacks:
-        - Each entry consists of 5 bytes, the type, some properties and the operand
+        - Each entry consists of 5 bytes, the type, the mask and the operand
         - Type: number, variable, function, operator etc
-        - Properties: the first bit is the absence/presence of a °, the next 3 bits is the masking: u8, s16, u24, ° etc, 
-             the last 4 bits the amount of pointers, i.e. *** = 3
+        - Mask: 0 = 8 bits, 1 = 16 bits, 2 = 24 bits
         - The operand is either a 3-byte number or consists of these 3 bytes:
-            - The first byte = the operand: function/variable/operator
+            - The first byte = the operand: function/variable/operator token
             - If it's a function then the second byte is the amount of arguments for that function
             - If it's a getKeyFast, the second byte is the key
             - If it's a 2-byte function, the third byte is the second byte of the function
