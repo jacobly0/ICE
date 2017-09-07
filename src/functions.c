@@ -1,3 +1,4 @@
+#include "defines.h"
 #include "functions.h"
 
 #include "errors.h"
@@ -7,20 +8,7 @@
 #include "output.h"
 #include "operator.h"
 #include "routines.h"
-#include "gfx/gfx_logos.h"
-
-#ifndef COMPUTER_ICE
-#include <debug.h>
-#endif
-
-#include <tice.h>
-#include <stdbool.h>
-#include <stddef.h>
-#include <stdint.h>
-#include <math.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
+//#include "gfx/gfx_logos.h"
 
 #ifdef COMPUTER_ICE
 #define INCBIN_PREFIX
@@ -168,11 +156,14 @@ uint8_t parseFunction(uint24_t index) {
                 case tSub:
                     break;
                 case tLength:
+                    if (amountOfArguments != 1) {
+                        return E_ARGUMENTS;
+                    }
                     if (outputPrevType < TYPE_STRING) {
                         return E_SYNTAX;
                     }
                     if (outputPrevType == TYPE_STRING && outputPrevOperand != TempString1 && outputPrevOperand != TempString2) {
-                        LD_HL_NUMBER(strlen((char *)outputPrevOperand));
+                        LD_HL_NUMBER(strlen((char*)outputPrevOperand));
                     } else {
                         LD_HL_IMM(outputPrevOperand);
                         PUSH_HL();
@@ -187,6 +178,9 @@ uint8_t parseFunction(uint24_t index) {
         case tExtTok:
             switch (function2) {
                 case tRemainder:
+                    if (amountOfArguments != 2) {
+                        return E_ARGUMENTS;
+                    }
                     switch (outputPrevPrevType) {
                         case TYPE_NUMBER:
                             switch (outputPrevType) {
@@ -282,6 +276,9 @@ uint8_t parseFunction(uint24_t index) {
             }
             break;
         case tNot:
+            if (amountOfArguments != 1) {
+                return E_ARGUMENTS;
+            }
             switch (outputPrevType) {
                 case TYPE_VARIABLE:
                     LD_HL_IND_IX_OFF(outputPrevOperand);
@@ -307,6 +304,9 @@ uint8_t parseFunction(uint24_t index) {
         case tMin:
         case tMax:
         case tMean:
+            if (amountOfArguments != 2) {
+                return E_ARGUMENTS;
+            }
             switch (outputPrevPrevType) {
                 case TYPE_NUMBER:
                     switch (outputPrevType) {
@@ -439,6 +439,9 @@ uint8_t parseFunction(uint24_t index) {
             }
             break;
         case tSqrt:
+            if (amountOfArguments != 1) {
+                return E_ARGUMENTS;
+            }
             if (outputPrevType == TYPE_VARIABLE) {
                 LD_HL_IND_IX_OFF(outputPrevOperand);
             } else if (outputPrevType == TYPE_FUNCTION_RETURN) {

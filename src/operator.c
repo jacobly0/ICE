@@ -1,3 +1,4 @@
+#include "defines.h"
 #include "parse.h"
 #include "operator.h"
 
@@ -7,20 +8,17 @@
 #include "stack.h"
 #include "output.h"
 #include "routines.h"
-#include "gfx/gfx_logos.h"
+//#include "gfx/gfx_logos.h"
 
-#ifndef COMPUTER_ICE
-#include <debug.h>
+#ifdef COMPUTER_ICE
+#define INCBIN_PREFIX
+#include "incbin.h"
+INCBIN(And, "src/asm/and.bin");
+INCBIN(Or, "src/asm/or.bin");
+INCBIN(Xor, "src/asm/xor.bin");
+INCBIN(Rand, "src/asm/rand.bin");
+INCBIN(Keypad, "src/asm/keypad.bin");
 #endif
-
-#include <tice.h>
-#include <stdbool.h>
-#include <stddef.h>
-#include <stdint.h>
-#include <math.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
 
 extern void (*operatorFunctions[224])(void);
 extern void (*operatorChainPushChainAnsFunctions[14])(void);
@@ -37,16 +35,6 @@ static uint8_t oper;
 
 #define SIZEOF_KEYPAD_DATA 18
 #define SIZEOF_RAND_DATA 54
-
-#ifdef COMPUTER_ICE
-#define INCBIN_PREFIX
-#include "incbin.h"
-INCBIN(And, "src/asm/and.bin");
-INCBIN(Or, "src/asm/or.bin");
-INCBIN(Xor, "src/asm/xor.bin");
-INCBIN(Rand, "src/asm/rand.bin");
-INCBIN(Keypad, "src/asm/keypad.bin");
-#endif
 
 #ifdef COMPUTER_ICE
 static uint8_t clz(uint24_t x) {
@@ -84,10 +72,10 @@ void MultWithNumber(uint24_t num, uint8_t *programPtr, bool ChangeRegisters) {
         }
     } else if (num < 0x100) {
         LD_A(num);
-        CALL(0x000150);
+        CALL(__imul_b);
     } else {
         LD_BC_IMM(num);
-        CALL(0x000154);
+        CALL(__imuls);
     }
 }
 #endif

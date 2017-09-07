@@ -1,12 +1,6 @@
 #ifndef STACK_H
 #define STACK_H
 
-#include <stdint.h>
-
-#ifdef COMPUTER_ICE
-typedef uint32_t uint24_t;
-#endif
-
 void push(uint24_t);
 uint24_t pop(void);
 uint24_t getStackSize(void);

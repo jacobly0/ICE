@@ -1,6 +1,6 @@
 #include "hooks/ti84pce.inc"
 
-#define AMOUNT_OF_CUSTOM_TOKENS 6
+#define AMOUNT_OF_CUSTOM_TOKENS 2
 #define AMOUNT_OF_C_FUNCTIONS   89
 
 KeyHook_start:
@@ -365,12 +365,8 @@ GetDetValueStop:
 .echo "Cursor hook: ",$-CursorHook_start, " bytes"
 
 Tab1:
-C1:   .db "ExecHex(", 0
-C2:   .db "DefineSprite(", 0
-C3:   .db "Call ", 0
-C4:   .db "CompilePrgm(", 0
-C5:   .db "SetBASICVar(", 0
-C6:   .db "GetBASICVar(", 0
+C1:   .db "DefineSprite(", 0
+C2:   .db "Call ", 0
       
 G01:  .db "Begin", 0
 G02:  .db "End", 0
@@ -382,11 +378,11 @@ G07:  .db "SetPixel", 0
 G08:  .db "GetPixel", 0
 G09:  .db "GetDraw", 0
 G10:  .db "SetDraw", 0
-Tab2:
 G11:  .db "SwapDraw", 0
 G12:  .db "Blit", 0
 G13:  .db "BlitLines", 0
 G14:  .db "BlitArea", 0
+Tab2:
 G15:  .db "PrintChar", 0
 G16:  .db "PrintInt", 0
 G17:  .db "PrintUInt", 0
@@ -399,11 +395,11 @@ G23:  .db "SetTextTransparentColor", 0
 G24:  .db "SetCustomFontData", 0
 G25:  .db "SetCustomFontSpacing", 0
 G26:  .db "SetMonospaceFont", 0
-Tab3:
 G27:  .db "GetStringWidth", 0
 G28:  .db "GetCharWidth", 0
 G29:  .db "GetTextX", 0
 G30:  .db "GetTextY", 0
+Tab3:
 G31:  .db "Line", 0
 G32:  .db "HorizLine", 0
 G33:  .db "VertLine", 0
@@ -416,11 +412,11 @@ G39:  .db "HorizLine_NoClip", 0
 G40:  .db "VertLine_NoClip", 0
 G41:  .db "FillCircle_NoClip", 0
 G42:  .db "Rectangle_NoClip", 0
-Tab4:
 G43:  .db "FillRectangle_NoClip", 0
 G44:  .db "SetClipRegion", 0
 G45:  .db "GetClipRegion", 0
 G46:  .db "ShiftDown", 0
+Tab4:
 G47:  .db "ShiftUp", 0
 G48:  .db "ShiftLeft", 0
 G49:  .db "ShiftRight", 0
@@ -433,11 +429,11 @@ G55:  .db "TilePtrMapped", 0
 G56:  .db "LZDecompress", 0
 G57:  .db "AllocSprite", 0
 G58:  .db "Sprite", 0
-Tab5:
 G59:  .db "TransparentSprite", 0
 G60:  .db "Sprite_NoClip", 0
 G61:  .db "TransparentSprite_NoClip", 0
 G62:  .db "GetSprite_NoClip", 0
+Tab5:
 G63:  .db "ScaledSprite_NoClip", 0
 G64:  .db "ScaledTransparentSprite_NoClip", 0
 G65:  .db "FlipSpriteY", 0
@@ -450,11 +446,11 @@ G71:  .db "Polygon_NoClip", 0
 G72:  .db "FillTriangle", 0
 G73:  .db "FillTriangle_NoClip", 0
 G74:  .db "LZDecompressSprite", 0
-Tab6:
 G75:  .db "SetTextScale", 0
 G76:  .db "SetTransparentColor", 0
 G77:  .db "ZeroScreen", 0
 G78:  .db "SetTextConfig", 0
+Tab6:
 G79:  .db "GetSpriteChar", 0
 G80:  .db "Lighten", 0
 G81:  .db "Darken", 0
@@ -468,12 +464,9 @@ G88:  .db "ConvertToRLETSprite", 0
 G89:  .db "ConvertToNewRLETSprite", 0
       .db 0
       
-Tok1: .db 8,  "ExecHex(", 0
-Tok2: .db 13, "DefineSprite(", 0
-Tok3: .db 5,  "Call ", 0
-Tok4: .db 12, "CompilePrgm(", 0
-Tok5: .db 12, "SetBASICVar(", 0
-Tok6: .db 12, "GetBASICVar(", 0
+; First token is $62 $0A
+Tok1: .db 13, "DefineSprite("
+Tok2: .db 5,  "Call "
 
 TabData:
     .dl Tab1 - KeyHook_start
@@ -577,12 +570,8 @@ CData5:
 TokenHook_data:
     .dl Tok1 - KeyHook_start - 1
     .dl Tok2 - KeyHook_start - 1
-    .dl Tok3 - KeyHook_start - 1
-    .dl Tok4 - KeyHook_start - 1
-    .dl Tok5 - KeyHook_start - 1
-    .dl Tok6 - KeyHook_start - 1
 
 CustomTokensProgramText:
-    .db    "PROGRAM:", 0
+    .db "PROGRAM:", 0
 
 Hooks_end:

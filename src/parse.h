@@ -1,16 +1,6 @@
 #ifndef PARSE_H
 #define PARSE_H
 
-#include <stdint.h>
-
-#ifndef COMPUTER_ICE
-#include <fileioc.h>
-#else
-#include <stdio.h>
-typedef uint32_t uint24_t;
-typedef FILE* ti_var_t;
-#endif
-
 #define TYPE_NUMBER          0
 #define TYPE_VARIABLE        1
 #define TYPE_FUNCTION_RETURN 2
@@ -23,12 +13,16 @@ typedef FILE* ti_var_t;
 #define TYPE_LIST            7
 #define TYPE_OS_LIST         8
 
+#define TYPE_INDEX_START     250
+#define TYPE_INDEX_END       251
 #define TYPE_C_START         252
 #define TYPE_ARG_DELIMITER   253
 #define TYPE_OPERATOR        254
 #define TYPE_FUNCTION        255
 
-#define __getc() getNextToken()
+#define TYPE_MASK_U8         0
+#define TYPE_MASK_U16        1
+#define TYPE_MASK_U24        2
 
 void UpdatePointersToData(uint24_t);
 void optimizeZeroCarryFlagOutput(void);
@@ -39,7 +33,8 @@ uint8_t functionRepeat(uint24_t);
 uint8_t parseProgram(void);
 
 typedef struct {
-    uint8_t type;
+    uint8_t  type;
+    uint8_t  mask;
     uint24_t operand;
 } element_t;
 

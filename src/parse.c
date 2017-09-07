@@ -1,3 +1,4 @@
+#include "defines.h"
 #include "parse.h"
 
 #include "operator.h"
@@ -7,22 +8,7 @@
 #include "stack.h"
 #include "output.h"
 #include "routines.h"
-#include "gfx/gfx_logos.h"
-
-#ifndef COMPUTER_ICE
-#include <fileioc.h>
-#include <graphx.h>
-#include <debug.h>
-#endif
-
-#include <tice.h>
-#include <stdbool.h>
-#include <stddef.h>
-#include <stdint.h>
-#include <math.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
+//#include "gfx/gfx_logos.h"
 
 #ifdef COMPUTER_ICE
 #define INCBIN_PREFIX
@@ -33,19 +19,6 @@ INCBIN(Pause, "src/asm/pause.bin");
 extern uint8_t (*functions[256])(uint24_t token);
 const char implementedFunctions[] = {tNot, tMin, tMax, tMean, tSqrt, tDet};
 const char implementedFunctions2[] = {tRemainder, tSub, tLength, tToString};
-const uint24_t OSString[]= {
-    pixelShadow + 54000,
-    pixelShadow + 55000,
-    pixelShadow + 56000,
-    pixelShadow + 57000,
-    pixelShadow + 58000,
-    pixelShadow + 59000,
-    pixelShadow + 60000,
-    pixelShadow + 61000,
-    pixelShadow + 62000,
-    pixelShadow + 63000
-};
-
 uint8_t outputStack[4096];
 
 uint8_t parseProgram(void) {
@@ -53,7 +26,7 @@ uint8_t parseProgram(void) {
     uint8_t ret = VALID;
 
     // Do things based on the token
-    while ((int)(token = __getc()) != EOF) {
+    while ((int)(token = _getc(ice.inPrgm)) != EOF) {
         if ((uint8_t)token != tii) {
             ice.usedCodeAfterHeader = true;
         }
@@ -72,23 +45,24 @@ uint8_t parseProgram(void) {
 /* Static functions */
 
 uint8_t parseExpression(uint24_t token) {
-    uint24_t stackElements = 0;
+    uint24_t stackElements = 0, outputElements = 0;
     uint24_t loopIndex, temp;
     uint8_t stack[1500], amountOfArgumentsStack[20];
-    uint8_t index = 0, a, stackToOutputReturn;
-    uint8_t *amountOfArgumentsStackPtr = amountOfArgumentsStack;
+    uint8_t index = 0, a, stackToOutputReturn, mask = TYPE_MASK_U24, tok;
+    uint8_t *amountOfArgumentsStackPtr = amountOfArgumentsStack, canUseMask = 2;
 
     // Setup pointers
     element_t *outputPtr = (element_t*)outputStack;
     element_t *stackPtr  = (element_t*)stack;
     element_t *outputCurr, *outputPrev, *outputPrevPrev;
     element_t *stackCurr, *stackPrev = NULL;
-    ice.outputElements = 0;
     
     /*
         General explanation stacks:
-        - Each entry consists of 4 bytes, the type and the operand
+        - Each entry consists of 5 bytes, the type, some properties and the operand
         - Type: number, variable, function, operator etc
+        - Properties: the first bit is the absence/presence of a °, the next 3 bits is the masking: u8, s16, u24, ° etc, 
+             the last 4 bits the amount of pointers, i.e. *** = 3
         - The operand is either a 3-byte number or consists of these 3 bytes:
             - The first byte = the operand: function/variable/operator
             - If it's a function then the second byte is the amount of arguments for that function
@@ -96,21 +70,26 @@ uint8_t parseExpression(uint24_t token) {
             - If it's a 2-byte function, the third byte is the second byte of the function
     */
 
-    while ((int)token != EOF && (uint8_t)token != tEnter) {
-        uint8_t tok = (uint8_t)token;
-        
-        outputCurr = &outputPtr[ice.outputElements];
+    while ((int)token != EOF && (tok = (uint8_t)token) != tEnter) {
+        outputCurr = &outputPtr[outputElements];
         stackCurr  = &stackPtr[stackElements];
+        
+        // We can use the unsigned mask * only at the start of the line, or directly after an operator
+        if (canUseMask) {
+            canUseMask--;
+        }
 
         // Process a number
         if (tok >= t0 && tok <= t9) {
             uint24_t output = token - t0;
-            while ((uint8_t)(token = __getc()) >= t0 && (uint8_t)token <= t9) {
+            
+            while ((uint8_t)(token = _getc(ice.inPrgm)) >= t0 && (uint8_t)token <= t9) {
                 output = output * 10 + (uint8_t)token - t0;
             }
             outputCurr->type = TYPE_NUMBER;
             outputCurr->operand = output;
-            ice.outputElements++;
+            outputElements++;
+            mask = TYPE_MASK_U24;
 
             // Don't grab a new token
             continue;
@@ -120,22 +99,65 @@ uint8_t parseExpression(uint24_t token) {
         else if (tok == tee) {
             uint24_t output = 0;
             
-            while ((tok = IsHexadecimal(__getc())) != 16) {
+            while ((tok = IsHexadecimal(token = _getc(ice.inPrgm))) != 16) {
                 output = (output << 4) + tok;
             }
             outputCurr->type = TYPE_NUMBER;
             outputCurr->operand = output;
-            ice.outputElements++;
+            outputElements++;
+            mask = TYPE_MASK_U24;
 
             // Don't grab a new token
             continue;
+        }
+        
+        // Process a 'negative' number
+        else if (tok == tChs) {
+            uint24_t output = 0;
+            
+            while ((uint8_t)(token = _getc(ice.inPrgm)) >= t0 && (uint8_t)token <= t9) {
+                output = output * 10 + (uint8_t)token - t0;
+            }
+            outputCurr->type = TYPE_NUMBER;
+            outputCurr->operand = 0-output;
+            outputElements++;
+            mask = TYPE_MASK_U24;
+
+            // Don't grab a new token
+            continue;
+        }
+        
+        // Process an OS list (number)
+        else if (tok == tVarLst) {
+            outputCurr->type = TYPE_NUMBER;
+            outputCurr->operand = ice.OSLists[_getc(ice.inPrgm)];
+            outputElements++;
+            mask = TYPE_MASK_U24;
         }
 
         // Process a variable
         else if (tok >= tA && tok <= tTheta) {
             outputCurr->type = TYPE_VARIABLE;
             outputCurr->operand = tok - tA;
-            ice.outputElements++;
+            outputElements++;
+            mask = TYPE_MASK_U24;
+        }
+        
+        // Process a mask
+        else if (tok == tMul && canUseMask) {
+            uint8_t a = 0;
+            
+            while ((uint8_t)(token = _getc(ice.inPrgm)) == tMul) {
+                a++;
+            }
+            
+            if (a > 2 || (uint8_t)token != tLBrace) {
+                return E_SYNTAX;
+            }
+            mask = TYPE_MASK_U8 + a;
+            
+            // Don't grab the { token
+            continue;
         }
         
         // Parse an operator
@@ -145,52 +167,82 @@ uint8_t parseExpression(uint24_t token) {
                 // Move entire stack to output
                 stackToOutputReturn = 1;
                 goto stackToOutput;
-stackToOutputReturn1:;
             }
             
             // Move the stack to the output as long as it's not empty
             while (stackElements) {
                 stackPrev = &stackPtr[stackElements-1];
-                outputCurr = &outputPtr[ice.outputElements];
+                outputCurr = &outputPtr[outputElements];
                 
                 // Move the last entry of the stack to the ouput if it's precedence is greater than the precedence of the current token
                 if (stackPrev->type == TYPE_OPERATOR && operatorPrecedence[index - 1] <= operatorPrecedence2[getIndexOfOperator(stackPrev->operand) - 1]) {
                     outputCurr->type = stackPrev->type;
+                    outputCurr->mask = stackPrev->mask;
                     outputCurr->operand = stackPrev->operand;
                     stackElements--;
-                    ice.outputElements++;
+                    outputElements++;
                 } else {
                     break;
                 }
             }
             
+stackToOutputReturn1:
             // Push the operator to the stack
             stackCurr = &stackPtr[stackElements++];
             stackCurr->type = TYPE_OPERATOR;
             stackCurr->operand = token;
+            mask = TYPE_MASK_U24;
+            canUseMask = 2;
         }
         
-        // Push a left parenthesis
-        else if (tok == tLParen) {
+        // Push a ( { [
+        else if (tok == tLParen || tok == tLBrace || tok == tLBrack) {
             stackCurr->type = TYPE_FUNCTION;
+            stackCurr->mask = mask;
             stackCurr->operand = token;
             stackElements++;
+            mask = TYPE_MASK_U24;
+            canUseMask = 2;
         }
         
-        // Pop a right parenthesis
-        else if (tok == tRParen || tok == tComma) {
+        // Gets the address of a variable
+        else if (tok == tFromDeg) {
+            outputCurr->type = TYPE_NUMBER;
+            outputElements++;
+            mask = TYPE_MASK_U24;
+            tok = (uint8_t)_getc(ice.inPrgm);
+            
+            // Get the address of the variable
+            if (tok >= tA && tok <= tTheta) {
+                outputCurr->operand = 0xD13F47 + (tok - tA) * 3;
+            } else if (tok == tVarLst) {
+                outputCurr->operand = ice.OSLists[_getc(ice.inPrgm)];
+            } else if (tok == tVarStrng) {
+                outputCurr->operand = ice.OSStrings[_getc(ice.inPrgm)];
+            } else {
+                return E_SYNTAX;
+            }
+        }
+        
+        // Pop a ) } ] ,
+        else if (tok == tRParen || tok == tComma || tok == tRBrace || tok == tRBrack) {
             // Move until stack is empty or a function is encountered
             while (stackElements) {
                 stackPrev = &stackPtr[stackElements-1];
-                outputCurr = &outputPtr[ice.outputElements];
+                outputCurr = &outputPtr[outputElements];
                 if (stackPrev->type != TYPE_FUNCTION) {
                     outputCurr->type = stackPrev->type;
                     outputCurr->operand = stackPrev->operand;
                     stackElements--;
-                    ice.outputElements++;
+                    outputElements++;
                 } else {
                     break;
                 }
+            }
+            
+            // Closing tag should match it's open tag
+            if (tok != tComma && (stackPrev->operand != tok - 1)) {
+                return E_SYNTAX;
             }
             
             // No matching left parenthesis
@@ -205,27 +257,34 @@ stackToOutputReturn1:;
             // If it's a det, add an argument delimiter as well
             if (tok == tComma && (uint8_t)stackPrev->operand == tDet) {
                 outputCurr->type = TYPE_ARG_DELIMITER;
-                ice.outputElements++;
+                outputElements++;
             }
             
             // If the right parenthesis belongs to a function, move the function as well
-            if (tok == tRParen && stackPrev->operand != tLParen) {
+            if (tok != tComma && stackPrev->operand != tLParen) {
+                uint24_t temp2 = stackPrev->operand;
                 outputCurr->type = stackPrev->type;
-                outputCurr->operand = stackPrev->operand + ((*amountOfArgumentsStackPtr--) << 8);
+                outputCurr->mask = stackPrev->mask;
+                if (tok == tRParen) {
+                    temp2 += (*amountOfArgumentsStackPtr--) << 8;
+                }
+                outputCurr->operand = temp2;
                 stackElements--;
-                ice.outputElements++;
+                outputElements++;
             }
             
             // Increment the amount of arguments for that function
-            else {
+            if (tok == tComma) {
                 (*amountOfArgumentsStackPtr)++;
             }
+            
+            mask = TYPE_MASK_U24;
         }
         
         // Process a function
         else if (strchr(implementedFunctions, tok) || tok == t2ByteTok || tok == tExtTok) {
             if (tok == t2ByteTok || tok == tExtTok) {
-                if (!strchr(implementedFunctions2, tok = (uint8_t)__getc())) {
+                if (!strchr(implementedFunctions2, tok = (uint8_t)_getc(ice.inPrgm))) {
                     return E_SYNTAX;
                 }
                 token = token + (tok << 16);
@@ -235,11 +294,13 @@ stackToOutputReturn1:;
             stackCurr->type = TYPE_FUNCTION;
             stackCurr->operand = token;
             stackElements++;
+            mask = TYPE_MASK_U24;
+            canUseMask = 2;
             
             // Check if it's a C function
             if (tok == tDet) {
                 outputCurr->type = TYPE_C_START;
-                ice.outputElements++;
+                outputElements++;
             }
         }
         
@@ -247,24 +308,25 @@ stackToOutputReturn1:;
         else if (tok == tRand || tok == tGetKey) {
             outputCurr->type = TYPE_FUNCTION_RETURN;
             outputCurr->operand = token;
-            ice.outputElements++;
+            outputElements++;
+            mask = TYPE_MASK_U24;
             
             // Check for fast key input, i.e. getKey(X)
             if (tok == tGetKey) {
                 // The next token must be a left parenthesis
-                if ((uint8_t)(token = __getc()) != tLParen) {
+                if ((uint8_t)(token = _getc(ice.inPrgm)) != tLParen) {
                     continue;
                 }
                 
                 // The next token must be a number
-                if ((uint8_t)(token = __getc()) >= t0 && (uint8_t)token <= t9) {
+                if ((uint8_t)(token = _getc(ice.inPrgm)) >= t0 && (uint8_t)token <= t9) {
                     tok = (uint8_t)token - t0;
                     
                     // The next token can be a number, but also right parenthesis or EOF
-                    if ((uint8_t)(token = __getc()) >= t0 && (uint8_t)token <= t9) {
+                    if ((uint8_t)(token = _getc(ice.inPrgm)) >= t0 && (uint8_t)token <= t9) {
                         // Add the direct key to the operand
                         outputCurr->operand = tGetKey + ((tok * 10 + (uint8_t)token - t0) << 8);
-                        if ((uint8_t)(token = __getc()) == tStore || (uint8_t)token == tEnter) {
+                        if ((uint8_t)(token = _getc(ice.inPrgm)) == tStore || (uint8_t)token == tEnter) {
                             // Don't grab new token
                             continue;
                         } else if ((int)token != EOF && (uint8_t)token != tRParen) {
@@ -290,30 +352,34 @@ stackToOutputReturn1:;
         else if (tok == tString) {
             outputCurr->type = TYPE_STRING;
             outputCurr->operand = (uint24_t)ice.programDataPtr;
-            ice.outputElements++;
-            while ((int)(token = __getc()) != EOF && (uint8_t)token != tString && (uint8_t)token != tStore && (uint8_t)token != tEnter) {
+            outputElements++;
+            mask = TYPE_MASK_U24;
+            
+            // Get the string until it hits EOF, Enter, " or ->
+            while ((int)(token = _getc(ice.inPrgm)) != EOF && (uint8_t)token != tString && (uint8_t)token != tStore && (uint8_t)token != tEnter) {
                 *ice.programDataPtr++ = (uint8_t)token;
             }
             *ice.programDataPtr++ = 0;
             if ((uint8_t)token == tStore || (uint8_t)token == tEnter) {
                 continue;
             }
-
         }
         
         // Parse an OS string
         else if (tok == tVarStrng) {
             outputCurr->type = TYPE_OS_STRING;
-            outputCurr->operand = OSString[__getc()];
-            ice.outputElements++;
+            outputCurr->operand = ice.OSStrings[_getc(ice.inPrgm)];
+            outputElements++;
+            mask = TYPE_MASK_U24;
         }
         
         // Oops, unknown token...
         else {
             return E_UNIMPLEMENTED;
         }
-       
-        token = __getc();
+        
+        // Yay, fetch the next token, it's great, it's true, I like it
+        token = _getc(ice.inPrgm);
     }
     
     // If the expression quits normally, rather than an argument seperator
@@ -326,7 +392,7 @@ stopParsing:
 stackToOutputReturn2:
 
     // Remove stupid things like 2+5, and not(1, max(2,3
-    for (loopIndex = 1; loopIndex < ice.outputElements; loopIndex++) {
+    for (loopIndex = 1; loopIndex < outputElements; loopIndex++) {
         outputPrevPrev = &outputPtr[loopIndex-2];
         outputPrev = &outputPtr[loopIndex-1];
         outputCurr = &outputPtr[loopIndex];
@@ -337,67 +403,78 @@ stackToOutputReturn2:
                outputCurr->type == TYPE_OPERATOR && (uint8_t)outputCurr->operand != tStore) {
             // If yes, execute the operator, and store it in the first entry, and remove the other 2
             outputPrevPrev->operand = executeOperator(outputPrevPrev->operand, outputPrev->operand, (uint8_t)outputCurr->operand);
-            memcpy(outputPrev, &outputPtr[loopIndex+1], (ice.outputElements-1)*4);
-            ice.outputElements -= 2;
+            memcpy(outputPrev, &outputPtr[loopIndex+1], (outputElements-1)*4);
+            outputElements -= 2;
             loopIndex--;
             continue;
         }
         
         // Check if the types are number | number | ... | function (not det)
-        if (loopIndex >= index && outputCurr->type == TYPE_FUNCTION && (uint8_t)outputCurr->operand != tDet) {
+        if (loopIndex >= index && outputCurr->type == TYPE_FUNCTION && (uint8_t)outputCurr->operand != tDet && (uint8_t)outputCurr->operand != tLBrace) {
+            uint24_t outputPrevOperand = outputPrev->operand, outputPrevPrevOperand = outputPrevPrev->operand;
             for (a = 1; a <= index; a++) {
                 if ((&outputPtr[loopIndex-a])->type != TYPE_NUMBER) {
                     goto DontDeleteFunction;
                 }
             }
             // The function has only numbers as argument, so remove them as well :)
-            switch ((uint8_t)outputCurr->operand) {
+            switch (outputCurr->operand) {
                 case tNot:
-                    temp = !outputPrev->operand;
+                    temp = !outputPrevOperand;
                     break;
                 case tMin:
-                    temp = (outputPrev->operand < outputPrevPrev->operand) ? outputPrev->operand : outputPrevPrev->operand;
+                    temp = (outputPrevOperand < outputPrevPrevOperand) ? outputPrevOperand : outputPrevPrevOperand;
                     break;
                 case tMax:
-                    temp = (outputPrev->operand > outputPrevPrev->operand) ? outputPrev->operand : outputPrevPrev->operand;
+                    temp = (outputPrevOperand > outputPrevPrevOperand) ? outputPrevOperand : outputPrevPrevOperand;
                     break;
                 case tMean:
-                    temp = (outputPrev->operand + outputPrevPrev->operand) / 2;
+                    temp = (outputPrevOperand + outputPrevPrevOperand) / 2;
+                    break;
+                case tSqrt:
+                    temp = sqrt(outputPrevOperand);
+                    break;
+                case tExtTok:
+                    if ((uint8_t)(outputPrevOperand >> 16) != tRemainder) {
+                        return E_ICE_ERROR;
+                    }
+                    temp = outputPrevOperand % outputPrevPrevOperand;
                     break;
                 default:
-                    temp = sqrt(outputPrev->operand);
+                    return E_ICE_ERROR;
             }
             
             // And remove everything
             (&outputPtr[loopIndex - index])->operand = temp;
-            memcpy(&outputPtr[loopIndex - index + 1], &outputPtr[loopIndex+1], (ice.outputElements-1)*4);
-            ice.outputElements -= index;
+            memcpy(&outputPtr[loopIndex - index + 1], &outputPtr[loopIndex+1], (outputElements - 1) * 4);
+            outputElements -= index;
             loopIndex -= index - 1;
 DontDeleteFunction:;
         }
     }
     
     // Check if the expression is valid
-    if (!ice.outputElements) {
+    if (!outputElements) {
         return E_SYNTAX;
     }
     
-    return parsePostFixFromIndexToIndex(0, ice.outputElements - 1);
+    return parsePostFixFromIndexToIndex(0, outputElements - 1);
 
     // Duplicated function opt
 stackToOutput:
     // Move entire stack to output
     while (stackElements) {
-        outputCurr = &outputPtr[ice.outputElements++];
+        outputCurr = &outputPtr[outputElements++];
         stackPrev = &stackPtr[--stackElements];
         
         // Don't move the left paren...
         if (stackPrev->type == TYPE_FUNCTION && (uint8_t)stackPrev->operand == tLParen) {
-            ice.outputElements--;
+            outputElements--;
             continue;
         }
         
         outputCurr->type = stackPrev->type;
+        outputCurr->mask = stackPrev->mask;
         temp = stackPrev->operand;
         
         // If it's a function, add the amount of arguments as well
@@ -419,7 +496,7 @@ stackToOutput:
 uint8_t parsePostFixFromIndexToIndex(uint24_t startIndex, uint24_t endIndex) {
     element_t *outputCurr;
     element_t *outputPtr = (element_t*)outputStack;
-    uint8_t outputType, temp, operandDepth = 0;
+    uint8_t outputType, temp, operandDepth = 0, AnsDepth = 0;
     uint24_t outputOperand, loopIndex, tempIndex = 0, operand1Index, operand2Index, amountOfStackElements;
     
     // Set some variables
@@ -520,6 +597,12 @@ uint8_t parsePostFixFromIndexToIndex(uint24_t startIndex, uint24_t endIndex) {
                 return E_SYNTAX;
             }
             
+            if (AnsDepth > 3) {
+                // We need to push HL since it isn't used in the next operator/function
+                (&outputPtr[tempIndex])->type = TYPE_CHAIN_PUSH;
+                PushHLDE();
+            }
+            
             operand2Index = getIndexOffset(-2);
             operand1Index = getIndexOffset(-3);
             
@@ -540,14 +623,21 @@ uint8_t parsePostFixFromIndexToIndex(uint24_t startIndex, uint24_t endIndex) {
                 outputCurr->type = TYPE_STRING;
                 outputCurr->operand = (outputPrevPrev->operand == TempString2 || outputPrev->operand == TempString1) ? TempString2 : TempString1;
             } else {
-                operandDepth = 3;
+                AnsDepth = 1;
             }
             tempIndex = loopIndex;
+            outputCurr->type = TYPE_CHAIN_ANS;
         }
         
         else if (outputType == TYPE_FUNCTION) {
             // Use this to cleanup the function after parsing
             uint8_t amountOfArguments = (uint8_t)(outputCurr->operand >> 8);
+            
+            if (AnsDepth > 1+amountOfArguments) {
+                // We need to push HL since it isn't used in the next operator/function
+                (&outputPtr[tempIndex])->type = TYPE_CHAIN_PUSH;
+                PushHLDE();
+            }
             
             if ((temp = parseFunction(loopIndex)) != VALID) {
                 return temp;
@@ -561,8 +651,13 @@ uint8_t parsePostFixFromIndexToIndex(uint24_t startIndex, uint24_t endIndex) {
             }
             
             // Check chain push/ans
-            operandDepth = 3;
+            AnsDepth = 1;
             tempIndex = loopIndex;
+            outputCurr->type = TYPE_CHAIN_ANS;
+        }
+        
+        if (AnsDepth) {
+            AnsDepth++;
         }
         
         // Check if the next or next next operand is either a function operator
@@ -592,7 +687,7 @@ static uint8_t functionI(uint24_t token) {
         // Get the output name
         if (!ice.gotName) {
             uint8_t a = 0;
-            while ((int)(token = __getc()) != EOF && (uint8_t)token != tEnter && a < 9) {
+            while ((int)(token = _getc(ice.inPrgm)) != EOF && (uint8_t)token != tEnter && a < 9) {
                 ice.outName[a++] = (uint8_t)token;
             }
             ice.gotName = true;
@@ -613,22 +708,22 @@ static uint8_t functionI(uint24_t token) {
             ice.programPtr += 7;
             
             // Icon should start with a "
-            if ((uint8_t)__getc() != tString) {
+            if ((uint8_t)_getc(ice.inPrgm) != tString) {
                 return E_WRONG_ICON;
             }
 
             // Get hexadecimal
             do {
                 uint8_t tok;
-                if ((tok = IsHexadecimal(__getc())) == 16) {
+                if ((tok = IsHexadecimal(_getc(ice.inPrgm))) == 16) {
                     return E_INVALID_HEX;
                 }
                 *ice.programPtr++ = colorTable[tok];
             } while (++b);
             
             // Move on to the description
-            if ((uint8_t)(token = __getc()) == tString) {
-                token = __getc();
+            if ((uint8_t)(token = _getc(ice.inPrgm)) == tString) {
+                token = _getc(ice.inPrgm);
             }
 
             if ((int)token != EOF) {
@@ -637,12 +732,12 @@ static uint8_t functionI(uint24_t token) {
                 }
                 
                 // Check if there is a description
-                if ((uint8_t)(token = __getc()) == tii) {
+                if ((uint8_t)(token = _getc(ice.inPrgm)) == tii) {
 #ifndef COMPUTER_ICE
                     uint8_t *dataPtr = ti_GetDataPtr(ice.inPrgm);
                     
                     // Grab description
-                    while ((int)(token = __getc()) != EOF && (uint8_t)token != tEnter) {
+                    while ((int)(token = _getc(ice.inPrgm)) != EOF && (uint8_t)token != tEnter) {
                         uint24_t strLength;
                         const char *dataString;
                         uint8_t tokSize;
@@ -654,20 +749,20 @@ static uint8_t functionI(uint24_t token) {
                         
                         // If it's a 2-byte token, we also need to get the second byte of it
                         if (tokSize == 2) {
-                            __getc();
+                            _getc(ice.inPrgm);
                         }
                     }
 #else
-                    while ((int)(token = __getc()) != EOF && (uint8_t)token != tEnter) {
+                    while ((int)(token = _getc(ice.inPrgm)) != EOF && (uint8_t)token != tEnter) {
                         const uint8_t token2byte[] = { 0x5C, 0x5D, 0x5E, 0x60, 0x61, 0x62, 0x63, 0x7E, 0xBB, 0xAA, 0xEF };
                         *ice.programPtr++ = (uint8_t)token;
                         if (memchr(token2byte, token, sizeof token2byte)) {
-                            __getc();
+                            _getc(ice.inPrgm);
                         }
                     }
 #endif
                 } else if ((int)token != EOF) {
-                    setCurrentOffset(-1, SEEK_CUR);
+                    _seek(-1, SEEK_CUR, ice.inPrgm);
                 }
             }
 
@@ -712,7 +807,7 @@ static uint8_t functionIf(uint24_t token) {
     uint8_t *IfStartAddr, *IfElseAddr = NULL;
     uint24_t tempDataOffsetElements, tempDataOffsetElements2;
     
-    if ((int)(token = __getc()) != EOF && token != tEnter) {
+    if ((int)(token = _getc(ice.inPrgm)) != EOF && token != tEnter) {
         // Parse the argument
         if ((res = parseExpression(token)) != VALID) {
             return res;
@@ -902,7 +997,7 @@ uint8_t functionRepeat(uint24_t token) {
     uint16_t RepeatCondStart, RepeatProgEnd;
     uint8_t *RepeatCodeStart, *RepeatCondEnd, res;
     
-    RepeatCondStart = getCurrentOffset();
+    RepeatCondStart = _tell(ice.inPrgm);
     RepeatCodeStart = ice.programPtr;
     tempCurrentLine = ice.currentLine;
     
@@ -920,14 +1015,14 @@ uint8_t functionRepeat(uint24_t token) {
     }
 
     // Remind where the "End" is
-    RepeatProgEnd = getCurrentOffset();
+    RepeatProgEnd = _tell(ice.inPrgm);
     WhileRepeatCondStart = ice.programPtr;
     
     // Parse the condition
-    setCurrentOffset(RepeatCondStart, SEEK_SET);
+    _seek(RepeatCondStart, SEEK_SET, ice.inPrgm);
     tempCurrentLine2 = ice.currentLine;
     ice.currentLine = tempCurrentLine;
-    if ((res = parseExpression(__getc())) != VALID) {
+    if ((res = parseExpression(_getc(ice.inPrgm))) != VALID) {
         return res;
     }
     ice.currentLine = tempCurrentLine2;
@@ -937,7 +1032,7 @@ uint8_t functionRepeat(uint24_t token) {
     }
     
     // And set the pointer after the "End"
-    setCurrentOffset(RepeatProgEnd, SEEK_SET);
+    _seek(RepeatProgEnd, SEEK_SET, ice.inPrgm);
     optimizeZeroCarryFlagOutput();
     RepeatCondEnd = ice.programPtr;
 
@@ -983,11 +1078,11 @@ uint8_t functionRepeat(uint24_t token) {
 static uint8_t functionReturn(uint24_t token) {
     uint8_t res;
     
-    if ((int)(token = __getc()) == EOF || (uint8_t)token == tEnter) {
+    if ((int)(token = _getc(ice.inPrgm)) == EOF || (uint8_t)token == tEnter) {
         RET();
         ice.lastTokenIsReturn = true;
     } else if (token == tIf) {
-        if ((res = parseExpression(__getc())) != VALID) {
+        if ((res = parseExpression(_getc(ice.inPrgm))) != VALID) {
             return res;
         }
         if (expr.outputIsString) {
@@ -1018,8 +1113,8 @@ static uint8_t functionDisp(uint24_t token) {
     do {
         uint8_t res;
 
-        if ((uint8_t)(token = __getc()) == tii) {
-            if ((int)(token = __getc()) == EOF) {
+        if ((uint8_t)(token = _getc(ice.inPrgm)) == tii) {
+            if ((int)(token = _getc(ice.inPrgm)) == EOF) {
                 ice.tempToken = tEnter;
             } else {
                 ice.tempToken = (uint8_t)token;
@@ -1054,7 +1149,7 @@ static uint8_t functionOutput(uint24_t token) {
     
     // Get the first argument = column
     expr.inFunction = true;
-    if ((res = parseExpression(__getc())) != VALID) {
+    if ((res = parseExpression(_getc(ice.inPrgm))) != VALID) {
         return res;
     }
     
@@ -1070,7 +1165,7 @@ static uint8_t functionOutput(uint24_t token) {
         
         // Get the second argument = row
         expr.inFunction = true;
-        if ((res = parseExpression(__getc())) != VALID) {
+        if ((res = parseExpression(_getc(ice.inPrgm))) != VALID) {
             return res;
         }
         if (expr.outputIsString) {
@@ -1106,7 +1201,7 @@ static uint8_t functionOutput(uint24_t token) {
         
         // Get the second argument = row
         expr.inFunction = true;
-        if ((res = parseExpression(__getc())) != VALID) {
+        if ((res = parseExpression(_getc(ice.inPrgm))) != VALID) {
             return res;
         }
         if (expr.outputIsString) {
@@ -1125,7 +1220,7 @@ static uint8_t functionOutput(uint24_t token) {
     
     // Get the third argument = output thing
     if (ice.tempToken == tComma) {
-        if ((res = parseExpression(__getc())) != VALID) {
+        if ((res = parseExpression(_getc(ice.inPrgm))) != VALID) {
             return res;
         }
         
@@ -1157,13 +1252,6 @@ static uint8_t functionClrHome(uint24_t token) {
 }
 
 static uint8_t functionFor(uint24_t token) {
-    
-    
-    
-    
-    
-    
-    
     return E_UNIMPLEMENTED;
 }
 
@@ -1172,7 +1260,7 @@ static uint8_t functionPrgm(uint24_t token) {
 }
 
 static uint8_t functionCustom(uint24_t token) {
-    uint8_t tok = (uint8_t)(token = __getc());
+    uint8_t tok = (uint8_t)(token = _getc(ice.inPrgm));
     
     // CompilePrgm(
     if ((uint8_t)token == 0x0D) {
@@ -1180,12 +1268,16 @@ static uint8_t functionCustom(uint24_t token) {
         uint8_t a = 0, res;
         ti_var_t tempProg = ice.inPrgm;
         
-        while ((int)(token = __getc()) != EOF && (tok = (uint8_t)token) != tEnter && a < 9) {
+#ifdef COMPUTER_ICE
+        return E_NO_SUBPROG;
+#endif
+        
+        while ((int)(token = _getc(ice.inPrgm)) != EOF && (tok = (uint8_t)token) != tEnter && a < 9) {
             tempName[a++] = (char)tok;
         }
         tempName[a] = 0;
         
-        if ((ice.inPrgm = ti_OpenVar(tempName, "r", TI_PRGM_TYPE))) {
+        if ((ice.inPrgm = _open(tempName))) {
 #ifndef COMPUTER_ICE
             char buf[30];
             displayLoadingBarFrame();
@@ -1196,8 +1288,6 @@ static uint8_t functionCustom(uint24_t token) {
             res = parseProgram();
             displayLoadingBarFrame();
             ti_Close(ice.inPrgm);
-#else
-            res = parseProgram();
 #endif
         } else {
             return E_PROG_NOT_FOUND;
@@ -1210,11 +1300,7 @@ static uint8_t functionCustom(uint24_t token) {
     else if ((uint8_t)token == 0x0C) {
         // Add the goto to the stack, and skip the line
         *ice.GotoPtr++ = (uint24_t)ice.programPtr;
-#ifndef COMPUTER_ICE
-        *ice.GotoPtr++ = (uint24_t)ti_GetDataPtr(ice.inPrgm);
-#else
-        *ice.GotoPtr++ = ftell(ice.inPrgm);
-#endif
+        *ice.GotoPtr++ = _tell(ice.inPrgm);
         CALL(0);
         skipLine();
         return VALID;
@@ -1226,11 +1312,7 @@ static uint8_t functionCustom(uint24_t token) {
 static uint8_t functionLbl(uint24_t token) {
     // Add the label to the stack, and skip the line
     *ice.LblPtr++ = (uint24_t)ice.programPtr;
-#ifndef COMPUTER_ICE
-    *ice.LblPtr++ = (uint24_t)ti_GetDataPtr(ice.inPrgm);
-#else
-    *ice.LblPtr++ = ftell(ice.inPrgm);
-#endif
+    *ice.LblPtr++ = _tell(ice.inPrgm);
     skipLine();
     return VALID;
 }
@@ -1238,11 +1320,7 @@ static uint8_t functionLbl(uint24_t token) {
 static uint8_t functionGoto(uint24_t token) {
     // Add the goto to the stack, and skip the line
     *ice.GotoPtr++ = (uint24_t)ice.programPtr;
-#ifndef COMPUTER_ICE
-    *ice.GotoPtr++ = (uint24_t)ti_GetDataPtr(ice.inPrgm);
-#else
-    *ice.GotoPtr++ = ftell(ice.inPrgm);
-#endif
+    *ice.GotoPtr++ = _tell(ice.inPrgm);
     JP(0);
     skipLine();
     return VALID;
@@ -1256,8 +1334,8 @@ static uint8_t functionPause(uint24_t token) {
     } else {
         uint8_t res;
         
-        setCurrentOffset(-1, SEEK_CUR);
-        if ((res = parseExpression(__getc())) != VALID) {
+        _seek(-1, SEEK_CUR, ice.inPrgm);
+        if ((res = parseExpression(_getc(ice.inPrgm))) != VALID) {
             return res;
         }
         
@@ -1285,8 +1363,8 @@ static uint8_t functionInput(uint24_t token) {
 
 static uint8_t functionBB(uint24_t token) {
     // Asm(
-    if ((uint8_t)(token = __getc()) == tAsm) {
-        while ((int)(token = __getc()) != EOF && (uint8_t)token != tEnter && (uint8_t)token != tRParen) {
+    if ((uint8_t)(token = _getc(ice.inPrgm)) == tAsm) {
+        while ((int)(token = _getc(ice.inPrgm)) != EOF && (uint8_t)token != tEnter && (uint8_t)token != tRParen) {
             uint8_t tok1, tok2;
             
             // Get hexadecimal 1
@@ -1295,20 +1373,20 @@ static uint8_t functionBB(uint24_t token) {
             }
             
             // Get hexadecimal 2
-            if ((tok2 = IsHexadecimal(__getc())) == 16) {
+            if ((tok2 = IsHexadecimal(_getc(ice.inPrgm))) == 16) {
                 return E_INVALID_HEX;
             }
             
             *ice.programPtr++ = (tok1 << 4) + tok2;
         }
         if ((uint8_t)token == tRParen) {
-            if ((uint8_t)__getc() != tEnter) {
+            if ((uint8_t)_getc(ice.inPrgm) != tEnter) {
                 return E_SYNTAX;
             }
         }
     } else {
-        setCurrentOffset(-2, SEEK_CUR);
-        return parseExpression(__getc());
+        _seek(-2, SEEK_CUR, ice.inPrgm);
+        return parseExpression(_getc(ice.inPrgm));
     }
     return VALID;
 }
@@ -1336,7 +1414,7 @@ void optimizeZeroCarryFlagOutput(void) {
 void skipLine(void) {
     uint24_t token;
     
-    while ((int)(token = __getc()) != EOF && (uint8_t)token != tEnter);
+    while ((int)(token = _getc(ice.inPrgm)) != EOF && (uint8_t)token != tEnter);
 }
 
 uint8_t (*functions[256])(uint24_t) = {
@@ -1346,12 +1424,12 @@ uint8_t (*functions[256])(uint24_t) = {
     tokenUnimplemented, //3
     tokenWrongPlace,    //4
     tokenUnimplemented, //5
-    tokenUnimplemented, //6
-    tokenUnimplemented, //7
-    parseExpression,    //8
+    tokenWrongPlace,    //6
+    parseExpression,    //7
+    tokenWrongPlace,    //8
     parseExpression,    //9
     tokenUnimplemented, //10
-    tokenUnimplemented, //11
+    parseExpression,    //11
     tokenUnimplemented, //12
     tokenUnimplemented, //13
     tokenUnimplemented, //14
@@ -1516,7 +1594,7 @@ uint8_t (*functions[256])(uint24_t) = {
     parseExpression,    //173
     tokenUnimplemented, //174
     tokenUnimplemented, //175
-    tokenUnimplemented, //176
+    parseExpression,    //176
     tokenUnimplemented, //177
     tokenUnimplemented, //178
     parseExpression,    //179
@@ -1580,7 +1658,7 @@ uint8_t (*functions[256])(uint24_t) = {
     tokenUnimplemented, //237
     tokenUnimplemented, //238
     parseExpression,    //239
-    tokenUnimplemented, //240
+    parseExpression,    //240
     tokenUnimplemented, //241
     tokenUnimplemented, //242
     tokenUnimplemented, //243

@@ -1,8 +1,6 @@
 #ifndef ERRORS_H
 #define ERRORS_H
 
-#include <stdint.h>
-
 #define E_UNIMPLEMENTED    0
 #define E_WRONG_PLACE      1
 #define E_NO_CONDITION     2
@@ -19,6 +17,7 @@
 #define E_NO_LABEL         13
 #define E_UNKNOWN_C        14
 #define E_PROG_NOT_FOUND   15
+#define E_NO_SUBPROG       16
 
 #define E_VALID            254
 #define VALID              255

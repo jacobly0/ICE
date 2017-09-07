@@ -1,29 +1,6 @@
 #ifndef MAIN_H
 #define MAIN_H
 
-#include <stdbool.h>
-#include <stdint.h>
-
-#ifndef COMPUTER_ICE
-
-#define w24(x, y) (*(uint24_t*)(x) = y)
-#define r24(x) (*(uint24_t*)(x))
-#include <fileioc.h>
-#define resetFileOrigin() ti_Rewind(ice.inPrgm)
-
-#else
-    
-#include <stdio.h>
-typedef uint32_t uint24_t;
-typedef FILE* ti_var_t;
-#define resetFileOrigin() fseek(ice.inPrgm, 0x4A, SEEK_SET)
-#define ti_OpenVar(x,y,z)  fopen(x,y)
-
-void w24(void *x, uint32_t val);
-uint32_t r24(void *x);
-
-#endif
-
 #define STACK_SIZE 25
 
 typedef struct {
@@ -40,26 +17,24 @@ typedef struct {
     uint8_t  CRoutinesStack[100];                           // The address of the relocation jumps
     uint8_t  tempToken;                                     // Used for functions, i.e. For(, where an argument can stop with either a comma or a parentheses
     uint8_t  stackDepth;                                    // Used for compiling arguments of C functions
+    uint8_t  amountOfOSLocationsUsed;                       // Used for the amount of OS lists and strings that are used
     
     uint24_t *dataOffsetStack[500];                         // Stack of the address to point to the data, which needs to be changed after compiling
     uint24_t dataOffsetElements;                            // Amount of stack elements of above
     uint24_t currentLine;                                   // The amount of parsed lines, useful for displaying it when an error occurs
     uint24_t programSize;                                   // Size of the output program
-#ifndef COMPUTER_ICE
-    uint8_t *programAddrStart;                              // The pointer to the start of the program
-#endif
-    uint24_t outputElements;                                // 
     uint24_t *stack[STACK_SIZE*5];                          // Stacks for compiling arguments
     uint24_t *stackStart;                                   // Start of the stack
     uint24_t LblStack[200];                                 // Label stack
     uint24_t *LblPtr;                                       // Pointer to the label stack
     uint24_t GotoStack[200];                                // Goto stack
     uint24_t *GotoPtr;                                      // Pointer to the goto stack
+    uint24_t OSLists[6];                                    // Used to allocate OS lists
+    uint24_t OSStrings[10];                                 // Used to allocate OS string
+    uint24_t tempStrings[2];                                // Used to allocate temp strings
     
     ti_var_t inPrgm;                                        // Used for getting tokens
-#ifdef COMPUTER_ICE
     ti_var_t inPrgm2;                                       // Another input program
-#endif
     ti_var_t outPrgm;                                       // Used for writing bytes
     
     bool     gotName;                                       // Already got the output name
@@ -82,9 +57,7 @@ typedef struct {
     
     bool     usedAlreadyPause;                              // Only once the "Pause " routine in the program data
     uint24_t PauseAddr;                                     // Address of the "Pause " routine in the program data
-#ifdef COMPUTER_ICE
-    int      programLength;                                 // Size of input program
-#endif
+    uint24_t programLength;                                 // Size of input program
 } ice_t;
 
 typedef struct {

@@ -1,12 +1,6 @@
 #ifndef FUNCTIONS_H
 #define FUNCTIONS_H
 
-#include <stdint.h>
-
-#ifdef COMPUTER_ICE
-typedef uint32_t uint24_t;
-#endif
-
 #define RET_A         (1<<7)
 #define RET_HL        (1<<5)
 #define RET_NONE      (0)

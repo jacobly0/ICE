@@ -1,3 +1,4 @@
+#include "defines.h"
 #include "stack.h"
 
 #include "parse.h"
@@ -7,15 +8,7 @@
 #include "operator.h"
 #include "functions.h"
 #include "routines.h"
-#include "gfx/gfx_logos.h"
-
-#include <stdbool.h>
-#include <stddef.h>
-#include <stdint.h>
-#include <math.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
+//#include "gfx/gfx_logos.h"
 
 static uint24_t *p1;
 static uint24_t *p2;

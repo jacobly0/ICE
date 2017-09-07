@@ -1,3 +1,4 @@
+#include "defines.h"
 #include "routines.h"
 
 #include "main.h"
@@ -7,20 +8,7 @@
 #include "parse.h"
 #include "output.h"
 #include "operator.h"
-#include "gfx/gfx_logos.h"
-
-#ifndef COMPUTER_ICE
-#include <graphx.h>
-#endif
-
-#include <tice.h>
-#include <stdbool.h>
-#include <stddef.h>
-#include <stdint.h>
-#include <math.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
+//#include "gfx/gfx_logos.h"
 
 #define LB_X 40
 #define LB_Y 200
@@ -65,7 +53,7 @@ uint8_t IsHexadecimal(uint24_t token) {
 
 bool CheckEOL(void) {
     uint24_t token;
-    if ((int)(token = __getc()) == EOF || (uint8_t)token == tEnter) {
+    if ((int)(token = _getc(ice.inPrgm)) == EOF || (uint8_t)token == tEnter) {
         return true;
     }
     return false;
@@ -87,11 +75,11 @@ void displayLoadingBarFrame(void) {
     gfx_FillRectangle_NoClip(LB_X + LB_W - LB_R, LB_Y - LB_R + 1, LB_R + 1, LB_H - 1);
 }
 
-void displayLoadingBar(void) {
+void displayLoadingBar(ti_var_t inPrgm) {
     gfx_SetClipRegion(
         LB_X - LB_R + 1, 
         LB_Y - LB_R, 
-        LB_X - LB_R + 2 + ti_Tell(ice.inPrgm) * (LB_W + LB_R - 1 + LB_R - 1) / ti_GetSize(ice.inPrgm), 
+        LB_X - LB_R + 2 + ti_Tell(inPrgm) * (LB_W + LB_R - 1 + LB_R - 1) / ti_GetSize(inPrgm), 
         LB_Y + LB_R
     );
     gfx_SetColor(4);
@@ -100,10 +88,10 @@ void displayLoadingBar(void) {
     gfx_FillRectangle(LB_X, LB_Y - LB_R + 1, LB_W, LB_H);
 }
 
-uint24_t getNextToken(void) {
+uint24_t getNextToken(ti_var_t inPrgm) {
     // Display loading bar
-    displayLoadingBar();
-    return ti_GetC(ice.inPrgm);
+    displayLoadingBar(inPrgm);
+    return ti_GetC(inPrgm);
 }
 
 void setCurrentOffset(uint24_t offset, uint24_t origin) {
@@ -116,19 +104,11 @@ uint24_t getCurrentOffset(void) {
 
 #else
     
-uint24_t getNextToken(void) {
-    if (ftell(ice.inPrgm) < ice.programLength - 2) {
-        return getc(ice.inPrgm);
+uint24_t getNextToken(ti_var_t inPrgm) {
+    if (_tell(inPrgm) < ice.programLength - 2) {
+        return _getc(inPrgm);
     }
     return EOF;
-}
-
-void setCurrentOffset(uint24_t offset, uint24_t origin) {
-    fseek(ice.inPrgm, offset, origin);
-}
-
-uint24_t getCurrentOffset(void) {
-    return ftell(ice.inPrgm);
 }
 
 #endif

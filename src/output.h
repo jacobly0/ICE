@@ -17,10 +17,12 @@
 #define _os_GetCSC    0x021D3C
 #define _SetHLUTo0    0x021D8C
 #define _DispHL       0x021EE0
+
 #define __strcat      0x0000C0
 #define __strcpy      0x0000CC
 #define __strlen      0x0000D4
 #define __idvrmu      0x000144
+#define __imul_b      0x000150
 #define __imuls       0x000154
 
 #define OP_LD_B       0x06

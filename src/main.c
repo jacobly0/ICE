@@ -1,3 +1,4 @@
+#include "defines.h"
 #include "main.h"
 
 #include "functions.h"
@@ -7,22 +8,7 @@
 #include "output.h"
 #include "operator.h"
 #include "routines.h"
-#include "gfx/gfx_logos.h"
-
-#ifndef COMPUTER_ICE
-#include <fileioc.h>
-#include <graphx.h>
-#include <debug.h>
-#endif
-
-#include <tice.h>
-#include <stdbool.h>
-#include <stddef.h>
-#include <stdint.h>
-#include <math.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
+//#include "gfx/gfx_logos.h"
 
 ice_t ice;
 expr_t expr;
@@ -52,7 +38,6 @@ uint32_t r24(void *x) {
 #ifndef COMPUTER_ICE
 void main(void) {
 #else
-void export_program(const char *name, uint8_t *data, size_t size);
 int main(int argc, char **argv) {
 #endif
     uint8_t a = 0, selectedProgram = 0, key, amountOfPrograms, res, *hooksPtr, *search_pos = NULL;
@@ -146,12 +131,6 @@ int main(int argc, char **argv) {
     
     gfx_PrintStringXY("Prescanning...", 1, iceMessageLine);
     displayLoadingBarFrame();
-
-    // Find program
-    ice.inPrgm = ti_OpenVar(var_name, "r", TI_PRGM_TYPE);
-    if (!ice.inPrgm) {
-        goto stop;
-    }
 #else
     var_name = argv[1];
     if (argc != 2) {
@@ -159,22 +138,22 @@ int main(int argc, char **argv) {
         exit(1);
     }
     fprintf(stdout, "%s\nPrescanning...\n", infoStr);
-    ice.inPrgm = fopen(var_name, "r");
-    ice.inPrgm2 = fopen(var_name, "r");
+#endif
+
+    ice.inPrgm = _open(var_name);
+    ice.inPrgm2 = _open(var_name);
     if (!ice.inPrgm) {
+#ifdef COMPUTER_ICE
         fprintf(stdout, "Can't find input program");
+#endif
         goto stop;
     }
-    
-    fseek(ice.inPrgm2, 0, SEEK_END);
-    ice.programLength = ftell(ice.inPrgm2);
-    
-#endif
+    _seek(0, SEEK_END, ice.inPrgm2);
+    ice.programLength = _tell(ice.inPrgm2);
     
     // Setup pointers and header
 #ifndef COMPUTER_ICE
     ice.programData    = (uint8_t*)0xD52C00;
-    ice.programAddrStart = ti_GetDataPtr(ice.inPrgm);
 #else
     ice.programData    = malloc(50000);
 #endif
@@ -199,7 +178,6 @@ int main(int argc, char **argv) {
     ice.programSize = (uintptr_t)ice.programPtr - (uintptr_t)ice.programData;
    
     // Do the stuff
-    resetFileOrigin();
 #ifndef COMPUTER_ICE
     sprintf(buf, "Compiling program %s...", var_name);
     gfx_PrintStringXY(buf, 1, iceMessageLine);
@@ -233,52 +211,42 @@ int main(int argc, char **argv) {
         
         // Find all the matching Goto's/Lbl's
         while (ice.GotoPtr != ice.GotoStack) {
-            uint24_t GotoAddr  = *--ice.GotoPtr;
-            uint24_t GotoPtr = *--ice.GotoPtr;
-            uint24_t *temp;
+            uint24_t *temp, GotoAddr;
             
-#ifndef COMPUTER_ICE
-            setCurrentOffset(GotoAddr - (uint24_t)ice.programAddrStart, SEEK_SET);
-#endif
+            _seek(*--ice.GotoPtr, SEEK_SET, ice.inPrgm);
+            GotoAddr = *--ice.GotoPtr;
             
-            // Check for every label if it matches the Goto
+            // Check all the labels
             for (temp = ice.LblStack; temp < ice.LblPtr;) {
-                uint24_t LblPtr = *temp++;
+                int tok1, tok2;
                 uint24_t LblAddr = *temp++;
                 
-                // Compare the Goto and the Lbl labels
-#ifndef COMPUTER_ICE
-                if (!memcmp((char*)GotoAddr, (char*)LblAddr, (uint24_t)strchr((char*)LblAddr, tEnter) - LblAddr)) {
-                    w24(GotoPtr + 1, LblPtr - (uint24_t)ice.programData + PRGM_START);
+                _seek(*temp++, SEEK_SET, ice.inPrgm2);
+                
+                // Check if the labels are the same
+                do {
+                    tok1 = _getc(ice.inPrgm);
+                    tok2 = _getc(ice.inPrgm2);
+                } while ((uint8_t)tok1 != tEnter && tok1 != EOF && (uint8_t)tok2 != tEnter && tok2 != EOF && (uint8_t)tok1 == (uint8_t)tok2);
+                
+                if (((uint8_t)tok1 == tEnter || tok1 == EOF) && ((uint8_t)tok2 == tEnter || tok2 == EOF)) {
+                    w24((uint8_t*)GotoAddr + 1, LblAddr - (uint24_t)ice.programData + PRGM_START);
                     goto findNextLabel;
                 }
-#else
-                int tempTok;
-
-                fseek(ice.inPrgm2, LblAddr, SEEK_SET);
-                
-                while ((tempTok = fgetc(ice.inPrgm)) != tEnter) {
-                    if (tempTok != fgetc(ice.inPrgm2)) {
-                        goto labelNotTrue;
-                    }
-                }
-                w24((uint8_t*)GotoPtr + 1, LblPtr - (uint24_t)ice.programData + PRGM_START);
-                goto findNextLabel;
-labelNotTrue:;
-#endif
             }
             
-            // Lbl not found
+            // Label not found :(
             displayError(E_NO_LABEL);
             goto stop;
 findNextLabel:;
         }
-        
         totalSize = ice.programSize + programDataSize + 3;
         
+        ice.outPrgm = _new(ice.outName);
+        
 #ifndef COMPUTER_ICE
-        ice.outPrgm = ti_OpenVar(ice.outName, "w", TI_PPRGM_TYPE);
         if (!ice.outPrgm) {
+            gfx_PrintStringXY("Failed to open output file", 1, iceMessageLine);
             goto stop;
         }
         
@@ -305,6 +273,11 @@ findNextLabel:;
         sprintf(buf, "Output size: %u bytes", totalSize);
         gfx_PrintStringXY(buf, 1, iceMessageLine);
 #else
+        if (!ice.outPrgm) {
+            fprintf(stdout, "Failed to open output file");
+            goto stop;
+        }
+        
         uint8_t *export = malloc(0x10000);
         
         // Write ASM header
@@ -350,12 +323,10 @@ stop:
 void preScanProgram(void) {
     uint24_t token;
     
-#ifdef COMPUTER_ICE
-    resetFileOrigin();
-#endif
+    _rewind(ice.inPrgm);
     
     // Scan the entire program
-    while ((int)(token = __getc()) != EOF) {
+    while ((int)(token = _getc(ice.inPrgm)) != EOF) {
         uint8_t tok = (uint8_t)token;
         
         if (tok == tString) {
@@ -366,33 +337,39 @@ void preScanProgram(void) {
             skipLine();
         } else if (tok == tStore) {
             expr.inString = false;
+        } else if (tok == tVarLst && !expr.inString) {
+            if (!ice.OSLists[token = _getc(ice.inPrgm)]) {
+                ice.OSLists[token] = pixelShadow + 2000 * (ice.amountOfOSLocationsUsed++);
+            }
+        } else if (tok == tVarStrng && !expr.inString) {
+            if (!ice.OSStrings[token = _getc(ice.inPrgm)]) {
+                ice.OSStrings[token] = pixelShadow + 2000 * (ice.amountOfOSLocationsUsed++);
+            }
         } else if (tok == tVarOut && !expr.inString) {
             // CompilePrgm(
-            if ((uint8_t)__getc() == 0x0D) {
+            if ((uint8_t)_getc(ice.inPrgm) == 0x0D) {
                 char tempName[9];
                 uint8_t a = 0;
                 ti_var_t tempProg = ice.inPrgm;
-                
-                while ((int)(token = __getc()) != EOF && (tok = (uint8_t)token) != tEnter && a < 9) {
+
+                while ((int)(token = _getc(ice.inPrgm)) != EOF && (tok = (uint8_t)token) != tEnter && a < 9) {
                     tempName[a++] = (char)tok;
                 }
                 tempName[a] = 0;
                 
-                if ((ice.inPrgm = ti_OpenVar(tempName, "r", TI_PRGM_TYPE))) {
+                if ((ice.inPrgm = _open(tempName))) {
 #ifndef COMPUTER_ICE
                     displayLoadingBarFrame();
                     preScanProgram();
                     ti_Close(ice.inPrgm);
                     displayLoadingBarFrame();
-#else
-                    preScanProgram();
 #endif
                 }
                 ice.inPrgm = tempProg;
             }
         } else if (tok == tDet && !expr.inString) {
-            uint8_t tok1 = __getc();
-            uint8_t tok2 = __getc();
+            uint8_t tok1 = _getc(ice.inPrgm);
+            uint8_t tok2 = _getc(ice.inPrgm);
 
             // Invalid det( command
             if (tok1 < t0 || tok1 > t9) {
@@ -415,5 +392,5 @@ void preScanProgram(void) {
     }
     
     // Well, we scanned the entire program, so let's rewind it
-    resetFileOrigin();
+    _rewind(ice.inPrgm);
 }
