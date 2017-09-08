@@ -27,8 +27,10 @@ const uint8_t operatorPrecedence[]  = {0, 2, 1, 1, 3, 3, 3, 3, 3, 3, 5, 5, 4, 4}
 const uint8_t operatorPrecedence2[] = {6, 2, 1, 1, 3, 3, 3, 3, 3, 3, 5, 5, 4, 4};
 const uint8_t operatorCanSwap[]     = {0, 1, 1, 1, 1, 0, 0, 0, 0, 1, 1, 0, 1, 0};        // Used for operators which can swap the operands, i.e. A*B = B*A
 
+static element_t *entry0;
 static element_t *entry1;
 static element_t *entry2;
+static uint24_t entry0_operand;
 static uint24_t entry1_operand;
 static uint24_t entry2_operand;
 static uint8_t oper;
@@ -120,6 +122,7 @@ uint24_t executeOperator(uint24_t operand1, uint24_t operand2, uint8_t operator)
 }
 
 static void getEntryOperands() {
+    entry0_operand = entry0->operand;
     entry1_operand = entry1->operand;
     entry2_operand = entry2->operand;
 }
@@ -132,7 +135,7 @@ static void swapEntries() {
     getEntryOperands();
 }
 
-uint8_t parseOperator(element_t *outputPrevPrev, element_t *outputPrev, element_t *outputCurr) {
+uint8_t parseOperator(element_t *outputPrevPrevPrev, element_t *outputPrevPrev, element_t *outputPrev, element_t *outputCurr) {
     uint8_t typeMasked1 = outputPrevPrev->type;
     uint8_t typeMasked2 = outputPrev->type;
     oper = (uint8_t)outputCurr->operand;
@@ -142,7 +145,7 @@ uint8_t parseOperator(element_t *outputPrevPrev, element_t *outputPrev, element_
             (typeMasked1 == TYPE_NUMBER || typeMasked1 == TYPE_CHAIN_ANS)
         ) ||
         (oper == tStore &&
-            ((typeMasked2 != TYPE_VARIABLE && typeMasked2 != TYPE_OS_STRING) ||
+            ((typeMasked2 != TYPE_VARIABLE && typeMasked2 != TYPE_OS_STRING && !(typeMasked2 == TYPE_FUNCTION && outputPrev->operand == 0x010108)) ||
              (typeMasked2 == TYPE_OS_STRING && typeMasked1 < TYPE_STRING)
             )
         ) ||
@@ -158,7 +161,17 @@ uint8_t parseOperator(element_t *outputPrevPrev, element_t *outputPrev, element_
     expr.AnsSetCarryFlag = false;
     expr.AnsSetCarryFlagReversed = false;
     
-    if (typeMasked1 == TYPE_CHAIN_PUSH && oper != tStore) {
+    if (oper == tStore) {
+        dbg_Debugger();
+    }
+
+    // Store to a pointer
+    if (oper == tStore && typeMasked2 == TYPE_FUNCTION) {
+        typeMasked2 = TYPE_CHAIN_ANS;
+        typeMasked1 = outputPrevPrevPrev->type;
+    }
+    
+    if (typeMasked1 == TYPE_CHAIN_PUSH) {
         if (typeMasked2 != TYPE_CHAIN_ANS) {
             return E_ICE_ERROR;
         }
@@ -172,6 +185,7 @@ uint8_t parseOperator(element_t *outputPrevPrev, element_t *outputPrev, element_
     ice.programPtrBackup = ice.programPtr;
     
     // Get the right arguments
+    entry0 = outputPrevPrevPrev;
     entry1 = outputPrevPrev;
     entry2 = outputPrev;
     getEntryOperands();
@@ -394,6 +408,16 @@ void StoNumberVariable(void) {
 void StoVariableVariable(void) {
     LD_HL_IND_IX_OFF(entry1_operand);
     StoChainAnsVariable();
+}
+void StoNumberChainAns(void) {
+}
+void StoVariableChainAns(void) {
+}
+void StoFunctionChainAns(void) {
+}
+void StoChainPushChainAns(void) {
+}
+void StoChainAnsChainAns(void) {
 }
 void StoFunctionVariable(void) {
     insertFunctionReturn(entry1_operand, OUTPUT_IN_HL, NO_PUSH);
@@ -1099,7 +1123,7 @@ void SubChainPushChainAns(void) {
 }
 
 void (*operatorChainPushChainAnsFunctions[14])(void) = {
-    OperatorError,
+    StoChainPushChainAns,
     AndChainPushChainAns,
     XorChainPushChainAns,
     OrChainPushChainAns,
@@ -1119,19 +1143,19 @@ void (*operatorFunctions[224])(void) = {
     OperatorError,
     StoNumberVariable,
     OperatorError,
-    OperatorError,
+    StoNumberChainAns,
     OperatorError,
     StoVariableVariable,
     OperatorError,
-    OperatorError,
+    StoVariableChainAns,
     OperatorError,
     StoFunctionVariable,
     OperatorError,
-    OperatorError,
+    StoFunctionChainAns,
     OperatorError,
     StoChainAnsVariable,
     OperatorError,
-    OperatorError,
+    StoChainAnsChainAns,
     
     OperatorError,
     OperatorError,

@@ -19,7 +19,8 @@ INCBIN(Pause, "src/asm/pause.bin");
 extern uint8_t (*functions[256])(uint24_t token);
 const char implementedFunctions[] = {tNot, tMin, tMax, tMean, tSqrt, tDet};
 const char implementedFunctions2[] = {tRemainder, tSub, tLength, tToString};
-uint8_t outputStack[4096];
+uint8_t outputStack[2000];
+uint8_t stack[1500];
 
 uint8_t parseProgram(void) {
     uint24_t token;
@@ -47,8 +48,8 @@ uint8_t parseProgram(void) {
 uint8_t parseExpression(uint24_t token) {
     uint24_t stackElements = 0, outputElements = 0;
     uint24_t loopIndex, temp;
-    uint8_t stack[1500], amountOfArgumentsStack[20];
-    uint8_t index = 0, a, stackToOutputReturn, mask = TYPE_MASK_U24, tok;
+    uint8_t amountOfArgumentsStack[20];
+    uint8_t index = 0, a, stackToOutputReturn, mask = TYPE_MASK_U24, tok, storeDepth = 0;
     uint8_t *amountOfArgumentsStackPtr = amountOfArgumentsStack, canUseMask = 2;
 
     // Setup pointers
@@ -58,15 +59,16 @@ uint8_t parseExpression(uint24_t token) {
     element_t *stackCurr, *stackPrev = NULL;
     
     /*
-        General explanation stacks:
-        - Each entry consists of 5 bytes, the type, the mask and the operand
+        General explanation output stack and normal stack:
+        - Each entry consists of 5 bytes, the type (1), the mask (1) and the operand (3)
         - Type: number, variable, function, operator etc
-        - Mask: 0 = 8 bits, 1 = 16 bits, 2 = 24 bits
+        - Mask: 0 = 8 bits, 1 = 16 bits, 2 = 24 bits, only used for pointers
         - The operand is either a 3-byte number or consists of these 3 bytes:
             - The first byte = the operand: function/variable/operator token
             - If it's a function then the second byte is the amount of arguments for that function
             - If it's a getKeyFast, the second byte is the key
             - If it's a 2-byte function, the third byte is the second byte of the function
+            - If it's a pointer directly after the -> operator, the third byte is 1 to ignore the function
     */
 
     while ((int)token != EOF && (tok = (uint8_t)token) != tEnter) {
@@ -76,6 +78,11 @@ uint8_t parseExpression(uint24_t token) {
         // We can use the unsigned mask * only at the start of the line, or directly after an operator
         if (canUseMask) {
             canUseMask--;
+        }
+        
+        // If there's a pointer directly after an -> operator, we have to ignore it
+        if (storeDepth) {
+            storeDepth--;
         }
 
         // Process a number
@@ -149,11 +156,13 @@ uint8_t parseExpression(uint24_t token) {
             while ((uint8_t)(token = _getc(ice.inPrgm)) == tMul) {
                 a++;
             }
-            
             if (a > 2 || (uint8_t)token != tLBrace) {
                 return E_SYNTAX;
             }
             mask = TYPE_MASK_U8 + a;
+            
+            // If the previous token was a ->, remind it, if not, this won't hurt
+            storeDepth++;
             
             // Don't grab the { token
             continue;
@@ -163,6 +172,7 @@ uint8_t parseExpression(uint24_t token) {
         else if ((index = getIndexOfOperator(tok))) {
             // If the token is ->, move the entire stack to the output, instead of checking the precedence
             if (tok == tStore) {
+                storeDepth = 2;
                 // Move entire stack to output
                 stackToOutputReturn = 1;
                 goto stackToOutput;
@@ -194,16 +204,6 @@ stackToOutputReturn1:
             canUseMask = 2;
         }
         
-        // Push a ( { [
-        else if (tok == tLParen || tok == tLBrace || tok == tLBrack) {
-            stackCurr->type = TYPE_FUNCTION;
-            stackCurr->mask = mask;
-            stackCurr->operand = token;
-            stackElements++;
-            mask = TYPE_MASK_U24;
-            canUseMask = 2;
-        }
-        
         // Gets the address of a variable
         else if (tok == tFromDeg) {
             outputCurr->type = TYPE_NUMBER;
@@ -231,6 +231,7 @@ stackToOutputReturn1:
                 outputCurr = &outputPtr[outputElements];
                 if (stackPrev->type != TYPE_FUNCTION) {
                     outputCurr->type = stackPrev->type;
+                    outputCurr->mask = stackPrev->mask;
                     outputCurr->operand = stackPrev->operand;
                     stackElements--;
                     outputElements++;
@@ -239,8 +240,10 @@ stackToOutputReturn1:
                 }
             }
             
+            stackPrev = &stackPtr[stackElements-1];
+            
             // Closing tag should match it's open tag
-            if (tok != tComma && (stackPrev->operand != tok - 1)) {
+            if (tok != tComma && ((uint8_t)stackPrev->operand != tok - 1)) {
                 return E_SYNTAX;
             }
             
@@ -261,13 +264,9 @@ stackToOutputReturn1:
             
             // If the right parenthesis belongs to a function, move the function as well
             if (tok != tComma && stackPrev->operand != tLParen) {
-                uint24_t temp2 = stackPrev->operand;
                 outputCurr->type = stackPrev->type;
                 outputCurr->mask = stackPrev->mask;
-                if (tok == tRParen) {
-                    temp2 += (*amountOfArgumentsStackPtr--) << 8;
-                }
-                outputCurr->operand = temp2;
+                outputCurr->operand = stackPrev->operand + ((*amountOfArgumentsStackPtr--) << 8);
                 stackElements--;
                 outputElements++;
             }
@@ -280,8 +279,8 @@ stackToOutputReturn1:
             mask = TYPE_MASK_U24;
         }
         
-        // Process a function
-        else if (strchr(implementedFunctions, tok) || tok == t2ByteTok || tok == tExtTok) {
+        // Process a function, ( { [
+        else if (strchr(implementedFunctions, tok) || tok == t2ByteTok || tok == tExtTok || tok == tLParen || tok == tLBrace || tok == tLBrack) {
             if (tok == t2ByteTok || tok == tExtTok) {
                 if (!strchr(implementedFunctions2, tok = (uint8_t)_getc(ice.inPrgm))) {
                     return E_SYNTAX;
@@ -291,7 +290,8 @@ stackToOutputReturn1:
             // We always have at least 1 argument
             *++amountOfArgumentsStackPtr = 1;
             stackCurr->type = TYPE_FUNCTION;
-            stackCurr->operand = token;
+            stackCurr->mask = mask;
+            stackCurr->operand = token + ((tok == tLBrace && storeDepth) << 16);
             stackElements++;
             mask = TYPE_MASK_U24;
             canUseMask = 2;
@@ -408,7 +408,7 @@ stackToOutputReturn2:
             continue;
         }
         
-        // Check if the types are number | number | ... | function (not det)
+        // Check if the types are number | number | ... | function (no det or pointer)
         if (loopIndex >= index && outputCurr->type == TYPE_FUNCTION && (uint8_t)outputCurr->operand != tDet && (uint8_t)outputCurr->operand != tLBrace) {
             uint24_t outputPrevOperand = outputPrev->operand, outputPrevPrevOperand = outputPrevPrev->operand;
             for (a = 1; a <= index; a++) {
@@ -588,28 +588,28 @@ uint8_t parsePostFixFromIndexToIndex(uint24_t startIndex, uint24_t endIndex) {
         // Clear this flag
         expr.AnsSetZeroFlagReversed = false;
         
+        //dbg_Debugger();
+        
         if (outputType == TYPE_OPERATOR) {
-            element_t *outputPrev, *outputPrevPrev;
+            element_t *outputPrev, *outputPrevPrev, *outputPrevPrevPrev;
             
             // Wait, invalid operator?!
             if (loopIndex < startIndex + 2) {
                 return E_SYNTAX;
             }
             
-            if (AnsDepth > 3) {
+            if (AnsDepth > 3 && (uint8_t)outputCurr->operand != tStore) {
                 // We need to push HL since it isn't used in the next operator/function
                 (&outputPtr[tempIndex])->type = TYPE_CHAIN_PUSH;
                 PushHLDE();
             }
             
-            operand2Index = getIndexOffset(-2);
-            operand1Index = getIndexOffset(-3);
-            
-            outputPrev = &outputPtr[operand2Index];
-            outputPrevPrev = &outputPtr[operand1Index];
+            outputPrev = &outputPtr[getIndexOffset(-2)];
+            outputPrevPrev = &outputPtr[getIndexOffset(-3)];
+            outputPrevPrevPrev = &outputPtr[getIndexOffset(-4)];
             
             // Parse the operator with the 2 latest operands of the stack!
-            if ((temp = parseOperator(outputPrevPrev, outputPrev, outputCurr)) != VALID) {
+            if ((temp = parseOperator(outputPrevPrevPrev, outputPrevPrev, outputPrev, outputCurr)) != VALID) {
                 return temp;
             }
             
@@ -618,7 +618,7 @@ uint8_t parsePostFixFromIndexToIndex(uint24_t startIndex, uint24_t endIndex) {
             removeIndexFromStack(getCurrentIndex() - 2);
             
             // Check if it was a command with 2 strings
-            if (outputCurr->operand == tAdd && outputPrevPrev->type >= TYPE_STRING && outputPrev->type >= TYPE_STRING) {
+            if ((uint8_t)outputCurr->operand == tAdd && outputPrevPrev->type >= TYPE_STRING && outputPrev->type >= TYPE_STRING) {
                 outputCurr->type = TYPE_STRING;
                 outputCurr->operand = (outputPrevPrev->operand == TempString2 || outputPrev->operand == TempString1) ? TempString2 : TempString1;
             } else {
@@ -632,27 +632,33 @@ uint8_t parsePostFixFromIndexToIndex(uint24_t startIndex, uint24_t endIndex) {
             // Use this to cleanup the function after parsing
             uint8_t amountOfArguments = (uint8_t)(outputCurr->operand >> 8);
             
-            if (AnsDepth > 1+amountOfArguments) {
-                // We need to push HL since it isn't used in the next operator/function
-                (&outputPtr[tempIndex])->type = TYPE_CHAIN_PUSH;
-                PushHLDE();
-            }
-            
-            if ((temp = parseFunction(loopIndex)) != VALID) {
-                return temp;
-            }
-            
-            // Cleanup, only if it's NOT a det(
-            if ((uint8_t)outputCurr->operand != tDet) {
-                for (temp = 0; temp < amountOfArguments; temp++) {
-                    removeIndexFromStack(getCurrentIndex() - 2);
+            dbg_Debugger();
+            // Only execute when it's not a pointer directly after a ->
+            if (outputCurr->operand != 0x010108) {
+                // Check if we need to push Ans
+                if (AnsDepth > 1 + amountOfArguments) {
+                    // We need to push HL since it isn't used in the next operator/function
+                    (&outputPtr[tempIndex])->type = TYPE_CHAIN_PUSH;
+                    PushHLDE();
                 }
-            }
+                
+                if ((temp = parseFunction(loopIndex)) != VALID) {
+                    return temp;
+                }
             
-            // Check chain push/ans
-            AnsDepth = 1;
-            tempIndex = loopIndex;
-            outputCurr->type = TYPE_CHAIN_ANS;
+                // Cleanup, if it's not a det(
+                if ((uint8_t)outputCurr->operand != tDet) {
+                    for (temp = 0; temp < amountOfArguments; temp++) {
+                        removeIndexFromStack(getCurrentIndex() - 2);
+                    }
+                }
+                
+                // I don't care that this will be ignored when it's a pointer, because I know there is a -> directly after
+                // Check chain push/ans
+                AnsDepth = 1;
+                tempIndex = loopIndex;
+                outputCurr->type = TYPE_CHAIN_ANS;
+            }
         }
         
         if (AnsDepth) {

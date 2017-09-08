@@ -28,7 +28,7 @@ INCBIN(Mean, "src/asm/mean.bin");
                 ...
 */
 
-#define AMOUNT_OF_C_FUNCTIONS 86
+#define AMOUNT_OF_C_FUNCTIONS 92
 
 const uint8_t CArguments[] = {
     RET_NONE | 0, ARG_NORM,    // Begin
@@ -117,24 +117,25 @@ const uint8_t CArguments[] = {
     RET_NONE | 3, SMALL_12,    // FloodFill
     RET_NONE | 3, ARG_NORM,    // RLETSprite
     RET_NONE | 3, SMALL_3,     // RLETSprite_NoClip
-    //UN       | 2, ARG_NORM,    // ConvertFromRLETSprite
-    //UN       | 2, ARG_NORM,    // ConvertToRLETSprite
-    //UN       | 2, ARG_NORM,    // ConvertToNewRLETSprite
-    //UN       | 4, ARG_NORM,    // RotateScaleSprite
-    //UN       | 4, ARG_NORM,    // RotatedScaledTransparentSprite_NoClip
-    //UN       | 4, ARG_NORM     // RotatedScaledSprite_NoClip
+    UN       | 2, ARG_NORM,    // ConvertFromRLETSprite
+    UN       | 2, ARG_NORM,    // ConvertToRLETSprite
+    UN       | 2, ARG_NORM,    // ConvertToNewRLETSprite
+    UN       | 4, ARG_NORM,    // RotateScaleSprite
+    UN       | 4, ARG_NORM,    // RotatedScaledTransparentSprite_NoClip
+    UN       | 4, ARG_NORM     // RotatedScaledSprite_NoClip
 };
 
 extern uint8_t outputStack[4096];
 
 uint8_t parseFunction(uint24_t index) {
-    element_t *outputPtr = (element_t*)outputStack, *outputPrev, *outputPrevPrev;
+    element_t *outputPtr = (element_t*)outputStack, *outputPrev, *outputPrevPrev, *outputCurr;
     uint8_t function, function2, amountOfArguments, temp, a, outputPrevType, outputPrevPrevType;
     uint24_t output, endIndex, startIndex, outputPrevOperand, outputPrevPrevOperand;
     
     outputPrev        = &outputPtr[getIndexOffset(-2)];
     outputPrevPrev    = &outputPtr[getIndexOffset(-3)];
     output            = (&outputPtr[index])->operand;
+    outputCurr        = &outputPtr[getIndexOffset(-1)];
     function          = (uint8_t)output;
     function2         = (uint8_t)(output >> 16);
     amountOfArguments = (uint8_t)(output >> 8);
@@ -151,6 +152,69 @@ uint8_t parseFunction(uint24_t index) {
     expr.AnsSetCarryFlagReversed = false;
     
     switch (function) {
+        case tLBrace:
+            if (amountOfArguments != 1) {
+                return E_ARGUMENTS;
+            }
+            if (outputPrevType == TYPE_NUMBER) {
+                if (outputCurr->mask == TYPE_MASK_U8) {
+                    LD_A_ADDR(outputPrevOperand);
+                } else if (outputCurr->mask == TYPE_MASK_U16) {
+                    LD_HL_ADDR(outputPrevOperand);
+                    EX_S_DE_HL();
+                    expr.outputRegister2 = OutputRegisterDE;
+                } else {
+                    LD_HL_ADDR(outputPrevOperand);
+                }
+            } else if (outputPrevType == TYPE_VARIABLE) {
+                LD_HL_IND_IX_OFF(outputPrevOperand);
+                if (outputCurr->mask == TYPE_MASK_U8) {
+                    LD_A_HL();
+                } else if (outputCurr->mask == TYPE_MASK_U16) {
+                    LD_HL_HL();
+                    EX_S_DE_HL();
+                    expr.outputRegister2 = OutputRegisterDE;
+                } else {
+                    LD_HL_HL();
+                }
+            } else if (outputPrevType == TYPE_FUNCTION_RETURN) {
+                insertFunctionReturn(outputPrevOperand, OUTPUT_IN_HL, NO_PUSH);
+                if (outputCurr->mask == TYPE_MASK_U8) {
+                    LD_A_HL();
+                } else if (outputCurr->mask == TYPE_MASK_U16) {
+                    LD_HL_HL();
+                    EX_S_DE_HL();
+                    expr.outputRegister2 = OutputRegisterDE;
+                } else {
+                    LD_HL_HL();
+                }
+            } else if (outputPrevType == TYPE_CHAIN_ANS) {
+                if (outputCurr->mask == TYPE_MASK_U8) {
+                    if (expr.outputRegister == OutputRegisterHL) {
+                        LD_A_HL();
+                    } else {
+                        LD_A_DE();
+                    }
+                } else if (outputCurr->mask == TYPE_MASK_U16) {
+                    MaybeDEToHL();
+                    LD_HL_HL();
+                    EX_S_DE_HL();
+                    expr.outputRegister2 = OutputRegisterDE;
+                } else {
+                    MaybeDEToHL();
+                    LD_HL_HL();
+                }
+            } else {
+                return E_SYNTAX;
+            }
+            if (outputCurr->mask == TYPE_MASK_U8) {
+                OR_A_A();
+                SBC_HL_HL();
+                LD_L_A();
+                expr.AnsSetZeroFlag = true;
+                expr.ZeroCarryFlagRemoveAmountOfBytes = 3;
+            }
+            break;
         case t2ByteTok:
             switch (function2) {
                 case tSub:
@@ -575,7 +639,7 @@ uint8_t parseFunction(uint24_t index) {
                 LD_L_A();
             } else if (temp & RET_HL) {
                 EX_S_DE_HL();
-                expr.outputRegister = OutputRegisterDE;
+                expr.outputRegister2 = OutputRegisterDE;
             }
             break;
         default:

@@ -13,7 +13,7 @@
 ice_t ice;
 expr_t expr;
 
-const char *infoStr = "ICE Compiler v1.6 - By Peter \"PT_\" Tillema";
+const char *infoStr = "ICE Compiler v2.0 - By Peter \"PT_\" Tillema";
 
 #ifdef COMPUTER_ICE
 #define INCBIN_PREFIX
