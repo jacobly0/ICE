@@ -21,26 +21,26 @@ void ProgramPtrToOffsetStack(void) {
 }
 
 void MaybeDEToHL(void) {
-    if (expr.outputRegister != OutputRegisterHL) {
+    if (expr.outputRegister != OUTPUT_IN_HL) {
         EX_DE_HL();
     }
 }
 
 void MaybeHLToDE(void) {
-    if (expr.outputRegister == OutputRegisterHL) {
+    if (expr.outputRegister == OUTPUT_IN_HL) {
         EX_DE_HL();
     }
 }
 
 void PushHLDE(void) {
-    if (expr.outputRegister == OutputRegisterHL) {
+    if (expr.outputRegister == OUTPUT_IN_HL) {
         PUSH_HL();
     } else {
         PUSH_DE();
     }
 }
 
-uint8_t IsHexadecimal(uint24_t token) {
+uint8_t IsHexadecimal(int token) {
     uint8_t tok = (uint8_t)token;
     if (tok >= t0 && tok <= t9) {
         return tok - t0;
@@ -52,9 +52,9 @@ uint8_t IsHexadecimal(uint24_t token) {
 }
 
 bool CheckEOL(void) {
-    uint24_t token;
+    int token;
     
-    if ((int)(token = _getc(ice.inPrgm)) == EOF || (uint8_t)token == tEnter) {
+    if ((token = _getc(ice.inPrgm)) == EOF || (uint8_t)token == tEnter) {
         return true;
     }
     return false;
@@ -106,7 +106,7 @@ uint24_t getCurrentOffset(void) {
 #else
     
 uint24_t getNextToken(ti_var_t inPrgm) {
-    if (_tell(inPrgm) < ice.programLength - 2) {
+    if ((uint24_t)_tell(inPrgm) < ice.programLength - 2) {
         return _getc(inPrgm);
     }
     return EOF;

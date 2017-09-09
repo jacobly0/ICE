@@ -16,18 +16,18 @@
 INCBIN(Pause, "src/asm/pause.bin");
 #endif
 
-extern uint8_t (*functions[256])(uint24_t token);
+extern uint8_t (*functions[256])(int token);
 const char implementedFunctions[] = {tNot, tMin, tMax, tMean, tSqrt, tDet};
 const char implementedFunctions2[] = {tRemainder, tSub, tLength, tToString};
 uint8_t outputStack[2000];
 uint8_t stack[1500];
 
 uint8_t parseProgram(void) {
-    uint24_t token;
+    int token;
     uint8_t ret = VALID;
 
     // Do things based on the token
-    while ((int)(token = _getc(ice.inPrgm)) != EOF) {
+    while ((token = _getc(ice.inPrgm)) != EOF) {
         if ((uint8_t)token != tii) {
             ice.usedCodeAfterHeader = true;
         }
@@ -45,7 +45,7 @@ uint8_t parseProgram(void) {
 
 /* Static functions */
 
-uint8_t parseExpression(uint24_t token) {
+uint8_t parseExpression(int token) {
     uint24_t stackElements = 0, outputElements = 0;
     uint24_t loopIndex, temp;
     uint8_t amountOfArgumentsStack[20];
@@ -71,7 +71,7 @@ uint8_t parseExpression(uint24_t token) {
             - If it's a pointer directly after the -> operator, the third byte is 1 to ignore the function
     */
 
-    while ((int)token != EOF && (tok = (uint8_t)token) != tEnter) {
+    while (token != EOF && (tok = (uint8_t)token) != tEnter) {
         outputCurr = &outputPtr[outputElements];
         stackCurr  = &stackPtr[stackElements];
         
@@ -328,10 +328,10 @@ stackToOutputReturn1:
                         if ((uint8_t)(token = _getc(ice.inPrgm)) == tStore || (uint8_t)token == tEnter) {
                             // Don't grab new token
                             continue;
-                        } else if ((int)token != EOF && (uint8_t)token != tRParen) {
+                        } else if (token != EOF && (uint8_t)token != tRParen) {
                             return E_SYNTAX;
                         }
-                    } else if ((uint8_t)token == tRParen || (int)token == EOF || (uint8_t)token == tStore || (uint8_t)token == tEnter) {
+                    } else if ((uint8_t)token == tRParen || token == EOF || (uint8_t)token == tStore || (uint8_t)token == tEnter) {
                         // Add the direct key to the operand
                         outputCurr->operand = tGetKey + (tok << 8);
                         if ((uint8_t)token == tStore || (uint8_t)token == tEnter) {
@@ -355,7 +355,7 @@ stackToOutputReturn1:
             mask = TYPE_MASK_U24;
             
             // Get the string until it hits EOF, Enter, " or ->
-            while ((int)(token = _getc(ice.inPrgm)) != EOF && (uint8_t)token != tString && (uint8_t)token != tStore && (uint8_t)token != tEnter) {
+            while ((token = _getc(ice.inPrgm)) != EOF && (uint8_t)token != tString && (uint8_t)token != tStore && (uint8_t)token != tEnter) {
                 *ice.programDataPtr++ = (uint8_t)token;
             }
             *ice.programDataPtr++ = 0;
@@ -679,7 +679,7 @@ uint8_t parsePostFixFromIndexToIndex(uint24_t startIndex, uint24_t endIndex) {
     return VALID;
 }
 
-static uint8_t functionI(uint24_t token) {
+static uint8_t functionI(int token) {
     const uint8_t colorTable[16] = {255,24,224,0,248,36,227,97,9,19,230,255,181,107,106,74};    // Thanks Cesium :D
 
     // Only get the output name, icon or description at the top of your program
@@ -689,7 +689,7 @@ static uint8_t functionI(uint24_t token) {
         // Get the output name
         if (!ice.gotName) {
             uint8_t a = 0;
-            while ((int)(token = _getc(ice.inPrgm)) != EOF && (uint8_t)token != tEnter && a < 9) {
+            while ((token = _getc(ice.inPrgm)) != EOF && (uint8_t)token != tEnter && a < 9) {
                 ice.outName[a++] = (uint8_t)token;
             }
             ice.gotName = true;
@@ -728,7 +728,7 @@ static uint8_t functionI(uint24_t token) {
                 token = _getc(ice.inPrgm);
             }
 
-            if ((int)token != EOF) {
+            if (token != EOF) {
                 if ((uint8_t)token != tEnter) {
                     return E_SYNTAX;
                 }
@@ -739,7 +739,7 @@ static uint8_t functionI(uint24_t token) {
                     void *dataPtr = ti_GetDataPtr(ice.inPrgm);
                     
                     // Grab description
-                    while ((int)(token = _getc(ice.inPrgm)) != EOF && (uint8_t)token != tEnter) {
+                    while ((token = _getc(ice.inPrgm)) != EOF && (uint8_t)token != tEnter) {
                         uint24_t strLength;
                         const char *dataString;
                         uint8_t tokSize;
@@ -755,7 +755,7 @@ static uint8_t functionI(uint24_t token) {
                         }
                     }
 #else
-                    while ((int)(token = _getc(ice.inPrgm)) != EOF && (uint8_t)token != tEnter) {
+                    while ((token = _getc(ice.inPrgm)) != EOF && (uint8_t)token != tEnter) {
                         const uint8_t token2byte[] = { 0x5C, 0x5D, 0x5E, 0x60, 0x61, 0x62, 0x63, 0x7E, 0xBB, 0xAA, 0xEF };
                         *ice.programPtr++ = (uint8_t)token;
                         if (memchr(token2byte, token, sizeof token2byte)) {
@@ -763,7 +763,7 @@ static uint8_t functionI(uint24_t token) {
                         }
                     }
 #endif
-                } else if ((int)token != EOF) {
+                } else if (token != EOF) {
                     _seek(-1, SEEK_CUR, ice.inPrgm);
                 }
             }
@@ -804,12 +804,12 @@ static uint8_t functionI(uint24_t token) {
     return VALID;
 }
 
-static uint8_t functionIf(uint24_t token) {
+static uint8_t functionIf(int token) {
     uint8_t res, tempZR, tempC, tempCR, insertJRCZReturn;
     uint8_t *IfStartAddr, *IfElseAddr = NULL;
     uint24_t tempDataOffsetElements, tempDataOffsetElements2;
     
-    if ((int)(token = _getc(ice.inPrgm)) != EOF && token != tEnter) {
+    if ((token = _getc(ice.inPrgm)) != EOF && token != tEnter) {
         // Parse the argument
         if ((res = parseExpression(token)) != VALID) {
             return res;
@@ -949,15 +949,15 @@ insertJRCZ:
     goto insertJRCZReturn2;
 }
 
-static uint8_t functionElse(uint24_t token) {
+static uint8_t functionElse(int token) {
     return E_ELSE;
 }
 
-static uint8_t functionEnd(uint24_t token) {
+static uint8_t functionEnd(int token) {
     return E_END;
 }
 
-static uint8_t dummyReturn(uint24_t token) {
+static uint8_t dummyReturn(int token) {
     return VALID;
 }
 
@@ -970,7 +970,7 @@ void UpdatePointersToData(uint24_t tempDataOffsetElements) {
     }
 }
 
-static uint8_t functionWhile(uint24_t token) {
+static uint8_t functionWhile(int token) {
     uint24_t tempDataOffsetElements = ice.dataOffsetElements;
     uint8_t *WhileStartAddr = ice.programPtr, *TempStartAddr = WhileStartAddr, res;
     
@@ -994,7 +994,7 @@ static uint8_t functionWhile(uint24_t token) {
     return VALID;
 }
 
-uint8_t functionRepeat(uint24_t token) {
+uint8_t functionRepeat(int token) {
     uint24_t tempCurrentLine, tempCurrentLine2;
     uint16_t RepeatCondStart, RepeatProgEnd;
     uint8_t *RepeatCodeStart, *RepeatCondEnd, res;
@@ -1077,10 +1077,10 @@ uint8_t functionRepeat(uint24_t token) {
     return VALID;
 }
 
-static uint8_t functionReturn(uint24_t token) {
+static uint8_t functionReturn(int token) {
     uint8_t res;
     
-    if ((int)(token = _getc(ice.inPrgm)) == EOF || (uint8_t)token == tEnter) {
+    if ((token = _getc(ice.inPrgm)) == EOF || (uint8_t)token == tEnter) {
         RET();
         ice.lastTokenIsReturn = true;
     } else if (token == tIf) {
@@ -1111,12 +1111,12 @@ static uint8_t functionReturn(uint24_t token) {
     return VALID;
 }
 
-static uint8_t functionDisp(uint24_t token) {
+static uint8_t functionDisp(int token) {
     do {
         uint8_t res;
 
         if ((uint8_t)(token = _getc(ice.inPrgm)) == tii) {
-            if ((int)(token = _getc(ice.inPrgm)) == EOF) {
+            if ((token = _getc(ice.inPrgm)) == EOF) {
                 ice.tempToken = tEnter;
             } else {
                 ice.tempToken = (uint8_t)token;
@@ -1146,7 +1146,7 @@ checkArgument:
     return VALID;
 }
 
-static uint8_t functionOutput(uint24_t token) {
+static uint8_t functionOutput(int token) {
     uint8_t res;
     
     // Get the first argument = column
@@ -1184,7 +1184,7 @@ static uint8_t functionOutput(uint24_t token) {
         } else {
             if (expr.outputIsVariable) {
                 *(ice.programPtr - 2) = 0x7E;
-            } else if (expr.outputRegister == OutputRegisterHL) {
+            } else if (expr.outputRegister == OUTPUT_IN_HL) {
                 LD_A_L();
             } else {
                 LD_A_E();
@@ -1194,7 +1194,7 @@ static uint8_t functionOutput(uint24_t token) {
     } else {
         if (expr.outputIsVariable) {
             *(ice.programPtr - 2) = 0x7E;
-        } else if (expr.outputRegister == OutputRegisterHL) {
+        } else if (expr.outputRegister == OUTPUT_IN_HL) {
             LD_A_L();
         } else {
             LD_A_E();
@@ -1212,7 +1212,7 @@ static uint8_t functionOutput(uint24_t token) {
         
         if (expr.outputIsVariable) {
             *(ice.programPtr - 2) = 0x7E;
-        } else if (expr.outputRegister == OutputRegisterHL) {
+        } else if (expr.outputRegister == OUTPUT_IN_HL) {
             LD_A_L();
         } else {
             LD_A_E();
@@ -1240,7 +1240,7 @@ static uint8_t functionOutput(uint24_t token) {
     return VALID;
 }
 
-static uint8_t functionClrHome(uint24_t token) {
+static uint8_t functionClrHome(int token) {
     if (!CheckEOL()) {
         return E_SYNTAX;
     }
@@ -1253,15 +1253,15 @@ static uint8_t functionClrHome(uint24_t token) {
     return VALID;
 }
 
-static uint8_t functionFor(uint24_t token) {
+static uint8_t functionFor(int token) {
     return E_UNIMPLEMENTED;
 }
 
-static uint8_t functionPrgm(uint24_t token) {
+static uint8_t functionPrgm(int token) {
     return E_UNIMPLEMENTED;
 }
 
-static uint8_t functionCustom(uint24_t token) {
+static uint8_t functionCustom(int token) {
     uint8_t tok = (uint8_t)(token = _getc(ice.inPrgm));
     
     // CompilePrgm(
@@ -1274,7 +1274,7 @@ static uint8_t functionCustom(uint24_t token) {
         return E_NO_SUBPROG;
 #endif
         
-        while ((int)(token = _getc(ice.inPrgm)) != EOF && (tok = (uint8_t)token) != tEnter && a < 9) {
+        while ((token = _getc(ice.inPrgm)) != EOF && (tok = (uint8_t)token) != tEnter && a < 9) {
             tempName[a++] = (char)tok;
         }
         tempName[a] = 0;
@@ -1311,7 +1311,7 @@ static uint8_t functionCustom(uint24_t token) {
     }
 }
 
-static uint8_t functionLbl(uint24_t token) {
+static uint8_t functionLbl(int token) {
     // Add the label to the stack, and skip the line
     *ice.LblPtr++ = (uint24_t)ice.programPtr;
     *ice.LblPtr++ = _tell(ice.inPrgm);
@@ -1319,7 +1319,7 @@ static uint8_t functionLbl(uint24_t token) {
     return VALID;
 }
 
-static uint8_t functionGoto(uint24_t token) {
+static uint8_t functionGoto(int token) {
     // Add the goto to the stack, and skip the line
     *ice.GotoPtr++ = (uint24_t)ice.programPtr;
     *ice.GotoPtr++ = _tell(ice.inPrgm);
@@ -1328,7 +1328,7 @@ static uint8_t functionGoto(uint24_t token) {
     return VALID;
 }
 
-static uint8_t functionPause(uint24_t token) {
+static uint8_t functionPause(int token) {
     if (CheckEOL()) {
         CALL(_GetCSC);
         CP_A(9);
@@ -1359,14 +1359,14 @@ static uint8_t functionPause(uint24_t token) {
     return VALID;
 }
 
-static uint8_t functionInput(uint24_t token) {
+static uint8_t functionInput(int token) {
     return E_UNIMPLEMENTED;
 }
 
-static uint8_t functionBB(uint24_t token) {
+static uint8_t functionBB(int token) {
     // Asm(
     if ((uint8_t)(token = _getc(ice.inPrgm)) == tAsm) {
-        while ((int)(token = _getc(ice.inPrgm)) != EOF && (uint8_t)token != tEnter && (uint8_t)token != tRParen) {
+        while ((token = _getc(ice.inPrgm)) != EOF && (uint8_t)token != tEnter && (uint8_t)token != tRParen) {
             uint8_t tok1, tok2;
             
             // Get hexadecimal 1
@@ -1393,17 +1393,17 @@ static uint8_t functionBB(uint24_t token) {
     return VALID;
 }
 
-static uint8_t tokenWrongPlace(uint24_t token) {
+static uint8_t tokenWrongPlace(int token) {
     return E_WRONG_PLACE;
 }
 
-static uint8_t tokenUnimplemented(uint24_t token) {
+static uint8_t tokenUnimplemented(int token) {
     return E_UNIMPLEMENTED;
 }
 
 void optimizeZeroCarryFlagOutput(void) {
     if (!expr.AnsSetZeroFlag && !expr.AnsSetCarryFlag) {
-        if (expr.outputRegister == OutputRegisterHL) {
+        if (expr.outputRegister == OUTPUT_IN_HL) {
             ADD_HL_DE();
             OR_A_A();
             SBC_HL_DE();
@@ -1420,12 +1420,10 @@ void optimizeZeroCarryFlagOutput(void) {
 }
 
 void skipLine(void) {
-    uint24_t token;
-    
-    while ((int)(token = _getc(ice.inPrgm)) != EOF && (uint8_t)token != tEnter);
+    while (!CheckEOL());
 }
 
-uint8_t (*functions[256])(uint24_t) = {
+uint8_t (*functions[256])(int) = {
     tokenUnimplemented, //0
     tokenUnimplemented, //1
     tokenUnimplemented, //2

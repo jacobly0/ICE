@@ -33,7 +33,7 @@ static const char *errors[] = {
     "Unknown C function. If you are sure this              function exists, please contact me!",
 #else
     "Label not found",
-    "Unknown C function. If you are sure this function exists, please contact me!",
+    "Unknown C function",
 #endif
     "Subprogram not found",
     "Compiling subprograms not supported",

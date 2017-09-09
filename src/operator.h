@@ -1,14 +1,10 @@
 #ifndef OPERATOR_H
 #define OPERATOR_H
 
-#define OUTPUT_IN_A   0
-#define OUTPUT_IN_C   1
-#define OUTPUT_IN_BCs 2
-#define OUTPUT_IN_DEs 3
-#define OUTPUT_IN_HLs 4
-#define OUTPUT_IN_BC  5
-#define OUTPUT_IN_DE  6
-#define OUTPUT_IN_HL  7
+#define OUTPUT_IN_HL    0
+#define OUTPUT_IN_DE    1
+#define OUTPUT_IN_BC    2
+#define OUTPUT_IN_HL_DE 3
 
 #define NO_PUSH   false
 #define NEED_PUSH true

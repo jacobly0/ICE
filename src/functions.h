@@ -20,5 +20,7 @@
 #define SMALL_45      (SMALL_4 | SMALL_5)
 
 uint8_t parseFunction(uint24_t);
+uint8_t parseFunction1Arg(uint24_t, uint8_t, uint8_t);
+uint8_t parseFunction2Args(uint24_t, uint8_t, uint8_t, bool);
 
 #endif

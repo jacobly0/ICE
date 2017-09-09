@@ -29,7 +29,7 @@ void optimizeZeroCarryFlagOutput(void);
 void skipLine(void);
 
 uint8_t parsePostFixFromIndexToIndex(uint24_t, uint24_t);
-uint8_t functionRepeat(uint24_t);
+uint8_t functionRepeat(int);
 uint8_t parseProgram(void);
 
 typedef struct {
