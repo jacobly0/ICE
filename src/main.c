@@ -40,10 +40,11 @@ void main(void) {
 #else
 int main(int argc, char **argv) {
 #endif
-    uint8_t a = 0, selectedProgram = 0, key, amountOfPrograms, res, *hooksPtr, *search_pos = NULL;
-    uint24_t token, headerSize, programDataSize, offset, totalSize;
+    uint8_t selectedProgram = 0, key, amountOfPrograms, res, *hooksPtr;
+    uint24_t programDataSize, offset, totalSize;
     const char ICEheader[] = {tii, 0};
     char buf[30], *var_name;
+    void *search_pos = NULL;
     
 #ifndef COMPUTER_ICE  
     // Install hooks
@@ -66,7 +67,7 @@ int main(int argc, char **argv) {
     }
     
     // Yay, GUI! :)
-    gfx_Begin(gfx_8bpp);
+    gfx_Begin();
     
     // Display flash screen
     /*gfx_ZeroScreen();

@@ -160,16 +160,18 @@ uint8_t parseOperator(element_t *outputPrevPrevPrev, element_t *outputPrevPrev, 
     expr.AnsSetZeroFlagReversed = false;
     expr.AnsSetCarryFlag = false;
     expr.AnsSetCarryFlagReversed = false;
-    
-    if (oper == tStore) {
-        dbg_Debugger();
-    }
 
     // Store to a pointer
     if (oper == tStore && typeMasked2 == TYPE_FUNCTION) {
         typeMasked2 = TYPE_CHAIN_ANS;
         typeMasked1 = outputPrevPrevPrev->type;
     }
+    
+    // Get the right arguments
+    entry0 = outputPrevPrevPrev;
+    entry1 = outputPrevPrev;
+    entry2 = outputPrev;
+    getEntryOperands();
     
     if (typeMasked1 == TYPE_CHAIN_PUSH) {
         if (typeMasked2 != TYPE_CHAIN_ANS) {
@@ -183,12 +185,6 @@ uint8_t parseOperator(element_t *outputPrevPrevPrev, element_t *outputPrevPrev, 
     
     // If you have something like "A or 1", the output is always 1, so we can remove the "ld hl, (A)"
     ice.programPtrBackup = ice.programPtr;
-    
-    // Get the right arguments
-    entry0 = outputPrevPrevPrev;
-    entry1 = outputPrevPrev;
-    entry2 = outputPrev;
-    getEntryOperands();
 
     // Swap operands for compiler optimizations
     if (oper == tLE || oper == tLT || (operatorCanSwap[getIndexOfOperator(oper) - 1] && 
@@ -410,14 +406,226 @@ void StoVariableVariable(void) {
     StoChainAnsVariable();
 }
 void StoNumberChainAns(void) {
+    uint8_t type = entry1->type;
+    uint8_t mask = entry2->mask;
+    
+    if (type == TYPE_NUMBER) {
+        if (mask == TYPE_MASK_U8) {
+            LD_A(entry0_operand);
+            LD_ADDR_A(entry1_operand);
+        } else if (mask == TYPE_MASK_U16) {
+            LD_HL_NUMBER(entry1_operand);
+        } else {
+            LD_HL_NUMBER(entry0_operand);
+            LD_ADDR_HL(entry1_operand);
+        }
+    } else if (type == TYPE_VARIABLE) {
+        LD_HL_IND_IX_OFF(entry1_operand);
+    } else if (type == TYPE_FUNCTION_RETURN) {
+        insertFunctionReturn(entry1_operand, OUTPUT_IN_HL, NO_PUSH);
+    } else {
+        MaybeDEToHL();
+    }
+    if (type != TYPE_NUMBER) {
+        if (mask == TYPE_MASK_U8) {
+            LD_A(entry0_operand);
+            LD_HL_A();
+        } else if (mask == TYPE_MASK_U24) {
+            LD_DE_IMM(entry0_operand);
+            LD_HL_DE();
+            expr.outputRegister2 = OutputRegisterHL;
+        }
+    }
+    if (mask == TYPE_MASK_U16) {
+        LD_DE_IMM(entry0_operand);
+    }
+    StoToChainAns();
 }
 void StoVariableChainAns(void) {
+    uint8_t type = entry1->type;
+    uint8_t mask = entry2->mask;
+    
+    if (type == TYPE_NUMBER) {
+        if (mask == TYPE_MASK_U8) {
+            LD_A_IND_IX_OFF(entry0_operand);
+            LD_ADDR_A(entry1_operand);
+        } else if (mask == TYPE_MASK_U16) {
+            LD_HL_IND_IX_OFF(entry1_operand);
+        } else {
+            LD_HL_IND_IX_OFF(entry0_operand);
+            LD_ADDR_HL(entry1_operand);
+        }
+    } else if (type == TYPE_VARIABLE) {
+        LD_HL_IND_IX_OFF(entry1_operand);
+    } else if (type == TYPE_FUNCTION_RETURN) {
+        insertFunctionReturn(entry1_operand, OUTPUT_IN_HL, NO_PUSH);
+    } else {
+        MaybeDEToHL();
+    }
+    if (type != TYPE_NUMBER) {
+        if (mask == TYPE_MASK_U8) {
+            LD_A_IND_IX_OFF(entry0_operand);
+            LD_HL_A();
+        } else if (mask == TYPE_MASK_U24) {
+            LD_DE_IND_IX_OFF(entry0_operand);
+            LD_HL_DE();
+            expr.outputRegister2 = OutputRegisterHL;
+        }
+    }
+    if (mask == TYPE_MASK_U16) {
+        LD_DE_IND_IX_OFF(entry0_operand);
+    }
+    StoToChainAns();
 }
 void StoFunctionChainAns(void) {
+    uint8_t type = entry1->type;
+    uint8_t mask = entry2->mask;
+    
+    if (type == TYPE_NUMBER) {
+        if (mask == TYPE_MASK_U8) {
+            insertFunctionReturn(entry0_operand, OUTPUT_IN_HL, NO_PUSH);
+            LD_A_L();
+            LD_ADDR_A(entry1_operand);
+        } else if (mask == TYPE_MASK_U16) {
+            insertFunctionReturn(entry0_operand, OUTPUT_IN_DE, NO_PUSH);
+            LD_HL_NUMBER(entry1_operand);
+            StoToChainAns();
+        } else {
+            insertFunctionReturn(entry0_operand, OUTPUT_IN_HL, NO_PUSH);
+            LD_ADDR_HL(entry1_operand);
+        }
+    } else if (type == TYPE_VARIABLE) {
+        if (mask == TYPE_MASK_U8) {
+            insertFunctionReturn(entry0_operand, OUTPUT_IN_HL, NO_PUSH);
+            LD_A_L();
+            LD_HL_IND_IX_OFF(entry1_operand);
+            LD_HL_A();
+        } else if (mask == TYPE_MASK_U16) {
+            insertFunctionReturn(entry0_operand, OUTPUT_IN_DE, NO_PUSH);
+            LD_HL_IND_IX_OFF(entry1_operand);
+        } else {
+            insertFunctionReturn(entry0_operand, OUTPUT_IN_DE, NO_PUSH);
+            LD_HL_IND_IX_OFF(entry1_operand);
+            LD_HL_DE();
+            expr.outputRegister = OutputRegisterDE;
+        }
+    } else if (type == TYPE_FUNCTION_RETURN) {
+        insertFunctionReturn(entry1_operand, OUTPUT_IN_DE, NO_PUSH);
+        if (mask == TYPE_MASK_U8) {
+            LD_A_E();
+            insertFunctionReturn(entry1_operand, OUTPUT_IN_HL, NEED_PUSH);
+            LD_HL_A();
+        } else if (mask == TYPE_MASK_U16) {
+            insertFunctionReturn(entry1_operand, OUTPUT_IN_HL, NEED_PUSH);
+        } else {
+            insertFunctionReturn(entry1_operand, OUTPUT_IN_HL, NEED_PUSH);
+            LD_HL_DE();
+            expr.outputRegister2 = OutputRegisterDE;
+        }
+    } else {
+        MaybeDEToHL();
+        insertFunctionReturn(entry0_operand, OUTPUT_IN_DE, NEED_PUSH);
+        if (mask == TYPE_MASK_U8) {
+            LD_A_E();
+            LD_HL_A();
+        } else if (mask == TYPE_MASK_U24) {
+            LD_HL_DE();
+            expr.outputRegister2 = OutputRegisterDE;
+        }
+    }
+    if (type != TYPE_NUMBER) {
+        StoToChainAns();
+    }
 }
 void StoChainPushChainAns(void) {
+    if (entry1->type == TYPE_CHAIN_ANS) {
+        MaybeDEToHL();
+        POP_DE();
+        if (entry2->mask == TYPE_MASK_U8) {
+            LD_A_E();
+            LD_HL_A();
+        } else if (entry2->mask == TYPE_MASK_U24) {
+            LD_HL_DE();
+            expr.outputRegister2 = OutputRegisterDE;
+        }
+        StoToChainAns();
+    }
 }
 void StoChainAnsChainAns(void) {
+    uint8_t type = entry1->type;
+    uint8_t mask = entry2->mask;
+    
+    if (type == TYPE_NUMBER) {
+        if (mask == TYPE_MASK_U8) {
+            if (expr.outputRegister == OutputRegisterHL) {
+                LD_A_L();
+            } else {
+                LD_A_E();
+            }
+            LD_ADDR_A(entry1_operand);
+        } else if (mask == TYPE_MASK_U16) {
+            MaybeHLToDE();
+            LD_HL_NUMBER(entry1_operand);
+        } else {
+            expr.outputRegister2 = expr.outputRegister;
+            if (expr.outputRegister == OutputRegisterHL) {
+                LD_ADDR_HL(entry1_operand);
+            } else {
+                LD_ADDR_DE(entry1_operand);
+            }
+        }
+    } else if (type == TYPE_VARIABLE) {
+        if (mask == TYPE_MASK_U8) {
+            if (expr.outputRegister == OutputRegisterHL) {
+                LD_A_L();
+            } else {
+                LD_A_E();
+            }
+            LD_HL_IND_IX_OFF(entry1_operand);
+            LD_HL_A();
+        } else {
+            MaybeHLToDE();
+            LD_HL_IND_IX_OFF(entry1_operand);
+            if (mask == TYPE_MASK_U24) {
+                LD_HL_DE();
+                expr.outputRegister2 = OutputRegisterDE;
+            }
+        }
+    } else {
+        // Chain Ans -> Function Return
+        if (mask == TYPE_MASK_U8) {
+            PushHLDE();
+            insertFunctionReturn(entry1_operand, OUTPUT_IN_HL, NO_PUSH);
+            POP_DE();
+            LD_A_E();
+            LD_HL_A();
+        } else if (mask == TYPE_MASK_U16) {
+            PushHLDE();
+            insertFunctionReturn(entry1_operand, OUTPUT_IN_HL, NO_PUSH);
+            POP_DE();
+        } else {
+            PushHLDE();
+            insertFunctionReturn(entry1_operand, OUTPUT_IN_HL, NO_PUSH);
+            POP_DE();
+            LD_HL_DE();
+            expr.outputRegister2 = OutputRegisterDE;
+        }
+    }
+    StoToChainAns();
+}
+void StoToChainAns(void) {
+    if (entry2->mask == TYPE_MASK_U8) {
+        OR_A_A();
+        SBC_HL_HL();
+        LD_L_A();
+        expr.AnsSetZeroFlag = true;
+        expr.ZeroCarryFlagRemoveAmountOfBytes = 3;
+    } else if (entry2->mask == TYPE_MASK_U16) {
+        LD_HL_E();
+        INC_HL();
+        LD_HL_D();
+        EX_S_DE_HL();
+    }
 }
 void StoFunctionVariable(void) {
     insertFunctionReturn(entry1_operand, OUTPUT_IN_HL, NO_PUSH);
@@ -745,20 +953,20 @@ void GEChainPushChainAns(void) {
     GEInsert();
 }
 
-#define GTNumberVariable    GENumberVariable   
-#define GTNumberFunction    GENumberFunction   
-#define GTNumberChainAns    GENumberChainAns   
-#define GTVariableNumber    GEVariableNumber   
-#define GTVariableVariable  GEVariableVariable 
-#define GTVariableFunction  GEVariableFunction 
-#define GTVariableChainAns  GEVariableChainAns 
-#define GTFunctionNumber    GEFunctionNumber   
-#define GTFunctionVariable  GEFunctionVariable 
-#define GTFunctionFunction  GEFunctionFunction 
-#define GTFunctionChainAns  GEFunctionChainAns 
-#define GTChainAnsNumber    GEChainAnsNumber   
-#define GTChainAnsVariable  GEChainAnsVariable 
-#define GTChainAnsFunction  GEChainAnsFunction 
+#define GTNumberVariable    GENumberVariable
+#define GTNumberFunction    GENumberFunction
+#define GTNumberChainAns    GENumberChainAns
+#define GTVariableNumber    GEVariableNumber
+#define GTVariableVariable  GEVariableVariable
+#define GTVariableFunction  GEVariableFunction
+#define GTVariableChainAns  GEVariableChainAns
+#define GTFunctionNumber    GEFunctionNumber
+#define GTFunctionVariable  GEFunctionVariable
+#define GTFunctionFunction  GEFunctionFunction
+#define GTFunctionChainAns  GEFunctionChainAns
+#define GTChainAnsNumber    GEChainAnsNumber
+#define GTChainAnsVariable  GEChainAnsVariable
+#define GTChainAnsFunction  GEChainAnsFunction
 #define GTChainPushChainAns GEChainPushChainAns
 
 #define LTNumberVariable   GTVariableNumber

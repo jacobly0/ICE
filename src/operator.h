@@ -23,6 +23,7 @@ void LD_HL_STRING(uint24_t);
 uint8_t parseOperator(element_t*, element_t*, element_t*, element_t*);
 
 void insertFunctionReturn(uint24_t, uint8_t, bool);
+void StoToChainAns(void);
 void EQInsert(void);
 void GEInsert(void);
 void AddStringString(void);

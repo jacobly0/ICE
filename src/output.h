@@ -94,6 +94,7 @@
     } while (0)
 #endif
 
+#define LD_A_IND_IX_OFF(off)  do { output(uint16_t, 0x7EDD); output(uint8_t, off * 3); } while (0)
 #define LD_BC_IND_IX_OFF(off) do { output(uint16_t, 0x07DD); output(uint8_t, off * 3); } while (0)
 #define LD_DE_IND_IX_OFF(off) do { output(uint16_t, 0x17DD); output(uint8_t, off * 3); } while (0)
 #define LD_HL_IND_IX_OFF(off) do { output(uint16_t, 0x27DD); output(uint8_t, off * 3); } while (0)
@@ -111,15 +112,19 @@
 #define LD_SIS_IMM_HL(val)    do { output(uint16_t, 0x2240); output(uint16_t, val); } while (0)
 #define LD_SIS_HL(val)        do { output(uint16_t, 0x2140); output(uint16_t, val); } while (0)
 #define LD_HL_ADDR(val)       do { output(uint8_t, 0x2A); output(uint24_t, val); } while (0)
+#define LD_ADDR_HL(val)       do { output(uint8_t, 0x22); output(uint24_t, val); } while (0)
+#define LD_ADDR_DE(val)       do { output(uint16_t, 0x53ED); output(uint24_t, val); } while (0)
 #define LD_A_ADDR(val)        do { output(uint8_t, 0x3A); output(uint24_t, val); } while (0)
+#define LD_ADDR_A(val)        do { output(uint8_t, 0x32); output(uint24_t, val); } while (0)
 #define LD_HL_HL()            do { output(uint16_t, 0x27ED); } while (0)
-#define LD_HL_DE()            do { output(uint16_t, 0x17ED); } while (0)
+#define LD_HL_DE()            do { output(uint16_t, 0x1FED); } while (0)
 #define LD_HL_VAL(val)        do { output(uint8_t, 0x36); output(uint8_t, val); } while (0)
 
 #define LD_A(val)             do { output(uint8_t, OP_LD_A); output(uint8_t, val); } while (0)    
 #define LD_B(val)             do { output(uint8_t, OP_LD_B); output(uint8_t, val); } while (0)
 #define LD_C(val)             do { output(uint8_t, OP_LD_C); output(uint8_t, val); } while (0)
 #define LD_L(val)             do { output(uint8_t, OP_LD_L); output(uint8_t, val); } while (0)
+#define LD_HL_A()             do { output(uint8_t, 0x77); } while (0)
 #define LD_HL_D()             do { output(uint8_t, 0x73); } while (0)
 #define LD_HL_E()             do { output(uint8_t, 0x72); } while (0)
 #define LD_A_DE()             do { output(uint8_t, 0x1A);} while (0)

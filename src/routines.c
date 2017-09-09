@@ -53,6 +53,7 @@ uint8_t IsHexadecimal(uint24_t token) {
 
 bool CheckEOL(void) {
     uint24_t token;
+    
     if ((int)(token = _getc(ice.inPrgm)) == EOF || (uint8_t)token == tEnter) {
         return true;
     }

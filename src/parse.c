@@ -496,7 +496,7 @@ uint8_t parsePostFixFromIndexToIndex(uint24_t startIndex, uint24_t endIndex) {
     element_t *outputCurr;
     element_t *outputPtr = (element_t*)outputStack;
     uint8_t outputType, temp, operandDepth = 0, AnsDepth = 0;
-    uint24_t outputOperand, loopIndex, tempIndex = 0, operand1Index, operand2Index, amountOfStackElements;
+    uint24_t outputOperand, loopIndex, tempIndex = 0, amountOfStackElements;
     
     // Set some variables
     outputCurr = &outputPtr[startIndex];
@@ -588,8 +588,6 @@ uint8_t parsePostFixFromIndexToIndex(uint24_t startIndex, uint24_t endIndex) {
         // Clear this flag
         expr.AnsSetZeroFlagReversed = false;
         
-        //dbg_Debugger();
-        
         if (outputType == TYPE_OPERATOR) {
             element_t *outputPrev, *outputPrevPrev, *outputPrevPrevPrev;
             
@@ -632,7 +630,6 @@ uint8_t parsePostFixFromIndexToIndex(uint24_t startIndex, uint24_t endIndex) {
             // Use this to cleanup the function after parsing
             uint8_t amountOfArguments = (uint8_t)(outputCurr->operand >> 8);
             
-            dbg_Debugger();
             // Only execute when it's not a pointer directly after a ->
             if (outputCurr->operand != 0x010108) {
                 // Check if we need to push Ans
@@ -739,7 +736,7 @@ static uint8_t functionI(uint24_t token) {
                 // Check if there is a description
                 if ((uint8_t)(token = _getc(ice.inPrgm)) == tii) {
 #ifndef COMPUTER_ICE
-                    uint8_t *dataPtr = ti_GetDataPtr(ice.inPrgm);
+                    void *dataPtr = ti_GetDataPtr(ice.inPrgm);
                     
                     // Grab description
                     while ((int)(token = _getc(ice.inPrgm)) != EOF && (uint8_t)token != tEnter) {
@@ -832,7 +829,7 @@ static uint8_t functionIf(uint24_t token) {
         tempC  = expr.AnsSetCarryFlag;
         tempCR = expr.AnsSetCarryFlagReversed;
         
-        if (tempC) {
+        if (tempC || tempCR) {
             if (tempCR) {
                 JP_NC(0);
             } else {
@@ -933,7 +930,7 @@ insertJRCZReturn2:
     
     // Duplicated function opt
 insertJRCZ:
-    if (tempC) {
+    if (tempC || tempCR) {
         if (tempCR) {
             *IfStartAddr++ = OP_JR_NC;
         } else {
@@ -1041,7 +1038,7 @@ uint8_t functionRepeat(uint24_t token) {
     optimizeZeroCarryFlagOutput();
     RepeatCondEnd = ice.programPtr;
 
-    if (expr.AnsSetCarryFlag) {
+    if (expr.AnsSetCarryFlag || expr.AnsSetCarryFlagReversed) {
         if (expr.AnsSetCarryFlagReversed) {
             JP_NC(0);
         } else {
@@ -1057,7 +1054,7 @@ uint8_t functionRepeat(uint24_t token) {
     
     // Check if we can replace the "jp" with a "jr"
     if (ice.programPtr - RepeatCodeStart < 0x80 + 4 - 2) {
-        if (expr.AnsSetCarryFlag) {
+        if (expr.AnsSetCarryFlag || expr.AnsSetCarryFlagReversed) {
             if (expr.AnsSetCarryFlagReversed) {
                 *RepeatCondEnd++ = OP_JR_NC;
             } else {
@@ -1097,7 +1094,7 @@ static uint8_t functionReturn(uint24_t token) {
         //Check if we can optimize stuff :D
         optimizeZeroCarryFlagOutput();
         
-        if (expr.AnsSetCarryFlag) {
+        if (expr.AnsSetCarryFlag || expr.AnsSetCarryFlagReversed) {
             if (expr.AnsSetCarryFlagReversed) {
                 RET_C();
             } else {
@@ -1406,10 +1403,16 @@ static uint8_t tokenUnimplemented(uint24_t token) {
 
 void optimizeZeroCarryFlagOutput(void) {
     if (!expr.AnsSetZeroFlag && !expr.AnsSetCarryFlag) {
-        MaybeDEToHL();
-        ADD_HL_DE();
-        OR_A_A();
-        SBC_HL_DE();
+        if (expr.outputRegister == OutputRegisterHL) {
+            ADD_HL_DE();
+            OR_A_A();
+            SBC_HL_DE();
+        } else {
+            SCF();
+            SBC_HL_HL();
+            ADD_HL_DE();
+            expr.AnsSetCarryFlagReversed = true;
+        }
     } else {
         ice.programPtr -= expr.ZeroCarryFlagRemoveAmountOfBytes;
     }
