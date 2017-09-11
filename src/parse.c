@@ -120,6 +120,22 @@ uint8_t parseExpression(int token) {
             continue;
         }
         
+        // Process a binary number
+        else if (tok == tPi) {
+            uint24_t output = 0;
+            
+            while ((tok = (uint8_t)(token = _getc(ice.inPrgm))) >= t0 && tok <= t1) {
+                output = (output << 1) + tok - t0;
+            }
+            outputCurr->type = TYPE_NUMBER;
+            outputCurr->operand = output;
+            outputElements++;
+            mask = TYPE_MASK_U24;
+
+            // Don't grab a new token
+            continue;
+        }
+        
         // Process a 'negative' number
         else if (tok == tChs) {
             uint24_t output = 0;
@@ -1615,7 +1631,7 @@ uint8_t (*functions[256])(int) = {
     tokenUnimplemented, //169
     tokenUnimplemented, //170
     parseExpression,    //171
-    tokenUnimplemented, //172
+    parseExpression,    //172
     parseExpression,    //173
     tokenUnimplemented, //174
     tokenUnimplemented, //175
