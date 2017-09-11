@@ -227,6 +227,40 @@ uint8_t parseFunction(uint24_t index) {
         CALL(__idvrmu);
     }
     
+    // sub(
+    else if (function2 == tSubStrng) {
+        element_t *outputPrevPrevPrev = &outputPtr[getIndexOffset(-4)];
+        uint24_t outputPrevPrevPrevOperand = outputPrevPrevPrev->operand;
+        
+        // First argument should be a string
+        if (outputPrevPrevPrev->type < TYPE_STRING) {
+            return E_SYNTAX;
+        }
+        
+        // Parse last 2 argument
+        if ((res = parseFunction2Args(index, OUTPUT_IN_BC, amountOfArguments - 1, true)) != VALID) {
+            return res;
+        }
+        
+        // Get the string into DE
+        if (outputPrevPrevPrev->type == TYPE_STRING && 
+              outputPrevPrevPrevOperand != ice.tempStrings[TempString1] && outputPrevPrevPrevOperand != ice.tempStrings[TempString2]) {
+            ProgramPtrToOffsetStack();
+        }
+        LD_DE_IMM(outputPrevPrevPrevOperand);
+        
+        // Add the offset to the string, and copy!
+        ADD_HL_DE();
+        if (outputPrevPrevPrevOperand == ice.tempStrings[TempString1]) {
+            LD_DE_IMM(ice.tempStrings[TempString2]);
+        } else {
+            LD_DE_IMM(ice.tempStrings[TempString1]);
+        }
+        LDIR();
+        EX_DE_HL();
+        LD_HL_VAL(0);
+    }
+    
     // {
     else if (function == tLBrace) {
         if (amountOfArguments != 1) {
@@ -498,14 +532,14 @@ uint8_t parseFunction2Args(uint24_t index, uint8_t outputRegister2, uint8_t amou
         if (outputPrevType == TYPE_NUMBER) {
             if (orderDoesMatter) {
                 LD_HL_IND_IX_OFF(outputPrevPrevOperand);
-                LD_DE_IMM(outputPrevOperand);
+                if (outputRegister2 == OUTPUT_IN_DE) {
+                    LD_DE_IMM(outputPrevOperand);
+                } else {
+                    LD_BC_IMM(outputPrevOperand);
+                }
             } else {
                 LD_HL_NUMBER(outputPrevPrevOperand);
-                if (outputRegister2 == OUTPUT_IN_DE) {
-                    LD_DE_IND_IX_OFF(outputPrevOperand);
-                } else {
-                    LD_BC_IND_IX_OFF(outputPrevOperand);
-                }
+                LD_DE_IND_IX_OFF(outputPrevOperand);
             }
         } else if (outputPrevType == TYPE_VARIABLE) {
             LD_HL_IND_IX_OFF(outputPrevPrevOperand);

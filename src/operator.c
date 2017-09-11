@@ -18,7 +18,6 @@ INCBIN(Or, "src/asm/or.bin");
 INCBIN(Xor, "src/asm/xor.bin");
 INCBIN(Rand, "src/asm/rand.bin");
 INCBIN(Keypad, "src/asm/keypad.bin");
-INCBIN(StringSto, "src/asm/stringsto.bin");
 #endif
 
 extern void (*operatorFunctions[224])(void);
@@ -622,10 +621,12 @@ void StoFunctionVariable(void) {
 }
 void StoStringString(void) {
     LD_HL_STRING(entry1_operand);
-    memcpy(ice.programDataPtr, StringStoData, 9);
-    ice.programDataPtr += 9;
-    LD_DE_IMM(entry2_operand);
-    LDIR();
+    PUSH_HL();
+    LD_HL_IMM(entry2_operand);
+    PUSH_HL();
+    CALL(__strcpy);
+    POP_BC();
+    POP_BC();
 }
 void AndInsert(void) {
     if (oper == tOr) {

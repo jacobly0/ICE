@@ -18,7 +18,7 @@ INCBIN(Pause, "src/asm/pause.bin");
 
 extern uint8_t (*functions[256])(int token);
 const char implementedFunctions[] = {tNot, tMin, tMax, tMean, tSqrt, tDet};
-const char implementedFunctions2[] = {tRemainder, tSub, tLength, tToString};
+const char implementedFunctions2[] = {tRemainder, tSubStrng, tLength, tToString};
 element_t outputStack[400];
 element_t stack[200];
 label_t labelStack[100];
@@ -601,6 +601,7 @@ uint8_t parsePostFixFromIndexToIndex(uint24_t startIndex, uint24_t endIndex) {
     
     // 3 or more entries, full expression
     do {
+        element_t *outputPrevPrevPrev = &outputPtr[getIndexOffset(-4)];
         outputCurr = &outputPtr[loopIndex = getNextIndex()];
         outputType = outputCurr->type;
         
@@ -608,7 +609,7 @@ uint8_t parsePostFixFromIndexToIndex(uint24_t startIndex, uint24_t endIndex) {
         expr.AnsSetZeroFlagReversed = false;
         
         if (outputType == TYPE_OPERATOR) {
-            element_t *outputPrev, *outputPrevPrev, *outputPrevPrevPrev;
+            element_t *outputPrev, *outputPrevPrev;
             
             // Wait, invalid operator?!
             if (loopIndex < startIndex + 2) {
@@ -621,9 +622,9 @@ uint8_t parsePostFixFromIndexToIndex(uint24_t startIndex, uint24_t endIndex) {
                 PushHLDE();
             }
             
+            // Get the previous entries, -2 is the previous one, -3 is the one before etc
             outputPrev = &outputPtr[getIndexOffset(-2)];
             outputPrevPrev = &outputPtr[getIndexOffset(-3)];
-            outputPrevPrevPrev = &outputPtr[getIndexOffset(-4)];
             
             // Parse the operator with the 2 latest operands of the stack!
             if ((temp = parseOperator(outputPrevPrevPrev, outputPrevPrev, outputPrev, outputCurr)) != VALID) {
@@ -634,7 +635,7 @@ uint8_t parsePostFixFromIndexToIndex(uint24_t startIndex, uint24_t endIndex) {
             removeIndexFromStack(getCurrentIndex() - 2);
             removeIndexFromStack(getCurrentIndex() - 2);
             
-            // Check if it was a command with 2 strings
+            // Check if it was a command with 2 strings, then the output is a string, not Ans
             if ((uint8_t)outputCurr->operand == tAdd && outputPrevPrev->type >= TYPE_STRING && outputPrev->type >= TYPE_STRING) {
                 outputCurr->type = TYPE_STRING;
                 if (outputPrevPrev->operand == ice.tempStrings[TempString2] || outputPrev->operand == ice.tempStrings[TempString1]) {
@@ -652,6 +653,7 @@ uint8_t parsePostFixFromIndexToIndex(uint24_t startIndex, uint24_t endIndex) {
         else if (outputType == TYPE_FUNCTION) {
             // Use this to cleanup the function after parsing
             uint8_t amountOfArguments = (uint8_t)(outputCurr->operand >> 8);
+            uint8_t function2 = (uint8_t)(outputCurr->operand >> 16);
             
             // Only execute when it's not a pointer directly after a ->
             if (outputCurr->operand != 0x010108) {
@@ -674,10 +676,22 @@ uint8_t parsePostFixFromIndexToIndex(uint24_t startIndex, uint24_t endIndex) {
                 }
                 
                 // I don't care that this will be ignored when it's a pointer, because I know there is a -> directly after
+                // If it's a sub(, the output should be a string, not Ans
+                if (function2 == tSubStrng) {
+                    outputCurr->type = TYPE_STRING;
+                    if (outputPrevPrevPrev->operand == ice.tempStrings[TempString1]) {
+                        outputCurr->operand = ice.tempStrings[TempString2];
+                    } else {
+                        outputCurr->operand = ice.tempStrings[TempString1];
+                    }
+                }
+                
                 // Check chain push/ans
-                AnsDepth = 1;
-                tempIndex = loopIndex;
-                outputCurr->type = TYPE_CHAIN_ANS;
+                else {
+                    AnsDepth = 1;
+                    tempIndex = loopIndex;
+                    outputCurr->type = TYPE_CHAIN_ANS;
+                }
             }
         }
         
