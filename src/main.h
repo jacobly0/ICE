@@ -18,6 +18,8 @@ typedef struct {
     uint8_t  tempToken;                                     // Used for functions, i.e. For(, where an argument can stop with either a comma or a parentheses
     uint8_t  stackDepth;                                    // Used for compiling arguments of C functions
     uint8_t  amountOfOSLocationsUsed;                       // Used for the amount of OS lists and strings that are used
+    uint8_t  amountOfLbls;
+    uint8_t  amountOfGotos;
     
     uint24_t *dataOffsetStack[500];                         // Stack of the address to point to the data, which needs to be changed after compiling
     uint24_t dataOffsetElements;                            // Amount of stack elements of above
@@ -34,7 +36,6 @@ typedef struct {
     uint24_t tempStrings[2];                                // Used to allocate temp strings
     
     ti_var_t inPrgm;                                        // Used for getting tokens
-    ti_var_t inPrgm2;                                       // Another input program
     ti_var_t outPrgm;                                       // Used for writing bytes
     
     bool     gotName;                                       // Already got the output name
@@ -77,6 +78,11 @@ typedef struct {
     
     uint24_t outputNumber;
 } expr_t;
+
+typedef struct {
+    char     name[10];
+    uint24_t addr;
+} label_t;
 
 #define MESSAGE_HEIGHT       10
 #define iceMessageLine       ((ice.messageIndex += MESSAGE_HEIGHT) + 3)

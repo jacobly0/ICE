@@ -27,6 +27,7 @@
 void UpdatePointersToData(uint24_t);
 void optimizeZeroCarryFlagOutput(void);
 void skipLine(void);
+void insertGotoLabel(void);
 
 uint8_t parsePostFixFromIndexToIndex(uint24_t, uint24_t);
 uint8_t functionRepeat(int);

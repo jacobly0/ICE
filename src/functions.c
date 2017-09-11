@@ -128,12 +128,11 @@ const uint8_t CArguments[] = {
 extern uint8_t outputStack[4096];
 
 uint8_t parseFunction(uint24_t index) {
-    element_t *outputPtr = (element_t*)outputStack, *outputPrev, *outputPrevPrev, *outputCurr;
-    uint8_t function, function2, amountOfArguments, temp, a, outputPrevType, outputPrevPrevType, res;
-    uint24_t output, endIndex, startIndex, outputPrevOperand, outputPrevPrevOperand;
+    element_t *outputPtr = (element_t*)outputStack, *outputPrev, *outputCurr;
+    uint8_t function, function2, amountOfArguments, temp, a, outputPrevType, res;
+    uint24_t output, endIndex, startIndex, outputPrevOperand;
     
     outputPrev        = &outputPtr[getIndexOffset(-2)];
-    outputPrevPrev    = &outputPtr[getIndexOffset(-3)];
     output            = (&outputPtr[index])->operand;
     outputCurr        = &outputPtr[getIndexOffset(-1)];
     function          = (uint8_t)output;
@@ -141,9 +140,7 @@ uint8_t parseFunction(uint24_t index) {
     amountOfArguments = (uint8_t)(output >> 8);
     
     outputPrevOperand     = outputPrev->operand;
-    outputPrevPrevOperand = outputPrevPrev->operand;
     outputPrevType        = outputPrev->type;
-    outputPrevPrevType    = outputPrevPrev->type;
     
     expr.outputRegister2 = OUTPUT_IN_HL;
     expr.AnsSetZeroFlag = expr.AnsSetZeroFlagReversed = expr.AnsSetCarryFlag = expr.AnsSetCarryFlagReversed = false;

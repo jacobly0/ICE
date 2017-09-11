@@ -19,8 +19,11 @@ INCBIN(Pause, "src/asm/pause.bin");
 extern uint8_t (*functions[256])(int token);
 const char implementedFunctions[] = {tNot, tMin, tMax, tMean, tSqrt, tDet};
 const char implementedFunctions2[] = {tRemainder, tSub, tLength, tToString};
-uint8_t outputStack[2000];
-uint8_t stack[1500];
+element_t outputStack[400];
+element_t stack[200];
+label_t labelStack[100];
+label_t gotoStack[50];
+
 
 uint8_t parseProgram(void) {
     int token;
@@ -53,8 +56,8 @@ uint8_t parseExpression(int token) {
     uint8_t *amountOfArgumentsStackPtr = amountOfArgumentsStack, canUseMask = 2;
 
     // Setup pointers
-    element_t *outputPtr = (element_t*)outputStack;
-    element_t *stackPtr  = (element_t*)stack;
+    element_t *outputPtr = outputStack;
+    element_t *stackPtr  = stack;
     element_t *outputCurr, *outputPrev, *outputPrevPrev;
     element_t *stackCurr, *stackPrev = NULL;
     
@@ -1290,6 +1293,8 @@ static uint8_t functionCustom(int token) {
             res = parseProgram();
             displayLoadingBarFrame();
             ti_Close(ice.inPrgm);
+#else
+            res = E_NOT_IMPLEMENTED;
 #endif
         } else {
             return E_PROG_NOT_FOUND;
@@ -1300,11 +1305,8 @@ static uint8_t functionCustom(int token) {
     
     // Call
     else if ((uint8_t)token == 0x0C) {
-        // Add the goto to the stack, and skip the line
-        *ice.GotoPtr++ = (uint24_t)ice.programPtr;
-        *ice.GotoPtr++ = _tell(ice.inPrgm);
+        insertGotoLabel();
         CALL(0);
-        skipLine();
         return VALID;
     } else {
         return E_UNIMPLEMENTED;
@@ -1313,19 +1315,36 @@ static uint8_t functionCustom(int token) {
 
 static uint8_t functionLbl(int token) {
     // Add the label to the stack, and skip the line
-    *ice.LblPtr++ = (uint24_t)ice.programPtr;
-    *ice.LblPtr++ = _tell(ice.inPrgm);
-    skipLine();
+    label_t *labelPtr = labelStack;
+    label_t *labelCurr = &labelPtr[ice.amountOfLbls++];
+    uint8_t a = 0;
+    
+    while ((token = _getc(ice.inPrgm)) != EOF || (uint8_t)token != tEnter) {
+        labelCurr->name[a++] = (uint8_t)token;
+    }
+    labelCurr->name[a] = 0;
+    labelCurr->addr = (uint24_t)ice.programPtr;
     return VALID;
 }
 
 static uint8_t functionGoto(int token) {
-    // Add the goto to the stack, and skip the line
-    *ice.GotoPtr++ = (uint24_t)ice.programPtr;
-    *ice.GotoPtr++ = _tell(ice.inPrgm);
+    insertGotoLabel();
     JP(0);
-    skipLine();
     return VALID;
+}
+
+void insertGotoLabel(void) {
+    // Add the label to the stack, and skip the line
+    label_t *gotoPtr = gotoStack;
+    label_t *gotoCurr = &gotoPtr[ice.amountOfGotos++];
+    uint8_t a = 0;
+    int token;
+    
+    while ((token = _getc(ice.inPrgm)) != EOF || (uint8_t)token != tEnter) {
+        gotoCurr->name[a++] = (uint8_t)token;
+    }
+    gotoCurr->name[a] = 0;
+    gotoCurr->addr = (uint24_t)ice.programPtr;
 }
 
 static uint8_t functionPause(int token) {

@@ -14,6 +14,8 @@ ice_t ice;
 expr_t expr;
 
 const char *infoStr = "ICE Compiler v2.0 - By Peter \"PT_\" Tillema";
+extern label_t labelStack[100];
+extern label_t gotoStack[50];
 
 #ifdef COMPUTER_ICE
 #define INCBIN_PREFIX
@@ -132,32 +134,29 @@ int main(int argc, char **argv) {
     
     gfx_PrintStringXY("Prescanning...", 1, iceMessageLine);
     displayLoadingBarFrame();
+    
+    ice.inPrgm = _open(var_name);
+    _seek(0, SEEK_END, ice.inPrgm);
+    ice.programLength = _tell(ice.inPrgm);
+    ice.programData    = (uint8_t*)0xD52C00;
 #else
     var_name = argv[1];
     if (argc != 2) {
         fprintf(stderr, "Error: Missing program as input\n");
         exit(1);
     }
-    fprintf(stdout, "%s\nPrescanning...\n", infoStr);
-#endif
-
+    
     ice.inPrgm = _open(var_name);
-    ice.inPrgm2 = _open(var_name);
     if (!ice.inPrgm) {
-#ifdef COMPUTER_ICE
-        fprintf(stdout, "Can't find input program");
-#endif
+        fprintf(stdout, "Can't find input program\n");
         goto stop;
     }
-    _seek(0, SEEK_END, ice.inPrgm2);
-    ice.programLength = _tell(ice.inPrgm2);
-    
-    // Setup pointers and header
-#ifndef COMPUTER_ICE
-    ice.programData    = (uint8_t*)0xD52C00;
-#else
-    ice.programData    = malloc(50000);
+    fprintf(stdout, "%s\nPrescanning...\n", infoStr);
+    _seek(0, SEEK_END, ice.inPrgm);
+    ice.programLength = _tell(ice.inPrgm);
+    ice.programData   = malloc(50000);
 #endif
+
     ice.programPtr     = ice.programData + 116;
     ice.programDataPtr = ice.programDataData;
     ice.LblPtr         = ice.LblStack;
@@ -190,6 +189,8 @@ int main(int argc, char **argv) {
     
     // Create or empty the output program if parsing succeeded
     if (res == VALID) {
+        uint8_t currentGoto, currentLbl;
+        
         // If we modified IY, restore it
         if (ice.modifiedIY) {
             LD_IY_IMM(flags);
@@ -211,32 +212,15 @@ int main(int argc, char **argv) {
         }
         
         // Find all the matching Goto's/Lbl's
-        while (ice.GotoPtr != ice.GotoStack) {
-            uint24_t *temp, GotoAddr;
-            
-            _seek(*--ice.GotoPtr, SEEK_SET, ice.inPrgm);
-            GotoAddr = *--ice.GotoPtr;
-            
-            // Check all the labels
-            for (temp = ice.LblStack; temp < ice.LblPtr;) {
-                int tok1, tok2;
-                uint24_t LblAddr = *temp++;
-                
-                _seek(*temp++, SEEK_SET, ice.inPrgm2);
-                
-                // Check if the labels are the same
-                do {
-                    tok1 = _getc(ice.inPrgm);
-                    tok2 = _getc(ice.inPrgm2);
-                } while ((uint8_t)tok1 != tEnter && tok1 != EOF && (uint8_t)tok2 != tEnter && tok2 != EOF && (uint8_t)tok1 == (uint8_t)tok2);
-                
-                if (((uint8_t)tok1 == tEnter || tok1 == EOF) && ((uint8_t)tok2 == tEnter || tok2 == EOF)) {
-                    w24((uint8_t*)GotoAddr + 1, LblAddr - (uint24_t)ice.programData + PRGM_START);
+        for (currentGoto = 0; currentGoto < ice.amountOfGotos; currentGoto++) {
+            for (currentLbl = 0; currentLbl < ice.amountOfLbls; currentLbl++) {
+                if (memcmp((&labelStack[currentLbl])->name, (&gotoStack[currentGoto])->name, 10)) {
+                    w24((uint8_t*)((&gotoStack[currentGoto])->addr + 1), (&labelStack[currentLbl])->addr - (uint24_t)ice.programData + PRGM_START);
                     goto findNextLabel;
                 }
             }
             
-            // Label not found :(
+            // Label not found
             displayError(E_NO_LABEL);
             goto stop;
 findNextLabel:;
