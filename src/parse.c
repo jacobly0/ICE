@@ -637,12 +637,16 @@ uint8_t parsePostFixFromIndexToIndex(uint24_t startIndex, uint24_t endIndex) {
             // Check if it was a command with 2 strings
             if ((uint8_t)outputCurr->operand == tAdd && outputPrevPrev->type >= TYPE_STRING && outputPrev->type >= TYPE_STRING) {
                 outputCurr->type = TYPE_STRING;
-                outputCurr->operand = (outputPrevPrev->operand == TempString2 || outputPrev->operand == TempString1) ? TempString2 : TempString1;
+                if (outputPrevPrev->operand == ice.tempStrings[TempString2] || outputPrev->operand == ice.tempStrings[TempString1]) {
+                    outputCurr->operand = ice.tempStrings[TempString2];
+                } else {
+                    outputCurr->operand = ice.tempStrings[TempString1];
+                }
             } else {
                 AnsDepth = 1;
+                outputCurr->type = TYPE_CHAIN_ANS;
             }
             tempIndex = loopIndex;
-            outputCurr->type = TYPE_CHAIN_ANS;
         }
         
         else if (outputType == TYPE_FUNCTION) {

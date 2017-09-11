@@ -101,6 +101,7 @@ void AndData(void);
 void XorData(void);
 void RandData(void);
 void KeypadData(void);
+void StringStoData(void);
 void StringConcatenateData(void);
 void MeanData(void);
 void SqrtData(void);

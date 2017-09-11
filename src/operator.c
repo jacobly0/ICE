@@ -18,6 +18,7 @@ INCBIN(Or, "src/asm/or.bin");
 INCBIN(Xor, "src/asm/xor.bin");
 INCBIN(Rand, "src/asm/rand.bin");
 INCBIN(Keypad, "src/asm/keypad.bin");
+INCBIN(StringSto, "src/asm/stringsto.bin");
 #endif
 
 extern void (*operatorFunctions[224])(void);
@@ -368,7 +369,7 @@ void LD_HL_NUMBER(uint24_t number) {
 }
 
 void LD_HL_STRING(uint24_t StringPtr) {
-    if (StringPtr != TempString1 && StringPtr != TempString2) {
+    if (StringPtr != ice.tempStrings[TempString1] && StringPtr != ice.tempStrings[TempString2]) {
         ProgramPtrToOffsetStack();
     }
     LD_HL_IMM(StringPtr);
@@ -621,12 +622,8 @@ void StoFunctionVariable(void) {
 }
 void StoStringString(void) {
     LD_HL_STRING(entry1_operand);
-    PUSH_HL();
-    CALL(__strlen);
-    INC_HL();
-    PUSH_HL();
-    POP_BC();
-    POP_HL();
+    memcpy(ice.programDataPtr, StringStoData, 9);
+    ice.programDataPtr += 9;
     LD_DE_IMM(entry2_operand);
     LDIR();
 }
@@ -1209,10 +1206,10 @@ void AddStringString(void) {
     if (entry1->type == TYPE_STRING) {
         LD_HL_STRING(entry1_operand);
         PUSH_HL();
-        if (entry2_operand == TempString1) {
-            LD_HL_IMM(TempString2);
+        if (entry2_operand == ice.tempStrings[TempString1]) {
+            LD_HL_IMM(ice.tempStrings[TempString2]);
         } else {
-            LD_HL_IMM(TempString1);
+            LD_HL_IMM(ice.tempStrings[TempString1]);
         }
         PUSH_HL();
         CALL(__strcpy);
@@ -1246,9 +1243,9 @@ void SubChainAnsNumber(void) {
         }
     } else {
         if (expr.outputRegister == OUTPUT_IN_HL) {
-            LD_DE_IMM(0x1000000 - number);
+            LD_DE_IMM(~number);
         } else {
-            LD_HL_IMM(0x1000000 - number);
+            LD_HL_IMM(~number);
         }
         ADD_HL_DE();
     }

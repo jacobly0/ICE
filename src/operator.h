@@ -9,8 +9,8 @@
 #define NO_PUSH   false
 #define NEED_PUSH true
 
-#define TempString1 pixelShadow + 64000
-#define TempString2 pixelShadow + 65000
+#define TempString1 0
+#define TempString2 1
 
 uint8_t getIndexOfOperator(uint8_t);
 uint24_t executeOperator(uint24_t, uint24_t, uint8_t);
