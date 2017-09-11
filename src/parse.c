@@ -18,7 +18,7 @@ INCBIN(Pause, "src/asm/pause.bin");
 
 extern uint8_t (*functions[256])(int token);
 const char implementedFunctions[] = {tNot, tMin, tMax, tMean, tSqrt, tDet};
-const char implementedFunctions2[] = {tRemainder, tSubStrng, tLength, tToString};
+const char implementedFunctions2[] = {tRemainder, tSubStrng, tLength};
 element_t outputStack[400];
 element_t stack[200];
 label_t labelStack[100];

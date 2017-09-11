@@ -261,6 +261,24 @@ uint8_t parseFunction(uint24_t index) {
         LD_HL_VAL(0);
     }
     
+    // length(
+    else if (function2 == tLength) {
+        if (amountOfArguments != 1) {
+            return E_ARGUMENTS;
+        }
+        
+        // Should be a string
+        if (outputPrev->type < TYPE_STRING) {
+            return E_SYNTAX;
+        }
+        
+        // Get the length
+        LD_HL_STRING(outputPrev->operand);
+        PUSH_HL();
+        CALL(__strlen);
+        POP_BC();
+    }
+    
     // {
     else if (function == tLBrace) {
         if (amountOfArguments != 1) {
