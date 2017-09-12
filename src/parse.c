@@ -842,8 +842,7 @@ static uint8_t functionI(int token) {
 }
 
 static uint8_t functionIf(int token) {
-    uint8_t res, tempZR, tempC, tempCR, insertJRCZReturn;
-    uint8_t *IfStartAddr, *IfElseAddr = NULL;
+    uint8_t *IfStartAddr, *IfElseAddr = NULL, res;
     uint24_t tempDataOffsetElements, tempDataOffsetElements2;
     
     if ((token = _getc(ice.inPrgm)) != EOF && token != tEnter) {
@@ -862,18 +861,15 @@ static uint8_t functionIf(int token) {
         // Backup stuff
         IfStartAddr = ice.programPtr;
         tempDataOffsetElements = ice.dataOffsetElements;
-        tempZR = expr.AnsSetZeroFlagReversed;
-        tempC  = expr.AnsSetCarryFlag;
-        tempCR = expr.AnsSetCarryFlagReversed;
         
-        if (tempC || tempCR) {
-            if (tempCR) {
+        if (expr.AnsSetCarryFlag || expr.AnsSetCarryFlagReversed) {
+            if (expr.AnsSetCarryFlagReversed) {
                 JP_NC(0);
             } else {
                 JP_C(0);
             }
         } else {
-            if (tempZR) {
+            if (expr.AnsSetZeroFlagReversed) {
                 JP_NZ(0);
             } else {
                 JP_Z(0);
@@ -888,13 +884,14 @@ static uint8_t functionIf(int token) {
         
         // Check if we quit the program with an 'Else'
         if (res == E_ELSE) {
+            bool shortElseCode;
+            
             // Backup stuff
             IfElseAddr = ice.programPtr;
             tempDataOffsetElements2 = ice.dataOffsetElements;
             
             JP(0);
-            res = parseProgram();
-            if (res != E_END && res != VALID) {
+            if ((res = parseProgram()) != E_END && res != VALID) {
                 return res;
             }
             
@@ -903,60 +900,13 @@ static uint8_t functionIf(int token) {
                 return E_SYNTAX;
             }
             
-            // Check if we can change the "jp" to a "jr" from the Else code
-            if (ice.programPtr - IfElseAddr - 2 < 0x80) {
-                // Update all the pointers to the data section
-                UpdatePointersToData(tempDataOffsetElements2);
-
-                // And finally insert the "jr", and move the code
-                *IfElseAddr++ = OP_JR;
-                *IfElseAddr = ice.programPtr - IfElseAddr - 3;
-                IfElseAddr++;
-                memcpy(IfElseAddr, IfElseAddr + 2, 0x7F);
-                ice.programPtr -= 2;
-            } else {
-                w24(IfElseAddr + 1, ice.programPtr + PRGM_START - ice.programData);
-                IfElseAddr += 4;
-            }
-            
-            // Check if we can change the "jp" to a "jr" from the If code
-            if (IfElseAddr - IfStartAddr < 0x80 + 4) {
-                // Update all the pointers to the data section
-                while (ice.dataOffsetElements != tempDataOffsetElements) {
-                    ice.dataOffsetStack[tempDataOffsetElements] -= 2;
-                }
-                // And finally insert the "jr (n)z/c", and move the code
-                insertJRCZReturn = 1;
-                goto insertJRCZ;
-insertJRCZReturn1:
-                *IfStartAddr = IfElseAddr - IfStartAddr - 3;
-                IfStartAddr++;
-                memcpy(IfStartAddr, IfStartAddr + 2, ice.programPtr - IfStartAddr);
-                ice.programPtr -= 2;
-            } else {
-                w24(IfStartAddr + 1, IfElseAddr + PRGM_START - ice.programData);
-                IfStartAddr += 4;
-            }
+            shortElseCode = JumpForward(IfElseAddr, ice.programPtr, tempDataOffsetElements2);
+            JumpForward(IfStartAddr, IfElseAddr + (shortElseCode ? 2 : 4), tempDataOffsetElements);
         }
         
         // Check if we quit the program with an 'End' or at the end of the input program
         else if (res == E_END || res == VALID) {
-            // Check if we can change the "jp" to a "jr"
-            if (ice.programPtr - IfStartAddr - 2 < 0x80) {
-                // Update all the pointers to the data section
-                UpdatePointersToData(tempDataOffsetElements);
-
-                // And finally insert the "jr (n)z/c", and move the code
-                insertJRCZReturn = 2;
-                goto insertJRCZ;
-insertJRCZReturn2:
-                *IfStartAddr = ice.programPtr - IfStartAddr - 3;
-                IfStartAddr++;
-                memcpy(IfStartAddr, IfStartAddr + 2, 0x7F);
-                ice.programPtr -= 2;
-            } else {
-                w24(IfStartAddr + 1, ice.programPtr + PRGM_START - ice.programData);
-            }
+            JumpForward(IfStartAddr, ice.programPtr, tempDataOffsetElements);
         } else {
             return res;
         }
@@ -964,26 +914,6 @@ insertJRCZReturn2:
     } else {
         return E_NO_CONDITION;
     }
-    
-    // Duplicated function opt
-insertJRCZ:
-    if (tempC || tempCR) {
-        if (tempCR) {
-            *IfStartAddr++ = OP_JR_NC;
-        } else {
-            *IfStartAddr++ = OP_JR_C;
-        }
-    } else {
-        if (tempZR) {
-            *IfStartAddr++ = OP_JR_NZ;
-        } else {
-            *IfStartAddr++ = OP_JR_Z;
-        }
-    }
-    if (insertJRCZReturn == 1) {
-        goto insertJRCZReturn1;
-    }
-    goto insertJRCZReturn2;
 }
 
 static uint8_t functionElse(int token) {
@@ -998,14 +928,46 @@ static uint8_t dummyReturn(int token) {
     return VALID;
 }
 
-uint8_t *WhileRepeatCondStart = NULL;
-
 void UpdatePointersToData(uint24_t tempDataOffsetElements) {
     while (ice.dataOffsetElements != tempDataOffsetElements) {
         ice.dataOffsetStack[tempDataOffsetElements] = (uint24_t*)(((uint8_t*)ice.dataOffsetStack[tempDataOffsetElements]) - 2);
         tempDataOffsetElements++;
     }
 }
+
+uint8_t JumpForward(uint8_t *startAddr, uint8_t *endAddr, uint24_t tempDataOffsetElements) {
+    if (endAddr - startAddr <= 0x80) {
+        uint8_t *tempPtr = startAddr;
+        uint8_t opcode = *startAddr;
+        
+        *startAddr++ = opcode - 0xA2 - (opcode == 0xC3 ? 9 : 0);
+        *startAddr++ = endAddr - tempPtr - 4;
+        UpdatePointersToData(tempDataOffsetElements);
+        memcpy(startAddr, startAddr + 2, ice.programPtr - startAddr);
+        ice.programPtr -= 2;
+        return true;
+    } else {
+        w24(startAddr + 1, ice.programPtr - ice.programData + PRGM_START);
+        return false;
+    }
+}
+
+uint8_t JumpBackwards(uint8_t *startAddr, uint8_t whichOpcode) {
+    if (ice.programPtr + 2 - startAddr <= 0x80) {
+        uint8_t *tempPtr = ice.programPtr;
+        
+        *ice.programPtr++ = whichOpcode;
+        *ice.programPtr++ = startAddr - 2 - tempPtr;
+        return true;
+    } else {
+        // JR cc to JP cc
+        *ice.programPtr++ = whichOpcode + 0xA2 + (whichOpcode == 0x18 ? 9 : 0);
+        *(uint24_t*)ice.programPtr++ = startAddr - ice.programData + PRGM_START;
+        return false;
+    }
+}
+
+uint8_t *WhileRepeatCondStart = NULL;
 
 static uint8_t functionWhile(int token) {
     uint24_t tempDataOffsetElements = ice.dataOffsetElements;
@@ -1017,17 +979,9 @@ static uint8_t functionWhile(int token) {
         return res;
     }
     
-    // Check if we can replace the "jp" with a "jr"
-    if (WhileRepeatCondStart - WhileStartAddr + 2 < 0x80) {
-        *WhileStartAddr++ = OP_JR;
-        *WhileStartAddr++ = WhileRepeatCondStart - TempStartAddr - 4;
-        UpdatePointersToData(tempDataOffsetElements);
-        memcpy(WhileStartAddr, WhileStartAddr + 2, 0x80);
-        ice.programPtr -= 2;
-    } else {
-        w24(WhileStartAddr + 1, WhileRepeatCondStart + PRGM_START - ice.programData);
-    }
-    
+    // Check if we can optimize the JP(0) to JR
+    JumpForward(WhileStartAddr, WhileRepeatCondStart, tempDataOffsetElements);
+
     return VALID;
 }
 
@@ -1073,44 +1027,10 @@ uint8_t functionRepeat(int token) {
     // And set the pointer after the "End"
     _seek(RepeatProgEnd, SEEK_SET, ice.inPrgm);
     optimizeZeroCarryFlagOutput();
-    RepeatCondEnd = ice.programPtr;
-
-    if (expr.AnsSetCarryFlag || expr.AnsSetCarryFlagReversed) {
-        if (expr.AnsSetCarryFlagReversed) {
-            JP_NC(0);
-        } else {
-            JP_C(0);
-        }
-    } else {
-        if (expr.AnsSetZeroFlagReversed) {
-            JP_NZ(0);
-        } else {
-            JP_Z(0);
-        }
-    }
     
-    // Check if we can replace the "jp" with a "jr"
-    if (ice.programPtr - RepeatCodeStart < 0x80 + 4 - 2) {
-        if (expr.AnsSetCarryFlag || expr.AnsSetCarryFlagReversed) {
-            if (expr.AnsSetCarryFlagReversed) {
-                *RepeatCondEnd++ = OP_JR_NC;
-            } else {
-                *RepeatCondEnd++ = OP_JR_C;
-            }
-        } else {
-            if (expr.AnsSetZeroFlagReversed) {
-                *RepeatCondEnd++ = OP_JR_NZ;
-            } else {
-                *RepeatCondEnd++ = OP_JR_Z;
-            }
-        }
-        
-        // Insert the jr offset
-        *RepeatCondEnd++ = RepeatCodeStart - ice.programPtr + 2;
-        ice.programPtr -= 2;
-    } else {
-        w24(RepeatCondEnd+1, ice.programPtr + PRGM_START - ice.programData);
-    }
+    JumpBackwards(RepeatCodeStart, expr.AnsSetCarryFlag || expr.AnsSetCarryFlagReversed ?
+        (expr.AnsSetCarryFlagReversed ? OP_JR_NC : OP_JR_C) :
+        (expr.AnsSetZeroFlagReversed  ? OP_JR_NZ : OP_JR_Z));
     return VALID;
 }
 
@@ -1291,7 +1211,155 @@ static uint8_t functionClrHome(int token) {
 }
 
 static uint8_t functionFor(int token) {
-    return E_UNIMPLEMENTED;
+    bool endPointIsNumber = false, stepIsNumber = false, reversedCond = false, smallCode;
+    uint24_t endPointNumber, stepNumber = 0, tempDataOffsetElements;
+    uint8_t *endPointExpressionValue, *stepExpression = 0, *jumpToCond, *loopStart;
+    uint8_t tok, variable, res;
+    
+    if ((tok = (token = _getc(ice.inPrgm))) >= tA && tok <= tTheta) {
+        variable = tok - tA;
+        if ((uint8_t)_getc(ice.inPrgm) != tComma) {
+            return E_SYNTAX;
+        }
+        expr.inFunction = true;
+        
+        // Get the start value, followed by a comma
+        if ((res = parseExpression(_getc(ice.inPrgm))) != VALID) {
+            return res;
+        }
+        if (ice.tempToken != tComma) {
+            return E_SYNTAX;
+        }
+        
+        // Load the value in the variable
+        if (expr.outputRegister == OUTPUT_IN_HL) {
+            LD_IX_OFF_IND_HL(variable);
+        } else {
+            LD_IX_OFF_IND_DE(variable);
+        }
+        
+        // Get the end value
+        expr.inFunction = true;
+        if ((res = parseExpression(_getc(ice.inPrgm))) != VALID) {
+            return res;
+        }
+        
+        // If the end point is a number, we can optimize things :D
+        if (expr.outputIsNumber) {
+            endPointIsNumber = true;
+            endPointNumber = expr.outputNumber;
+            ice.programPtr -= 4 - !expr.outputNumber;
+        } else {
+            endPointExpressionValue = ice.programPtr;
+            if (expr.outputRegister == OUTPUT_IN_HL) {
+                LD_ADDR_HL(0);
+            } else {
+                LD_ADDR_DE(0);
+            }
+        }
+        
+        // Check if there was a step
+        if (ice.tempToken == tComma) {
+            expr.inFunction = true;
+            
+            // Get the step value
+            if ((res = parseExpression(_getc(ice.inPrgm))) != VALID) {
+                return res;
+            }
+            if (ice.tempToken == tComma) {
+                return E_SYNTAX;
+            }
+            
+            if (expr.outputIsNumber) {
+                stepIsNumber = true;
+                stepNumber = expr.outputNumber;
+                ice.programPtr -= 4 - !expr.outputNumber;
+            } else {
+                stepExpression = ice.programPtr;
+                if (expr.outputRegister == OUTPUT_IN_HL) {
+                    LD_ADDR_HL(0);
+                } else {
+                    LD_ADDR_DE(0);
+                }
+            }
+        } else {
+            stepIsNumber = true;
+            stepNumber = 1;
+        }
+        
+        jumpToCond = ice.programPtr;
+        JP(0);
+        tempDataOffsetElements = ice.dataOffsetElements;
+        loopStart = ice.programPtr;
+        
+        // Parse the inner loop
+        if ((res = parseProgram()) != E_END && res != VALID) {
+            return res;
+        }
+        
+        // Needs to be the end of a line
+        if (!CheckEOL()) {
+            return E_SYNTAX;
+        }
+        
+        // First add the step to the variable, if the step is 0 we don't need this
+        if (!stepIsNumber || stepNumber) {
+            // ld hl, (ix+*) \ inc hl/dec hl (x times) \ ld (ix+*), hl
+            // ld hl, (ix+*) \ ld de, x \ add hl, de \ ld (ix+*), hl
+            LD_HL_IND_IX_OFF(variable);
+            if (stepIsNumber) {
+                uint8_t a = 0;
+                if (stepNumber < 5) {
+                    for (a = 0; a < (uint8_t)stepNumber; a++) {
+                        INC_HL();
+                    }
+                } else if (stepNumber > -5) {
+                    for (a = 0; a < (uint8_t)~stepNumber; a++) {
+                        DEC_HL();
+                    }
+                } else {
+                    LD_DE_IMM(stepNumber);
+                    ADD_HL_DE();
+                }
+            } else {
+                w24(stepExpression + 1, (uint24_t)ice.programPtr - (uint24_t)ice.programData + PRGM_START + 1);
+                LD_DE_IMM(0);
+                ADD_HL_DE();
+            }
+            LD_IX_OFF_IND_HL(variable);
+        }
+        
+        smallCode = JumpForward(jumpToCond, ice.programPtr, tempDataOffsetElements);
+        LD_HL_IND_IX_OFF(variable);
+
+        if (endPointIsNumber) {
+            if (stepNumber < 0x800000) {
+                LD_DE_IMM(endPointNumber + 1);
+            } else {
+                LD_DE_IMM(endPointNumber);
+                reversedCond = true;
+            }
+            OR_A_A();
+        } else {
+            w24(endPointExpressionValue + 1, ice.programPtr + PRGM_START - ice.programData + 1);
+            LD_DE_IMM(0);
+            if (stepNumber < 0x800000) {
+                SCF();
+            } else {
+                OR_A_A();
+                reversedCond = true;
+            }
+        }
+        SBC_HL_DE();
+        
+        // Jump back to the loop
+        JumpBackwards(loopStart - (smallCode ? 2 : 0), OP_JR_C - (reversedCond ? 8 : 0));
+    }
+    
+    // Small For loop
+    else {
+    }
+    return VALID;
 }
 
 static uint8_t functionPrgm(int token) {
@@ -1353,6 +1421,7 @@ static uint8_t functionLbl(int token) {
     label_t *labelCurr = &labelPtr[ice.amountOfLbls++];
     uint8_t a = 0;
     
+    // Get the label name
     while ((token = _getc(ice.inPrgm)) != EOF || (uint8_t)token != tEnter) {
         labelCurr->name[a++] = (uint8_t)token;
     }

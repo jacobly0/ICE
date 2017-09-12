@@ -25,6 +25,8 @@
 #define TYPE_MASK_U24        2
 
 void UpdatePointersToData(uint24_t);
+uint8_t JumpForward(uint8_t*, uint8_t*, uint24_t);
+uint8_t JumpBackwards(uint8_t*, uint8_t);
 void optimizeZeroCarryFlagOutput(void);
 void skipLine(void);
 void insertGotoLabel(void);

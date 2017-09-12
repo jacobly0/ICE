@@ -243,7 +243,7 @@ findNextLabel:;
         ti_PutC(0x7F, ice.outPrgm);
         
         // Write the header, main program, and data to output :D
-        if (ice.programSize) ti_Write(ice.programData, ice.programSize, 1, ice.outPrgm);
+        ti_Write(ice.programData, ice.programSize, 1, ice.outPrgm);
         if (programDataSize) ti_Write(ice.programDataData, programDataSize, 1, ice.outPrgm);
         
         // Yep, we are really done!
