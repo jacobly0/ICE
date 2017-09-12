@@ -39,7 +39,7 @@ uint8_t parseProgram(void) {
         ice.lastTokenIsReturn = false;
         ice.currentLine++;
 
-        if ((ret = (*functions[(uint8_t)token])(token)) != VALID) {
+        if ((ret = (*functions[token])(token)) != VALID) {
             break;
         }
     }
@@ -94,7 +94,7 @@ uint8_t parseExpression(int token) {
             uint24_t output = token - t0;
             
             while ((uint8_t)(token = _getc(ice.inPrgm)) >= t0 && (uint8_t)token <= t9) {
-                output = output * 10 + (uint8_t)token - t0;
+                output = output * 10 + token - t0;
             }
             outputCurr->type = TYPE_NUMBER;
             outputCurr->operand = output;
@@ -125,7 +125,7 @@ uint8_t parseExpression(int token) {
         else if (tok == tPi) {
             uint24_t output = 0;
             
-            while ((tok = (uint8_t)(token = _getc(ice.inPrgm))) >= t0 && tok <= t1) {
+            while ((tok = (token = _getc(ice.inPrgm))) >= t0 && tok <= t1) {
                 output = (output << 1) + tok - t0;
             }
             outputCurr->type = TYPE_NUMBER;
@@ -142,7 +142,7 @@ uint8_t parseExpression(int token) {
             uint24_t output = 0;
             
             while ((uint8_t)(token = _getc(ice.inPrgm)) >= t0 && (uint8_t)token <= t9) {
-                output = output * 10 + (uint8_t)token - t0;
+                output = output * 10 + token - t0;
             }
             outputCurr->type = TYPE_NUMBER;
             outputCurr->operand = 0-output;
@@ -229,7 +229,7 @@ stackToOutputReturn1:
             outputCurr->type = TYPE_NUMBER;
             outputElements++;
             mask = TYPE_MASK_U24;
-            tok = (uint8_t)_getc(ice.inPrgm);
+            tok = _getc(ice.inPrgm);
             
             // Get the address of the variable
             if (tok >= tA && tok <= tTheta) {
@@ -263,7 +263,7 @@ stackToOutputReturn1:
             stackPrev = &stackPtr[stackElements-1];
             
             // Closing tag should match it's open tag
-            if (tok != tComma && ((uint8_t)stackPrev->operand != tok - 1)) {
+            if (tok != tComma && (stackPrev->operand != token - 1)) {
                 return E_SYNTAX;
             }
             
@@ -302,10 +302,12 @@ stackToOutputReturn1:
         // Process a function, ( { [
         else if (strchr(implementedFunctions, tok) || tok == t2ByteTok || tok == tExtTok || tok == tLParen || tok == tLBrace || tok == tLBrack) {
             if (tok == t2ByteTok || tok == tExtTok) {
-                if (!strchr(implementedFunctions2, tok = (uint8_t)_getc(ice.inPrgm))) {
+                uint24_t temp2;
+                
+                if (!strchr(implementedFunctions2, temp2 = _getc(ice.inPrgm))) {
                     return E_SYNTAX;
                 }
-                token = token + (tok << 16);
+                token = token + (temp2 << 16);
             }
             // We always have at least 1 argument
             *++amountOfArgumentsStackPtr = 1;
@@ -339,12 +341,12 @@ stackToOutputReturn1:
                 
                 // The next token must be a number
                 if ((uint8_t)(token = _getc(ice.inPrgm)) >= t0 && (uint8_t)token <= t9) {
-                    tok = (uint8_t)token - t0;
+                    uint24_t temp2 = token - t0;
                     
                     // The next token can be a number, but also right parenthesis or EOF
                     if ((uint8_t)(token = _getc(ice.inPrgm)) >= t0 && (uint8_t)token <= t9) {
                         // Add the direct key to the operand
-                        outputCurr->operand = tGetKey + ((tok * 10 + (uint8_t)token - t0) << 8);
+                        outputCurr->operand = tGetKey + ((temp2 * 10 + token - t0) << 8);
                         if ((uint8_t)(token = _getc(ice.inPrgm)) == tStore || (uint8_t)token == tEnter) {
                             // Don't grab new token
                             continue;
@@ -353,7 +355,7 @@ stackToOutputReturn1:
                         }
                     } else if ((uint8_t)token == tRParen || token == EOF || (uint8_t)token == tStore || (uint8_t)token == tEnter) {
                         // Add the direct key to the operand
-                        outputCurr->operand = tGetKey + (tok << 8);
+                        outputCurr->operand = tGetKey + (temp2 << 8);
                         if ((uint8_t)token == tStore || (uint8_t)token == tEnter) {
                             // Don't grab new token
                             continue;
@@ -376,7 +378,7 @@ stackToOutputReturn1:
             
             // Get the string until it hits EOF, Enter, " or ->
             while ((token = _getc(ice.inPrgm)) != EOF && (uint8_t)token != tString && (uint8_t)token != tStore && (uint8_t)token != tEnter) {
-                *ice.programDataPtr++ = (uint8_t)token;
+                *ice.programDataPtr++ = token;
             }
             *ice.programDataPtr++ = 0;
             if ((uint8_t)token == tStore || (uint8_t)token == tEnter) {
@@ -415,7 +417,7 @@ stackToOutputReturn2:
         outputPrevPrev = &outputPtr[loopIndex-2];
         outputPrev = &outputPtr[loopIndex-1];
         outputCurr = &outputPtr[loopIndex];
-        index = (uint8_t)(outputCurr->operand >> 8);
+        index = outputCurr->operand >> 8;
         
         // Check if the types are number | number | operator
         if (loopIndex > 1 && outputPrevPrev->type == TYPE_NUMBER && outputPrev->type == TYPE_NUMBER && 
@@ -437,7 +439,7 @@ stackToOutputReturn2:
                 }
             }
             // The function has only numbers as argument, so remove them as well :)
-            switch (outputCurr->operand) {
+            switch ((uint8_t)outputCurr->operand) {
                 case tNot:
                     temp = !outputPrevOperand;
                     break;
@@ -448,7 +450,7 @@ stackToOutputReturn2:
                     temp = (outputPrevOperand > outputPrevPrevOperand) ? outputPrevOperand : outputPrevPrevOperand;
                     break;
                 case tMean:
-                    temp = (outputPrevOperand + outputPrevPrevOperand) / 2;
+                    temp = ((long)outputPrevOperand + (long)outputPrevPrevOperand) / 2;
                     break;
                 case tSqrt:
                     temp = sqrt(outputPrevOperand);
@@ -653,8 +655,8 @@ uint8_t parsePostFixFromIndexToIndex(uint24_t startIndex, uint24_t endIndex) {
         
         else if (outputType == TYPE_FUNCTION) {
             // Use this to cleanup the function after parsing
-            uint8_t amountOfArguments = (uint8_t)(outputCurr->operand >> 8);
-            uint8_t function2 = (uint8_t)(outputCurr->operand >> 16);
+            uint8_t amountOfArguments = outputCurr->operand >> 8;
+            uint8_t function2 = outputCurr->operand >> 16;
             
             // Only execute when it's not a pointer directly after a ->
             if (outputCurr->operand != 0x010108) {
@@ -728,7 +730,7 @@ static uint8_t functionI(int token) {
         if (!ice.gotName) {
             uint8_t a = 0;
             while ((token = _getc(ice.inPrgm)) != EOF && (uint8_t)token != tEnter && a < 9) {
-                ice.outName[a++] = (uint8_t)token;
+                ice.outName[a++] = token;
             }
             ice.gotName = true;
             return VALID;
@@ -1312,7 +1314,7 @@ static uint8_t functionFor(int token) {
                 for (a = 0; a < (uint8_t)stepNumber; a++) {
                     INC_HL();
                 }
-            } else if (stepNumber > -5) {
+            } else if (stepNumber > 0xFFFFFF - 4) {
                 for (a = 0; a < (uint8_t)~stepNumber; a++) {
                     DEC_HL();
                 }
@@ -1375,7 +1377,7 @@ static uint8_t functionCustom(int token) {
 #endif
         
         while ((token = _getc(ice.inPrgm)) != EOF && (tok = (uint8_t)token) != tEnter && a < 9) {
-            tempName[a++] = (char)tok;
+            tempName[a++] = tok;
         }
         tempName[a] = 0;
         
@@ -1418,7 +1420,7 @@ static uint8_t functionLbl(int token) {
     
     // Get the label name
     while ((token = _getc(ice.inPrgm)) != EOF || (uint8_t)token != tEnter) {
-        labelCurr->name[a++] = (uint8_t)token;
+        labelCurr->name[a++] = token;
     }
     labelCurr->name[a] = 0;
     labelCurr->addr = (uint24_t)ice.programPtr;
@@ -1439,7 +1441,7 @@ void insertGotoLabel(void) {
     int token;
     
     while ((token = _getc(ice.inPrgm)) != EOF || (uint8_t)token != tEnter) {
-        gotoCurr->name[a++] = (uint8_t)token;
+        gotoCurr->name[a++] = token;
     }
     gotoCurr->name[a] = 0;
     gotoCurr->addr = (uint24_t)ice.programPtr;

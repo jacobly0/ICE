@@ -135,9 +135,9 @@ uint8_t parseFunction(uint24_t index) {
     outputPrev        = &outputPtr[getIndexOffset(-2)];
     output            = (&outputPtr[index])->operand;
     outputCurr        = &outputPtr[getIndexOffset(-1)];
-    function          = (uint8_t)output;
-    function2         = (uint8_t)(output >> 16);
-    amountOfArguments = (uint8_t)(output >> 8);
+    function          = output;
+    function2         = output >> 16;
+    amountOfArguments = output >> 8;
     
     outputPrevOperand     = outputPrev->operand;
     outputPrevType        = outputPrev->type;
@@ -429,7 +429,7 @@ uint8_t parseFunction(uint24_t index) {
         }
         
         // Call the function
-        CALL(ice.CRoutinesStack[expr.outputNumber]*4 + 0xD1A8F6);
+        CALL(ice.CRoutinesStack[expr.outputNumber] * 4 + 0xD1A8F6);
         
         // And pop the arguments
         for (a = 1; a < amountOfArguments; a++) {

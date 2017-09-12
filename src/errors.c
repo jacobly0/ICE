@@ -55,7 +55,7 @@ void displayError(uint8_t index) {
     
     // If a label is not found, ice.inPrgm points to the label, so just display it
     if (index == E_NO_LABEL) {
-        while ((c = (char)_getc(ice.inPrgm)) != tEnter) {
+        while ((c = _getc(ice.inPrgm)) != tEnter) {
             PrintChar(c);
         }
     }

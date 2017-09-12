@@ -138,7 +138,7 @@ static void swapEntries() {
 uint8_t parseOperator(element_t *outputPrevPrevPrev, element_t *outputPrevPrev, element_t *outputPrev, element_t *outputCurr) {
     uint8_t typeMasked1 = outputPrevPrev->type;
     uint8_t typeMasked2 = outputPrev->type;
-    oper = (uint8_t)outputCurr->operand;
+    oper = outputCurr->operand;
     
     // Only call the function if both types are valid
     if ((typeMasked1 == typeMasked2 &&

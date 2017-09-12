@@ -41,7 +41,7 @@ void PushHLDE(void) {
 }
 
 uint8_t IsHexadecimal(int token) {
-    uint8_t tok = (uint8_t)token;
+    uint8_t tok = token;
     if (tok >= t0 && tok <= t9) {
         return tok - t0;
     } else if (tok >= tA && tok <= tF) {
