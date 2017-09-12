@@ -170,6 +170,11 @@ int main(int argc, char **argv) {
     // If there are no C functions, remove the entire header
     if (!ice.amountOfCRoutinesUsed) {
         ice.programPtr = (uint8_t*)ice.programData;
+    } else {
+        CALL(_RunIndicOff);
+        CALL((uint24_t)ice.programPtr + 12 - (uint24_t)ice.programData + PRGM_START);
+        LD_IY_IMM(flags);
+        JP(_DrawStatusBar);
     }
     
     memcpy(ice.programPtr, CProgramHeaderData, 5);

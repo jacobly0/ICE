@@ -56,6 +56,9 @@ typedef struct {
     bool     usedAlreadyMean;                               // Only once the "mean(" routine in the program data
     uint24_t MeanAddr;                                      // Address of the "mean(" routine in the program data
     
+    bool     usedAlreadyInput;                              // Only once the "Input" routine in the program data
+    uint24_t InputAddr;                                     // Address of the "Input" routine in the program data
+    
     bool     usedAlreadyPause;                              // Only once the "Pause " routine in the program data
     uint24_t PauseAddr;                                     // Address of the "Pause " routine in the program data
     uint24_t programLength;                                 // Size of input program
@@ -102,6 +105,7 @@ void XorData(void);
 void RandData(void);
 void KeypadData(void);
 void StringStoData(void);
+void InputData(void);
 void StringConcatenateData(void);
 void MeanData(void);
 void SqrtData(void);

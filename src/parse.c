@@ -14,6 +14,7 @@
 #define INCBIN_PREFIX
 #include "incbin.h"
 INCBIN(Pause, "src/asm/pause.bin");
+INCBIN(Input, "src/asm/input.bin");
 #endif
 
 extern uint8_t (*functions[256])(int token);
@@ -567,7 +568,7 @@ uint8_t parsePostFixFromIndexToIndex(uint24_t startIndex, uint24_t endIndex) {
         
         // Expression is only a function without arguments that returns something (getKey, rand)
         else if (outputType == TYPE_FUNCTION_RETURN) {
-            insertFunctionReturn(outputOperand, OUTPUT_IN_HL, NO_PUSH);
+            insertFunctionReturnNoPush(outputOperand, OUTPUT_IN_HL);
         }
         
         // It is a det(
@@ -1133,10 +1134,9 @@ static uint8_t functionOutput(int token) {
         
         // Yay, we can optimize things!
         if (expr.outputIsNumber) {
-            uint16_t outputCoordinates;
+            // Output coordinates in H and L
             ice.programPtr -= 10;
-            outputCoordinates = (*(ice.programPtr + 1) << 8) + *(ice.programPtr + 7);
-            LD_SIS_HL(outputCoordinates);
+            LD_SIS_HL((*(ice.programPtr + 1) << 8) + *(ice.programPtr + 7));
             LD_SIS_IMM_HL(curRow & 0xFFFF);
         } else {
             if (expr.outputIsVariable) {
@@ -1212,153 +1212,148 @@ static uint8_t functionClrHome(int token) {
 
 static uint8_t functionFor(int token) {
     bool endPointIsNumber = false, stepIsNumber = false, reversedCond = false, smallCode;
-    uint24_t endPointNumber, stepNumber = 0, tempDataOffsetElements;
-    uint8_t *endPointExpressionValue, *stepExpression = 0, *jumpToCond, *loopStart;
+    uint24_t endPointNumber = 0, stepNumber = 0, tempDataOffsetElements;
+    uint8_t *endPointExpressionValue = 0, *stepExpression = 0, *jumpToCond, *loopStart;
     uint8_t tok, variable, res;
     
-    if ((tok = (token = _getc(ice.inPrgm))) >= tA && tok <= tTheta) {
-        variable = tok - tA;
-        if ((uint8_t)_getc(ice.inPrgm) != tComma) {
-            return E_SYNTAX;
-        }
-        expr.inFunction = true;
-        
-        // Get the start value, followed by a comma
-        if ((res = parseExpression(_getc(ice.inPrgm))) != VALID) {
-            return res;
-        }
-        if (ice.tempToken != tComma) {
-            return E_SYNTAX;
-        }
-        
-        // Load the value in the variable
+    if ((tok = _getc(ice.inPrgm)) < tA || tok > tTheta || (uint8_t)_getc(ice.inPrgm) != tComma) {
+        return E_SYNTAX;
+    }
+    variable = tok - tA;
+    expr.inFunction = true;
+    
+    // Get the start value, followed by a comma
+    if ((res = parseExpression(_getc(ice.inPrgm))) != VALID) {
+        return res;
+    }
+    if (ice.tempToken != tComma) {
+        return E_SYNTAX;
+    }
+    
+    // Load the value in the variable
+    if (expr.outputRegister == OUTPUT_IN_HL) {
+        LD_IX_OFF_IND_HL(variable);
+    } else {
+        LD_IX_OFF_IND_DE(variable);
+    }
+    
+    // Get the end value
+    expr.inFunction = true;
+    if ((res = parseExpression(_getc(ice.inPrgm))) != VALID) {
+        return res;
+    }
+    
+    // If the end point is a number, we can optimize things :D
+    if (expr.outputIsNumber) {
+        endPointIsNumber = true;
+        endPointNumber = expr.outputNumber;
+        ice.programPtr -= 4 - !expr.outputNumber;
+    } else {
+        endPointExpressionValue = ice.programPtr;
         if (expr.outputRegister == OUTPUT_IN_HL) {
-            LD_IX_OFF_IND_HL(variable);
+            LD_ADDR_HL(0);
         } else {
-            LD_IX_OFF_IND_DE(variable);
+            LD_ADDR_DE(0);
         }
-        
-        // Get the end value
+    }
+    
+    // Check if there was a step
+    if (ice.tempToken == tComma) {
         expr.inFunction = true;
+        
+        // Get the step value
         if ((res = parseExpression(_getc(ice.inPrgm))) != VALID) {
             return res;
         }
+        if (ice.tempToken == tComma) {
+            return E_SYNTAX;
+        }
         
-        // If the end point is a number, we can optimize things :D
         if (expr.outputIsNumber) {
-            endPointIsNumber = true;
-            endPointNumber = expr.outputNumber;
+            stepIsNumber = true;
+            stepNumber = expr.outputNumber;
             ice.programPtr -= 4 - !expr.outputNumber;
         } else {
-            endPointExpressionValue = ice.programPtr;
+            stepExpression = ice.programPtr;
             if (expr.outputRegister == OUTPUT_IN_HL) {
                 LD_ADDR_HL(0);
             } else {
                 LD_ADDR_DE(0);
             }
         }
-        
-        // Check if there was a step
-        if (ice.tempToken == tComma) {
-            expr.inFunction = true;
-            
-            // Get the step value
-            if ((res = parseExpression(_getc(ice.inPrgm))) != VALID) {
-                return res;
-            }
-            if (ice.tempToken == tComma) {
-                return E_SYNTAX;
-            }
-            
-            if (expr.outputIsNumber) {
-                stepIsNumber = true;
-                stepNumber = expr.outputNumber;
-                ice.programPtr -= 4 - !expr.outputNumber;
-            } else {
-                stepExpression = ice.programPtr;
-                if (expr.outputRegister == OUTPUT_IN_HL) {
-                    LD_ADDR_HL(0);
-                } else {
-                    LD_ADDR_DE(0);
-                }
-            }
-        } else {
-            stepIsNumber = true;
-            stepNumber = 1;
-        }
-        
-        jumpToCond = ice.programPtr;
-        JP(0);
-        tempDataOffsetElements = ice.dataOffsetElements;
-        loopStart = ice.programPtr;
-        
-        // Parse the inner loop
-        if ((res = parseProgram()) != E_END && res != VALID) {
-            return res;
-        }
-        
-        // Needs to be the end of a line
-        if (!CheckEOL()) {
-            return E_SYNTAX;
-        }
-        
-        // First add the step to the variable, if the step is 0 we don't need this
-        if (!stepIsNumber || stepNumber) {
-            // ld hl, (ix+*) \ inc hl/dec hl (x times) \ ld (ix+*), hl
-            // ld hl, (ix+*) \ ld de, x \ add hl, de \ ld (ix+*), hl
-            LD_HL_IND_IX_OFF(variable);
-            if (stepIsNumber) {
-                uint8_t a = 0;
-                if (stepNumber < 5) {
-                    for (a = 0; a < (uint8_t)stepNumber; a++) {
-                        INC_HL();
-                    }
-                } else if (stepNumber > -5) {
-                    for (a = 0; a < (uint8_t)~stepNumber; a++) {
-                        DEC_HL();
-                    }
-                } else {
-                    LD_DE_IMM(stepNumber);
-                    ADD_HL_DE();
-                }
-            } else {
-                w24(stepExpression + 1, (uint24_t)ice.programPtr - (uint24_t)ice.programData + PRGM_START + 1);
-                LD_DE_IMM(0);
-                ADD_HL_DE();
-            }
-            LD_IX_OFF_IND_HL(variable);
-        }
-        
-        smallCode = JumpForward(jumpToCond, ice.programPtr, tempDataOffsetElements);
-        LD_HL_IND_IX_OFF(variable);
-
-        if (endPointIsNumber) {
-            if (stepNumber < 0x800000) {
-                LD_DE_IMM(endPointNumber + 1);
-            } else {
-                LD_DE_IMM(endPointNumber);
-                reversedCond = true;
-            }
-            OR_A_A();
-        } else {
-            w24(endPointExpressionValue + 1, ice.programPtr + PRGM_START - ice.programData + 1);
-            LD_DE_IMM(0);
-            if (stepNumber < 0x800000) {
-                SCF();
-            } else {
-                OR_A_A();
-                reversedCond = true;
-            }
-        }
-        SBC_HL_DE();
-        
-        // Jump back to the loop
-        JumpBackwards(loopStart - (smallCode ? 2 : 0), OP_JR_C - (reversedCond ? 8 : 0));
+    } else {
+        stepIsNumber = true;
+        stepNumber = 1;
     }
     
-    // Small For loop
-    else {
+    jumpToCond = ice.programPtr;
+    JP(0);
+    tempDataOffsetElements = ice.dataOffsetElements;
+    loopStart = ice.programPtr;
+    
+    // Parse the inner loop
+    if ((res = parseProgram()) != E_END && res != VALID) {
+        return res;
     }
+    
+    // Needs to be the end of a line
+    if (!CheckEOL()) {
+        return E_SYNTAX;
+    }
+    
+    // First add the step to the variable, if the step is 0 we don't need this
+    if (!stepIsNumber || stepNumber) {
+        // ld hl, (ix+*) \ inc hl/dec hl (x times) \ ld (ix+*), hl
+        // ld hl, (ix+*) \ ld de, x \ add hl, de \ ld (ix+*), hl
+        LD_HL_IND_IX_OFF(variable);
+        if (stepIsNumber) {
+            uint8_t a = 0;
+            if (stepNumber < 5) {
+                for (a = 0; a < (uint8_t)stepNumber; a++) {
+                    INC_HL();
+                }
+            } else if (stepNumber > -5) {
+                for (a = 0; a < (uint8_t)~stepNumber; a++) {
+                    DEC_HL();
+                }
+            } else {
+                LD_DE_IMM(stepNumber);
+                ADD_HL_DE();
+            }
+        } else {
+            w24(stepExpression + 1, (uint24_t)ice.programPtr - (uint24_t)ice.programData + PRGM_START + 1);
+            LD_DE_IMM(0);
+            ADD_HL_DE();
+        }
+        LD_IX_OFF_IND_HL(variable);
+    }
+    
+    smallCode = JumpForward(jumpToCond, ice.programPtr, tempDataOffsetElements);
+    LD_HL_IND_IX_OFF(variable);
+
+    if (endPointIsNumber) {
+        if (stepNumber < 0x800000) {
+            LD_DE_IMM(endPointNumber + 1);
+        } else {
+            LD_DE_IMM(endPointNumber);
+            reversedCond = true;
+        }
+        OR_A_A();
+    } else {
+        w24(endPointExpressionValue + 1, ice.programPtr + PRGM_START - ice.programData + 1);
+        LD_DE_IMM(0);
+        if (stepNumber < 0x800000) {
+            SCF();
+        } else {
+            OR_A_A();
+            reversedCond = true;
+        }
+    }
+    SBC_HL_DE();
+    
+    // Jump back to the loop
+    JumpBackwards(loopStart - (smallCode ? 2 : 0), OP_JR_C - (reversedCond ? 8 : 0));
+    
     return VALID;
 }
 
@@ -1482,7 +1477,30 @@ static uint8_t functionPause(int token) {
 }
 
 static uint8_t functionInput(int token) {
-    return E_UNIMPLEMENTED;
+    uint8_t tok;
+    
+    if ((tok = _getc(ice.inPrgm)) < tA || tok > tTheta || !CheckEOL()) {
+        return E_SYNTAX;
+    }
+    LD_A((tok - tA) * 3);
+    
+    // Copy the Input routine to the data section
+    if (!ice.usedAlreadyInput) {
+        ice.InputAddr = (uintptr_t)ice.programDataPtr;
+        memcpy(ice.programDataPtr, InputData, 66);
+        ice.programDataPtr += 66;
+        ice.usedAlreadyInput = true;
+    }
+    
+    // Set which var we need to store to
+    ProgramPtrToOffsetStack();
+    LD_ADDR_A(ice.InputAddr + 61);
+    
+    // Call the right routine
+    ProgramPtrToOffsetStack();
+    CALL(ice.InputAddr);
+    
+    return VALID;
 }
 
 static uint8_t functionBB(int token) {
@@ -1527,8 +1545,7 @@ void optimizeZeroCarryFlagOutput(void) {
     if (!expr.AnsSetZeroFlag && !expr.AnsSetCarryFlag) {
         if (expr.outputRegister == OUTPUT_IN_HL) {
             ADD_HL_DE();
-            OR_A_A();
-            SBC_HL_DE();
+            OR_A_SBC_HL_DE();
         } else {
             SCF();
             SBC_HL_HL();

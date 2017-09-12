@@ -156,8 +156,7 @@ uint8_t parseFunction(uint24_t index) {
             LD_HL_IMM(-1);
         }
         ADD_HL_DE();
-        SBC_HL_HL();
-        INC_HL();
+        SBC_HL_HL_INC_HL();
         expr.AnsSetCarryFlag = true;
         expr.ZeroCarryFlagRemoveAmountOfBytes = 3;
     }
@@ -184,8 +183,7 @@ uint8_t parseFunction(uint24_t index) {
         if ((res = parseFunction2Args(index, OUTPUT_IN_DE, amountOfArguments, false)) != VALID) {
             return res;
         }
-        OR_A_A();
-        SBC_HL_DE();
+        OR_A_SBC_HL_DE();
         ADD_HL_DE();
         JR_C(1);
         EX_DE_HL();
@@ -196,8 +194,7 @@ uint8_t parseFunction(uint24_t index) {
         if ((res = parseFunction2Args(index, OUTPUT_IN_DE, amountOfArguments, false)) != VALID) {
             return res;
         }
-        OR_A_A();
-        SBC_HL_DE();
+        OR_A_SBC_HL_DE();
         ADD_HL_DE();
         JR_NC(1);
         EX_DE_HL();
@@ -306,7 +303,7 @@ uint8_t parseFunction(uint24_t index) {
                 LD_HL_HL();
             }
         } else if (outputPrevType == TYPE_FUNCTION_RETURN) {
-            insertFunctionReturn(outputPrevOperand, OUTPUT_IN_HL, NO_PUSH);
+            insertFunctionReturnNoPush(outputPrevOperand, OUTPUT_IN_HL);
             if (outputCurr->mask == TYPE_MASK_U8) {
                 LD_A_HL();
             } else if (outputCurr->mask == TYPE_MASK_U16) {
@@ -431,19 +428,8 @@ uint8_t parseFunction(uint24_t index) {
             return E_ARGUMENTS;
         }
         
-        // If it's Begin, push gfx_Bpp8 as well
-        if (!expr.outputNumber) {
-            LD_L(0x27);
-            PUSH_HL();
-        }
-        
         // Call the function
-        CALL(ice.CRoutinesStack[expr.outputNumber]*4 + 0xD00000);
-        
-        // If it's Begin, pop gfx_Bpp8 as well
-        if (!expr.outputNumber) {
-            POP_BC();
-        }
+        CALL(ice.CRoutinesStack[expr.outputNumber]*4 + 0xD1A8F6);
         
         // And pop the arguments
         for (a = 1; a < amountOfArguments; a++) {
@@ -482,7 +468,7 @@ uint8_t parseFunction1Arg(uint24_t index, uint8_t outputRegister1, uint8_t amoun
     if (outputPrevType == TYPE_VARIABLE) {
         LD_HL_IND_IX_OFF(outputOperand);
     } else if (outputPrevType == TYPE_FUNCTION_RETURN) {
-        insertFunctionReturn(outputOperand, OUTPUT_IN_HL, NO_PUSH);
+        insertFunctionReturnNoPush(outputOperand, OUTPUT_IN_HL);
     } else if (outputPrevType == TYPE_CHAIN_ANS) {
         if (outputRegister1 == OUTPUT_IN_HL) {
             MaybeDEToHL();
@@ -521,10 +507,10 @@ uint8_t parseFunction2Args(uint24_t index, uint8_t outputRegister2, uint8_t amou
             }
         } else if (outputPrevType == TYPE_FUNCTION_RETURN) {
             if (orderDoesMatter) {
-                insertFunctionReturn(outputPrevOperand, outputRegister2, NO_PUSH);
+                insertFunctionReturnNoPush(outputPrevOperand, outputRegister2);
                 LD_HL_NUMBER(outputPrevPrevOperand);
             } else {
-                insertFunctionReturn(outputPrevOperand, OUTPUT_IN_HL, NO_PUSH);
+                insertFunctionReturnNoPush(outputPrevOperand, OUTPUT_IN_HL);
                 LD_DE_IMM(outputPrevPrevOperand);
             }
         } else if (outputPrevType == TYPE_CHAIN_ANS) {
@@ -568,10 +554,10 @@ uint8_t parseFunction2Args(uint24_t index, uint8_t outputRegister2, uint8_t amou
             }
         } else if (outputPrevType == TYPE_FUNCTION_RETURN) {
             if (orderDoesMatter) {
-                insertFunctionReturn(outputPrevOperand, outputRegister2, NO_PUSH);
+                insertFunctionReturnNoPush(outputPrevOperand, outputRegister2);
                 LD_HL_IND_IX_OFF(outputPrevPrevOperand);
             } else {
-                insertFunctionReturn(outputPrevOperand, OUTPUT_IN_HL, NO_PUSH);
+                insertFunctionReturnNoPush(outputPrevOperand, OUTPUT_IN_HL);
                 LD_DE_IND_IX_OFF(outputPrevPrevOperand);
             }
         } else if (outputPrevType == TYPE_CHAIN_ANS) {
@@ -595,26 +581,26 @@ uint8_t parseFunction2Args(uint24_t index, uint8_t outputRegister2, uint8_t amou
         }
     } else if (outputPrevPrevType == TYPE_FUNCTION_RETURN) {
         if (outputPrevType == TYPE_NUMBER) {
-            insertFunctionReturn(outputPrevPrevOperand, OUTPUT_IN_HL, NO_PUSH);
+            insertFunctionReturnNoPush(outputPrevPrevOperand, OUTPUT_IN_HL);
             if (outputRegister2 == OUTPUT_IN_DE) {
                 LD_DE_IMM(outputPrevOperand);
             } else {
                 LD_BC_IMM(outputPrevOperand);
             }
         } else if (outputPrevType == TYPE_VARIABLE) {
-            insertFunctionReturn(outputPrevPrevOperand, OUTPUT_IN_HL, NO_PUSH);
+            insertFunctionReturnNoPush(outputPrevPrevOperand, OUTPUT_IN_HL);
             if (outputRegister2 == OUTPUT_IN_DE) {
                 LD_DE_IND_IX_OFF(outputPrevOperand);
             } else {
                 LD_BC_IND_IX_OFF(outputPrevOperand);
             }
         } else if (outputPrevType == TYPE_FUNCTION_RETURN) {
-            insertFunctionReturn(outputPrevOperand, outputRegister2, NO_PUSH);
-            insertFunctionReturn(outputPrevPrevOperand, OUTPUT_IN_HL, NO_PUSH);
+            insertFunctionReturnNoPush(outputPrevOperand, outputRegister2);
+            insertFunctionReturnNoPush(outputPrevPrevOperand, OUTPUT_IN_HL);
         } else if (outputPrevType == TYPE_CHAIN_ANS) {
             if (orderDoesMatter) {
                 PushHLDE();
-                insertFunctionReturn(outputPrevPrevOperand, OUTPUT_IN_HL, NO_PUSH);
+                insertFunctionReturnNoPush(outputPrevPrevOperand, OUTPUT_IN_HL);
                 if (outputRegister2 == OUTPUT_IN_DE) {
                     POP_DE();
                 } else {
@@ -623,7 +609,7 @@ uint8_t parseFunction2Args(uint24_t index, uint8_t outputRegister2, uint8_t amou
             } else {
                 if (expr.outputRegister == OUTPUT_IN_HL) {
                     PUSH_HL();
-                    insertFunctionReturn(outputPrevPrevOperand, OUTPUT_IN_HL, NO_PUSH);
+                    insertFunctionReturnNoPush(outputPrevPrevOperand, OUTPUT_IN_HL);
                     POP_DE();
                 } else {
                     insertFunctionReturn(outputPrevPrevOperand, OUTPUT_IN_HL, NEED_PUSH);
@@ -666,12 +652,12 @@ uint8_t parseFunction2Args(uint24_t index, uint8_t outputRegister2, uint8_t amou
         } else if (outputPrevType == TYPE_FUNCTION_RETURN) {
             if (orderDoesMatter) {
                 PushHLDE();
-                insertFunctionReturn(outputPrevOperand, outputRegister2, NO_PUSH);
+                insertFunctionReturnNoPush(outputPrevOperand, outputRegister2);
                 POP_HL();
             } else {
                 if (expr.outputRegister == OUTPUT_IN_HL) {
                     PUSH_HL();
-                    insertFunctionReturn(outputPrevOperand, OUTPUT_IN_HL, NO_PUSH);
+                    insertFunctionReturnNoPush(outputPrevOperand, OUTPUT_IN_HL);
                     POP_DE();
                 } else {
                     insertFunctionReturn(outputPrevOperand, OUTPUT_IN_HL, NEED_PUSH);
