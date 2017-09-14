@@ -8,7 +8,6 @@
 #include "operator.h"
 #include "functions.h"
 #include "routines.h"
-//#include "gfx/gfx_logos.h"
 
 static const char *errors[] = {
     "This token is not implemented (yet)",

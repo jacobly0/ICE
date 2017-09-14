@@ -18,8 +18,11 @@ INCBIN(Input, "src/asm/input.bin");
 #endif
 
 extern uint8_t (*functions[256])(int token);
-const char implementedFunctions[] = {tNot, tMin, tMax, tMean, tSqrt, tDet};
-const char implementedFunctions2[] = {tRemainder, tSubStrng, tLength};
+const char implementedFunctions[] = {tNot, tMin, tMax, tMean, tSqrt, tDet, tSum};
+const char implementedFunctions2[] = {tExtTok, tRemainder,
+                                      t2ByteTok, tSubStrng,
+                                      t2ByteTok, tLength,
+                                      tVarOut, tDefineSprite};
 element_t outputStack[400];
 element_t stack[200];
 label_t labelStack[100];
@@ -76,6 +79,8 @@ uint8_t parseExpression(int token) {
     */
 
     while (token != EOF && (tok = (uint8_t)token) != tEnter) {
+        bool IsA2ByteToken = (tok == t2ByteTok || tok == tExtTok || tok == tVarOut);
+        
         outputCurr = &outputPtr[outputElements];
         stackCurr  = &stackPtr[stackElements];
         
@@ -277,7 +282,7 @@ stackToOutputReturn1:
             }
             
             // If it's a det, add an argument delimiter as well
-            if (tok == tComma && (uint8_t)stackPrev->operand == tDet) {
+            if (tok == tComma && ((uint8_t)stackPrev->operand == tDet || (uint8_t)stackPrev->operand == tSum)) {
                 outputCurr->type = TYPE_ARG_DELIMITER;
                 outputElements++;
             }
@@ -300,11 +305,12 @@ stackToOutputReturn1:
         }
         
         // Process a function, ( { [
-        else if (strchr(implementedFunctions, tok) || tok == t2ByteTok || tok == tExtTok || tok == tLParen || tok == tLBrace || tok == tLBrack) {
-            if (tok == t2ByteTok || tok == tExtTok) {
+        else if (strchr(implementedFunctions, tok) || IsA2ByteToken || tok == tLParen || tok == tLBrace || tok == tLBrack) {
+            if (IsA2ByteToken) {
                 uint24_t temp2;
+                char *temp3;
                 
-                if (!strchr(implementedFunctions2, temp2 = _getc(ice.inPrgm))) {
+                if (!(temp3 = strchr(implementedFunctions2, temp2 = _getc(ice.inPrgm))) || (uint8_t)*(temp3 - 1) != tok) {
                     return E_SYNTAX;
                 }
                 token = token + (temp2 << 16);
@@ -319,7 +325,7 @@ stackToOutputReturn1:
             canUseMask = 2;
             
             // Check if it's a C function
-            if (tok == tDet) {
+            if (tok == tDet || tok == tSum) {
                 outputCurr->type = TYPE_C_START;
                 outputElements++;
             }
@@ -431,7 +437,11 @@ stackToOutputReturn2:
         }
         
         // Check if the types are number | number | ... | function (no det or pointer)
-        if (loopIndex >= index && outputCurr->type == TYPE_FUNCTION && (uint8_t)outputCurr->operand != tDet && (uint8_t)outputCurr->operand != tLBrace) {
+        if (loopIndex >= index && outputCurr->type == TYPE_FUNCTION && 
+                (uint8_t)outputCurr->operand != tDet &&
+                (uint8_t)outputCurr->operand != tLBrace &&
+                (uint8_t)outputCurr->operand != tSum &&
+                (uint8_t)outputCurr->operand != tVarOut) {
             uint24_t outputPrevOperand = outputPrev->operand, outputPrevPrevOperand = outputPrevPrev->operand;
             for (a = 1; a <= index; a++) {
                 if ((&outputPtr[loopIndex-a])->type != TYPE_NUMBER) {
@@ -536,16 +546,16 @@ uint8_t parsePostFixFromIndexToIndex(uint24_t startIndex, uint24_t endIndex) {
     for (loopIndex = startIndex; loopIndex <= endIndex; loopIndex++) {
         outputCurr = &outputPtr[loopIndex];
         
-        // If it's the start of a det(, increment the amount of nested dets
+        // If it's the start of a det( or sum(, increment the amount of nested det(/sum(
         if (outputCurr->type == TYPE_C_START) {
             temp++;
         }
-        // If it's a det(, decrement the amount of nested dets
-        if (outputCurr->type == TYPE_FUNCTION && (uint8_t)outputCurr->operand == tDet) {
+        // If it's a det( or sum(, decrement the amount of nested dets
+        if (outputCurr->type == TYPE_FUNCTION && ((uint8_t)outputCurr->operand == tDet || (uint8_t)outputCurr->operand == tSum)) {
             temp--;
         }
         
-        // If not in a nested det(, push the index
+        // If not in a nested det( or sum(, push the index
         if (!temp) {
             push(loopIndex);
             amountOfStackElements++;
@@ -672,7 +682,7 @@ uint8_t parsePostFixFromIndexToIndex(uint24_t startIndex, uint24_t endIndex) {
                 }
             
                 // Cleanup, if it's not a det(
-                if ((uint8_t)outputCurr->operand != tDet) {
+                if ((uint8_t)outputCurr->operand != tDet && (uint8_t)outputCurr->operand != tSum) {
                     for (temp = 0; temp < amountOfArguments; temp++) {
                         removeIndexFromStack(getCurrentIndex() - 2);
                     }
@@ -757,6 +767,7 @@ static uint8_t functionI(int token) {
             // Get hexadecimal
             do {
                 uint8_t tok;
+                
                 if ((tok = IsHexadecimal(_getc(ice.inPrgm))) == 16) {
                     return E_INVALID_HEX;
                 }
@@ -1323,7 +1334,7 @@ static uint8_t functionFor(int token) {
                 ADD_HL_DE();
             }
         } else {
-            w24(stepExpression + 1, (uint24_t)ice.programPtr - (uint24_t)ice.programData + PRGM_START + 1);
+            w24(stepExpression + 1, ice.programPtr - ice.programData + PRGM_START + 1);
             LD_DE_IMM(0);
             ADD_HL_DE();
         }
@@ -1364,46 +1375,16 @@ static uint8_t functionPrgm(int token) {
 }
 
 static uint8_t functionCustom(int token) {
-    uint8_t tok = (uint8_t)(token = _getc(ice.inPrgm));
+    uint8_t tok = _getc(ice.inPrgm);
     
-    // CompilePrgm(
-    if ((uint8_t)token == 0x0D) {
-        char tempName[9];
-        uint8_t a = 0, res;
-        ti_var_t tempProg = ice.inPrgm;
-        
-#ifdef COMPUTER_ICE
-        return E_NO_SUBPROG;
-#endif
-        
-        while ((token = _getc(ice.inPrgm)) != EOF && (tok = (uint8_t)token) != tEnter && a < 9) {
-            tempName[a++] = tok;
-        }
-        tempName[a] = 0;
-        
-        if ((ice.inPrgm = _open(tempName))) {
-#ifndef COMPUTER_ICE
-            char buf[30];
-            displayLoadingBarFrame();
-            sprintf(buf, "Compiling program %s...", tempName);
-            gfx_PrintStringXY(buf, 1, iceMessageLine);
-            
-            // Compile it, and close
-            res = parseProgram();
-            displayLoadingBarFrame();
-            ti_Close(ice.inPrgm);
-#else
-            res = E_NOT_IMPLEMENTED;
-#endif
-        } else {
-            return E_PROG_NOT_FOUND;
-        }
-        ice.inPrgm = tempProg;
-        return res;
+    // DefineSprite(
+    if (tok == tDefineSprite) {
+        _seek(-1, SEEK_CUR, ice.inPrgm);
+        return parseExpression(token);
     }
     
     // Call
-    else if ((uint8_t)token == 0x0C) {
+    else if (tok == tCall) {
         insertGotoLabel();
         CALL(0);
         return VALID;
@@ -1524,15 +1505,49 @@ static uint8_t functionBB(int token) {
             *ice.programPtr++ = (tok1 << 4) + tok2;
         }
         if ((uint8_t)token == tRParen) {
-            if ((uint8_t)_getc(ice.inPrgm) != tEnter) {
+            if (!CheckEOL()) {
                 return E_SYNTAX;
             }
         }
-    } else {
-        _seek(-2, SEEK_CUR, ice.inPrgm);
-        return parseExpression(_getc(ice.inPrgm));
+        return VALID;
     }
-    return VALID;
+    
+    // AsmComp(
+    else if ((uint8_t)token == tAsmComp) {
+        char tempName[9];
+        uint8_t a = 0, res;
+        ti_var_t tempProg = ice.inPrgm;
+        
+#ifdef COMPUTER_ICE
+        return E_NO_SUBPROG;
+#else
+        while ((token = _getc(ice.inPrgm)) != EOF && (uint8_t)token != tEnter && a < 9) {
+            tempName[a++] = token;
+        }
+        tempName[a] = 0;
+        
+        if ((ice.inPrgm = _open(tempName))) {
+            char buf[30];
+            
+            displayLoadingBarFrame();
+            sprintf(buf, "Compiling program %s...", tempName);
+            gfx_PrintStringXY(buf, 1, iceMessageLine);
+            
+            // Compile it, and close
+            res = parseProgram();
+            displayLoadingBarFrame();
+            ti_Close(ice.inPrgm);
+            gfx_PrintStringXY("Return from subprogram...", 1, iceMessageLine);
+        } else {
+            return E_PROG_NOT_FOUND;
+        }
+        ice.inPrgm = tempProg;
+        return res;
+#endif
+    } else {
+        _seek(-1, SEEK_CUR, ice.inPrgm);
+        return parseExpression(token);
+    }
 }
 
 static uint8_t tokenWrongPlace(int token) {
@@ -1747,7 +1762,7 @@ uint8_t (*functions[256])(int) = {
     parseExpression,    //179
     tokenUnimplemented, //180
     tokenUnimplemented, //181
-    tokenUnimplemented, //182
+    parseExpression,    //182
     tokenUnimplemented, //183
     parseExpression,    //184
     tokenUnimplemented, //185

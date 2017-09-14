@@ -8,7 +8,6 @@
 #include "parse.h"
 #include "output.h"
 #include "operator.h"
-//#include "gfx/gfx_logos.h"
 
 #define LB_X 40
 #define LB_Y 200

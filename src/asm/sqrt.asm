@@ -3,7 +3,6 @@ segment data
 .def _SqrtData
 
 _SqrtData:
-    di
     dec     sp              ; (sp) = ?
     push    hl              ; (sp) = ?uhl
             dec     sp      ; (sp) = ?uhl?

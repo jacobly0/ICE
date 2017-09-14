@@ -8,7 +8,6 @@
 #include "operator.h"
 #include "functions.h"
 #include "routines.h"
-//#include "gfx/gfx_logos.h"
 
 static uint24_t *p1;
 static uint24_t *p2;

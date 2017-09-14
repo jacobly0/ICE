@@ -1,7 +1,8 @@
 #include "hooks/ti84pce.inc"
 
 #define AMOUNT_OF_CUSTOM_TOKENS 2
-#define AMOUNT_OF_C_FUNCTIONS   89
+#define AMOUNT_OF_GRAPHX_FUNCTIONS 92
+#define AMOUNT_OF_FILEIOC_FUNCTIONS 21
 
 KeyHook_start:
     .db    83h
@@ -50,7 +51,7 @@ KeyIsLeft:
     jr      DisplayTabWithTokens
 KeyIsRight:
     ld      a, d
-    cp      a, 5
+    cp      a, 6
     jr      z, KeyLoop
     inc     d
     jr      DisplayTabWithTokens
@@ -123,10 +124,10 @@ KeyNotUp:
     cp      a, skDown
     jr      nz, KeyNotDown
     ld      a, d
-    cp      a, 5
+    cp      a, 7
     ld      a, e
     jr      nz, +_
-    cp      a, (AMOUNT_OF_C_FUNCTIONS + AMOUNT_OF_CUSTOM_TOKENS)%16 - 1
+    cp      a, (AMOUNT_OF_GRAPHX_FUNCTIONS + AMOUNT_OF_CUSTOM_TOKENS)%16 - 1
     jr      z, KeyLoop
 _:  ld      a, e
     cp      a, 16-1
@@ -145,8 +146,13 @@ KeyNotDown:
     sub     a, AMOUNT_OF_CUSTOM_TOKENS
     jr      c, InsertCustomToken
     ld      hl, saveSScreen
-    ld      (hl), tDet
-    inc     hl
+    cp      a, 21
+    jr      nc, +_
+    ld      (hl), tSum
+    jr      ++_
+_:  ld      (hl), tDet
+    sub     a, 21
+_:  inc     hl
     cp      a, 10
     jr      c, +_
     ld      d, a
@@ -290,11 +296,14 @@ _:  cp      a, 22h
     ret     nz
     ld      hl, (editCursor)
     ld      a, (hl)
+    cp      a, tSum
+    jr      z, DrawDetText
     cp      a, tDet
     ret     nz
 DrawDetText:
     bit     0, (iy-41h)
     ret     nz
+    ld      iyl, a
     ld      hl, (editTail)
     inc     hl
     ld      a, (hl)
@@ -306,7 +315,7 @@ DrawDetText:
     ld      e, a
     jr      c, GetDetValueLoop
 WrongDetValue:
-    inc     a
+    or      a, 1
     ret
 GetDetValueLoop:
     inc     hl
@@ -335,15 +344,22 @@ GetDetValueLoop:
     jr     GetDetValueLoop
 GetDetValueStop:
     ex      de, hl
-    ld      de, AMOUNT_OF_C_FUNCTIONS
-    or      a, a
+    ld      a, iyl
+    ld      iy, flags
+    cp      a, tDet
+    jr      z, +_
+    ld      de, AMOUNT_OF_FILEIOC_FUNCTIONS
+    ld      bc, CData4
+    jr      ++_
+_:  ld      de, AMOUNT_OF_GRAPHX_FUNCTIONS
+    ld      bc, CData5
+_:  or      a, a
     sbc     hl, de
     jr      nc, WrongDetValue
     add     hl, de
     ld      h, 3
     mlt     hl
-    ld      de, CData5 - KeyHook_start
-    add     hl, de
+    add     hl, bc
     ld      de, (rawKeyHookPtr)
     add     hl, de
     ld      hl, (hl)
@@ -364,9 +380,34 @@ GetDetValueStop:
     
 .echo "Cursor hook: ",$-CursorHook_start, " bytes"
 
+DataStart:
+
 Tab1:
 C1:   .db "DefineSprite(", 0
 C2:   .db "Call ", 0
+
+F01:  .db "CloseAll", 0
+F02:  .db "Open(", 0
+F03:  .db "OpenVar(", 0
+F04:  .db "Close(", 0
+F05:  .db "Write(", 0
+F06:  .db "Read(", 0
+F07:  .db "GetChar(", 0
+F08:  .db "PutChar(", 0
+F09:  .db "Delete(", 0
+F10:  .db "DeleteVar(", 0
+F11:  .db "Seek(", 0
+F12:  .db "Resize(", 0
+F13:  .db "IsArchived(", 0
+F14:  .db "SetArchiveStatus(", 0
+Tab2:
+F15:  .db "Tell(", 0
+F16:  .db "Rewind(", 0
+F17:  .db "GetSize(", 0
+F18:  .db "GetTokenString(", 0
+F19:  .db "GetDataPtr(", 0
+F20:  .db "Detect(", 0
+F21:  .db "DetectVar(", 0
       
 G01:  .db "Begin", 0
 G02:  .db "End", 0
@@ -377,12 +418,12 @@ G06:  .db "FillScreen", 0
 G07:  .db "SetPixel", 0
 G08:  .db "GetPixel", 0
 G09:  .db "GetDraw", 0
+Tab3:
 G10:  .db "SetDraw", 0
 G11:  .db "SwapDraw", 0
 G12:  .db "Blit", 0
 G13:  .db "BlitLines", 0
 G14:  .db "BlitArea", 0
-Tab2:
 G15:  .db "PrintChar", 0
 G16:  .db "PrintInt", 0
 G17:  .db "PrintUInt", 0
@@ -394,12 +435,12 @@ G22:  .db "SetTextFGColor", 0
 G23:  .db "SetTextTransparentColor", 0
 G24:  .db "SetCustomFontData", 0
 G25:  .db "SetCustomFontSpacing", 0
+Tab4:
 G26:  .db "SetMonospaceFont", 0
 G27:  .db "GetStringWidth", 0
 G28:  .db "GetCharWidth", 0
 G29:  .db "GetTextX", 0
 G30:  .db "GetTextY", 0
-Tab3:
 G31:  .db "Line", 0
 G32:  .db "HorizLine", 0
 G33:  .db "VertLine", 0
@@ -411,12 +452,12 @@ G38:  .db "Line_NoClip", 0
 G39:  .db "HorizLine_NoClip", 0
 G40:  .db "VertLine_NoClip", 0
 G41:  .db "FillCircle_NoClip", 0
+Tab5:
 G42:  .db "Rectangle_NoClip", 0
 G43:  .db "FillRectangle_NoClip", 0
 G44:  .db "SetClipRegion", 0
 G45:  .db "GetClipRegion", 0
 G46:  .db "ShiftDown", 0
-Tab4:
 G47:  .db "ShiftUp", 0
 G48:  .db "ShiftLeft", 0
 G49:  .db "ShiftRight", 0
@@ -428,12 +469,12 @@ G54:  .db "TilePtr", 0
 G55:  .db "TilePtrMapped", 0
 G56:  .db "LZDecompress", 0
 G57:  .db "AllocSprite", 0
+Tab6:
 G58:  .db "Sprite", 0
 G59:  .db "TransparentSprite", 0
 G60:  .db "Sprite_NoClip", 0
 G61:  .db "TransparentSprite_NoClip", 0
 G62:  .db "GetSprite_NoClip", 0
-Tab5:
 G63:  .db "ScaledSprite_NoClip", 0
 G64:  .db "ScaledTransparentSprite_NoClip", 0
 G65:  .db "FlipSpriteY", 0
@@ -445,12 +486,12 @@ G70:  .db "Polygon", 0
 G71:  .db "Polygon_NoClip", 0
 G72:  .db "FillTriangle", 0
 G73:  .db "FillTriangle_NoClip", 0
+Tab7:
 G74:  .db "LZDecompressSprite", 0
 G75:  .db "SetTextScale", 0
 G76:  .db "SetTransparentColor", 0
 G77:  .db "ZeroScreen", 0
 G78:  .db "SetTextConfig", 0
-Tab6:
 G79:  .db "GetSpriteChar", 0
 G80:  .db "Lighten", 0
 G81:  .db "Darken", 0
@@ -462,6 +503,10 @@ G86:  .db "RLETSprite_NoClip", 0
 G87:  .db "ConvertFromRLETSprite", 0
 G88:  .db "ConvertToRLETSprite", 0
 G89:  .db "ConvertToNewRLETSprite", 0
+Tab8:
+G90:  .db "RotateScaleSprite(", 0
+G91:  .db "RotatedScaledTransparentSprite_NoClip(", 0
+G92:  .db "RotatedScaledSprite_NoClip(", 0
       .db 0
       
 ; First token is $62 $0A
@@ -475,6 +520,31 @@ TabData:
     .dl Tab4 - KeyHook_start
     .dl Tab5 - KeyHook_start
     .dl Tab6 - KeyHook_start
+    .dl Tab7 - KeyHook_start
+    .dl Tab8 - KeyHook_start
+    
+CData4:
+    .dl F01 - KeyHook_start
+    .dl F02 - KeyHook_start
+    .dl F03 - KeyHook_start
+    .dl F04 - KeyHook_start
+    .dl F05 - KeyHook_start
+    .dl F06 - KeyHook_start
+    .dl F07 - KeyHook_start
+    .dl F08 - KeyHook_start
+    .dl F09 - KeyHook_start
+    .dl F10 - KeyHook_start
+    .dl F11 - KeyHook_start
+    .dl F12 - KeyHook_start
+    .dl F13 - KeyHook_start
+    .dl F14 - KeyHook_start
+    .dl F15 - KeyHook_start
+    .dl F16 - KeyHook_start
+    .dl F17 - KeyHook_start
+    .dl F18 - KeyHook_start
+    .dl F19 - KeyHook_start
+    .dl F20 - KeyHook_start
+    .dl F21 - KeyHook_start
     
 CData5:
     .dl G01 - KeyHook_start
@@ -566,6 +636,9 @@ CData5:
     .dl G87 - KeyHook_start
     .dl G88 - KeyHook_start
     .dl G89 - KeyHook_start
+    .dl G90 - KeyHook_start
+    .dl G91 - KeyHook_start
+    .dl G92 - KeyHook_start
     
 TokenHook_data:
     .dl Tok1 - KeyHook_start - 1
@@ -573,5 +646,8 @@ TokenHook_data:
 
 CustomTokensProgramText:
     .db "PROGRAM:", 0
+    
+.echo "Data size: ",$-DataStart, " bytes"
+.echo "Total size: ", $-KeyHook_start, " bytes"
 
 Hooks_end:

@@ -1,6 +1,8 @@
 .assume adl = 1
 segment data
 .def _CHeaderData
+.def _GraphxHeader
+.def _FileiocHeader
 
 _CHeaderData:
 	ld      hl, LibLoadAppVar - $ + 0D1A882h
@@ -40,4 +42,9 @@ LibLoadAppVar:
 	db " LibLoad", 0
 	db "tiny.cc/clibs", 0
 RelocationStart:
+	
+_GraphxHeader:
 	db 0C0h, "GRAPHX", 0, 6
+	
+_FileiocHeader:
+	db 0C0h, "FILEIOC", 0, 3

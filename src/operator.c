@@ -8,7 +8,6 @@
 #include "stack.h"
 #include "output.h"
 #include "routines.h"
-//#include "gfx/gfx_logos.h"
 
 #ifdef COMPUTER_ICE
 #define INCBIN_PREFIX
@@ -1240,7 +1239,7 @@ void SubChainAnsNumber(void) {
         if (expr.outputRegister == OUTPUT_IN_HL) {
             LD_DE_IMM(~number);
         } else {
-            LD_HL_IMM(~number);
+            LD_HL_NUMBER(~number);
         }
         ADD_HL_DE();
     }

@@ -1,7 +1,12 @@
 #ifndef MAIN_H
 #define MAIN_H
 
+#define AMOUNT_OF_GRAPHX_FUNCTIONS 92
+#define AMOUNT_OF_FILEIOC_FUNCTIONS 21
 #define STACK_SIZE 25
+
+#define tDefineSprite 0x0A
+#define tCall 0x0B
 
 typedef struct {
     char     outName[9];                                    // Output variable name
@@ -13,8 +18,8 @@ typedef struct {
     uint8_t  *programPtrBackup;                             // Same as above
     uint8_t  *programDataPtr;                               // Pointer to the program data
     uint8_t  messageIndex;                                  // Used for displaying messages during compiling
-    uint8_t  amountOfCRoutinesUsed;                         // Used for the relocation of C functions at the beginning of the program
-    uint8_t  CRoutinesStack[100];                           // The address of the relocation jumps
+    uint8_t  amountOfGraphxRoutinesUsed;                    // Used for the relocation of C functions at the beginning of the program - GRAPHX
+    uint8_t  amountOfFileiocRoutinesUsed;                   // Used for the relocation of C functions at the beginning of the program - FILEIOC
     uint8_t  tempToken;                                     // Used for functions, i.e. For(, where an argument can stop with either a comma or a parentheses
     uint8_t  stackDepth;                                    // Used for compiling arguments of C functions
     uint8_t  amountOfOSLocationsUsed;                       // Used for the amount of OS lists and strings that are used
@@ -34,6 +39,8 @@ typedef struct {
     uint24_t OSLists[6];                                    // Used to allocate OS lists
     uint24_t OSStrings[10];                                 // Used to allocate OS string
     uint24_t tempStrings[2];                                // Used to allocate temp strings
+    uint24_t GraphxRoutinesStack[AMOUNT_OF_GRAPHX_FUNCTIONS];   // The address of the relocation jumps of the GRAPHX lib
+    uint24_t FileiocRoutinesStack[AMOUNT_OF_FILEIOC_FUNCTIONS]; // The address of the relocation jumps of the FILEIOC lib
     
     ti_var_t inPrgm;                                        // Used for getting tokens
     ti_var_t outPrgm;                                       // Used for writing bytes
@@ -98,6 +105,8 @@ void preScanProgram(void);
 
 #ifndef COMPUTER_ICE
 void CHeaderData(void);
+void GraphxHeader(void);
+void FileiocHeader(void);
 void CProgramHeaderData(void);
 void OrData(void);
 void AndData(void);

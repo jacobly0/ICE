@@ -8,7 +8,6 @@
 #include "output.h"
 #include "operator.h"
 #include "routines.h"
-//#include "gfx/gfx_logos.h"
 
 #ifdef COMPUTER_ICE
 #define INCBIN_PREFIX
@@ -19,8 +18,8 @@ INCBIN(Mean, "src/asm/mean.bin");
 
 /* First byte:  bit 7  : returns something in A
                 bit 6  : unimplemented
-                bit 5  : returns something in HL(s)
-                bit 4  : extra bit
+                bit 5  : returns something in HL (16 bits)
+                bit 4  : deprecated
                 bit 2-0: amount of arguments needed
    Second byte: bit 7  : first argument is small
                 bit 6  : second argument is small
@@ -28,9 +27,7 @@ INCBIN(Mean, "src/asm/mean.bin");
                 ...
 */
 
-#define AMOUNT_OF_C_FUNCTIONS 92
-
-const uint8_t CArguments[] = {
+const uint8_t GraphxArgs[] = {
     RET_NONE | 0, ARG_NORM,    // Begin
     RET_NONE | 0, ARG_NORM,    // End
     RET_A    | 1, SMALL_1,     // SetColor
@@ -57,8 +54,8 @@ const uint8_t CArguments[] = {
     UN       | 0, ARG_NORM,    // SetCustomFontData
     UN       | 0, ARG_NORM,    // SetCustomFontSpacing
     RET_NONE | 1, SMALL_1,     // SetMonoSpaceFont
-    RET_NONE | 1, ARG_NORM,    // GetStringWidth
-    RET_NONE | 1, SMALL_1,     // GetCharWidth
+    RET_HL   | 1, ARG_NORM,    // GetStringWidth
+    RET_HL   | 1, SMALL_1,     // GetCharWidth
     RET_HL   | 0, ARG_NORM,    // GetTextX
     RET_HL   | 0, ARG_NORM,    // GetTextY
     RET_NONE | 4, ARG_NORM,    // Line
@@ -75,7 +72,7 @@ const uint8_t CArguments[] = {
     RET_NONE | 3, SMALL_14,    // Rectangle_NoClip
     RET_NONE | 4, SMALL_14,    // FillRectangle_NoClip
     RET_NONE | 4, ARG_NORM,    // SetClipRegion
-    UN       | 0, ARG_NORM,    // GetClipRegion
+    RET_A    | 1, ARG_NORM,    // GetClipRegion
     RET_NONE | 1, SMALL_1,     // ShiftDown
     RET_NONE | 1, SMALL_1,     // ShiftUp
     RET_NONE | 1, SMALL_1,     // ShiftLeft
@@ -92,16 +89,16 @@ const uint8_t CArguments[] = {
     RET_NONE | 3, ARG_NORM,    // TransparentSprite
     RET_NONE | 3, SMALL_3,     // Sprite_NoClip
     RET_NONE | 3, SMALL_3,     // TransparentSprite_NoClip
-    UN       | 0, ARG_NORM,    // GetSprite
+    RET_HL   | 3, ARG_NORM,    // GetSprite
     RET_NONE | 5, SMALL_45,    // ScaledSprite_NoClip
     RET_NONE | 5, SMALL_45,    // ScaledTransparentSprite_NoClip
-    UN       | 0, ARG_NORM,    // FlipSpriteY
-    UN       | 0, ARG_NORM,    // FlipSpriteX
-    UN       | 0, ARG_NORM,    // RotateSpriteC
-    UN       | 0, ARG_NORM,    // RotateSpriteCC
-    UN       | 0, ARG_NORM,    // RotateSpriteHalf
-    UN       | 0, ARG_NORM,    // Polygon
-    UN       | 0, ARG_NORM,    // Polygon_NoClip
+    RET_HL   | 2, ARG_NORM,    // FlipSpriteY
+    RET_HL   | 2, ARG_NORM,    // FlipSpriteX
+    RET_HL   | 2, ARG_NORM,    // RotateSpriteC
+    RET_HL   | 2, ARG_NORM,    // RotateSpriteCC
+    RET_HL   | 2, ARG_NORM,    // RotateSpriteHalf
+    RET_NONE | 2, ARG_NORM,    // Polygon
+    RET_NONE | 2, ARG_NORM,    // Polygon_NoClip
     RET_NONE | 6, ARG_NORM,    // FillTriangle
     RET_NONE | 6, ARG_NORM,    // FillTriangle_NoClip
     UN       | 0, ARG_NORM,    // LZDecompressSprite
@@ -109,29 +106,54 @@ const uint8_t CArguments[] = {
     RET_A    | 1, SMALL_1,     // SetTransparentColor
     RET_NONE | 0, ARG_NORM,    // ZeroScreen
     RET_NONE | 1, SMALL_1,     // SetTextConfig
-    UN       | 0, ARG_NORM,    // GetSpriteChar
-    RET_HL   | 2, SMALL_2,     // Lighten
-    RET_HL   | 2, SMALL_2,     // Darken
+    RET_HL   | 1, SMALL_1,     // GetSpriteChar
+    RET_HLs  | 2, SMALL_2,     // Lighten
+    RET_HLs  | 2, SMALL_2,     // Darken
     RET_A    | 1, SMALL_1,     // SetFontHeight
-    UN       | 0, ARG_NORM,    // ScaleSprite
+    RET_HL   | 2, ARG_NORM,    // ScaleSprite
     RET_NONE | 3, SMALL_12,    // FloodFill
     RET_NONE | 3, ARG_NORM,    // RLETSprite
     RET_NONE | 3, SMALL_3,     // RLETSprite_NoClip
     UN       | 2, ARG_NORM,    // ConvertFromRLETSprite
     UN       | 2, ARG_NORM,    // ConvertToRLETSprite
     UN       | 2, ARG_NORM,    // ConvertToNewRLETSprite
-    UN       | 4, ARG_NORM,    // RotateScaleSprite
-    UN       | 4, ARG_NORM,    // RotatedScaledTransparentSprite_NoClip
-    UN       | 4, ARG_NORM     // RotatedScaledSprite_NoClip
+    RET_HL   | 4, SMALL_34,    // RotateScaleSprite
+    RET_A    | 5, SMALL_345,   // RotatedScaledTransparentSprite_NoClip
+    RET_A    | 5, SMALL_345,   // RotatedScaledSprite_NoClip
+};
+
+const uint8_t FileiocArgs[] = {
+    RET_NONE | 0, ARG_NORM,    // CloseAll
+    RET_A    | 2, ARG_NORM,    // Open
+    RET_A    | 3, SMALL_3,     // OpenVar
+    RET_NONE | 1, SMALL_1,     // Close
+    RET_HL   | 4, SMALL_4,     // Write
+    RET_HL   | 4, SMALL_4,     // Read
+    RET_HL   | 1, SMALL_1,     // GetChar
+    RET_HL   | 2, SMALL_12,    // PutChar
+    RET_HL   | 1, ARG_NORM,    // Delete
+    RET_HL   | 2, SMALL_2,     // DeleteVar
+    RET_HL   | 3, SMALL_23,    // Seek
+    RET_HL   | 2, SMALL_2,     // Resize
+    RET_HL   | 1, SMALL_1,     // IsArchived
+    RET_NONE | 2, SMALL_12,    // SetArchiveStatus
+    RET_HL   | 1, SMALL_1,     // Tell
+    RET_HL   | 1, SMALL_1,     // Rewind
+    RET_HL   | 1, SMALL_1,     // GetSize
+    RET_HL   | 1, SMALL_1,     // GetTokenString
+    RET_HL   | 1, SMALL_1,     // GetDataPtr
+    UN       | 0, ARG_NORM,    // Detect
+    UN       | 0, ARG_NORM,    // DetectVar
 };
 
 extern uint8_t outputStack[4096];
 
 uint8_t parseFunction(uint24_t index) {
-    element_t *outputPtr = (element_t*)outputStack, *outputPrev, *outputCurr;
+    element_t *outputPtr = (element_t*)outputStack, *outputPrev, *outputCurr, *outputPrevPrev;
     uint8_t function, function2, amountOfArguments, temp, a, outputPrevType, res;
     uint24_t output, endIndex, startIndex, outputPrevOperand;
     
+    outputPrevPrev    = &outputPtr[getIndexOffset(-3)];
     outputPrev        = &outputPtr[getIndexOffset(-2)];
     output            = (&outputPtr[index])->operand;
     outputCurr        = &outputPtr[getIndexOffset(-1)];
@@ -169,8 +191,8 @@ uint8_t parseFunction(uint24_t index) {
         ProgramPtrToOffsetStack();
         if (!ice.usedAlreadySqrt) {
             ice.SqrtAddr = (uintptr_t)ice.programDataPtr;
-            memcpy(ice.programDataPtr, SqrtData, 44);
-            ice.programDataPtr += 44;
+            memcpy(ice.programDataPtr, SqrtData, 43);
+            ice.programDataPtr += 43;
             ice.usedAlreadySqrt = true;
         }
         CALL(ice.SqrtAddr);
@@ -218,10 +240,34 @@ uint8_t parseFunction(uint24_t index) {
     
     // remainder(
     else if (function2 == tRemainder) {
-        if ((res = parseFunction2Args(index, OUTPUT_IN_BC, amountOfArguments, true)) != VALID) {
-            return res;
+        if (outputPrev->type == TYPE_NUMBER && outputPrev->operand <= 256 && !((uint8_t)outputPrev->operand & (uint8_t)(outputPrev->operand - 1))) {
+            if (outputPrevPrev->type == TYPE_VARIABLE) {
+                LD_A_IND_IX_OFF(outputPrevPrev->operand);
+            } else if (outputPrevPrev->type == TYPE_FUNCTION_RETURN) {
+                insertFunctionReturnNoPush(outputPrevPrev->operand, OUTPUT_IN_HL);
+                LD_A_L();
+            } else if (outputPrevPrev->type == TYPE_CHAIN_ANS) {
+                if (expr.outputRegister == OUTPUT_IN_HL) {
+                    LD_A_L();
+                } else {
+                    LD_A_E();
+                }
+            } else {
+                return E_ICE_ERROR;
+            }
+            if (outputPrev->operand == 256) {
+                OR_A_A();
+            } else {
+                AND_A(outputPrev->operand - 1);
+            }
+            SBC_HL_HL();
+            LD_L_A();
+        } else {
+            if ((res = parseFunction2Args(index, OUTPUT_IN_BC, amountOfArguments, true)) != VALID) {
+                return res;
+            }
+            CALL(__idvrmu);
         }
-        CALL(__idvrmu);
     }
     
     // sub(
@@ -274,6 +320,27 @@ uint8_t parseFunction(uint24_t index) {
         PUSH_HL();
         CALL(__strlen);
         POP_BC();
+    }
+    
+    // Here are coming the special functions, with abnormal arguments
+    
+    // DefineSprite(
+    else if (function2 == tDefineSprite) {
+        element_t *outputPrevPrevPrev = &outputPtr[getIndexOffset(-4)];
+        
+        if (amountOfArguments == 2) {
+            dbg_Debugger();
+            if (outputPrevPrev->type + outputPrevType != TYPE_NUMBER) {
+                return E_SYNTAX;
+            }
+            
+            ProgramPtrToOffsetStack();
+            LD_HL_IMM((uint24_t)ice.programDataPtr);
+            ice.programDataPtr += outputPrevPrev->operand * outputPrev->operand;
+        } else if (amountOfArguments == 3) {
+        } else {
+            return E_ARGUMENTS;
+        }
     }
     
     // {
@@ -341,8 +408,8 @@ uint8_t parseFunction(uint24_t index) {
         }
     }
     
-    // det(
-    else if (function == tDet) {
+    // det(, sum(
+    else if (function == tDet || function == tSum) {
         endIndex = index;
         startIndex = index;
         
@@ -362,7 +429,7 @@ uint8_t parseFunction(uint24_t index) {
                     temp--;
                 }
                 
-                if (outputPrevType == TYPE_FUNCTION && (uint8_t)outputPrevOperand == tDet) {
+                if (outputPrevType == TYPE_FUNCTION && ((uint8_t)outputPrevOperand == tDet || (uint8_t)outputPrevOperand == tSum)) {
                     temp++;
                 }
                 
@@ -404,14 +471,21 @@ uint8_t parseFunction(uint24_t index) {
         }
         
         // Wow, unknown C function?
-        if (expr.outputNumber >= AMOUNT_OF_C_FUNCTIONS) {
+        if (expr.outputNumber >= (function == tDet ? AMOUNT_OF_GRAPHX_FUNCTIONS : AMOUNT_OF_FILEIOC_FUNCTIONS)) {
             return E_UNKNOWN_C;
         }
         
         // Lel, we need to remove the last argument (ld hl, XXXXXX) + the push
         ice.programPtr -= 4 + (expr.outputNumber > 0);
         
-        temp = CArguments[expr.outputNumber * 2];
+        // Get the amount of arguments, and call the function
+        if (function == tDet) {
+            temp = GraphxArgs[expr.outputNumber * 2];
+            CALL(ice.GraphxRoutinesStack[expr.outputNumber]);
+        } else {
+            temp = FileiocArgs[expr.outputNumber * 2];
+            CALL(ice.FileiocRoutinesStack[expr.outputNumber]);
+        }
         
         // Check if unimplemented function
         if (temp & UN) {
@@ -428,9 +502,6 @@ uint8_t parseFunction(uint24_t index) {
             return E_ARGUMENTS;
         }
         
-        // Call the function
-        CALL(ice.CRoutinesStack[expr.outputNumber] * 4 + 0xD1A8F6);
-        
         // And pop the arguments
         for (a = 1; a < amountOfArguments; a++) {
             POP_BC();
@@ -441,7 +512,7 @@ uint8_t parseFunction(uint24_t index) {
             OR_A_A();
             SBC_HL_HL();
             LD_L_A();
-        } else if (temp & RET_HL) {
+        } else if (temp & RET_HLs) {
             EX_S_DE_HL();
             expr.outputRegister2 = OUTPUT_IN_DE;
         }

@@ -83,6 +83,7 @@
 #define OP_POP_HL     0xE1
 #define OP_EX_SP_HL   0xE3
 #define OP_PUSH_HL    0xE5
+#define OP_AND_A      0xE6
 #define OP_EX_DE_HL   0xEB
 #define OP_CP_A       0xFE
 
@@ -193,6 +194,7 @@
 #define OR_A_A()              do { output(uint8_t, OP_OR_A_A); } while (0)
 #define OR_A_C()              do { output(uint8_t, OP_OR_A_C); } while (0)
 #define XOR_A_A()             do { output(uint8_t, OP_XOR_A_A); } while (0)
+#define AND_A(val)            do { output(uint8_t, OP_AND_A); output(uint8_t, val); } while (0)
 #define CP_A(val)             do { output(uint8_t, OP_CP_A); output(uint8_t, val); } while (0)
 #define CCF()                 do { output(uint8_t, OP_CCF); } while (0)
 #define SCF()                 do { output(uint8_t, OP_SCF); } while (0)

@@ -2,8 +2,9 @@
 #define FUNCTIONS_H
 
 #define RET_A         (1<<7)
-#define RET_HL        (1<<5)
+#define RET_HLs       (1<<5)
 #define RET_NONE      (0)
+#define RET_HL        (0)
 #define UN            (1<<6)
 #define DEPR          (1<<4)
 #define ARG_NORM      (0)
@@ -18,6 +19,8 @@
 #define SMALL_23      (SMALL_2 | SMALL_3)
 #define SMALL_14      (SMALL_1 | SMALL_4)
 #define SMALL_45      (SMALL_4 | SMALL_5)
+#define SMALL_34      (SMALL_3 | SMALL_4)
+#define SMALL_345     (SMALL_3 | SMALL_45)
 
 uint8_t parseFunction(uint24_t);
 uint8_t parseFunction1Arg(uint24_t, uint8_t, uint8_t);

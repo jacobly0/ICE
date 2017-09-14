@@ -8,7 +8,6 @@
 #include "output.h"
 #include "operator.h"
 #include "routines.h"
-//#include "gfx/gfx_logos.h"
 
 ice_t ice;
 expr_t expr;
@@ -18,13 +17,12 @@ extern label_t labelStack[100];
 extern label_t gotoStack[50];
 
 #ifdef COMPUTER_ICE
+
 #define INCBIN_PREFIX
 #include "incbin.h"
 INCBIN(CHeader, "src/asm/cheader.bin");
 INCBIN(CProgramHeader, "src/asm/cprogramheader.bin");
-#endif
 
-#ifdef COMPUTER_ICE
 void w24(void *x, uint32_t val) {
     uint8_t *ptr = (uint8_t*)(x);
     ptr[0] = val & 0xFF;
@@ -35,14 +33,16 @@ uint32_t r24(void *x) {
     uint8_t *ptr = (uint8_t*)(x);
     return (ptr[2] << 16) | (ptr[1] << 8) | (ptr[0]);
 }
+
+int main(int argc, char **argv) {
+    
+#else
+    
+void main(void) {
+    
 #endif
 
-#ifndef COMPUTER_ICE
-void main(void) {
-#else
-int main(int argc, char **argv) {
-#endif
-    uint8_t selectedProgram = 0, key, amountOfPrograms, res, *hooksPtr;
+    uint8_t selectedProgram = 0, key, amountOfPrograms, res;
     uint24_t programDataSize, offset, totalSize;
     const char ICEheader[] = {tii, 0};
     char buf[30], *var_name;
@@ -54,18 +54,19 @@ int main(int argc, char **argv) {
     ice.inPrgm = ti_OpenVar("ICEAPPV", "r", TI_APPVAR_TYPE);
     if (ice.inPrgm) {
         ti_SetArchiveStatus(true, ice.inPrgm);
-        hooksPtr = ti_GetDataPtr(ice.inPrgm);
+        ti_GetDataPtr(ice.inPrgm);
         
         // Manually set the hooks
         asm("ld de, 17");
         asm("add hl, de");
         asm("call 00213CCh");
-        asm("ld de, 473");
+        asm("ld de, 483");
         asm("add hl, de");
         asm("call 00213F8h");
         asm("ld de, 31");
         asm("add hl, de");
         asm("call 00213C4h");
+        ti_Close(ice.inPrgm);
     }
     
     // Yay, GUI! :)
@@ -157,25 +158,13 @@ int main(int argc, char **argv) {
     ice.programData   = malloc(50000);
 #endif
 
-    ice.programPtr     = ice.programData + 116;
+    ice.programPtr     = ice.programData;
     ice.programDataPtr = ice.programDataData;
     ice.LblPtr         = ice.LblStack;
     ice.GotoPtr        = ice.GotoStack;
     
-    memcpy(ice.programData, CHeaderData, 116);
-    
     // Pre-scan program (and subprograms) and find all the C routines
     preScanProgram();
-    
-    // If there are no C functions, remove the entire header
-    if (!ice.amountOfCRoutinesUsed) {
-        ice.programPtr = (uint8_t*)ice.programData;
-    } else {
-        CALL(_RunIndicOff);
-        CALL((uint24_t)ice.programPtr + 12 - (uint24_t)ice.programData + PRGM_START);
-        LD_IY_IMM(flags);
-        JP(_DrawStatusBar);
-    }
     
     memcpy(ice.programPtr, CProgramHeaderData, 5);
     ice.programPtr += 5;
@@ -313,6 +302,8 @@ stop:
 void preScanProgram(void) {
     int token;
     
+    memcpy(ice.programPtr, CHeaderData, 116);
+    ice.programPtr += 116;
     _rewind(ice.inPrgm);
     
     // Scan the entire program
@@ -335,15 +326,15 @@ void preScanProgram(void) {
             if (!ice.OSStrings[token = _getc(ice.inPrgm)]) {
                 ice.OSStrings[token] = pixelShadow + 2000 * (ice.amountOfOSLocationsUsed++);
             }
-        } else if (tok == tVarOut && !expr.inString) {
-            // CompilePrgm(
-            if ((uint8_t)_getc(ice.inPrgm) == 0x0D) {
+        } else if (tok == t2ByteTok && !expr.inString) {
+            // CompilePrgm( - AsmComp(
+            if ((uint8_t)_getc(ice.inPrgm) == tAsmComp) {
                 char tempName[9];
                 uint8_t a = 0;
                 ti_var_t tempProg = ice.inPrgm;
 
                 while ((int)(token = _getc(ice.inPrgm)) != EOF && (tok = (uint8_t)token) != tEnter && a < 9) {
-                    tempName[a++] = (char)tok;
+                    tempName[a++] = tok;
                 }
                 tempName[a] = 0;
                 
@@ -374,11 +365,69 @@ void preScanProgram(void) {
             }
             
             // Insert the C routine
-            if (!ice.CRoutinesStack[tok]) {
+            if (!ice.GraphxRoutinesStack[tok]) {
+                ice.GraphxRoutinesStack[tok] = ice.programPtr - ice.programData + PRGM_START;
                 JP(tok * 3);
-                ice.CRoutinesStack[tok] = ice.amountOfCRoutinesUsed++;
+                ice.amountOfGraphxRoutinesUsed++;
             }
         }
+    }
+    
+    // If there are no GRAPHX functions, remove the entire header
+    if (!ice.amountOfGraphxRoutinesUsed) {
+        ice.programPtr -= 9;
+    }
+    
+    // Scan again, but now for the FILEIOC lib functions
+    memcpy(ice.programPtr, FileiocHeader, 10);
+    ice.programPtr += 10;
+    _rewind(ice.inPrgm);
+    expr.inString = false;
+    
+    while ((int)(token = _getc(ice.inPrgm)) != EOF) {
+        uint8_t tok = (uint8_t)token;
+        
+        if (tok == tString) {
+            expr.inString = !expr.inString;
+        } else if (tok == tEnter) {
+            expr.inString = false;
+        } else if (tok == tSum && !expr.inString) {
+            uint8_t tok1 = _getc(ice.inPrgm);
+            uint8_t tok2 = _getc(ice.inPrgm);
+
+            // Invalid det( command
+            if (tok1 < t0 || tok1 > t9) {
+                break;
+            }
+            
+            // Get the det( command
+            if (tok2 < t0 || tok2 > t9) {
+                tok = tok1 - t0;
+            } else {
+                tok = (tok1 - t0) * 10 + (tok2 - t0);
+            }
+            
+            // Insert the C routine
+            if (!ice.FileiocRoutinesStack[tok]) {
+                ice.FileiocRoutinesStack[tok] = ice.programPtr - ice.programData + PRGM_START;
+                JP(tok * 3);
+                ice.amountOfFileiocRoutinesUsed++;
+            }
+        }
+    }
+    
+    if (!ice.amountOfFileiocRoutinesUsed) {
+        ice.programPtr -= 10;
+        if (!ice.amountOfGraphxRoutinesUsed) {
+            ice.programPtr = ice.programData;
+        }
+    }
+    
+    if (ice.amountOfGraphxRoutinesUsed) {
+        CALL(_RunIndicOff);
+        CALL(ice.programPtr - ice.programData + 12 + PRGM_START);
+        LD_IY_IMM(flags);
+        JP(_DrawStatusBar);
     }
     
     // Well, we scanned the entire program, so let's rewind it
