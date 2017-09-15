@@ -44,7 +44,7 @@ LibLoadAppVar:
 RelocationStart:
 	
 _GraphxHeader:
-	db 0C0h, "GRAPHX", 0, 6
+	db 0C0h, "GRAPHX", 0, 7
 	
 _FileiocHeader:
 	db 0C0h, "FILEIOC", 0, 3

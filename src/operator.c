@@ -1563,4 +1563,4 @@ void (*operatorFunctions[224])(void) = {
     SubChainAnsVariable,
     SubChainAnsFunction,
     OperatorError,
-};
+};

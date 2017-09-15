@@ -328,16 +328,34 @@ uint8_t parseFunction(uint24_t index) {
     else if (function2 == tDefineSprite) {
         element_t *outputPrevPrevPrev = &outputPtr[getIndexOffset(-4)];
         
+        ProgramPtrToOffsetStack();
+        
         if (amountOfArguments == 2) {
-            dbg_Debugger();
-            if (outputPrevPrev->type + outputPrevType != TYPE_NUMBER) {
+            if (outputPrevPrev->type != TYPE_NUMBER || outputPrevType != TYPE_NUMBER) {
                 return E_SYNTAX;
             }
             
-            ProgramPtrToOffsetStack();
             LD_HL_IMM((uint24_t)ice.programDataPtr);
             ice.programDataPtr += outputPrevPrev->operand * outputPrev->operand;
         } else if (amountOfArguments == 3) {
+            uint8_t *prevDataPtr = (uint8_t*)outputPrev->operand, *prevDataPtr2 = prevDataPtr;
+            
+            if(outputPrevPrevPrev->type != TYPE_NUMBER || outputPrevPrev->type != TYPE_NUMBER || outputPrev->type != TYPE_STRING) {
+                return E_SYNTAX;
+            }
+            
+            // Replace the hexadecimal string to hexadecimal bytes
+            LD_HL_IMM((uint24_t)prevDataPtr);
+            while (prevDataPtr != ice.programDataPtr - 1) {
+                uint8_t tok1, tok2;
+                
+                if ((tok1 = IsHexadecimal(*prevDataPtr++)) == 16 || (tok2 = IsHexadecimal(*prevDataPtr++)) == 16) {
+                    return E_SYNTAX;
+                }
+                *prevDataPtr2++ = (tok1 << 4) + tok2;
+            }
+            
+            ice.programDataPtr = prevDataPtr2;
         } else {
             return E_ARGUMENTS;
         }
