@@ -336,6 +336,7 @@ void insertFunctionReturn(uint24_t function, uint8_t outputRegister, bool needPu
             // The key should be in HL
             if (outputRegister == OUTPUT_IN_HL) {
                 CALL(_os_GetCSC);
+                ice.modifiedIY = false;
             }
             
             // The key should be in BC or DE

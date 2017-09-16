@@ -7,6 +7,8 @@
 
 #define tDefineSprite 0x0A
 #define tCall 0x0B
+#define tData 0x0C
+#define tCopy 0x0D
 
 typedef struct {
     char     outName[9];                                    // Output variable name
@@ -41,6 +43,7 @@ typedef struct {
     uint24_t tempStrings[2];                                // Used to allocate temp strings
     uint24_t GraphxRoutinesStack[AMOUNT_OF_GRAPHX_FUNCTIONS];   // The address of the relocation jumps of the GRAPHX lib
     uint24_t FileiocRoutinesStack[AMOUNT_OF_FILEIOC_FUNCTIONS]; // The address of the relocation jumps of the FILEIOC lib
+    uint24_t programLength;                                 // Size of input program
     
     ti_var_t inPrgm;                                        // Used for getting tokens
     ti_var_t outPrgm;                                       // Used for writing bytes
@@ -68,7 +71,9 @@ typedef struct {
     
     bool     usedAlreadyPause;                              // Only once the "Pause " routine in the program data
     uint24_t PauseAddr;                                     // Address of the "Pause " routine in the program data
-    uint24_t programLength;                                 // Size of input program
+    
+    bool     usedAlreadySinCos;                             // Only once the "sin(" or "cos(" routine in the program data
+    uint24_t SinCosAddr;                                    // Address of the "sin(" or "cos(" routine in the program data
 } ice_t;
 
 typedef struct {
@@ -115,6 +120,7 @@ void RandData(void);
 void KeypadData(void);
 void StringStoData(void);
 void InputData(void);
+void SinCosData(void);
 void StringConcatenateData(void);
 void MeanData(void);
 void SqrtData(void);

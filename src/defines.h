@@ -22,7 +22,7 @@
 #define r24(x) (*(uint24_t*)(x))
 #define _rewind(x)   ti_Rewind(x)
 #define _open(x)     ti_OpenVar(x, "r", TI_PRGM_TYPE)
-#define _new(x)      ti_OpenVar(x, "w", TI_PRGM_TYPE)
+#define _new(x)      ti_OpenVar(x, "w", TI_PPRGM_TYPE)
 #define _tell(x)     ti_Tell(x)
 #define _seek(x,y,z) ti_Seek(x,y,z)
 #define _getc(x)     getNextToken(x)

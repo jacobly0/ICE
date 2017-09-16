@@ -14,6 +14,7 @@
 #include "incbin.h"
 INCBIN(Sqrt, "src/asm/sqrt.bin");
 INCBIN(Mean, "src/asm/mean.bin");
+INCBIN(Sincos, "src/asm/sincos.bin");
 #endif
 
 /* First byte:  bit 7  : returns something in A
@@ -200,6 +201,22 @@ uint8_t parseFunction(uint24_t index) {
         ice.modifiedIY = true;
     }
     
+    // sin(, cos(
+    else if (function == tSin || function == tCos) {
+        if ((res = parseFunction1Arg(index, OUTPUT_IN_HL, amountOfArguments)) != VALID) {
+            return res;
+        }
+        
+        ProgramPtrToOffsetStack();
+        if (!ice.usedAlreadySinCos) {
+            ice.SinCosAddr = (uintptr_t)ice.programDataPtr;
+            memcpy(ice.programDataPtr, SinCosData, 176);
+            ice.programDataPtr += 176;
+            ice.usedAlreadySinCos = true;
+        }
+        CALL(ice.SinCosAddr + (function == tSin ? 4 : 0));
+    }
+    
     // min(
     else if (function == tMin) {
         if ((res = parseFunction2Args(index, OUTPUT_IN_DE, amountOfArguments, false)) != VALID) {
@@ -271,7 +288,7 @@ uint8_t parseFunction(uint24_t index) {
     }
     
     // sub(
-    else if (function2 == tSubStrng) {
+    else if (function == t2ByteTok && function2 == tSubStrng) {
         element_t *outputPrevPrevPrev = &outputPtr[getIndexOffset(-4)];
         uint24_t outputPrevPrevPrevOperand = outputPrevPrevPrev->operand;
         
@@ -323,6 +340,29 @@ uint8_t parseFunction(uint24_t index) {
     }
     
     // Here are coming the special functions, with abnormal arguments
+    
+    // Data(
+    else if (function == tVarOut && function2 == tData) {
+        element_t *outputTemp;
+        uint24_t startIndex = -1 - amountOfArguments;
+        uint8_t a;
+        
+        ProgramPtrToOffsetStack();
+        LD_HL_IMM((uint24_t)ice.programDataPtr);
+        
+        for (a = 0; a < amountOfArguments; a++) {
+            outputTemp = &outputPtr[getIndexOffset(startIndex + a)];
+            if (outputTemp->type != TYPE_NUMBER) {
+                return E_SYNTAX;
+            }
+            *ice.programDataPtr++ = outputTemp->operand;
+        }
+    }
+    
+    // Copy(
+    else if (function2 == tCopy) {
+        return E_NOT_IMPLEMENTED;
+    }
     
     // DefineSprite(
     else if (function2 == tDefineSprite) {

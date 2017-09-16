@@ -8,7 +8,6 @@
 #include "stack.h"
 #include "output.h"
 #include "routines.h"
-//#include "gfx/gfx_logos.h"
 
 #ifdef COMPUTER_ICE
 #define INCBIN_PREFIX
@@ -18,11 +17,14 @@ INCBIN(Input, "src/asm/input.bin");
 #endif
 
 extern uint8_t (*functions[256])(int token);
-const char implementedFunctions[] = {tNot, tMin, tMax, tMean, tSqrt, tDet, tSum};
-const char implementedFunctions2[] = {tExtTok, tRemainder,
-                                      t2ByteTok, tSubStrng,
-                                      t2ByteTok, tLength,
-                                      tVarOut, tDefineSprite};
+const char implementedFunctions[] = {tNot, tMin, tMax, tMean, tSqrt, tDet, tSum, tSin, tCos};
+const uint8_t implementedFunctions2[12] = {tExtTok, tRemainder,
+                                           t2ByteTok, tSubStrng,
+                                           t2ByteTok, tLength,
+                                           tVarOut, tDefineSprite,
+                                           tVarOut, tData,
+                                           tVarOut, tCopy
+                                          };
 element_t outputStack[400];
 element_t stack[200];
 label_t labelStack[100];
@@ -142,20 +144,31 @@ uint8_t parseExpression(int token) {
             continue;
         }
         
-        // Process a 'negative' number
+        // Process a 'negative' number or expression
         else if (tok == tChs) {
-            uint24_t output = 0;
-            
-            while ((uint8_t)(token = _getc(ice.inPrgm)) >= t0 && (uint8_t)token <= t9) {
-                output = output * 10 + token - t0;
+            if ((token = _getc(ice.inPrgm)) >= t0 && token <= t9) {
+                uint24_t output = token - t0;
+                
+                while ((uint8_t)(token = _getc(ice.inPrgm)) >= t0 && (uint8_t)token <= t9) {
+                    output = output * 10 + token - t0;
+                }
+                outputCurr->type = TYPE_NUMBER;
+                outputCurr->operand = 0-output;
+                outputElements++;
+                mask = TYPE_MASK_U24;
+                
+                // Don't grab a new token
+                continue;
+            } else {
+                // Pretend as if it's a -1*
+                outputCurr->type = TYPE_NUMBER;
+                outputCurr->operand = -1;
+                outputElements++;
+                _seek(-1, SEEK_CUR, ice.inPrgm);
+                token = tMul;
+                tok = tMul;
+                goto tokenIsOperator;
             }
-            outputCurr->type = TYPE_NUMBER;
-            outputCurr->operand = 0-output;
-            outputElements++;
-            mask = TYPE_MASK_U24;
-
-            // Don't grab a new token
-            continue;
         }
         
         // Process an OS list (number)
@@ -202,7 +215,8 @@ uint8_t parseExpression(int token) {
                 stackToOutputReturn = 1;
                 goto stackToOutput;
             }
-            
+tokenIsOperator:
+
             // Move the stack to the output as long as it's not empty
             while (stackElements) {
                 stackPrev = &stackPtr[stackElements-1];
@@ -299,6 +313,7 @@ stackToOutputReturn1:
             // Increment the amount of arguments for that function
             if (tok == tComma) {
                 (*amountOfArgumentsStackPtr)++;
+                canUseMask = 2;
             }
             
             mask = TYPE_MASK_U24;
@@ -307,12 +322,16 @@ stackToOutputReturn1:
         // Process a function, ( { [
         else if (strchr(implementedFunctions, tok) || IsA2ByteToken || tok == tLParen || tok == tLBrace || tok == tLBrack) {
             if (IsA2ByteToken) {
-                uint24_t temp2;
-                char *temp3;
+                uint8_t temp2 = _getc(ice.inPrgm);
+                uint24_t temp3;
                 
-                if (!(temp3 = strchr(implementedFunctions2, temp2 = _getc(ice.inPrgm))) || (uint8_t)*(temp3 - 1) != tok) {
-                    return E_SYNTAX;
+                for (temp3 = 0; temp3 < sizeof(implementedFunctions2); temp3 += 2) {
+                    if (tok == implementedFunctions2[temp3] && temp2 == implementedFunctions2[temp3 + 1]) {
+                        goto foundRight2ByteToken;
+                    }
                 }
+                return E_NOT_IMPLEMENTED;
+foundRight2ByteToken:
                 token = token + (temp2 << 16);
             }
             // We always have at least 1 argument
@@ -470,6 +489,12 @@ stackToOutputReturn2:
                         return E_ICE_ERROR;
                     }
                     temp = outputPrevOperand % outputPrevPrevOperand;
+                    break;
+                case tSin:
+                    temp = 256*sin((double)outputPrevOperand / 256 * 2 * M_PI);
+                    break;
+                case tCos:
+                    temp = 256*cos((double)outputPrevOperand / 256 * 2 * M_PI);
                     break;
                 default:
                     return E_ICE_ERROR;
@@ -690,7 +715,7 @@ uint8_t parsePostFixFromIndexToIndex(uint24_t startIndex, uint24_t endIndex) {
                 
                 // I don't care that this will be ignored when it's a pointer, because I know there is a -> directly after
                 // If it's a sub(, the output should be a string, not Ans
-                if (function2 == tSubStrng) {
+                if ((uint8_t)outputCurr->operand == t2ByteTok && function2 == tSubStrng) {
                     outputCurr->type = TYPE_STRING;
                     if (outputPrevPrevPrev->operand == ice.tempStrings[TempString1]) {
                         outputCurr->operand = ice.tempStrings[TempString2];
@@ -1065,24 +1090,18 @@ static uint8_t functionReturn(int token) {
         //Check if we can optimize stuff :D
         optimizeZeroCarryFlagOutput();
         
-        if (expr.AnsSetCarryFlag || expr.AnsSetCarryFlagReversed) {
-            if (expr.AnsSetCarryFlagReversed) {
-                RET_C();
-            } else {
-                RET_NC();
-            }
-        } else {
-            if (expr.AnsSetZeroFlagReversed) {
-                RET_Z();
-            } else {
-                RET_NZ();
-            }
-        }
+        *ice.programPtr++ = (expr.AnsSetCarryFlag || expr.AnsSetCarryFlagReversed ? 
+            (expr.AnsSetCarryFlagReversed ? OP_RET_C : OP_RET_NC) :
+            (expr.AnsSetZeroFlagReversed ? OP_RET_Z : OP_RET_NZ));
     }
     return VALID;
 }
 
 static uint8_t functionDisp(int token) {
+    if (ice.modifiedIY) {
+        LD_IY_IMM(flags);
+        ice.modifiedIY = false;
+    }
     do {
         uint8_t res;
 
@@ -1153,7 +1172,7 @@ static uint8_t functionOutput(int token) {
             LD_SIS_IMM_HL(curRow & 0xFFFF);
         } else {
             if (expr.outputIsVariable) {
-                *(ice.programPtr - 2) = 0x7E;
+                *(ice.programPtr - 2) = OP_LD_A_HL;
             } else if (expr.outputRegister == OUTPUT_IN_HL) {
                 LD_A_L();
             } else {
@@ -1163,7 +1182,7 @@ static uint8_t functionOutput(int token) {
         }
     } else {
         if (expr.outputIsVariable) {
-            *(ice.programPtr - 2) = 0x7E;
+            *(ice.programPtr - 2) = OP_LD_A_HL;
         } else if (expr.outputRegister == OUTPUT_IN_HL) {
             LD_A_L();
         } else {
@@ -1181,7 +1200,7 @@ static uint8_t functionOutput(int token) {
         }
         
         if (expr.outputIsVariable) {
-            *(ice.programPtr - 2) = 0x7E;
+            *(ice.programPtr - 2) = OP_LD_A_HL;
         } else if (expr.outputRegister == OUTPUT_IN_HL) {
             LD_A_L();
         } else {
@@ -1192,6 +1211,10 @@ static uint8_t functionOutput(int token) {
     
     // Get the third argument = output thing
     if (ice.tempToken == tComma) {
+        if (ice.modifiedIY) {
+            LD_IY_IMM(flags);
+            ice.modifiedIY = false;
+        }
         if ((res = parseExpression(_getc(ice.inPrgm))) != VALID) {
             return res;
         }
@@ -1377,8 +1400,8 @@ static uint8_t functionPrgm(int token) {
 static uint8_t functionCustom(int token) {
     uint8_t tok = _getc(ice.inPrgm);
     
-    // DefineSprite(
-    if (tok == tDefineSprite) {
+    // DefineSprite(, Data(, Copy(
+    if (tok == tDefineSprite || tok == tData || tok == tCopy) {
         _seek(-1, SEEK_CUR, ice.inPrgm);
         return parseExpression(token);
     }
@@ -1710,7 +1733,7 @@ uint8_t (*functions[256])(int) = {
     tokenUnimplemented, //127
     tokenUnimplemented, //128
     tokenUnimplemented, //129
-    tokenWrongPlace,    //130
+    parseExpression,    //130
     tokenWrongPlace,    //131
     tokenUnimplemented, //132
     tokenUnimplemented, //133
@@ -1774,9 +1797,9 @@ uint8_t (*functions[256])(int) = {
     tokenUnimplemented, //191
     tokenUnimplemented, //192
     tokenUnimplemented, //193
-    tokenUnimplemented, //194
+    parseExpression,    //194
     tokenUnimplemented, //195
-    tokenUnimplemented, //196
+    parseExpression,    //196
     tokenUnimplemented, //197
     tokenUnimplemented, //198
     tokenUnimplemented, //199
