@@ -27,6 +27,10 @@ DunnoWhatThisDoes:
 	add	hl, de
 	jr	c, MultiplyLarge
 MultiplySmall:
+	ld	a, (iy+9)
+	or	a, a
+	ld	a, 0EBh
+	call	nz, InsertA
 	ld	hl, 0CD003Eh
 	ld	h, e
 	ld	de, 0000150h
@@ -35,10 +39,8 @@ MultiplySmall:
 MultiplyLarge:
 	ld	a, (iy+9)
 	or	a, a
-	jr	z, DontInsertEXDEHL
 	ld	a, 0EBh
-	call	InsertA
-DontInsertEXDEHL:
+	call	nz, InsertA
 	ex	de, hl
 	ld	a, 001h
 	call	InsertAHL
@@ -56,9 +58,8 @@ DoInsertHLDE:
 DontNeedPushHLPopDE:
 	ld	a, (iy+9)
 	or	a, a
-	jr	z, DontInsertEXDEHL2
 	ld	a, 0EBh
-	call	InsertA
+	call	nz, InsertA
 DontInsertEXDEHL2:
 	ex	de, hl
 	scf

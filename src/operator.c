@@ -72,9 +72,15 @@ void MultWithNumber(uint24_t num, uint8_t *programPtr, bool ChangeRegisters) {
             }
         }
     } else if (num < 0x100) {
+        if (ChangeRegisters) {
+            EX_DE_HL();
+        }
         LD_A(num);
         CALL(__imul_b);
     } else {
+        if (ChangeRegisters) {
+            EX_DE_HL();
+        }
         LD_BC_IMM(num);
         CALL(__imuls);
     }

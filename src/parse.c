@@ -1343,15 +1343,17 @@ static uint8_t functionFor(int token) {
     if (!stepIsNumber || stepNumber) {
         // ld hl, (ix+*) \ inc hl/dec hl (x times) \ ld (ix+*), hl
         // ld hl, (ix+*) \ ld de, x \ add hl, de \ ld (ix+*), hl
+        
         LD_HL_IND_IX_OFF(variable);
         if (stepIsNumber) {
             uint8_t a = 0;
+            
             if (stepNumber < 5) {
                 for (a = 0; a < (uint8_t)stepNumber; a++) {
                     INC_HL();
                 }
             } else if (stepNumber > 0xFFFFFF - 4) {
-                for (a = 0; a < (uint8_t)~stepNumber; a++) {
+                for (a = 0; a < (uint8_t)(0-stepNumber); a++) {
                     DEC_HL();
                 }
             } else {
@@ -1367,7 +1369,11 @@ static uint8_t functionFor(int token) {
     }
     
     smallCode = JumpForward(jumpToCond, ice.programPtr, tempDataOffsetElements);
-    LD_HL_IND_IX_OFF(variable);
+    
+    // If both the step and the end point are a number, the variable is already in HL
+    if (!(endPointIsNumber && stepIsNumber)) {
+        LD_HL_IND_IX_OFF(variable);
+    }
 
     if (endPointIsNumber) {
         if (stepNumber < 0x800000) {
