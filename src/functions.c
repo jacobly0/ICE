@@ -189,6 +189,7 @@ uint8_t parseFunction(uint24_t index) {
         if ((res = parseFunction1Arg(index, OUTPUT_IN_HL, amountOfArguments)) != VALID) {
             return res;
         }
+        
         ProgramPtrToOffsetStack();
         if (!ice.usedAlreadySqrt) {
             ice.SqrtAddr = (uintptr_t)ice.programDataPtr;
@@ -207,11 +208,15 @@ uint8_t parseFunction(uint24_t index) {
             return res;
         }
         
+        // ld bc, SinTable
+        ProgramPtrToOffsetStack();
+        LD_BC_IMM((uint24_t)ice.programDataPtr + 45);
+        
         ProgramPtrToOffsetStack();
         if (!ice.usedAlreadySinCos) {
             ice.SinCosAddr = (uintptr_t)ice.programDataPtr;
-            memcpy(ice.programDataPtr, SinCosData, 176);
-            ice.programDataPtr += 176;
+            memcpy(ice.programDataPtr, SinCosData, 110);
+            ice.programDataPtr += 110;
             ice.usedAlreadySinCos = true;
         }
         CALL(ice.SinCosAddr + (function == tSin ? 4 : 0));
@@ -361,7 +366,7 @@ uint8_t parseFunction(uint24_t index) {
     
     // Copy(
     else if (function2 == tCopy) {
-        return E_NOT_IMPLEMENTED;
+        return E_UNIMPLEMENTED;
     }
     
     // DefineSprite(
@@ -547,7 +552,7 @@ uint8_t parseFunction(uint24_t index) {
         
         // Check if unimplemented function
         if (temp & UN) {
-            return E_NOT_IMPLEMENTED;
+            return E_UNIMPLEMENTED;
         }
         
         // Check if deprecated function

@@ -10,7 +10,7 @@
 #include "routines.h"
 
 static const char *errors[] = {
-    "This token is not implemented (yet)",
+    "This token/function is not implemented (yet)",
 #ifndef COMPUTER_ICE
     "This token cannot be used at the start of the   line",
 #else
@@ -25,7 +25,6 @@ static const char *errors[] = {
     "Invalid hexadecimal",
     "ICE ERROR: please report it!",
     "You have the wrong number or arguments",
-    "This C function is not implemented (yet)",
     "Warning: this C function is deprecated",
 #ifndef COMPUTER_ICE
     "Label not found: ",

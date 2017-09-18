@@ -282,7 +282,8 @@ stackToOutputReturn1:
             stackPrev = &stackPtr[stackElements-1];
             
             // Closing tag should match it's open tag
-            if (tok != tComma && (stackPrev->operand != token - 1)) {
+            if (((tok == tRBrace || tok == tRBrack) && (stackPrev->operand != token - 1)) ||
+                 (tok == tRParen && (stackPrev->operand == tLBrace || stackPrev->operand == tLBrack))) {
                 return E_SYNTAX;
             }
             
@@ -330,7 +331,7 @@ stackToOutputReturn1:
                         goto foundRight2ByteToken;
                     }
                 }
-                return E_NOT_IMPLEMENTED;
+                return E_UNIMPLEMENTED;
 foundRight2ByteToken:
                 token = token + (temp2 << 16);
             }
@@ -439,8 +440,8 @@ stackToOutputReturn2:
 
     // Remove stupid things like 2+5, and not(1, max(2,3
     for (loopIndex = 1; loopIndex < outputElements; loopIndex++) {
-        outputPrevPrev = &outputPtr[loopIndex-2];
-        outputPrev = &outputPtr[loopIndex-1];
+        outputPrevPrev = &outputPtr[loopIndex - 2];
+        outputPrev = &outputPtr[loopIndex - 1];
         outputCurr = &outputPtr[loopIndex];
         index = outputCurr->operand >> 8;
         
@@ -449,7 +450,7 @@ stackToOutputReturn2:
                outputCurr->type == TYPE_OPERATOR && (uint8_t)outputCurr->operand != tStore) {
             // If yes, execute the operator, and store it in the first entry, and remove the other 2
             outputPrevPrev->operand = executeOperator(outputPrevPrev->operand, outputPrev->operand, (uint8_t)outputCurr->operand);
-            memcpy(outputPrev, &outputPtr[loopIndex+1], (outputElements-1)*4);
+            memcpy(outputPrev, &outputPtr[loopIndex + 1], (outputElements - 1) * sizeof(element_t));
             outputElements -= 2;
             loopIndex--;
             continue;
@@ -462,6 +463,7 @@ stackToOutputReturn2:
                 (uint8_t)outputCurr->operand != tSum &&
                 (uint8_t)outputCurr->operand != tVarOut) {
             uint24_t outputPrevOperand = outputPrev->operand, outputPrevPrevOperand = outputPrevPrev->operand;
+            
             for (a = 1; a <= index; a++) {
                 if ((&outputPtr[loopIndex-a])->type != TYPE_NUMBER) {
                     goto DontDeleteFunction;
@@ -491,10 +493,10 @@ stackToOutputReturn2:
                     temp = outputPrevOperand % outputPrevPrevOperand;
                     break;
                 case tSin:
-                    temp = 256*sin((double)outputPrevOperand / 256 * 2 * M_PI);
+                    temp = 255*sin((double)outputPrevOperand / 256 * 2 * M_PI);
                     break;
                 case tCos:
-                    temp = 256*cos((double)outputPrevOperand / 256 * 2 * M_PI);
+                    temp = 255*cos((double)outputPrevOperand / 256 * 2 * M_PI);
                     break;
                 default:
                     return E_ICE_ERROR;
@@ -502,7 +504,7 @@ stackToOutputReturn2:
             
             // And remove everything
             (&outputPtr[loopIndex - index])->operand = temp;
-            memcpy(&outputPtr[loopIndex - index + 1], &outputPtr[loopIndex+1], (outputElements - 1) * 4);
+            memcpy(&outputPtr[loopIndex - index + 1], &outputPtr[loopIndex + 1], (outputElements - 1) * sizeof(element_t));
             outputElements -= index;
             loopIndex -= index - 1;
 DontDeleteFunction:;
@@ -705,7 +707,7 @@ uint8_t parsePostFixFromIndexToIndex(uint24_t startIndex, uint24_t endIndex) {
                 if ((temp = parseFunction(loopIndex)) != VALID) {
                     return temp;
                 }
-            
+                
                 // Cleanup, if it's not a det(
                 if ((uint8_t)outputCurr->operand != tDet && (uint8_t)outputCurr->operand != tSum) {
                     for (temp = 0; temp < amountOfArguments; temp++) {

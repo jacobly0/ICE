@@ -3,7 +3,7 @@
 
 #define AMOUNT_OF_GRAPHX_FUNCTIONS 92
 #define AMOUNT_OF_FILEIOC_FUNCTIONS 21
-#define STACK_SIZE 25
+#define STACK_SIZE 250
 
 #define tDefineSprite 0x0A
 #define tCall 0x0B
