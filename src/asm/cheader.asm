@@ -5,46 +5,46 @@ segment data
 .def _FileiocHeader
 
 _CHeaderData:
-	ld      hl, LibLoadAppVar - $ + 0D1A882h
+	ld	hl, LibLoadAppVar - $ + 0D1A882h
 	call	0020320h
-	ld      a, 015h
-	ld      (0D005F8h), a
+	ld	a, 015h
+	ld	(0D005F8h), a
 FindProgram:
 	call	002050Ch
-	jr      c, NotFound
+	jr	c, NotFound
 	call	0021F98h
-	jr      nz, InArc
+	jr	nz, InArc
 	call	0020628h
 	call	0021448h
 	call	00205C4h
-	jr      FindProgram
+	jr	FindProgram
 InArc:
-	ex      de, hl
-	ld      de, 9
-	add     hl, de
-	ld      e, (hl)
-	add     hl, de
-	inc     hl
-	inc     hl
-	inc     hl
-	ld      de, RelocationStart - _CHeaderData + 0D1A882h
-	jp      (hl)
+	ex	de, hl
+	ld	de, 9
+	add	hl, de
+	ld	e, (hl)
+	add	hl, de
+	inc	hl
+	inc	hl
+	inc	hl
+	ld	de, RelocationStart - _CHeaderData + 0D1A882h
+	jp	(hl)
 NotFound:
 	call	0020814h
 	call	0020828h
-	ld      hl, MissingAppVar - _CHeaderData + 0D1A882h
+	ld	hl, MissingAppVar - _CHeaderData + 0D1A882h
 	call	00207C0h
 	call	00207F0h
-	jp	    00207C0h
+	jp	00207C0h
 MissingAppVar:
-	db "Need"
+	db	"Need"
 LibLoadAppVar:
-	db " LibLoad", 0
-	db "tiny.cc/clibs", 0
+	db	" LibLoad", 0
+	db	"tiny.cc/clibs", 0
 RelocationStart:
 	
 _GraphxHeader:
-	db 0C0h, "GRAPHX", 0, 7
+	db	0C0h, "GRAPHX", 0, 7
 	
 _FileiocHeader:
-	db 0C0h, "FILEIOC", 0, 3
+	db	0C0h, "FILEIOC", 0, 3

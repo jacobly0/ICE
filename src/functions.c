@@ -208,18 +208,19 @@ uint8_t parseFunction(uint24_t index) {
             return res;
         }
         
-        // ld bc, SinTable
-        ProgramPtrToOffsetStack();
-        LD_BC_IMM((uint24_t)ice.programDataPtr + 45);
-        
-        ProgramPtrToOffsetStack();
         if (!ice.usedAlreadySinCos) {
             ice.SinCosAddr = (uintptr_t)ice.programDataPtr;
-            memcpy(ice.programDataPtr, SinCosData, 110);
-            ice.programDataPtr += 110;
+            memcpy(ice.programDataPtr, SinCosData, 95);
+            ice.programDataPtr += 95;
             ice.usedAlreadySinCos = true;
         }
+        ProgramPtrToOffsetStack();
+        LD_DE_IMM(ice.SinCosAddr + 30);
+        
+        ProgramPtrToOffsetStack();
         CALL(ice.SinCosAddr + (function == tSin ? 4 : 0));
+        
+        expr.outputRegister2 = OUTPUT_IN_DE;
     }
     
     // min(

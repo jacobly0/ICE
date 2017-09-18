@@ -3,4 +3,4 @@ segment data
 .def _CProgramHeaderData
 
 _CProgramHeaderData:
-	ld ix, 0D13F47h
+	ld	ix, 0D13F47h

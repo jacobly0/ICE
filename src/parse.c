@@ -1003,7 +1003,7 @@ uint8_t JumpBackwards(uint8_t *startAddr, uint8_t whichOpcode) {
     } else {
         // JR cc to JP cc
         *ice.programPtr++ = whichOpcode + 0xA2 + (whichOpcode == 0x18 ? 9 : 0);
-        *(uint24_t*)ice.programPtr++ = startAddr - ice.programData + PRGM_START;
+        output(uint24_t, startAddr - ice.programData + PRGM_START);
         return false;
     }
 }
