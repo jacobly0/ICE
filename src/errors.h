@@ -17,6 +17,7 @@
 #define E_UNKNOWN_C        13
 #define E_PROG_NOT_FOUND   14
 #define E_NO_SUBPROG       15
+#define E_NO_FUNC_ALLOW    16
 
 #define E_VALID            254
 #define VALID              255

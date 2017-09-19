@@ -253,7 +253,9 @@ stackToOutputReturn1:
             
             // Get the address of the variable
             if (tok >= tA && tok <= tTheta) {
-                outputCurr->operand = 0xD13F47 + (tok - tA) * 3;
+                char offset = GetVariableOffset(tok);
+                
+                outputCurr->operand = 0xD13F47 + offset;
             } else if (tok == tVarLst) {
                 outputCurr->operand = ice.OSLists[_getc(ice.inPrgm)];
             } else if (tok == tVarStrng) {

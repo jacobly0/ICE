@@ -150,17 +150,18 @@ const uint8_t FileiocArgs[] = {
 extern uint8_t outputStack[4096];
 
 uint8_t parseFunction(uint24_t index) {
-    element_t *outputPtr = (element_t*)outputStack, *outputPrev, *outputCurr, *outputPrevPrev;
+    element_t *outputPtr = (element_t*)outputStack, *outputPrev, *outputCurr, *outputPrevPrev, *outputPrevPrevPrev;
     uint8_t function, function2, amountOfArguments, temp, a, outputPrevType, res;
     uint24_t output, endIndex, startIndex, outputPrevOperand;
     
-    outputPrevPrev    = &outputPtr[getIndexOffset(-3)];
-    outputPrev        = &outputPtr[getIndexOffset(-2)];
-    output            = (&outputPtr[index])->operand;
-    outputCurr        = &outputPtr[getIndexOffset(-1)];
-    function          = output;
-    function2         = output >> 16;
-    amountOfArguments = output >> 8;
+    outputPrevPrevPrev = &outputPtr[getIndexOffset(-4)];
+    outputPrevPrev     = &outputPtr[getIndexOffset(-3)];
+    outputPrev         = &outputPtr[getIndexOffset(-2)];
+    output             = (&outputPtr[index])->operand;
+    outputCurr         = &outputPtr[getIndexOffset(-1)];
+    function           = output;
+    function2          = output >> 16;
+    amountOfArguments  = output >> 8;
     
     outputPrevOperand     = outputPrev->operand;
     outputPrevType        = outputPrev->type;
@@ -295,7 +296,6 @@ uint8_t parseFunction(uint24_t index) {
     
     // sub(
     else if (function == t2ByteTok && function2 == tSubStrng) {
-        element_t *outputPrevPrevPrev = &outputPtr[getIndexOffset(-4)];
         uint24_t outputPrevPrevPrevOperand = outputPrevPrevPrev->operand;
         
         // First argument should be a string
@@ -367,13 +367,66 @@ uint8_t parseFunction(uint24_t index) {
     
     // Copy(
     else if (function2 == tCopy) {
-        return E_UNIMPLEMENTED;
+        uint8_t outputPrevPrevPrevType = outputPrevPrevPrev->type;
+        uint8_t outputPrevPrevType = outputPrevPrev->type;
+        uint24_t outputPrevPrevPrevOperand = outputPrevPrevPrev->operand;
+        uint24_t outputPrevPrevOperand = outputPrevPrev->operand;
+        
+        if (outputPrevPrevPrevType == TYPE_FUNCTION_RETURN || outputPrevPrevType == TYPE_FUNCTION_RETURN || outputPrevType == TYPE_FUNCTION_RETURN) {
+            return E_NO_FUNC_ALLOW;
+        }
+        
+        if (outputPrevPrevPrevType <= TYPE_VARIABLE) {
+            if (outputPrevPrevType == TYPE_CHAIN_PUSH) {
+                if (outputPrevType != TYPE_CHAIN_ANS) {
+                    return E_ICE_ERROR;
+                }
+                PushHLDE();
+                POP_BC();
+                POP_HL();
+            }
+            if (outputPrevType == TYPE_CHAIN_ANS) {
+                PushHLDE();
+                POP_BC();
+            } else if (outputPrevPrevType == TYPE_CHAIN_ANS) {
+                MaybeDEToHL();
+            }
+        } else if (outputPrevPrevPrevType == TYPE_CHAIN_ANS) {
+            MaybeHLToDE();
+        } else if (outputPrevPrevPrevType == TYPE_CHAIN_PUSH) {
+            if (outputPrevPrevType == TYPE_CHAIN_ANS) {
+                MaybeDEToHL();
+            } else if (outputPrevType == TYPE_CHAIN_ANS) {
+                PushHLDE();
+                POP_BC();
+            } else {
+                return E_SYNTAX;
+            }
+            POP_DE();
+        }
+
+        if (outputPrevPrevPrevType == TYPE_NUMBER) {
+            LD_DE_IMM(outputPrevPrevPrevOperand);
+        } else if (outputPrevPrevPrevType == TYPE_VARIABLE) {
+            LD_DE_IND_IX_OFF(outputPrevPrevPrevOperand);
+        }
+        if (outputPrevPrevType == TYPE_NUMBER) {
+            LD_HL_NUMBER(outputPrevPrevOperand);
+        } else if (outputPrevPrevType == TYPE_VARIABLE) {
+            LD_HL_IND_IX_OFF(outputPrevPrevOperand);
+        }
+        if (outputPrevType == TYPE_NUMBER) {
+            LD_BC_IMM(outputPrevOperand);
+        } else if (outputPrevPrevPrevType == TYPE_VARIABLE) {
+            LD_BC_IND_IX_OFF(outputPrevOperand);
+        }
+        LDIR();
+        
+        return VALID;
     }
     
     // DefineSprite(
     else if (function2 == tDefineSprite) {
-        element_t *outputPrevPrevPrev = &outputPtr[getIndexOffset(-4)];
-        
         ProgramPtrToOffsetStack();
         
         if (amountOfArguments == 2) {
