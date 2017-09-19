@@ -29,6 +29,7 @@ element_t outputStack[400];
 element_t stack[200];
 label_t labelStack[100];
 label_t gotoStack[50];
+variable_t variableStack[85];
 
 
 uint8_t parseProgram(void) {
@@ -182,7 +183,7 @@ uint8_t parseExpression(int token) {
         // Process a variable
         else if (tok >= tA && tok <= tTheta) {
             outputCurr->type = TYPE_VARIABLE;
-            outputCurr->operand = tok - tA;
+            outputCurr->operand = GetVariableOffset(tok);
             outputElements++;
             mask = TYPE_MASK_U24;
         }
@@ -1257,7 +1258,7 @@ static uint8_t functionFor(int token) {
     if ((tok = _getc(ice.inPrgm)) < tA || tok > tTheta || (uint8_t)_getc(ice.inPrgm) != tComma) {
         return E_SYNTAX;
     }
-    variable = tok - tA;
+    variable = GetVariableOffset(tok);
     expr.inFunction = true;
     
     // Get the start value, followed by a comma
@@ -1496,7 +1497,7 @@ static uint8_t functionInput(int token) {
     if ((tok = _getc(ice.inPrgm)) < tA || tok > tTheta || !CheckEOL()) {
         return E_SYNTAX;
     }
-    LD_A((tok - tA) * 3);
+    LD_A(GetVariableOffset(tok));
     
     // Copy the Input routine to the data section
     if (!ice.usedAlreadyInput) {

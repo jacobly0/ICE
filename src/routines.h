@@ -10,7 +10,6 @@ void MaybeHLToDE(void);
 void PushHLDE(void);
 uint8_t IsHexadecimal(int);
 bool CheckEOL(void);
-void setCurrentOffset(uint24_t, uint24_t);
-uint24_t getCurrentOffset(void);
+uint8_t GetVariableOffset(uint8_t);
 
 #endif

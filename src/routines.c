@@ -15,6 +15,8 @@
 #define LB_H 14
 #define LB_R (LB_H / 2)
 
+extern variable_t variableStack[85];
+
 void ProgramPtrToOffsetStack(void) {
     ice.dataOffsetStack[ice.dataOffsetElements++] = (uint24_t*)(ice.programPtr + 1);
 }
@@ -59,6 +61,31 @@ bool CheckEOL(void) {
     return false;
 }
 
+uint8_t GetVariableOffset(uint8_t tok) {
+    char variableName[10] = {0,0,0,0,0,0,0,0,0,0};
+    variable_t *variableNew;
+    uint24_t a = 1, b;
+    
+    variableName[0] = tok;
+    while ((tok = _getc(ice.inPrgm)) >= tA && tok <= tTheta) {
+        variableName[a++] = tok;
+    }
+    variableName[a] = 0;
+    _seek(-1, SEEK_CUR, ice.inPrgm);
+    
+    // This variable already exists
+    for (b = 0; b < ice.amountOfVariablesUsed; b++) {
+        if (!strcmp(variableName, (&variableStack[b])->name)) {
+            return (&variableStack[b])->offset;
+        }
+    }
+    
+    // Create new variable
+    variableNew = &variableStack[ice.amountOfVariablesUsed];
+    memcpy(variableNew->name, variableName, a + 1);
+    return variableNew->offset = ice.amountOfVariablesUsed++ * 3 - 128;
+}
+
 #ifndef COMPUTER_ICE
 
 void displayLoadingBarFrame(void) {
@@ -92,14 +119,6 @@ uint24_t getNextToken(ti_var_t inPrgm) {
     // Display loading bar
     displayLoadingBar(inPrgm);
     return ti_GetC(inPrgm);
-}
-
-void setCurrentOffset(uint24_t offset, uint24_t origin) {
-    ti_Seek(offset, origin, ice.inPrgm);
-}
-
-uint24_t getCurrentOffset(void) {
-    return ti_Tell(ice.inPrgm);
 }
 
 #else
