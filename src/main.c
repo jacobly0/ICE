@@ -378,6 +378,10 @@ void preScanProgram(void) {
         ice.programPtr -= 9;
     }
     
+#ifndef COMPUTER_ICE
+    displayLoadingBarFrame();
+#endif
+    
     // Scan again, but now for the FILEIOC lib functions
     memcpy(ice.programPtr, FileiocHeader, 10);
     ice.programPtr += 10;

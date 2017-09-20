@@ -70,7 +70,7 @@ const uint8_t GraphxArgs[] = {
     RET_NONE | 3, SMALL_2,     // HorizLine_NoClip
     RET_NONE | 3, SMALL_2,     // VertLine_NoClip
     RET_NONE | 3, SMALL_2,     // FillCircle_NoClip
-    RET_NONE | 3, SMALL_14,    // Rectangle_NoClip
+    RET_NONE | 4, SMALL_14,    // Rectangle_NoClip
     RET_NONE | 4, SMALL_14,    // FillRectangle_NoClip
     RET_NONE | 4, ARG_NORM,    // SetClipRegion
     RET_A    | 1, ARG_NORM,    // GetClipRegion
@@ -403,6 +403,8 @@ uint8_t parseFunction(uint24_t index) {
                 return E_SYNTAX;
             }
             POP_DE();
+        } else {
+            return E_SYNTAX;
         }
 
         if (outputPrevPrevPrevType == TYPE_NUMBER) {

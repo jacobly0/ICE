@@ -285,7 +285,7 @@ stackToOutputReturn1:
             stackPrev = &stackPtr[stackElements-1];
             
             // Closing tag should match it's open tag
-            if (((tok == tRBrace || tok == tRBrack) && (stackPrev->operand != token - 1)) ||
+            if (((tok == tRBrace || tok == tRBrack) && ((uint8_t)stackPrev->operand != token - 1)) ||
                  (tok == tRParen && (stackPrev->operand == tLBrace || stackPrev->operand == tLBrack))) {
                 return E_SYNTAX;
             }
@@ -644,8 +644,10 @@ uint8_t parsePostFixFromIndexToIndex(uint24_t startIndex, uint24_t endIndex) {
     
     // 3 or more entries, full expression
     do {
-        element_t *outputPrevPrevPrev = &outputPtr[getIndexOffset(-4)];
+        element_t *outputPrevPrevPrev;
+        
         outputCurr = &outputPtr[loopIndex = getNextIndex()];
+        outputPrevPrevPrev = &outputPtr[getIndexOffset(-4)];
         outputType = outputCurr->type;
         
         // Clear this flag
@@ -1257,11 +1259,14 @@ static uint8_t functionFor(int token) {
     uint8_t *endPointExpressionValue = 0, *stepExpression = 0, *jumpToCond, *loopStart;
     uint8_t tok, variable, res;
     
-    if ((tok = _getc(ice.inPrgm)) < tA || tok > tTheta || (uint8_t)_getc(ice.inPrgm) != tComma) {
+    if ((tok = _getc(ice.inPrgm)) < tA || tok > tTheta) {
         return E_SYNTAX;
     }
     variable = GetVariableOffset(tok);
     expr.inFunction = true;
+    if (_getc(ice.inPrgm) != tComma) {
+        return E_SYNTAX;
+    }
     
     // Get the start value, followed by a comma
     if ((res = parseExpression(_getc(ice.inPrgm))) != VALID) {
