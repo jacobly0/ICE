@@ -39,6 +39,7 @@
 #define OP_JR_NZ      0x20
 #define OP_LD_HL      0x21
 #define OP_INC_HL     0x23
+#define OP_LD_H       0x26
 #define OP_JR_Z       0x28
 #define OP_ADD_HL_HL  0x29
 #define OP_DEC_HL     0x2B
@@ -47,6 +48,7 @@
 #define OP_LD_IMM_A   0x32
 #define OP_SCF        0x37
 #define OP_JR_C       0x38
+#define OP_INC_A      0x3C
 #define OP_LD_A       0x3E
 #define OP_CCF        0x3F
 #define OP_LD_C_A     0x4F
@@ -59,6 +61,7 @@
 #define OP_LD_A_E     0x7B
 #define OP_LD_A_L     0x7D
 #define OP_LD_A_HL    0x7E
+#define OP_SBC_A_A    0x9F
 #define OP_AND_A_L    0xA5
 #define OP_XOR_A_L    0xAD
 #define OP_XOR_A_A    0xAF
@@ -70,6 +73,7 @@
 #define OP_JP_NZ      0xC2
 #define OP_JP         0xC3
 #define OP_PUSH_BC    0xC5
+#define OP_ADD_A      0xC6
 #define OP_RET_Z      0xC8
 #define OP_RET        0xC9
 #define OP_CALL       0xCD
@@ -78,6 +82,7 @@
 #define OP_POP_DE     0xD1
 #define OP_JP_NC      0xD2
 #define OP_PUSH_DE    0xD5
+#define OP_SUB_A      0xD6
 #define OP_RET_C      0xD8
 #define OP_JP_C       0xDA
 #define OP_POP_HL     0xE1
@@ -85,6 +90,8 @@
 #define OP_PUSH_HL    0xE5
 #define OP_AND_A      0xE6
 #define OP_EX_DE_HL   0xEB
+#define OP_XOR_A      0xEE
+#define OP_OR_A       0xF6
 #define OP_CP_A       0xFE
 
 #ifndef COMPUTER_ICE
@@ -130,11 +137,12 @@
 #define LD_ADDR_A(val)        do { output(uint8_t, 0x32); output(uint24_t, val); } while (0)
 #define LD_HL_HL()            do { output(uint16_t, 0x27ED); } while (0)
 #define LD_HL_DE()            do { output(uint16_t, 0x1FED); } while (0)
-#define LD_HL_VAL(val)        do { output(uint8_t, 0x36); output(uint8_t, val); } while (0)
+#define LD_HL_VAL(val)        do { output(uint16_t, 0x36 + val * 256); } while (0)
 
-#define LD_A(val)             do { output(uint8_t, OP_LD_A); output(uint8_t, val); } while (0)    
+#define LD_A(val)             do { output(uint16_t, val * 256 + OP_LD_A); } while (0)
 #define LD_B(val)             do { output(uint8_t, OP_LD_B); output(uint8_t, val); } while (0)
 #define LD_C(val)             do { output(uint8_t, OP_LD_C); output(uint8_t, val); } while (0)
+#define LD_H(val)             do { output(uint8_t, OP_LD_H); output(uint8_t, val); } while (0)
 #define LD_L(val)             do { output(uint8_t, OP_LD_L); output(uint8_t, val); } while (0)
 #define LD_HL_A()             do { output(uint8_t, OP_LD_HL_A); } while (0)
 #define LD_HL_D()             do { output(uint8_t, OP_LD_HL_D); } while (0)
@@ -156,6 +164,7 @@
 #define ADD_HL_HL()           do { output(uint8_t, OP_ADD_HL_HL); } while (0)
 #define SBC_HL_DE()           do { output(uint16_t, 0x52ED); } while (0)
 #define SBC_HL_HL()           do { output(uint16_t, 0x62ED); } while (0)
+#define MLT_HL()              do { output(uint16_t, 0x6CED); } while (0)
     
 #define OR_A_SBC_HL_DE()      do { output(uint24_t, 0x52EDB7); } while (0)
 #define SBC_HL_HL_INC_HL()    do { output(uint24_t, 0x2362ED); } while (0)
@@ -198,5 +207,12 @@
 #define CP_A(val)             do { output(uint8_t, OP_CP_A); output(uint8_t, val); } while (0)
 #define CCF()                 do { output(uint8_t, OP_CCF); } while (0)
 #define SCF()                 do { output(uint8_t, OP_SCF); } while (0)
+#define SRL_A()               do { output(uint16_t, 0x3FCB); } while (0)
+#define SUB_A(val)            do { output(uint8_t, OP_SUB_A); output(uint8_t, val); } while (0)
+#define ADD_A(val)            do { output(uint8_t, OP_ADD_A); output(uint8_t, val); } while (0)
+#define SBC_A_A()             do { output(uint8_t, OP_SBC_A_A); } while (0)
+#define INC_A()               do { output(uint8_t, OP_INC_A); } while (0)
+#define XOR_A(val)            do { output(uint8_t, OP_XOR_A); output(uint8_t, val); } while (0)
+#define OR_A(val)             do { output(uint8_t, OP_OR_A); output(uint8_t, val); } while (0)
 
 #endif

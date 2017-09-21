@@ -21,19 +21,37 @@ void ProgramPtrToOffsetStack(void) {
     ice.dataOffsetStack[ice.dataOffsetElements++] = (uint24_t*)(ice.programPtr + 1);
 }
 
-void MaybeDEToHL(void) {
-    if (expr.outputRegister != OUTPUT_IN_HL) {
+void AnsToHL(void) {
+    if (expr.outputRegister == OUTPUT_IN_DE) {
         EX_DE_HL();
+    } else if (expr.outputRegister == OUTPUT_IN_A) {
+        OR_A_A();
+        SBC_HL_HL();
+        LD_L_A();
+    }
+    expr.outputRegister = OUTPUT_IN_HL;
+}
+
+void AnsToDE(void) {
+    if (expr.outputRegister == OUTPUT_IN_HL) {
+        EX_DE_HL();
+    } else if (expr.outputRegister == OUTPUT_IN_A) {
+        LD_DE_IMM(0);
+        LD_E_A();
     }
 }
 
-void MaybeHLToDE(void) {
-    if (expr.outputRegister == OUTPUT_IN_HL) {
-        EX_DE_HL();
+void MaybeAToHL(void) {
+    if (expr.outputRegister == OUTPUT_IN_A) {
+        OR_A_A();
+        SBC_HL_HL();
+        LD_L_A();
+        expr.outputRegister = OUTPUT_IN_HL;
     }
 }
 
 void PushHLDE(void) {
+    MaybeAToHL();
     if (expr.outputRegister == OUTPUT_IN_HL) {
         PUSH_HL();
     } else {
@@ -71,7 +89,9 @@ uint8_t GetVariableOffset(uint8_t tok) {
         variableName[a++] = tok;
     }
     variableName[a] = 0;
-    _seek(-1, SEEK_CUR, ice.inPrgm);
+    if (tok != 0xFF) {
+        _seek(-1, SEEK_CUR, ice.inPrgm);
+    }
     
     // This variable already exists
     for (b = 0; b < ice.amountOfVariablesUsed; b++) {

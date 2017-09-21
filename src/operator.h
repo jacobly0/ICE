@@ -5,6 +5,7 @@
 #define OUTPUT_IN_DE    1
 #define OUTPUT_IN_BC    2
 #define OUTPUT_IN_HL_DE 3
+#define OUTPUT_IN_A     4
 
 #define NO_PUSH   false
 #define NEED_PUSH true
@@ -19,6 +20,7 @@ void LD_HL_STRING(uint24_t);
 uint8_t parseOperator(element_t*, element_t*, element_t*, element_t*);
 
 void insertFunctionReturnNoPush(uint24_t, uint8_t);
+void insertFunctionReturnEntry1HLNoPush(void);
 void insertFunctionReturn(uint24_t, uint8_t, bool);
 void StoToChainAns(void);
 void EQInsert(void);

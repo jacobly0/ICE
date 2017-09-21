@@ -665,6 +665,7 @@ uint8_t parsePostFixFromIndexToIndex(uint24_t startIndex, uint24_t endIndex) {
                 // We need to push HL since it isn't used in the next operator/function
                 (&outputPtr[tempIndex])->type = TYPE_CHAIN_PUSH;
                 PushHLDE();
+                expr.outputRegister = OUTPUT_IN_HL;
             }
             
             // Get the previous entries, -2 is the previous one, -3 is the one before etc
@@ -707,6 +708,7 @@ uint8_t parsePostFixFromIndexToIndex(uint24_t startIndex, uint24_t endIndex) {
                     // We need to push HL since it isn't used in the next operator/function
                     (&outputPtr[tempIndex])->type = TYPE_CHAIN_PUSH;
                     PushHLDE();
+                    expr.outputRegister = OUTPUT_IN_HL;
                 }
                 
                 if ((temp = parseFunction(loopIndex)) != VALID) {
@@ -974,13 +976,6 @@ static uint8_t dummyReturn(int token) {
     return VALID;
 }
 
-void UpdatePointersToData(uint24_t tempDataOffsetElements) {
-    while (ice.dataOffsetElements != tempDataOffsetElements) {
-        ice.dataOffsetStack[tempDataOffsetElements] = (uint24_t*)(((uint8_t*)ice.dataOffsetStack[tempDataOffsetElements]) - 2);
-        tempDataOffsetElements++;
-    }
-}
-
 uint8_t JumpForward(uint8_t *startAddr, uint8_t *endAddr, uint24_t tempDataOffsetElements) {
     if (endAddr - startAddr <= 0x80) {
         uint8_t *tempPtr = startAddr;
@@ -988,7 +983,13 @@ uint8_t JumpForward(uint8_t *startAddr, uint8_t *endAddr, uint24_t tempDataOffse
         
         *startAddr++ = opcode - 0xA2 - (opcode == 0xC3 ? 9 : 0);
         *startAddr++ = endAddr - tempPtr - 4;
-        UpdatePointersToData(tempDataOffsetElements);
+        
+        // Update pointers to data, decrease them all with 2
+        while (ice.dataOffsetElements != tempDataOffsetElements) {
+            ice.dataOffsetStack[tempDataOffsetElements] = (uint24_t*)(((uint8_t*)ice.dataOffsetStack[tempDataOffsetElements]) - 2);
+            tempDataOffsetElements++;
+        }
+        
         memcpy(startAddr, startAddr + 2, ice.programPtr - startAddr);
         ice.programPtr -= 2;
         return true;
@@ -1130,7 +1131,7 @@ static uint8_t functionDisp(int token) {
         if (expr.outputIsString) {
             CALL(_PutS);
         } else {
-            MaybeDEToHL();
+            AnsToHL();
             CALL(_DispHL);
         }
         
@@ -1182,7 +1183,7 @@ static uint8_t functionOutput(int token) {
                 *(ice.programPtr - 2) = OP_LD_A_HL;
             } else if (expr.outputRegister == OUTPUT_IN_HL) {
                 LD_A_L();
-            } else {
+            } else if (expr.outputRegister == OUTPUT_IN_DE) {
                 LD_A_E();
             }
             LD_IMM_A(curRow);
@@ -1192,7 +1193,7 @@ static uint8_t functionOutput(int token) {
             *(ice.programPtr - 2) = OP_LD_A_HL;
         } else if (expr.outputRegister == OUTPUT_IN_HL) {
             LD_A_L();
-        } else {
+        } else if (expr.outputRegister == OUTPUT_IN_DE) {
             LD_A_E();
         }
         LD_IMM_A(curCol);
@@ -1210,7 +1211,7 @@ static uint8_t functionOutput(int token) {
             *(ice.programPtr - 2) = OP_LD_A_HL;
         } else if (expr.outputRegister == OUTPUT_IN_HL) {
             LD_A_L();
-        } else {
+        } else if (expr.outputRegister == OUTPUT_IN_DE) {
             LD_A_E();
         }
         LD_IMM_A(curRow);
@@ -1230,7 +1231,7 @@ static uint8_t functionOutput(int token) {
         if (expr.outputIsString) {
             CALL(_PutS);
         } else {
-            MaybeDEToHL();
+            AnsToHL();
             CALL(_DispHL);
         }
     } else if (ice.tempToken != tEnter) {
@@ -1296,6 +1297,7 @@ static uint8_t functionFor(int token) {
         ice.programPtr -= 4 - !expr.outputNumber;
     } else {
         endPointExpressionValue = ice.programPtr;
+        MaybeAToHL();
         if (expr.outputRegister == OUTPUT_IN_HL) {
             LD_ADDR_HL(0);
         } else {
@@ -1321,6 +1323,7 @@ static uint8_t functionFor(int token) {
             ice.programPtr -= 4 - !expr.outputNumber;
         } else {
             stepExpression = ice.programPtr;
+            MaybeAToHL();
             if (expr.outputRegister == OUTPUT_IN_HL) {
                 LD_ADDR_HL(0);
             } else {
@@ -1480,7 +1483,7 @@ static uint8_t functionPause(int token) {
             return res;
         }
         
-        MaybeDEToHL();
+        AnsToHL();
         
         // Store the pointer to the call to the stack, to replace later
         ProgramPtrToOffsetStack();
@@ -1602,11 +1605,13 @@ void optimizeZeroCarryFlagOutput(void) {
         if (expr.outputRegister == OUTPUT_IN_HL) {
             ADD_HL_DE();
             OR_A_SBC_HL_DE();
-        } else {
+        } else if (expr.outputRegister == OUTPUT_IN_DE) {
             SCF();
             SBC_HL_HL();
             ADD_HL_DE();
             expr.AnsSetCarryFlagReversed = true;
+        } else {
+            OR_A_A();
         }
     } else {
         ice.programPtr -= expr.ZeroCarryFlagRemoveAmountOfBytes;
