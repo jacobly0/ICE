@@ -174,16 +174,25 @@ uint8_t parseFunction(uint24_t index) {
         if ((res = parseFunction1Arg(index, OUTPUT_IN_HL_DE, amountOfArguments)) != VALID) {
             return res;
         }
-        MaybeAToHL();
-        if (expr.outputRegister == OUTPUT_IN_HL) {
-            LD_DE_IMM(-1);
+        
+        if (expr.outputRegister == OUTPUT_IN_A) {
+            ADD_A(255);
+            SBC_A_A();
+            INC_A();
+            expr.outputRegister2 = OUTPUT_IN_A;
+            expr.AnsSetCarryFlag = true;
+            expr.ZeroCarryFlagRemoveAmountOfBytes = 2;
         } else {
-            LD_HL_IMM(-1);
+            if (expr.outputRegister == OUTPUT_IN_HL) {
+                LD_DE_IMM(-1);
+            } else {
+                LD_HL_IMM(-1);
+            }
+            ADD_HL_DE();
+            SBC_HL_HL_INC_HL();
+            expr.AnsSetCarryFlag = true;
+            expr.ZeroCarryFlagRemoveAmountOfBytes = 3;
         }
-        ADD_HL_DE();
-        SBC_HL_HL_INC_HL();
-        expr.AnsSetCarryFlag = true;
-        expr.ZeroCarryFlagRemoveAmountOfBytes = 3;
     }
     
     // sqrt(
@@ -661,7 +670,6 @@ uint8_t parseFunction1Arg(uint24_t index, uint8_t outputRegister1, uint8_t amoun
     } else if (outputPrevType == TYPE_CHAIN_ANS) {
         if (outputRegister1 == OUTPUT_IN_HL) {
             AnsToHL();
-            expr.outputRegister = OUTPUT_IN_HL;
         }
     } else {
         return E_SYNTAX;

@@ -195,24 +195,19 @@ void main(void) {
             RET();
         }
         
-        // Get the sizes of the 3 stacks
-        ice.programSize = (uintptr_t)ice.programPtr - (uintptr_t)ice.programData;
-        programDataSize = (uintptr_t)ice.programDataPtr - (uintptr_t)ice.programDataData;
-        
-        // Change the pointers to the data as well, but first calculate the offset
-        offset = PRGM_START + ice.programSize - (uintptr_t)ice.programDataData;
-        while (ice.dataOffsetElements--) {
-            *ice.dataOffsetStack[ice.dataOffsetElements] += offset;
-        }
-        
         // Find all the matching Goto's/Lbl's
         for (currentGoto = 0; currentGoto < ice.amountOfGotos; currentGoto++) {
             label_t *curGoto = &gotoStack[currentGoto];
             
             for (currentLbl = 0; currentLbl < ice.amountOfLbls; currentLbl++) {
                 label_t *curLbl = &labelStack[currentLbl];
-                if (memcmp(curLbl->name, curGoto->name, 10)) {
+                if (!memcmp(curLbl->name, curGoto->name, 10)) {
                     w24((uint8_t*)(curGoto->addr + 1), curLbl->addr - (uint24_t)ice.programData + PRGM_START);
+                    
+                    // Check if we can optimize the JP (only works if we jump forward)
+                    if (curLbl->addr >= curGoto->addr) {
+                        JumpForward((uint8_t*)curGoto->addr, (uint8_t*)curLbl->addr, curGoto->dataOffsetElements);
+                    }
                     goto findNextLabel;
                 }
             }
@@ -221,6 +216,16 @@ void main(void) {
             displayLabelError(curGoto->name);
             goto stop;
 findNextLabel:;
+        }
+        
+        // Get the sizes of both stacks
+        ice.programSize = (uintptr_t)ice.programPtr - (uintptr_t)ice.programData;
+        programDataSize = (uintptr_t)ice.programDataPtr - (uintptr_t)ice.programDataData;
+        
+        // Change the pointers to the data as well, but first calculate the offset
+        offset = PRGM_START + ice.programSize - (uintptr_t)ice.programDataData;
+        while (ice.dataOffsetElements--) {
+            *ice.dataOffsetStack[ice.dataOffsetElements] += offset;
         }
         totalSize = ice.programSize + programDataSize + 3;
         

@@ -98,6 +98,7 @@ typedef struct {
 typedef struct {
     char     name[10];
     uint24_t addr;
+    uint24_t dataOffsetElements;
 } label_t;
 
 typedef struct {

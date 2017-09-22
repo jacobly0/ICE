@@ -5,378 +5,384 @@
 #define AMOUNT_OF_FILEIOC_FUNCTIONS 21
 
 KeyHook_start:
-    .db    83h
-    or      a, a
-    ret     z
-    ld      b, a
-    ld      a, (cxCurApp)
-    cp      a, cxPrgmEdit
-    ld      a, b
-    ret     nz
-    push    af
-            call    _os_ClearStatusBarLow
-            res     0, (iy-41h)
-    pop     af
-    cp      a, kTrace
-    ret     nz
+	.db	83h
+	or	a, a
+	ret	z
+	ld	b, a
+	ld	a, (cxCurApp)
+	cp	a, cxPrgmEdit
+	ld	a, b
+	ret	nz
+	push	af
+	call	_os_ClearStatusBarLow
+	res	0, (iy-41h)
+	pop	af
+	cp	a, kTrace
+	ret	nz
 DisplayCustomTokensAndCFunctions:
-    call    _CursorOff
-    ld      d, 0
+	call	_CursorOff
+	ld	d, 0
 DisplayTabWithTokens:
-    push    de
-            call    _ClrLCDFull
-    pop     de
-    ld      hl, 30
-    ld      (penRow), hl
-    ld      hl, 12
-    ld      (penCol), hl
-    ld      b, 0
-    ld      a, d
-    ld      e, 3
-    mlt     de
-    ld      hl, TabData - KeyHook_start
-    add     hl, de
-    ld      de, (rawKeyHookPtr)
-    add     hl, de
-    ld      hl, (hl)
-    add     hl, de
-    ld      d, a
-    ld      e, 0
-    jr      DisplayTokensLoop
+	push	de
+	call	_ClrLCDFull
+	pop	de
+	ld	hl, 30
+	ld	(penRow), hl
+	ld	hl, 12
+	ld	(penCol), hl
+	ld	b, 0
+	ld	a, d
+	ld	e, 3
+	mlt	de
+	ld	hl, TabData - KeyHook_start
+	add	hl, de
+	ld	de, (rawKeyHookPtr)
+	add	hl, de
+	ld	hl, (hl)
+	add	hl, de
+	ld	d, a
+	ld	e, 0
+	jr	DisplayTokensLoop
 KeyIsLeft:
-    ld      a, d
-    or      a, a
-    jr      z, KeyLoop
-    dec     d
-    jr      DisplayTabWithTokens
+	ld	a, d
+	or	a, a
+	jr	z, KeyLoop
+	dec	d
+	jr	DisplayTabWithTokens
 KeyIsRight:
-    ld      a, d
-    cp      a, 7
-    jr      z, KeyLoop
-    inc     d
-    jr      DisplayTabWithTokens
+	ld	a, d
+	cp	a, 7
+	jr	z, KeyLoop
+	inc	d
+	jr	DisplayTabWithTokens
 DisplayTokensLoop:
-    ld      a, b
-    cp      a, 16
-    jr      z, StopDisplayingTokens
-    inc     b
-    call    _VPutS
-    push    hl
-            push    de
-                    ld    hl, (penRow)
-                    ld    de, 13
-                    add    hl, de
-                    ld    (penRow), hl
-                    ld    hl, 12
-                    ld    (penCol), hl
-            pop     de
-    pop     hl
-    ld      a, (hl)
-    or      a, a
-    jr      nz, DisplayTokensLoop
+	ld	a, b
+	cp	a, 16
+	jr	z, StopDisplayingTokens
+	inc	b
+	call	_VPutS
+	push	hl
+	push	de
+	ld	hl, (penRow)
+	ld	de, 13
+	add	hl, de
+	ld	(penRow), hl
+	ld	hl, 12
+	ld	(penCol), hl
+	pop	de
+	pop	hl
+	ld	a, (hl)
+	or	a, a
+	jr	nz, DisplayTokensLoop
 StopDisplayingTokens:
-    ld      hl, 1
-    ld      (penCol), hl
+	ld	hl, 1
+	ld	(penCol), hl
 GetRightCustomToken:
-    ld      a, e
-    ld      b, d
-    ld      d, 13
-    mlt     de
-    ld      hl, 30
-    add     hl, de
-    ld      d, b
-    ld      e, a
-    ld      (penRow), hl
-    ld      hl, 1
-    ld      (penCol), hl
-    push    hl
-            push    de
-                    ld      a, '>'
-                    call    _VPutMap
-            pop     de
-    pop     hl
-    ld      (penCol), hl
+	ld	a, e
+	ld	b, d
+	ld	d, 13
+	mlt	de
+	ld	hl, 30
+	add	hl, de
+	ld	d, b
+	ld	e, a
+	ld	(penRow), hl
+	ld	hl, 1
+	ld	(penCol), hl
+	push	hl
+	push	de
+	ld	a, '>'
+	call	_VPutMap
+	pop	de
+	pop	hl
+	ld	(penCol), hl
 KeyLoop:
-    call    _GetCSC
-    or      a, a
-    jr      z, KeyLoop
-    cp      a, skLeft
-    jr      z, KeyIsLeft
-    cp      a, skRight
-    jr      z, KeyIsRight
-    cp      a, skUp
-    jr      nz, KeyNotUp
-    ld      a, e
-    or      a, a
-    jr      z, KeyLoop
-    dec     e
+	call	_GetCSC
+	or	a, a
+	jr	z, KeyLoop
+	cp	a, skLeft
+	jr	z, KeyIsLeft
+	cp	a, skRight
+	jr	z, KeyIsRight
+	cp	a, skUp
+	jr	nz, KeyNotUp
+	ld	a, e
+	or	a, a
+	jr	z, KeyLoop
+	dec	e
 EraseCursor:
-    push    de
-            ld      a, ' '
-            call    _VPutMap
-            ld      a, ' '
-            call    _VPutMap
-            ld      a, ' '
-            call    _VPutMap
-    pop     de
-    jr      GetRightCustomToken
+	push	de
+	ld	a, ' '
+	call	_VPutMap
+	ld	a, ' '
+	call	_VPutMap
+	ld	a, ' '
+	call	_VPutMap
+	pop	de
+	jr	GetRightCustomToken
 KeyNotUp:
-    cp      a, skDown
-    jr      nz, KeyNotDown
-    ld      a, d
-    cp      a, 7
-    ld      a, e
-    jr      nz, +_
-    cp      a, (AMOUNT_OF_CUSTOM_TOKENS + AMOUNT_OF_GRAPHX_FUNCTIONS + AMOUNT_OF_FILEIOC_FUNCTIONS)%16 - 1
-    jr      z, KeyLoop
-_:  ld      a, e
-    cp      a, 16-1
-    jr      z, KeyLoop
-    inc     e
-    jr      EraseCursor
+	cp	a, skDown
+	jr	nz, KeyNotDown
+	ld	a, d
+	cp	a, 7
+	ld	a, e
+	jr	nz, +_
+	cp	a, (AMOUNT_OF_CUSTOM_TOKENS + AMOUNT_OF_GRAPHX_FUNCTIONS + AMOUNT_OF_FILEIOC_FUNCTIONS)%16 - 1
+	jr	z, KeyLoop
+_:	ld	a, e
+	cp	a, 16-1
+	jr	z, KeyLoop
+	inc	e
+	jr	EraseCursor
 KeyNotDown:
-    cp      a, skClear
-    jr      z, KeyIsClear
-    cp      a, skEnter
-    jr      nz, KeyLoop
-    ld      a, e
-    ld      e, 16
-    mlt     de
-    add     a, e
-    sub     a, AMOUNT_OF_CUSTOM_TOKENS
-    jr      c, InsertCustomToken
-    ld      hl, saveSScreen
-    cp      a, 21
-    jr      nc, +_
-    ld      (hl), tSum
-    jr      ++_
-_:  ld      (hl), tDet
-    sub     a, 21
-_:  inc     hl
-    cp      a, 10
-    jr      c, +_
-    ld      d, a
-    ld      e, 10
-    xor     a, a
-    ld      b, 8
+	cp	a, skClear
+	jr	z, KeyIsClear
+	cp	a, skEnter
+	jr	nz, KeyLoop
+	ld	a, e
+	ld	e, 16
+	mlt	de
+	add	a, e
+	sub	a, AMOUNT_OF_CUSTOM_TOKENS
+	jr	c, InsertCustomToken
+	ld	hl, saveSScreen
+	cp	a, 21
+	jr	nc, +_
+	ld	(hl), tSum
+	jr	++_
+_:	ld	(hl), tDet
+	sub	a, 21
+_:	inc	hl
+	cp	a, 10
+	jr	c, +_
+	ld	d, a
+	ld	e, 10
+	xor	a, a
+	ld	b, 8
 _loop:
-    sla     d
-    rla
-    cp      a, e
-    jr      c, $+4
-    sub     a, e
-    inc     d
-    djnz    _loop
-    ld      e, a
-    ld      a, d
-    add     a, t0
-    ld      (hl), a
-    inc     hl
-    ld      a, e
-_:  add     a, t0
-    ld      (hl), a
-    inc     hl
-    ld      (hl), 0
-    ld      hl, saveSScreen
+	sla	d
+	rla
+	cp	a, e
+	jr	c, $+4
+	sub	a, e
+	inc	d
+	djnz	_loop
+	ld	e, a
+	ld	a, d
+	add	a, t0
+	ld	(hl), a
+	inc	hl
+	ld	a, e
+_:	add	a, t0
+	ld	(hl), a
+	inc	hl
+	ld	(hl), 0
+	ld	hl, saveSScreen
 InsertCFunctionLoop:
-    ld      a, (hl)
-    or      a, a
-    jr      z, BufferSearch
-    ld      de, (editTail)
-    ld      a, (de)
-    cp      a, tEnter
-    ld      d, 0
-    ld      e, (hl)
-    jr      z, +_
-    push    hl
-            call    _BufReplace
-    pop     hl
-    inc     hl
-    jr      InsertCFunctionLoop
-_:  push    hl
-            call    _BufInsert
-    pop     hl
-    inc     hl
-    jr      InsertCFunctionLoop
+	ld	a, (hl)
+	or	a, a
+	jr	z, BufferSearch
+	ld	de, (editTail)
+	ld	a, (de)
+	cp	a, tEnter
+	ld	d, 0
+	ld	e, (hl)
+	jr	z, +_
+	push	hl
+	call	_BufReplace
+	pop	hl
+	inc	hl
+	jr	InsertCFunctionLoop
+_:	push	hl
+	call	_BufInsert
+	pop	hl
+	inc	hl
+	jr	InsertCFunctionLoop
 InsertCustomToken:
-    add     a, 10+AMOUNT_OF_CUSTOM_TOKENS
-    ld      e, a
-    ld      d, tVarOut
-    ld      hl, (editCursor)
-    ld      a, (hl)
-    cp      a, tEnter
-    jr      z, +_
-    call    _BufReplace
-    jr      BufferSearch
-_:  call    _BufInsert
+	add	a, 10+AMOUNT_OF_CUSTOM_TOKENS
+	ld	e, a
+	ld	d, tVarOut
+	ld	hl, (editCursor)
+	ld	a, (hl)
+	cp	a, tEnter
+	jr	z, +_
+	call	_BufReplace
+	jr	BufferSearch
+_:	call	_BufInsert
 KeyIsClear:
 BufferSearch:
-    ld      bc, 0
-_:  call    _BufLeft
-    jr      z, BufferFound
-    ld      a, e
-    cp      a, tEnter
-    jr      z, +_
-    inc     bc
-    jr      -_
-_:  call    _BufRight
+	ld	bc, 0
+_:	call	_BufLeft
+	jr	z, BufferFound
+	ld	a, e
+	cp	a, tEnter
+	jr	z, +_
+	inc	bc
+	jr	-_
+_:	call	_BufRight
 BufferFound:
-    push    bc
-            call    _ClrLCDFull
-            call    _ClrTxtShd
-            ld      de, CustomTokensProgramText - KeyHook_start
-            ld      hl, (rawKeyHookPtr)
-            add     hl, de
-            xor     a, a
-            ld      (curCol), a
-            ld      (curRow), a
-            call    _PutS
-            ld      hl, progToEdit
-            ld      b, 8
-_:          ld      a, (hl)
-            or      a, a
-            jr      z, +_
-            call    _PutC
-            inc     hl
-            djnz    -_
-_:          call    _NewLine
-            ld      a, ':'
-            call    _PutC
-            call    _DispEOW
-            pop     bc
+	push	bc
+	call	_ClrLCDFull
+	call	_ClrTxtShd
+	ld	de, CustomTokensProgramText - KeyHook_start
+	ld	hl, (rawKeyHookPtr)
+	add	hl, de
+	xor	a, a
+	ld	(curCol), a
+	ld	(curRow), a
+	call	_PutS
+	ld	hl, progToEdit
+	ld	b, 8
+_:	ld	a, (hl)
+	or	a, a
+	jr	z, +_
+	call	_PutC
+	inc	hl
+	djnz	-_
+_:	call	_NewLine
+	ld	a, ':'
+	call	_PutC
+	call	_DispEOW
+	pop	bc
 MoveCursorOnce:
-    ld      a, b
-    or      a, c
-    jr      z, ReturnToEditor
-    call    _CursorRight
-    dec     bc
-    jr      MoveCursorOnce
+	ld	a, b
+	or	a, c
+	jr	z, ReturnToEditor
+	call	_CursorRight
+	dec	bc
+	jr	MoveCursorOnce
 ReturnToEditor:
-    call    _CursorOn
-    inc     a                                                                    ;    reset zero flag
-    ld      a, 0
-    ret
+	call	_CursorOn
+	inc	a			;    reset zero flag
+	ld	a, 0
+	ret
 KeyHook_end:
 
 .echo "Key hook: ",$-KeyHook_start, " bytes"
 
 TokenHook_start:
-    .db     83h
-    ld      a, d
-    cp      a, 4
-    ret     nz
-    ld      a, e
-    cp      a, 5+3+(AMOUNT_OF_CUSTOM_TOKENS*3)
-    ret     nc
-    sub     a, 5
-    ld      de, (rawKeyHookPtr)
-    ld      hl, TokenHook_data - KeyHook_start
-    add     hl, de
-    ld      bc, 0
-    ld      c, a
-    add     hl, bc
-    ld      hl, (hl)
-    add     hl, de
-    ret
+	.db	83h
+	ld	a, d
+	cp	a, 4
+	ret	nz
+	ld	a, e
+	cp	a, 5+3+(AMOUNT_OF_CUSTOM_TOKENS*3)
+	ret	nc
+	sub	a, 5
+	ld	de, (rawKeyHookPtr)
+	ld	hl, TokenHook_data - KeyHook_start
+	add	hl, de
+	ld	bc, 0
+	ld	c, a
+	add	hl, bc
+	ld	hl, (hl)
+	add	hl, de
+	ret
 TokenHook_end:
 
 .echo "Token hook: ",$-TokenHook_start, " bytes"
 
 CursorHook_start:
-    .db     83h
-    cp      a, 24h
-    jr      nz, +_
-    inc     a
-    ld      a, (curUnder)
-    ret
-_:  cp      a, 22h
-    ret     nz
-    ld      a, (cxCurApp)
-    cp      a, cxPrgmEdit
-    ret     nz
-    ld      hl, (editCursor)
-    ld      a, (hl)
-    cp      a, tSum
-    jr      z, DrawDetText
-    cp      a, tDet
-    ret     nz
+	.db	83h
+	cp	a, 24h
+	jr	nz, +_
+	inc	a
+	ld	a, (curUnder)
+	ret
+_:	cp	a, 22h
+	ret	nz
+	ld	a, (cxCurApp)
+	cp	a, cxPrgmEdit
+	ret	nz
+	ld	hl, (editCursor)
+	ld	a, (hl)
+	cp	a, tSum
+	jr	z, DrawDetText
+	cp	a, tDet
+	ret	nz
 DrawDetText:
-    bit     0, (iy-41h)
-    ret     nz
-    ld      iyl, a
-    ld      hl, (editTail)
-    inc     hl
-    ld      a, (hl)
-    sub     a, t0
-    ret     c
-    cp      a, t9-t0+1
-    ld      bc, (editBtm)
-    ld      de, 0
-    ld      e, a
-    jr      c, GetDetValueLoop
+	bit	0, (iy-41h)
+	ret	nz
+	ld	b, a
+	ld	hl, (editTail)
+	inc	hl
+	ld	a, (hl)
+	sub	a, t0
+	ret	c
+	cp	a, t9-t0+1
+	jr	c, GetDetValue
 WrongDetValue:
-    or      a, 1
-    ret
+	or	a, 1
+	ret
+GetDetValue:
+	ld	iyl, a
+	ld	bc, (editBtm)
+	ld	de, 0
+	ld	e, a
 GetDetValueLoop:
-    inc     hl
-    or      a, a
-    sbc     hl, bc
-    jr      z, GetDetValueStop
-    add     hl, bc
-    ld      a, (hl)
-    sub     a, t0
-    jr      c, GetDetValueStop
-    cp      a, t9-t0+1
-    jr      nc, GetDetValueStop
-    push    hl
-            ex      de, hl
-            add     hl, hl
-            push    hl
-            pop     de
-            add     hl, hl
-            add     hl, hl
-            add     hl, de
-            ld      de, 0
-            ld      e, a
-            add     hl, de
-            ex      de, hl
-    pop     hl
-    jr     GetDetValueLoop
+	inc	hl
+	or	a, a
+	sbc	hl, bc
+	jr	z, GetDetValueStop
+	add	hl, bc
+	ld	a, (hl)
+	sub	a, t0
+	jr	c, GetDetValueStop
+	cp	a, t9-t0+1
+	jr	nc, GetDetValueStop
+	push	hl
+	ex	de, hl
+	add	hl, hl
+	push	hl
+	pop	de
+	add	hl, hl
+	add	hl, hl
+	add	hl, de
+	ld	de, 0
+	ld	e, a
+	add	hl, de
+	ex	de, hl
+	pop	hl
+	jr	GetDetValueLoop
 GetDetValueStop:
-    ex      de, hl
-    ld      a, iyl
-    ld      iy, flags
-    cp      a, tDet
-    jr      z, +_
-    ld      de, AMOUNT_OF_FILEIOC_FUNCTIONS
-    ld      bc, CData4
-    jr      ++_
-_:  ld      de, AMOUNT_OF_GRAPHX_FUNCTIONS
-    ld      bc, CData5
-_:  or      a, a
-    sbc     hl, de
-    jr      nc, WrongDetValue
-    add     hl, de
-    ld      h, 3
-    mlt     hl
-    add     hl, bc
-    ld      de, (rawKeyHookPtr)
-    add     hl, de
-    ld      hl, (hl)
-    add     hl, de
-    ld      de, 000E71Ch
-    ld.sis  (drawFGColor & 0FFFFh), de
-    ld.sis  de, (statusBarBGColor & 0FFFFh)
-    ld.sis  (drawBGColor & 0FFFFh), de
-    ld      a, 14
-    ld      (penRow),a
-    ld      de, 2
-    ld.sis  (penCol & 0FFFFh), de
-    call    _VPutS
-    ld      de, 0FFFFh
-    ld.sis  (drawBGColor & 0FFFFh), de
-    set     0, (iy-41h)
-    ret
+	ex	de, hl
+	ld	a, iyl
+	ld	iy, flags
+	cp	a, tDet
+	jr	z, +_
+	ld	de, AMOUNT_OF_FILEIOC_FUNCTIONS
+	ld	bc, CData4
+	jr	++_
+_:	ld	de, AMOUNT_OF_GRAPHX_FUNCTIONS
+	ld	bc, CData5
+_:	or	a, a
+	sbc	hl, de
+	jr	nc, WrongDetValue
+	add	hl, de
+	ld	h, 3
+	mlt	hl
+	add	hl, bc
+	push	hl
+	call	_os_ClearStatusBarLow
+	pop	hl
+	ld	de, (rawKeyHookPtr)
+	add	hl, de
+	ld	hl, (hl)
+	add	hl, de
+	ld	de, 000E71Ch
+	ld.sis	(drawFGColor & 0FFFFh), de
+	ld.sis	de, (statusBarBGColor & 0FFFFh)
+	ld.sis	(drawBGColor & 0FFFFh), de
+	ld	a, 14
+	ld	(penRow),a
+	ld	de, 2
+	ld.sis	(penCol & 0FFFFh), de
+	call	_VPutS
+	ld	de, 0FFFFh
+	ld.sis	(drawBGColor & 0FFFFh), de
+	set	0, (iy-41h)
+	inc	a
+	ret
     
 .echo "Cursor hook: ",$-CursorHook_start, " bytes"
 

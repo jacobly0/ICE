@@ -583,6 +583,7 @@ uint8_t parsePostFixFromIndexToIndex(uint24_t startIndex, uint24_t endIndex) {
         // If it's a det( or sum(, decrement the amount of nested dets
         if (outputCurr->type == TYPE_FUNCTION && ((uint8_t)outputCurr->operand == tDet || (uint8_t)outputCurr->operand == tSum)) {
             temp--;
+            amountOfStackElements++;
         }
         
         // If not in a nested det( or sum(, push the index
@@ -613,11 +614,6 @@ uint8_t parsePostFixFromIndexToIndex(uint24_t startIndex, uint24_t endIndex) {
             insertFunctionReturnNoPush(outputOperand, OUTPUT_IN_HL);
         }
         
-        // It is a det(
-        else if (outputType == TYPE_C_START) {
-            return parseFunction(getNextIndex());
-        }
-        
         // It's a string
         else if (outputType == TYPE_STRING || outputType == TYPE_OS_STRING) {
             expr.outputIsString = true;
@@ -631,8 +627,10 @@ uint8_t parsePostFixFromIndexToIndex(uint24_t startIndex, uint24_t endIndex) {
         
         return VALID;
     } else if (amountOfStackElements == 2) {
-        getNextIndex();
         outputCurr = &outputPtr[tempIndex = getNextIndex()];
+        if (outputCurr->type != TYPE_FUNCTION || ((uint8_t)outputCurr->operand != tDet && (uint8_t)outputCurr->operand != tSum)) {
+            outputCurr = &outputPtr[tempIndex = getNextIndex()];
+        }
         
         // It should be a function with a single argument, i.e. det(0 / not(A
         if (outputCurr->type != TYPE_FUNCTION) {
@@ -976,6 +974,14 @@ static uint8_t dummyReturn(int token) {
     return VALID;
 }
 
+void UpdatePointersToData(uint24_t tempDataOffsetElements) {
+    // Update pointers to data, decrease them all with 2
+    while (ice.dataOffsetElements != tempDataOffsetElements) {
+        ice.dataOffsetStack[tempDataOffsetElements] = (uint24_t*)(((uint8_t*)ice.dataOffsetStack[tempDataOffsetElements]) - 2);
+        tempDataOffsetElements++;
+    }
+}
+
 uint8_t JumpForward(uint8_t *startAddr, uint8_t *endAddr, uint24_t tempDataOffsetElements) {
     if (endAddr - startAddr <= 0x80) {
         uint8_t *tempPtr = startAddr;
@@ -984,12 +990,7 @@ uint8_t JumpForward(uint8_t *startAddr, uint8_t *endAddr, uint24_t tempDataOffse
         *startAddr++ = opcode - 0xA2 - (opcode == 0xC3 ? 9 : 0);
         *startAddr++ = endAddr - tempPtr - 4;
         
-        // Update pointers to data, decrease them all with 2
-        while (ice.dataOffsetElements != tempDataOffsetElements) {
-            ice.dataOffsetStack[tempDataOffsetElements] = (uint24_t*)(((uint8_t*)ice.dataOffsetStack[tempDataOffsetElements]) - 2);
-            tempDataOffsetElements++;
-        }
-        
+        UpdatePointersToData(tempDataOffsetElements);
         memcpy(startAddr, startAddr + 2, ice.programPtr - startAddr);
         ice.programPtr -= 2;
         return true;
@@ -1445,7 +1446,6 @@ static uint8_t functionLbl(int token) {
     while ((token = _getc(ice.inPrgm)) != EOF && (uint8_t)token != tEnter) {
         labelCurr->name[a++] = token;
     }
-    labelCurr->name[a] = 0;
     labelCurr->addr = (uint24_t)ice.programPtr;
     return VALID;
 }
@@ -1466,8 +1466,8 @@ void insertGotoLabel(void) {
     while ((token = _getc(ice.inPrgm)) != EOF && (uint8_t)token != tEnter) {
         gotoCurr->name[a++] = token;
     }
-    gotoCurr->name[a] = 0;
     gotoCurr->addr = (uint24_t)ice.programPtr;
+    gotoCurr->dataOffsetElements = ice.dataOffsetElements;
 }
 
 static uint8_t functionPause(int token) {
