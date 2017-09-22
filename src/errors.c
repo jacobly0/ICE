@@ -27,16 +27,26 @@ static const char *errors[] = {
     "You have the wrong number or arguments",
     "Warning: this C function is deprecated",
 #ifndef COMPUTER_ICE
-    "Label not found: ",
     "Unknown C function. If you are sure this              function exists, please contact me!",
 #else
-    "Label not found",
     "Unknown C function",
 #endif
     "Subprogram not found",
     "Compiling subprograms not supported",
     "rand and getKey are disabled in this function",
 };
+
+void displayLabelError(char *label) {
+#ifndef COMPUTER_ICE
+    char buf[30];
+    
+    gfx_SetTextFGColor(224);
+    sprintf(buf, "Label %s not found", label);
+    gfx_PrintStringXY(buf, 1, iceMessageLine);
+#else
+    fprintf(stdout, "%s\n", buf);
+#endif
+}
 
 void displayError(uint8_t index) {
     const char *str = errors[index];
@@ -50,13 +60,6 @@ void displayError(uint8_t index) {
     // Display the error
     while(c = *str++) {
         PrintChar(c);
-    }
-    
-    // If a label is not found, ice.inPrgm points to the label, so just display it
-    if (index == E_NO_LABEL) {
-        while ((c = _getc(ice.inPrgm)) != tEnter) {
-            PrintChar(c);
-        }
     }
     
     gfx_SetTextFGColor(0);

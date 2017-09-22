@@ -1442,7 +1442,7 @@ static uint8_t functionLbl(int token) {
     uint8_t a = 0;
     
     // Get the label name
-    while ((token = _getc(ice.inPrgm)) != EOF || (uint8_t)token != tEnter) {
+    while ((token = _getc(ice.inPrgm)) != EOF && (uint8_t)token != tEnter) {
         labelCurr->name[a++] = token;
     }
     labelCurr->name[a] = 0;
@@ -1463,7 +1463,7 @@ void insertGotoLabel(void) {
     uint8_t a = 0;
     int token;
     
-    while ((token = _getc(ice.inPrgm)) != EOF || (uint8_t)token != tEnter) {
+    while ((token = _getc(ice.inPrgm)) != EOF && (uint8_t)token != tEnter) {
         gotoCurr->name[a++] = token;
     }
     gotoCurr->name[a] = 0;

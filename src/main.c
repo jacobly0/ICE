@@ -207,15 +207,18 @@ void main(void) {
         
         // Find all the matching Goto's/Lbl's
         for (currentGoto = 0; currentGoto < ice.amountOfGotos; currentGoto++) {
+            label_t *curGoto = &gotoStack[currentGoto];
+            
             for (currentLbl = 0; currentLbl < ice.amountOfLbls; currentLbl++) {
-                if (memcmp((&labelStack[currentLbl])->name, (&gotoStack[currentGoto])->name, 10)) {
-                    w24((uint8_t*)((&gotoStack[currentGoto])->addr + 1), (&labelStack[currentLbl])->addr - (uint24_t)ice.programData + PRGM_START);
+                label_t *curLbl = &labelStack[currentLbl];
+                if (memcmp(curLbl->name, curGoto->name, 10)) {
+                    w24((uint8_t*)(curGoto->addr + 1), curLbl->addr - (uint24_t)ice.programData + PRGM_START);
                     goto findNextLabel;
                 }
             }
             
             // Label not found
-            displayError(E_NO_LABEL);
+            displayLabelError(curGoto->name);
             goto stop;
 findNextLabel:;
         }
