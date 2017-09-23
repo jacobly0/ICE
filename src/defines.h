@@ -37,6 +37,8 @@ typedef FILE* ti_var_t;
 #define _tell(x)     ftell(x)
 #define _seek(x,y,z) fseek(z,x,y);
 #define _getc(x)     fgetc(x)
+#define TI_PRGM_TYPE 5
+#define M_PI         3.14159265358979323846
 
 void w24(void *x, uint32_t val);
 uint32_t r24(void *x);

@@ -9,7 +9,7 @@
 #define E_EXTRA_RPAREN     5
 #define E_SYNTAX           6
 #define E_WRONG_ICON       7
-#define E_INVALID_HEX      9
+#define E_INVALID_HEX      8
 #define E_ICE_ERROR        9
 #define E_ARGUMENTS        10
 #define E_DEPRECATED       11

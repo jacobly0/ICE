@@ -14,6 +14,7 @@
 #include "incbin.h"
 INCBIN(Pause, "src/asm/pause.bin");
 INCBIN(Input, "src/asm/input.bin");
+INCBIN(Prgm, "src/asm/prgm.bin");
 #endif
 
 extern uint8_t (*functions[256])(int token);
@@ -615,9 +616,15 @@ uint8_t parsePostFixFromIndexToIndex(uint24_t startIndex, uint24_t endIndex) {
         }
         
         // It's a string
-        else if (outputType == TYPE_STRING || outputType == TYPE_OS_STRING) {
+        else if (outputType == TYPE_STRING) {
             expr.outputIsString = true;
             LD_HL_STRING(outputOperand);
+        }
+        
+        // It's an OS string
+        else if (outputType == TYPE_OS_STRING) {
+            expr.outputIsString = true;
+            LD_HL_IMM(outputOperand);
         }
         
         // Expression is an empty function or operator, i.e. not(, +
@@ -1178,7 +1185,7 @@ static uint8_t functionOutput(int token) {
     if (expr.outputIsNumber) {
         *(ice.programPtr - 4) = OP_LD_A;
         ice.programPtr -= 2;
-        LD_IMM_A(curCol);
+        LD_IMM_A(curRow);
         
         // Get the second argument = row
         expr.inFunction = true;
@@ -1191,9 +1198,12 @@ static uint8_t functionOutput(int token) {
         
         // Yay, we can optimize things!
         if (expr.outputIsNumber) {
+            uint16_t outputCoordinates;
+            
             // Output coordinates in H and L
             ice.programPtr -= 10;
-            LD_SIS_HL((*(ice.programPtr + 1) << 8) + *(ice.programPtr + 7));
+            outputCoordinates = (expr.outputNumber << 8) + *(ice.programPtr + 1);
+            LD_SIS_HL(outputCoordinates);
             LD_SIS_IMM_HL(curRow & 0xFFFF);
         } else {
             if (expr.outputIsVariable) {
@@ -1203,7 +1213,7 @@ static uint8_t functionOutput(int token) {
             } else if (expr.outputRegister == OUTPUT_IN_DE) {
                 LD_A_E();
             }
-            LD_IMM_A(curRow);
+            LD_IMM_A(curCol);
         }
     } else {
         if (expr.outputIsVariable) {
@@ -1213,7 +1223,7 @@ static uint8_t functionOutput(int token) {
         } else if (expr.outputRegister == OUTPUT_IN_DE) {
             LD_A_E();
         }
-        LD_IMM_A(curCol);
+        LD_IMM_A(curRow);
         
         // Get the second argument = row
         expr.inFunction = true;
@@ -1224,14 +1234,17 @@ static uint8_t functionOutput(int token) {
             return E_SYNTAX;
         }
         
-        if (expr.outputIsVariable) {
+        if (expr.outputIsNumber) {
+            *(ice.programPtr - 4) = OP_LD_A;
+            ice.programPtr -= 2;
+        } else if (expr.outputIsVariable) {
             *(ice.programPtr - 2) = OP_LD_A_HL;
         } else if (expr.outputRegister == OUTPUT_IN_HL) {
             LD_A_L();
         } else if (expr.outputRegister == OUTPUT_IN_DE) {
             LD_A_E();
         }
-        LD_IMM_A(curRow);
+        LD_IMM_A(curCol);
     }
     
     // Get the third argument = output thing
@@ -1432,7 +1445,32 @@ static uint8_t functionFor(int token) {
 }
 
 static uint8_t functionPrgm(int token) {
-    return E_UNIMPLEMENTED;
+    uint8_t a = 0, res;
+    uint8_t *tempProgramPtr;
+    
+    if (ice.modifiedIY) {
+        LD_IY_IMM(flags);
+        ice.modifiedIY = false;
+    }
+    tempProgramPtr = ice.programPtr;
+    
+    ProgramPtrToOffsetStack();
+    LD_HL_IMM((uint24_t)ice.programDataPtr);
+    *ice.programDataPtr++ = TI_PRGM_TYPE;
+
+    // Fetch the name
+    while ((token = _getc(ice.inPrgm)) != EOF && (uint8_t)token != tEnter && a < 9) {
+        *ice.programDataPtr++ = token;
+    }
+    *ice.programDataPtr++ = 0;
+    
+    // Insert the routine to run it
+    CALL(_Mov9ToOP1);
+    LD_HL_IMM(tempProgramPtr - ice.programData + PRGM_START + 28);
+    memcpy(ice.programPtr, PrgmData, 20);
+    ice.programPtr += 20;
+    
+    return VALID;
 }
 
 static uint8_t functionCustom(int token) {
@@ -1524,10 +1562,14 @@ static uint8_t functionPause(int token) {
 static uint8_t functionInput(int token) {
     uint8_t tok;
     
-    if ((tok = _getc(ice.inPrgm)) < tA || tok > tTheta || !CheckEOL()) {
+    if ((tok = _getc(ice.inPrgm)) < tA || tok > tTheta) {
         return E_SYNTAX;
     }
     LD_A(GetVariableOffset(tok));
+    
+    if (!CheckEOL()) {
+        return E_SYNTAX;
+    }
     
     // Copy the Input routine to the data section
     if (!ice.usedAlreadyInput) {
@@ -1578,6 +1620,7 @@ static uint8_t functionBB(int token) {
     else if ((uint8_t)token == tAsmComp) {
         char tempName[9];
         uint8_t a = 0, res;
+        uint24_t currentLine = ice.currentLine;
         ti_var_t tempProg = ice.inPrgm;
         
 #ifdef COMPUTER_ICE
@@ -1592,14 +1635,19 @@ static uint8_t functionBB(int token) {
             char buf[30];
             
             displayLoadingBarFrame();
-            sprintf(buf, "Compiling program %s...", tempName);
+            sprintf(buf, "Compiling subprogram %s...", tempName);
             gfx_PrintStringXY(buf, 1, iceMessageLine);
             
             // Compile it, and close
+            ice.currentLine = 0;
             res = parseProgram();
-            displayLoadingBarFrame();
             ti_Close(ice.inPrgm);
-            gfx_PrintStringXY("Return from subprogram...", 1, iceMessageLine);
+            
+            if (res == VALID) {
+                displayLoadingBarFrame();
+                gfx_PrintStringXY("Return from subprogram...", 1, iceMessageLine);
+                ice.currentLine = currentLine;
+            }
         } else {
             return E_PROG_NOT_FOUND;
         }
@@ -1608,7 +1656,7 @@ static uint8_t functionBB(int token) {
 #endif
     } else {
         _seek(-1, SEEK_CUR, ice.inPrgm);
-        return parseExpression(token);
+        return parseExpression(t2ByteTok);
     }
 }
 

@@ -120,7 +120,7 @@ void preScanProgram(void);
 #ifndef COMPUTER_ICE
 void CHeaderData(void);
 void GraphxHeader(void);
-void FileiocHeader(void);
+void FileiocHeaderData(void);
 void CProgramHeaderData(void);
 void OrData(void);
 void AndData(void);
@@ -130,6 +130,7 @@ void KeypadData(void);
 void StringStoData(void);
 void InputData(void);
 void SinCosData(void);
+void PrgmData(void);
 void StringConcatenateData(void);
 void MeanData(void);
 void SqrtData(void);

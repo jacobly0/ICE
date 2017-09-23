@@ -14,7 +14,7 @@
 #include "incbin.h"
 INCBIN(Sqrt, "src/asm/sqrt.bin");
 INCBIN(Mean, "src/asm/mean.bin");
-INCBIN(Sincos, "src/asm/sincos.bin");
+INCBIN(SinCos, "src/asm/sincos.bin");
 #endif
 
 /* First byte:  bit 7  : returns something in A
@@ -643,6 +643,7 @@ uint8_t parseFunction(uint24_t index) {
             EX_S_DE_HL();
             expr.outputRegister2 = OUTPUT_IN_DE;
         }
+        expr.outputIsNumber = expr.outputIsVariable = expr.outputIsString = false;
     }
     
     expr.outputRegister = expr.outputRegister2;

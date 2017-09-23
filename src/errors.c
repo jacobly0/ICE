@@ -37,11 +37,11 @@ static const char *errors[] = {
 };
 
 void displayLabelError(char *label) {
-#ifndef COMPUTER_ICE
     char buf[30];
     
-    gfx_SetTextFGColor(224);
     sprintf(buf, "Label %s not found", label);
+#ifndef COMPUTER_ICE 
+    gfx_SetTextFGColor(224);
     gfx_PrintStringXY(buf, 1, iceMessageLine);
 #else
     fprintf(stdout, "%s\n", buf);

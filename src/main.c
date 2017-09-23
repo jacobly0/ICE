@@ -22,6 +22,7 @@ extern label_t gotoStack[50];
 #include "incbin.h"
 INCBIN(CHeader, "src/asm/cheader.bin");
 INCBIN(CProgramHeader, "src/asm/cprogramheader.bin");
+INCBIN(FileiocHeader, "src/asm/fileioc.bin");
 
 void w24(void *x, uint32_t val) {
     uint8_t *ptr = (uint8_t*)(x);
@@ -386,7 +387,7 @@ void preScanProgram(void) {
 #endif
     
     // Scan again, but now for the FILEIOC lib functions
-    memcpy(ice.programPtr, FileiocHeader, 10);
+    memcpy(ice.programPtr, FileiocHeaderData, 10);
     ice.programPtr += 10;
     _rewind(ice.inPrgm);
     expr.inString = false;

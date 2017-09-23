@@ -3,29 +3,31 @@
 
 #include "main.h"
 
-#define PRGM_START     0xD1A882
-#define flags          0xD00080
-#define pixelShadow    0xD031F6
-#define curRow         0xD00595
-#define curCol         0xD00596
+#define PRGM_START        0xD1A882
+#define flags             0xD00080
+#define pixelShadow       0xD031F6
+#define curRow            0xD00595
+#define curCol            0xD00596
                        
-#define _GetCSC        0x02014C
-#define _PutS          0x0207C0
-#define _NewLine       0x0207F0
-#define _ClrLCDFull    0x020808
-#define _HomeUp        0x020828
-#define _RunIndicOff   0x020848
-#define _DrawStatusBar 0x021A3C
-#define _os_GetCSC     0x021D3C
-#define _SetHLUTo0     0x021D8C
-#define _DispHL        0x021EE0
+#define _GetCSC           0x02014C
+#define _Mov9ToOP1        0x020320
+#define _PutS             0x0207C0
+#define _NewLine          0x0207F0
+#define _ClrLCDFull       0x020808
+#define _HomeUp           0x020828
+#define _RunIndicOff      0x020848
+#define _ParseInp         0x020F00
+#define _DrawStatusBar    0x021A3C
+#define _os_GetCSC        0x021D3C
+#define _SetHLUTo0        0x021D8C
+#define _DispHL           0x021EE0
 
-#define __strcat       0x0000C0
-#define __strcpy       0x0000CC
-#define __strlen       0x0000D4
-#define __idvrmu       0x000144
-#define __imul_b       0x000150
-#define __imuls        0x000154
+#define __strcat          0x0000C0
+#define __strcpy          0x0000CC
+#define __strlen          0x0000D4
+#define __idvrmu          0x000144
+#define __imul_b          0x000150
+#define __imuls           0x000154
 
 #define OP_LD_BC      0x01
 #define OP_LD_B       0x06
