@@ -771,6 +771,7 @@ static uint8_t functionI(int token) {
         // Get the output name
         if (!ice.gotName) {
             uint8_t a = 0;
+            
             while ((token = _getc(ice.inPrgm)) != EOF && (uint8_t)token != tEnter && a < 9) {
                 ice.outName[a++] = token;
             }
@@ -890,6 +891,8 @@ static uint8_t functionI(int token) {
 static uint8_t functionIf(int token) {
     uint8_t *IfStartAddr, *IfElseAddr = NULL, res;
     uint24_t tempDataOffsetElements, tempDataOffsetElements2;
+    uint8_t tempGotoElements = ice.amountOfGotos;
+    uint8_t tempLblElements = ice.amountOfLbls;
     
     if ((token = _getc(ice.inPrgm)) != EOF && token != tEnter) {
         // Parse the argument
@@ -931,6 +934,8 @@ static uint8_t functionIf(int token) {
         // Check if we quit the program with an 'Else'
         if (res == E_ELSE) {
             bool shortElseCode;
+            uint8_t tempGotoElements2 = ice.amountOfGotos;
+            uint8_t tempLblElements2 = ice.amountOfLbls;
             
             // Backup stuff
             IfElseAddr = ice.programPtr;
@@ -946,13 +951,13 @@ static uint8_t functionIf(int token) {
                 return E_SYNTAX;
             }
             
-            shortElseCode = JumpForward(IfElseAddr, ice.programPtr, tempDataOffsetElements2);
-            JumpForward(IfStartAddr, IfElseAddr + (shortElseCode ? 2 : 4), tempDataOffsetElements);
+            shortElseCode = JumpForward(IfElseAddr, ice.programPtr, tempDataOffsetElements2, tempGotoElements2, tempLblElements2);
+            JumpForward(IfStartAddr, IfElseAddr + (shortElseCode ? 2 : 4), tempDataOffsetElements, tempGotoElements, tempLblElements);
         }
         
         // Check if we quit the program with an 'End' or at the end of the input program
         else if (res == E_END || res == VALID) {
-            JumpForward(IfStartAddr, ice.programPtr, tempDataOffsetElements);
+            JumpForward(IfStartAddr, ice.programPtr, tempDataOffsetElements, tempGotoElements, tempLblElements);
         } else {
             return res;
         }
@@ -974,23 +979,32 @@ static uint8_t dummyReturn(int token) {
     return VALID;
 }
 
-void UpdatePointersToData(uint24_t tempDataOffsetElements) {
-    // Update pointers to data, decrease them all with 2
-    while (ice.dataOffsetElements != tempDataOffsetElements) {
-        ice.dataOffsetStack[tempDataOffsetElements] = (uint24_t*)(((uint8_t*)ice.dataOffsetStack[tempDataOffsetElements]) - 2);
-        tempDataOffsetElements++;
-    }
-}
-
-uint8_t JumpForward(uint8_t *startAddr, uint8_t *endAddr, uint24_t tempDataOffsetElements) {
+uint8_t JumpForward(uint8_t *startAddr, uint8_t *endAddr, uint24_t tempDataOffsetElements, uint8_t tempGotoElements, uint8_t tempLblElements) {
     if (endAddr - startAddr <= 0x80) {
         uint8_t *tempPtr = startAddr;
         uint8_t opcode = *startAddr;
+        label_t *labelPtr = labelStack;
+        label_t *gotoPtr = gotoStack;
         
         *startAddr++ = opcode - 0xA2 - (opcode == 0xC3 ? 9 : 0);
         *startAddr++ = endAddr - tempPtr - 4;
         
-        UpdatePointersToData(tempDataOffsetElements);
+        // Update pointers to data, decrease them all with 2
+        while (ice.dataOffsetElements != tempDataOffsetElements) {
+            ice.dataOffsetStack[tempDataOffsetElements] = (uint24_t*)(((uint8_t*)ice.dataOffsetStack[tempDataOffsetElements]) - 2);
+            tempDataOffsetElements++;
+        }
+        
+        // Update Goto and Lbl addresses, decrease them all with 2
+        while (ice.amountOfGotos != tempGotoElements) {
+            (&gotoPtr[tempGotoElements])->addr -= 2;
+            tempGotoElements++;
+        }
+        while (ice.amountOfLbls != tempLblElements) {
+            (&labelPtr[tempLblElements])->addr -= 2;
+            tempLblElements++;
+        }
+        
         memcpy(startAddr, startAddr + 2, ice.programPtr - startAddr);
         ice.programPtr -= 2;
         return true;
@@ -1019,6 +1033,8 @@ uint8_t *WhileRepeatCondStart = NULL;
 
 static uint8_t functionWhile(int token) {
     uint24_t tempDataOffsetElements = ice.dataOffsetElements;
+    uint8_t tempGotoElements = ice.amountOfGotos;
+    uint8_t tempLblElements = ice.amountOfLbls;
     uint8_t *WhileStartAddr = ice.programPtr, *TempStartAddr = WhileStartAddr, res;
     
     // Basically the same as "Repeat", but jump to condition checking first
@@ -1028,7 +1044,7 @@ static uint8_t functionWhile(int token) {
     }
     
     // Check if we can optimize the JP(0) to JR
-    JumpForward(WhileStartAddr, WhileRepeatCondStart, tempDataOffsetElements);
+    JumpForward(WhileStartAddr, WhileRepeatCondStart, tempDataOffsetElements, tempGotoElements, tempLblElements);
 
     return VALID;
 }
@@ -1258,6 +1274,8 @@ static uint8_t functionClrHome(int token) {
 static uint8_t functionFor(int token) {
     bool endPointIsNumber = false, stepIsNumber = false, reversedCond = false, smallCode;
     uint24_t endPointNumber = 0, stepNumber = 0, tempDataOffsetElements;
+    uint8_t tempGotoElements = ice.amountOfGotos;
+    uint8_t tempLblElements = ice.amountOfLbls;
     uint8_t *endPointExpressionValue = 0, *stepExpression = 0, *jumpToCond, *loopStart;
     uint8_t tok, variable, res;
     
@@ -1380,7 +1398,7 @@ static uint8_t functionFor(int token) {
         LD_IX_OFF_IND_HL(variable);
     }
     
-    smallCode = JumpForward(jumpToCond, ice.programPtr, tempDataOffsetElements);
+    smallCode = JumpForward(jumpToCond, ice.programPtr, tempDataOffsetElements, tempGotoElements, tempLblElements);
     
     // If both the step and the end point are a number, the variable is already in HL
     if (!(endPointIsNumber && stepIsNumber)) {
@@ -1447,6 +1465,7 @@ static uint8_t functionLbl(int token) {
         labelCurr->name[a++] = token;
     }
     labelCurr->addr = (uint24_t)ice.programPtr;
+    labelCurr->LblGotoElements = ice.amountOfLbls;
     return VALID;
 }
 
@@ -1468,6 +1487,7 @@ void insertGotoLabel(void) {
     }
     gotoCurr->addr = (uint24_t)ice.programPtr;
     gotoCurr->dataOffsetElements = ice.dataOffsetElements;
+    gotoCurr->LblGotoElements = ice.amountOfGotos;
 }
 
 static uint8_t functionPause(int token) {

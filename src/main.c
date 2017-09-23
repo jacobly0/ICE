@@ -203,11 +203,6 @@ void main(void) {
                 label_t *curLbl = &labelStack[currentLbl];
                 if (!memcmp(curLbl->name, curGoto->name, 10)) {
                     w24((uint8_t*)(curGoto->addr + 1), curLbl->addr - (uint24_t)ice.programData + PRGM_START);
-                    
-                    // Check if we can optimize the JP (only works if we jump forward)
-                    if (curLbl->addr >= curGoto->addr) {
-                        JumpForward((uint8_t*)curGoto->addr, (uint8_t*)curLbl->addr, curGoto->dataOffsetElements);
-                    }
                     goto findNextLabel;
                 }
             }

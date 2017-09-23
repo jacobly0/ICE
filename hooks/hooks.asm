@@ -315,7 +315,7 @@ WrongDetValue:
 	or	a, 1
 	ret
 GetDetValue:
-	ld	iyl, a
+	ld	iyl, b
 	ld	bc, (editBtm)
 	ld	de, 0
 	ld	e, a
@@ -524,140 +524,140 @@ Tok3: .db 5,  "Data("
 Tok4: .db 5,  "Copy("
 
 TabData:
-    .dl Tab1 - KeyHook_start
-    .dl Tab2 - KeyHook_start
-    .dl Tab3 - KeyHook_start
-    .dl Tab4 - KeyHook_start
-    .dl Tab5 - KeyHook_start
-    .dl Tab6 - KeyHook_start
-    .dl Tab7 - KeyHook_start
-    .dl Tab8 - KeyHook_start
+	.dl Tab1 - KeyHook_start
+	.dl Tab2 - KeyHook_start
+	.dl Tab3 - KeyHook_start
+	.dl Tab4 - KeyHook_start
+	.dl Tab5 - KeyHook_start
+	.dl Tab6 - KeyHook_start
+	.dl Tab7 - KeyHook_start
+	.dl Tab8 - KeyHook_start
     
 CData4:
-    .dl F01 - KeyHook_start
-    .dl F02 - KeyHook_start
-    .dl F03 - KeyHook_start
-    .dl F04 - KeyHook_start
-    .dl F05 - KeyHook_start
-    .dl F06 - KeyHook_start
-    .dl F07 - KeyHook_start
-    .dl F08 - KeyHook_start
-    .dl F09 - KeyHook_start
-    .dl F10 - KeyHook_start
-    .dl F11 - KeyHook_start
-    .dl F12 - KeyHook_start
-    .dl F13 - KeyHook_start
-    .dl F14 - KeyHook_start
-    .dl F15 - KeyHook_start
-    .dl F16 - KeyHook_start
-    .dl F17 - KeyHook_start
-    .dl F18 - KeyHook_start
-    .dl F19 - KeyHook_start
-    .dl F20 - KeyHook_start
-    .dl F21 - KeyHook_start
+	.dl F01 - KeyHook_start
+	.dl F02 - KeyHook_start
+	.dl F03 - KeyHook_start
+	.dl F04 - KeyHook_start
+	.dl F05 - KeyHook_start
+	.dl F06 - KeyHook_start
+	.dl F07 - KeyHook_start
+	.dl F08 - KeyHook_start
+	.dl F09 - KeyHook_start
+	.dl F10 - KeyHook_start
+	.dl F11 - KeyHook_start
+	.dl F12 - KeyHook_start
+	.dl F13 - KeyHook_start
+	.dl F14 - KeyHook_start
+	.dl F15 - KeyHook_start
+	.dl F16 - KeyHook_start
+	.dl F17 - KeyHook_start
+	.dl F18 - KeyHook_start
+	.dl F19 - KeyHook_start
+	.dl F20 - KeyHook_start
+	.dl F21 - KeyHook_start
     
 CData5:
-    .dl G01 - KeyHook_start
-    .dl G02 - KeyHook_start
-    .dl G03 - KeyHook_start
-    .dl G04 - KeyHook_start
-    .dl G05 - KeyHook_start
-    .dl G06 - KeyHook_start
-    .dl G07 - KeyHook_start
-    .dl G08 - KeyHook_start
-    .dl G09 - KeyHook_start
-    .dl G10 - KeyHook_start
-    .dl G11 - KeyHook_start
-    .dl G12 - KeyHook_start
-    .dl G13 - KeyHook_start
-    .dl G14 - KeyHook_start
-    .dl G15 - KeyHook_start
-    .dl G16 - KeyHook_start
-    .dl G17 - KeyHook_start
-    .dl G18 - KeyHook_start
-    .dl G19 - KeyHook_start
-    .dl G20 - KeyHook_start
-    .dl G21 - KeyHook_start
-    .dl G22 - KeyHook_start
-    .dl G23 - KeyHook_start
-    .dl G24 - KeyHook_start
-    .dl G25 - KeyHook_start
-    .dl G26 - KeyHook_start
-    .dl G27 - KeyHook_start
-    .dl G28 - KeyHook_start
-    .dl G29 - KeyHook_start
-    .dl G30 - KeyHook_start
-    .dl G31 - KeyHook_start
-    .dl G32 - KeyHook_start
-    .dl G33 - KeyHook_start
-    .dl G34 - KeyHook_start
-    .dl G35 - KeyHook_start
-    .dl G36 - KeyHook_start
-    .dl G37 - KeyHook_start
-    .dl G38 - KeyHook_start
-    .dl G39 - KeyHook_start
-    .dl G40 - KeyHook_start
-    .dl G41 - KeyHook_start
-    .dl G42 - KeyHook_start
-    .dl G43 - KeyHook_start
-    .dl G44 - KeyHook_start
-    .dl G45 - KeyHook_start
-    .dl G46 - KeyHook_start
-    .dl G47 - KeyHook_start
-    .dl G48 - KeyHook_start
-    .dl G49 - KeyHook_start
-    .dl G50 - KeyHook_start
-    .dl G51 - KeyHook_start
-    .dl G52 - KeyHook_start
-    .dl G53 - KeyHook_start
-    .dl G54 - KeyHook_start
-    .dl G55 - KeyHook_start
-    .dl G56 - KeyHook_start
-    .dl G57 - KeyHook_start
-    .dl G58 - KeyHook_start
-    .dl G59 - KeyHook_start
-    .dl G60 - KeyHook_start
-    .dl G61 - KeyHook_start
-    .dl G62 - KeyHook_start
-    .dl G63 - KeyHook_start
-    .dl G64 - KeyHook_start
-    .dl G65 - KeyHook_start
-    .dl G66 - KeyHook_start
-    .dl G67 - KeyHook_start
-    .dl G68 - KeyHook_start
-    .dl G69 - KeyHook_start
-    .dl G70 - KeyHook_start
-    .dl G71 - KeyHook_start
-    .dl G72 - KeyHook_start
-    .dl G73 - KeyHook_start
-    .dl G74 - KeyHook_start
-    .dl G75 - KeyHook_start
-    .dl G76 - KeyHook_start
-    .dl G77 - KeyHook_start
-    .dl G78 - KeyHook_start
-    .dl G79 - KeyHook_start
-    .dl G80 - KeyHook_start
-    .dl G81 - KeyHook_start
-    .dl G82 - KeyHook_start
-    .dl G83 - KeyHook_start
-    .dl G84 - KeyHook_start
-    .dl G85 - KeyHook_start
-    .dl G86 - KeyHook_start
-    .dl G87 - KeyHook_start
-    .dl G88 - KeyHook_start
-    .dl G89 - KeyHook_start
-    .dl G90 - KeyHook_start
-    .dl G91 - KeyHook_start
-    .dl G92 - KeyHook_start
+	.dl G01 - KeyHook_start
+	.dl G02 - KeyHook_start
+	.dl G03 - KeyHook_start
+	.dl G04 - KeyHook_start
+	.dl G05 - KeyHook_start
+	.dl G06 - KeyHook_start
+	.dl G07 - KeyHook_start
+	.dl G08 - KeyHook_start
+	.dl G09 - KeyHook_start
+	.dl G10 - KeyHook_start
+	.dl G11 - KeyHook_start
+	.dl G12 - KeyHook_start
+	.dl G13 - KeyHook_start
+	.dl G14 - KeyHook_start
+	.dl G15 - KeyHook_start
+	.dl G16 - KeyHook_start
+	.dl G17 - KeyHook_start
+	.dl G18 - KeyHook_start
+	.dl G19 - KeyHook_start
+	.dl G20 - KeyHook_start
+	.dl G21 - KeyHook_start
+	.dl G22 - KeyHook_start
+	.dl G23 - KeyHook_start
+	.dl G24 - KeyHook_start
+	.dl G25 - KeyHook_start
+	.dl G26 - KeyHook_start
+	.dl G27 - KeyHook_start
+	.dl G28 - KeyHook_start
+	.dl G29 - KeyHook_start
+	.dl G30 - KeyHook_start
+	.dl G31 - KeyHook_start
+	.dl G32 - KeyHook_start
+	.dl G33 - KeyHook_start
+	.dl G34 - KeyHook_start
+	.dl G35 - KeyHook_start
+	.dl G36 - KeyHook_start
+	.dl G37 - KeyHook_start
+	.dl G38 - KeyHook_start
+	.dl G39 - KeyHook_start
+	.dl G40 - KeyHook_start
+	.dl G41 - KeyHook_start
+	.dl G42 - KeyHook_start
+	.dl G43 - KeyHook_start
+	.dl G44 - KeyHook_start
+	.dl G45 - KeyHook_start
+	.dl G46 - KeyHook_start
+	.dl G47 - KeyHook_start
+	.dl G48 - KeyHook_start
+	.dl G49 - KeyHook_start
+	.dl G50 - KeyHook_start
+	.dl G51 - KeyHook_start
+	.dl G52 - KeyHook_start
+	.dl G53 - KeyHook_start
+	.dl G54 - KeyHook_start
+	.dl G55 - KeyHook_start
+	.dl G56 - KeyHook_start
+	.dl G57 - KeyHook_start
+	.dl G58 - KeyHook_start
+	.dl G59 - KeyHook_start
+	.dl G60 - KeyHook_start
+	.dl G61 - KeyHook_start
+	.dl G62 - KeyHook_start
+	.dl G63 - KeyHook_start
+	.dl G64 - KeyHook_start
+	.dl G65 - KeyHook_start
+	.dl G66 - KeyHook_start
+	.dl G67 - KeyHook_start
+	.dl G68 - KeyHook_start
+	.dl G69 - KeyHook_start
+	.dl G70 - KeyHook_start
+	.dl G71 - KeyHook_start
+	.dl G72 - KeyHook_start
+	.dl G73 - KeyHook_start
+	.dl G74 - KeyHook_start
+	.dl G75 - KeyHook_start
+	.dl G76 - KeyHook_start
+	.dl G77 - KeyHook_start
+	.dl G78 - KeyHook_start
+	.dl G79 - KeyHook_start
+	.dl G80 - KeyHook_start
+	.dl G81 - KeyHook_start
+	.dl G82 - KeyHook_start
+	.dl G83 - KeyHook_start
+	.dl G84 - KeyHook_start
+	.dl G85 - KeyHook_start
+	.dl G86 - KeyHook_start
+	.dl G87 - KeyHook_start
+	.dl G88 - KeyHook_start
+	.dl G89 - KeyHook_start
+	.dl G90 - KeyHook_start
+	.dl G91 - KeyHook_start
+	.dl G92 - KeyHook_start
     
 TokenHook_data:
-    .dl Tok1 - KeyHook_start - 1
-    .dl Tok2 - KeyHook_start - 1
-    .dl Tok3 - KeyHook_start - 1
-    .dl Tok4 - KeyHook_start - 1
+	.dl Tok1 - KeyHook_start - 1
+	.dl Tok2 - KeyHook_start - 1
+	.dl Tok3 - KeyHook_start - 1
+	.dl Tok4 - KeyHook_start - 1
 
 CustomTokensProgramText:
-    .db "PROGRAM:", 0
+	.db "PROGRAM:", 0
     
 .echo "Data size: ",$-DataStart, " bytes"
 .echo "Total size: ", $-KeyHook_start, " bytes"
