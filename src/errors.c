@@ -25,7 +25,6 @@ static const char *errors[] = {
     "Invalid hexadecimal",
     "ICE ERROR: please report it!",
     "You have the wrong number or arguments",
-    "Warning: this C function is deprecated",
 #ifndef COMPUTER_ICE
     "Unknown C function. If you are sure this              function exists, please contact me!",
 #else

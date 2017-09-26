@@ -186,11 +186,6 @@ void main(void) {
     if (res == VALID) {
         uint8_t currentGoto, currentLbl;
         
-        // If we modified IY, restore it
-        if (ice.modifiedIY) {
-            LD_IY_IMM(flags);
-        }
-        
         // If the last token is not "Return", write a "ret" to the program
         if (!ice.lastTokenIsReturn) {
             RET();

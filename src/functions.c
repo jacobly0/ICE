@@ -29,98 +29,98 @@ INCBIN(SinCos, "src/asm/sincos.bin");
 */
 
 const uint8_t GraphxArgs[] = {
-    RET_NONE | 0, ARG_NORM,    // Begin
-    RET_NONE | 0, ARG_NORM,    // End
-    RET_A    | 1, SMALL_1,     // SetColor
-    RET_NONE | 0, ARG_NORM,    // SetDefaultPalette
-    UN       | 3, ARG_NORM,    // SetPalette
-    RET_NONE | 1, SMALL_1,     // FillScreen
-    RET_NONE | 2, SMALL_2,     // SetPixel
-    RET_A    | 2, SMALL_2,     // GetPixel
-    RET_A    | 0, ARG_NORM,    // GetDraw
-    RET_NONE | 1, SMALL_1,     // SetDraw
-    RET_NONE | 0, ARG_NORM,    // SwapDraw
-    RET_NONE | 1, SMALL_1,     // Blit
-    RET_NONE | 3, SMALL_123,   // BlitLines
-    RET_NONE | 5, SMALL_13,    // BlitArea
-    RET_NONE | 1, SMALL_1,     // PrintChar
-    RET_NONE | 2, SMALL_2,     // PrintInt
-    RET_NONE | 2, SMALL_2,     // PrintUInt
-    RET_NONE | 1, ARG_NORM,    // PrintString
-    RET_NONE | 3, ARG_NORM,    // PrintStringXY
-    RET_NONE | 2, ARG_NORM,    // SetTextXY
-    RET_A    | 1, SMALL_1,     // SetTextBGColor
-    RET_A    | 1, SMALL_1,     // SetTextFGColor
-    RET_A    | 1, SMALL_1,     // SetTextTransparentColor
-    UN       | 0, ARG_NORM,    // SetCustomFontData
-    UN       | 0, ARG_NORM,    // SetCustomFontSpacing
-    RET_NONE | 1, SMALL_1,     // SetMonoSpaceFont
-    RET_HL   | 1, ARG_NORM,    // GetStringWidth
-    RET_HL   | 1, SMALL_1,     // GetCharWidth
-    RET_HL   | 0, ARG_NORM,    // GetTextX
-    RET_HL   | 0, ARG_NORM,    // GetTextY
-    RET_NONE | 4, ARG_NORM,    // Line
-    RET_NONE | 3, ARG_NORM,    // HorizLine
-    RET_NONE | 3, ARG_NORM,    // VertLine
-    RET_NONE | 3, ARG_NORM,    // Circle
-    RET_NONE | 3, ARG_NORM,    // FillCircle
-    RET_NONE | 4, ARG_NORM,    // Rectangle
-    RET_NONE | 4, ARG_NORM,    // FillRectangle
-    RET_NONE | 4, SMALL_14,    // Line_NoClip
-    RET_NONE | 3, SMALL_2,     // HorizLine_NoClip
-    RET_NONE | 3, SMALL_2,     // VertLine_NoClip
-    RET_NONE | 3, SMALL_2,     // FillCircle_NoClip
-    RET_NONE | 4, SMALL_14,    // Rectangle_NoClip
-    RET_NONE | 4, SMALL_14,    // FillRectangle_NoClip
-    RET_NONE | 4, ARG_NORM,    // SetClipRegion
-    RET_A    | 1, ARG_NORM,    // GetClipRegion
-    RET_NONE | 1, SMALL_1,     // ShiftDown
-    RET_NONE | 1, SMALL_1,     // ShiftUp
-    RET_NONE | 1, SMALL_1,     // ShiftLeft
-    RET_NONE | 1, SMALL_1,     // ShiftRight
-    UN       | 0, ARG_NORM,    // Tilemap
-    UN       | 0, ARG_NORM,    // Tilemap_NoClip
-    UN       | 0, ARG_NORM,    // TransparentTilemap
-    UN       | 0, ARG_NORM,    // TransparentTilemap_NoClip
-    UN       | 0, ARG_NORM,    // TilePtr
-    UN       | 0, ARG_NORM,    // TilePtrMapped
-    UN       | 0, ARG_NORM,    // LZDecompress
-    UN       | 0, ARG_NORM,    // AllocSprite
-    RET_NONE | 3, ARG_NORM,    // Sprite
-    RET_NONE | 3, ARG_NORM,    // TransparentSprite
-    RET_NONE | 3, SMALL_3,     // Sprite_NoClip
-    RET_NONE | 3, SMALL_3,     // TransparentSprite_NoClip
-    RET_HL   | 3, ARG_NORM,    // GetSprite
-    RET_NONE | 5, SMALL_45,    // ScaledSprite_NoClip
-    RET_NONE | 5, SMALL_45,    // ScaledTransparentSprite_NoClip
-    RET_HL   | 2, ARG_NORM,    // FlipSpriteY
-    RET_HL   | 2, ARG_NORM,    // FlipSpriteX
-    RET_HL   | 2, ARG_NORM,    // RotateSpriteC
-    RET_HL   | 2, ARG_NORM,    // RotateSpriteCC
-    RET_HL   | 2, ARG_NORM,    // RotateSpriteHalf
-    RET_NONE | 2, ARG_NORM,    // Polygon
-    RET_NONE | 2, ARG_NORM,    // Polygon_NoClip
-    RET_NONE | 6, ARG_NORM,    // FillTriangle
-    RET_NONE | 6, ARG_NORM,    // FillTriangle_NoClip
-    UN       | 0, ARG_NORM,    // LZDecompressSprite
-    RET_NONE | 2, SMALL_12,    // SetTextScale
-    RET_A    | 1, SMALL_1,     // SetTransparentColor
-    RET_NONE | 0, ARG_NORM,    // ZeroScreen
-    RET_NONE | 1, SMALL_1,     // SetTextConfig
-    RET_HL   | 1, SMALL_1,     // GetSpriteChar
-    RET_HLs  | 2, SMALL_2,     // Lighten
-    RET_HLs  | 2, SMALL_2,     // Darken
-    RET_A    | 1, SMALL_1,     // SetFontHeight
-    RET_HL   | 2, ARG_NORM,    // ScaleSprite
-    RET_NONE | 3, SMALL_12,    // FloodFill
-    RET_NONE | 3, ARG_NORM,    // RLETSprite
-    RET_NONE | 3, SMALL_3,     // RLETSprite_NoClip
-    UN       | 2, ARG_NORM,    // ConvertFromRLETSprite
-    UN       | 2, ARG_NORM,    // ConvertToRLETSprite
-    UN       | 2, ARG_NORM,    // ConvertToNewRLETSprite
-    RET_HL   | 4, SMALL_34,    // RotateScaleSprite
-    RET_A    | 5, SMALL_345,   // RotatedScaledTransparentSprite_NoClip
-    RET_A    | 5, SMALL_345,   // RotatedScaledSprite_NoClip
+    RET_NONE         | 0, ARG_NORM,    // Begin
+    RET_NONE         | 0, ARG_NORM,    // End
+    RET_A            | 1, SMALL_1,     // SetColor
+    RET_NONE         | 0, ARG_NORM,    // SetDefaultPalette
+    RET_NONE | modIY | 3, ARG_NORM,    // SetPalette
+    RET_NONE | modIY | 1, SMALL_1,     // FillScreen
+    RET_NONE         | 2, SMALL_2,     // SetPixel
+    RET_A            | 2, SMALL_2,     // GetPixel
+    RET_A            | 0, ARG_NORM,    // GetDraw
+    RET_NONE         | 1, SMALL_1,     // SetDraw
+    RET_NONE         | 0, ARG_NORM,    // SwapDraw
+    RET_NONE         | 1, SMALL_1,     // Blit
+    RET_NONE | modIY | 3, SMALL_123,   // BlitLines
+    RET_NONE | modIY | 5, SMALL_13,    // BlitArea
+    RET_NONE | modIY | 1, SMALL_1,     // PrintChar
+    RET_NONE | modIY | 2, SMALL_2,     // PrintInt
+    RET_NONE | modIY | 2, SMALL_2,     // PrintUInt
+    RET_NONE | modIY | 1, ARG_NORM,    // PrintString
+    RET_NONE | modIY | 3, ARG_NORM,    // PrintStringXY
+    RET_NONE         | 2, ARG_NORM,    // SetTextXY
+    RET_A            | 1, SMALL_1,     // SetTextBGColor
+    RET_A            | 1, SMALL_1,     // SetTextFGColor
+    RET_A            | 1, SMALL_1,     // SetTextTransparentColor
+    UN               | 0, ARG_NORM,    // SetCustomFontData
+    UN               | 0, ARG_NORM,    // SetCustomFontSpacing
+    RET_NONE         | 1, SMALL_1,     // SetMonoSpaceFont
+    RET_HL           | 1, ARG_NORM,    // GetStringWidth
+    RET_HL   | modIY | 1, SMALL_1,     // GetCharWidth
+    RET_HL           | 0, ARG_NORM,    // GetTextX
+    RET_HL           | 0, ARG_NORM,    // GetTextY
+    RET_NONE | modIY | 4, ARG_NORM,    // Line
+    RET_NONE | modIY | 3, ARG_NORM,    // HorizLine
+    RET_NONE | modIY | 3, ARG_NORM,    // VertLine
+    RET_NONE | modIY | 3, ARG_NORM,    // Circle
+    RET_NONE | modIY | 3, ARG_NORM,    // FillCircle
+    RET_NONE | modIY | 4, ARG_NORM,    // Rectangle
+    RET_NONE | modIY | 4, ARG_NORM,    // FillRectangle
+    RET_NONE | modIY | 4, SMALL_14,    // Line_NoClip
+    RET_NONE | modIY | 3, SMALL_2,     // HorizLine_NoClip
+    RET_NONE | modIY | 3, SMALL_2,     // VertLine_NoClip
+    RET_NONE | modIY | 3, SMALL_2,     // FillCircle_NoClip
+    RET_NONE | modIY | 4, SMALL_14,    // Rectangle_NoClip
+    RET_NONE | modIY | 4, SMALL_14,    // FillRectangle_NoClip
+    RET_NONE | modIY | 4, ARG_NORM,    // SetClipRegion
+    RET_A    | modIY | 1, ARG_NORM,    // GetClipRegion
+    RET_NONE         | 1, SMALL_1,     // ShiftDown
+    RET_NONE         | 1, SMALL_1,     // ShiftUp
+    RET_NONE         | 1, SMALL_1,     // ShiftLeft
+    RET_NONE         | 1, SMALL_1,     // ShiftRight
+    UN               | 0, ARG_NORM,    // Tilemap
+    UN               | 0, ARG_NORM,    // Tilemap_NoClip
+    UN               | 0, ARG_NORM,    // TransparentTilemap
+    UN               | 0, ARG_NORM,    // TransparentTilemap_NoClip
+    UN               | 0, ARG_NORM,    // TilePtr
+    UN               | 0, ARG_NORM,    // TilePtrMapped
+    UN               | 0, ARG_NORM,    // LZDecompress
+    UN               | 0, ARG_NORM,    // AllocSprite
+    RET_NONE | modIY | 3, ARG_NORM,    // Sprite
+    RET_NONE | modIY | 3, ARG_NORM,    // TransparentSprite
+    RET_NONE | modIY | 3, SMALL_3,     // Sprite_NoClip
+    RET_NONE | modIY | 3, SMALL_3,     // TransparentSprite_NoClip
+    RET_HL   | modIY | 3, ARG_NORM,    // GetSprite
+    RET_NONE | modIY | 5, SMALL_45,    // ScaledSprite_NoClip
+    RET_NONE | modIY | 5, SMALL_45,    // ScaledTransparentSprite_NoClip
+    RET_HL   | modIY | 2, ARG_NORM,    // FlipSpriteY
+    RET_HL   | modIY | 2, ARG_NORM,    // FlipSpriteX
+    RET_HL   | modIY | 2, ARG_NORM,    // RotateSpriteC
+    RET_HL   | modIY | 2, ARG_NORM,    // RotateSpriteCC
+    RET_HL   | modIY | 2, ARG_NORM,    // RotateSpriteHalf
+    RET_NONE | modIY | 2, ARG_NORM,    // Polygon
+    RET_NONE | modIY | 2, ARG_NORM,    // Polygon_NoClip
+    RET_NONE | modIY | 6, ARG_NORM,    // FillTriangle
+    RET_NONE | modIY | 6, ARG_NORM,    // FillTriangle_NoClip
+    UN               | 0, ARG_NORM,    // LZDecompressSprite
+    RET_NONE         | 2, SMALL_12,    // SetTextScale
+    RET_A            | 1, SMALL_1,     // SetTransparentColor
+    RET_NONE         | 0, ARG_NORM,    // ZeroScreen
+    RET_NONE         | 1, SMALL_1,     // SetTextConfig
+    RET_HL   | modIY | 1, SMALL_1,     // GetSpriteChar
+    RET_HLs          | 2, SMALL_2,     // Lighten
+    RET_HLs          | 2, SMALL_2,     // Darken
+    RET_A            | 1, SMALL_1,     // SetFontHeight
+    RET_HL   | modIY | 2, ARG_NORM,    // ScaleSprite
+    RET_NONE | modIY | 3, SMALL_12,    // FloodFill
+    RET_NONE | modIY | 3, ARG_NORM,    // RLETSprite
+    RET_NONE | modIY | 3, SMALL_3,     // RLETSprite_NoClip
+    UN               | 2, ARG_NORM,    // ConvertFromRLETSprite
+    UN               | 2, ARG_NORM,    // ConvertToRLETSprite
+    UN               | 2, ARG_NORM,    // ConvertToNewRLETSprite
+    RET_HL   | modIY | 4, SMALL_34,    // RotateScaleSprite
+    RET_HL   | modIY | 4, SMALL_34,    // RotatedScaledTransparentSprite_NoClip
+    RET_HL   | modIY | 4, SMALL_345,   // RotatedScaledSprite_NoClip
 };
 
 const uint8_t FileiocArgs[] = {
@@ -449,24 +449,15 @@ uint8_t parseFunction(uint24_t index) {
             LD_HL_IMM((uint24_t)ice.programDataPtr);
             ice.programDataPtr += outputPrevPrev->operand * outputPrev->operand;
         } else if (amountOfArguments == 3) {
-            uint8_t *prevDataPtr = (uint8_t*)outputPrev->operand, *prevDataPtr2 = prevDataPtr;
-            
             if(outputPrevPrevPrev->type != TYPE_NUMBER || outputPrevPrev->type != TYPE_NUMBER || outputPrev->type != TYPE_STRING) {
                 return E_SYNTAX;
             }
             
-            // Replace the hexadecimal string to hexadecimal bytes
-            LD_HL_IMM((uint24_t)prevDataPtr);
-            while (prevDataPtr != ice.programDataPtr - 1) {
-                uint8_t tok1, tok2;
-                
-                if ((tok1 = IsHexadecimal(*prevDataPtr++)) == 16 || (tok2 = IsHexadecimal(*prevDataPtr++)) == 16) {
-                    return E_SYNTAX;
-                }
-                *prevDataPtr2++ = (tok1 << 4) + tok2;
-            }
+            LD_HL_IMM(outputPrev->operand);
             
-            ice.programDataPtr = prevDataPtr2;
+            if ((res = SquishHexadecimals((uint8_t*)outputPrev->operand)) != VALID) {
+                return res;
+            }
         } else {
             return E_ARGUMENTS;
         }
@@ -605,7 +596,14 @@ uint8_t parseFunction(uint24_t index) {
         }
         
         // Lel, we need to remove the last argument (ld hl, XXXXXX) + the push
-        ice.programPtr -= 4 + (expr.outputNumber > 0);
+        ice.programPtr -= 5 - !expr.outputNumber;
+        
+        // It's it's a SetPalette, the last argument needs to be squished
+        if (function == tDet && expr.outputNumber == 4) {
+            if ((res = SquishHexadecimals((uint8_t*)*(uint24_t*)(ice.programPtr - 4))) != VALID) {
+                return res;
+            }
+        }
         
         // Get the amount of arguments, and call the function
         if (function == tDet) {
@@ -619,11 +617,6 @@ uint8_t parseFunction(uint24_t index) {
         // Check if unimplemented function
         if (temp & UN) {
             return E_UNIMPLEMENTED;
-        }
-        
-        // Check if deprecated function
-        if (temp & DEPR) {
-            return E_DEPRECATED;
         }
         
         // Check the right amount of arguments
@@ -643,6 +636,12 @@ uint8_t parseFunction(uint24_t index) {
             EX_S_DE_HL();
             expr.outputRegister2 = OUTPUT_IN_DE;
         }
+        
+        // Check if IY is messed up
+        if (temp & modIY) {
+            ice.modifiedIY = true;
+        }
+        
         expr.outputIsNumber = expr.outputIsVariable = expr.outputIsString = false;
     }
     

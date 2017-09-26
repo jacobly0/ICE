@@ -50,6 +50,13 @@ void MaybeAToHL(void) {
     }
 }
 
+void MaybeLDIYFlags(void) {
+    if (ice.modifiedIY) {
+        LD_IY_IMM(flags);
+        ice.modifiedIY = false;
+    }
+}
+
 void PushHLDE(void) {
     MaybeAToHL();
     if (expr.outputRegister == OUTPUT_IN_HL) {
@@ -78,6 +85,23 @@ bool CheckEOL(void) {
         return true;
     }
     return false;
+}
+
+uint8_t SquishHexadecimals(uint8_t *prevDataPtr) {
+    uint8_t *prevDataPtr2 = prevDataPtr;
+            
+    // Replace the hexadecimal string to hexadecimal bytes
+    while (prevDataPtr != ice.programDataPtr - 1) {
+        uint8_t tok1, tok2;
+        
+        if ((tok1 = IsHexadecimal(*prevDataPtr++)) == 16 || (tok2 = IsHexadecimal(*prevDataPtr++)) == 16) {
+            return E_SYNTAX;
+        }
+        *prevDataPtr2++ = (tok1 << 4) + tok2;
+    }
+    
+    ice.programDataPtr = prevDataPtr2;
+    return VALID;
 }
 
 uint8_t GetVariableOffset(uint8_t tok) {

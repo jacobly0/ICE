@@ -12,11 +12,10 @@
 #define E_INVALID_HEX      8
 #define E_ICE_ERROR        9
 #define E_ARGUMENTS        10
-#define E_DEPRECATED       11
-#define E_UNKNOWN_C        12
-#define E_PROG_NOT_FOUND   13
-#define E_NO_SUBPROG       14
-#define E_NO_FUNC_ALLOW    15
+#define E_UNKNOWN_C        11
+#define E_PROG_NOT_FOUND   12
+#define E_NO_SUBPROG       13
+#define E_NO_FUNC_ALLOW    14
 
 #define E_VALID            254
 #define VALID              255

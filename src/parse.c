@@ -1130,10 +1130,7 @@ static uint8_t functionReturn(int token) {
 }
 
 static uint8_t functionDisp(int token) {
-    if (ice.modifiedIY) {
-        LD_IY_IMM(flags);
-        ice.modifiedIY = false;
-    }
+    MaybeLDIYFlags();
     do {
         uint8_t res;
 
@@ -1183,8 +1180,10 @@ static uint8_t functionOutput(int token) {
     }
     
     if (expr.outputIsNumber) {
-        *(ice.programPtr - 4) = OP_LD_A;
-        ice.programPtr -= 2;
+        uint8_t outputNumber = expr.outputNumber;
+        
+        ice.programPtr -= 4 - !outputNumber;
+        LD_A(outputNumber);
         LD_IMM_A(curRow);
         
         // Get the second argument = row
@@ -1198,12 +1197,9 @@ static uint8_t functionOutput(int token) {
         
         // Yay, we can optimize things!
         if (expr.outputIsNumber) {
-            uint16_t outputCoordinates;
-            
             // Output coordinates in H and L
-            ice.programPtr -= 10;
-            outputCoordinates = (expr.outputNumber << 8) + *(ice.programPtr + 1);
-            LD_SIS_HL(outputCoordinates);
+            ice.programPtr -= 10 - !expr.outputNumber;
+            LD_SIS_HL((expr.outputNumber << 8) + outputNumber);
             LD_SIS_IMM_HL(curRow & 0xFFFF);
         } else {
             if (expr.outputIsVariable) {
@@ -1249,10 +1245,7 @@ static uint8_t functionOutput(int token) {
     
     // Get the third argument = output thing
     if (ice.tempToken == tComma) {
-        if (ice.modifiedIY) {
-            LD_IY_IMM(flags);
-            ice.modifiedIY = false;
-        }
+        MaybeLDIYFlags();
         if ((res = parseExpression(_getc(ice.inPrgm))) != VALID) {
             return res;
         }
@@ -1275,12 +1268,10 @@ static uint8_t functionClrHome(int token) {
     if (!CheckEOL()) {
         return E_SYNTAX;
     }
-    if (ice.modifiedIY) {
-        LD_IY_IMM(flags);
-    }
+    MaybeLDIYFlags();
     CALL(_HomeUp);
     CALL(_ClrLCDFull);
-    ice.modifiedIY = false;
+    
     return VALID;
 }
 
@@ -1310,6 +1301,7 @@ static uint8_t functionFor(int token) {
     }
     
     // Load the value in the variable
+    MaybeAToHL();
     if (expr.outputRegister == OUTPUT_IN_HL) {
         LD_IX_OFF_IND_HL(variable);
     } else {
@@ -1448,10 +1440,7 @@ static uint8_t functionPrgm(int token) {
     uint8_t a = 0, res;
     uint8_t *tempProgramPtr;
     
-    if (ice.modifiedIY) {
-        LD_IY_IMM(flags);
-        ice.modifiedIY = false;
-    }
+    MaybeLDIYFlags();
     tempProgramPtr = ice.programPtr;
     
     ProgramPtrToOffsetStack();
@@ -1540,7 +1529,6 @@ static uint8_t functionPause(int token) {
         if ((res = parseExpression(_getc(ice.inPrgm))) != VALID) {
             return res;
         }
-        
         AnsToHL();
         
         // Store the pointer to the call to the stack, to replace later
@@ -1570,18 +1558,19 @@ static uint8_t functionInput(int token) {
     if (!CheckEOL()) {
         return E_SYNTAX;
     }
+    MaybeLDIYFlags();
     
     // Copy the Input routine to the data section
     if (!ice.usedAlreadyInput) {
         ice.InputAddr = (uintptr_t)ice.programDataPtr;
-        memcpy(ice.programDataPtr, InputData, 66);
-        ice.programDataPtr += 66;
+        memcpy(ice.programDataPtr, InputData, 74);
+        ice.programDataPtr += 74;
         ice.usedAlreadyInput = true;
     }
     
     // Set which var we need to store to
     ProgramPtrToOffsetStack();
-    LD_ADDR_A(ice.InputAddr + 61);
+    LD_ADDR_A(ice.InputAddr + 69);
     
     // Call the right routine
     ProgramPtrToOffsetStack();

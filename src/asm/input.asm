@@ -8,6 +8,8 @@ _InputData:
 	xor	a, a
 	ld	(0D00879h), a
 	ld	(0D00599h), a
+	res	6, (iy+28)
+	set	7, (iy+9)
 	call	0021320h
 	ld	hl, (0D0244Eh)
 	call	0020AE8h
