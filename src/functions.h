@@ -4,7 +4,6 @@
 #define RET_A         (1<<7)
 #define UN            (1<<6)
 #define RET_HLs       (1<<5)
-#define modIY         (1<<4)
 #define RET_NONE      (0)
 #define RET_HL        (0)
 #define ARG_NORM      (0)

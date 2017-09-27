@@ -33,6 +33,7 @@ static const char *errors[] = {
     "Subprogram not found",
     "Compiling subprograms not supported",
     "rand and getKey are disabled in this function",
+    "Too much memory allocated",
 };
 
 void displayLabelError(char *label) {

@@ -435,6 +435,7 @@ void preScanProgram(void) {
     
     // Well, we scanned the entire program, so let's rewind it
     _rewind(ice.inPrgm);
-    ice.tempStrings[0] = pixelShadow + 2000 * (ice.amountOfOSLocationsUsed++);
-    ice.tempStrings[1] = pixelShadow + 2000 * (ice.amountOfOSLocationsUsed++);
+    
+    // Sorry :3
+    ice.freeMemoryPtr = (ice.tempStrings[1] = (ice.tempStrings[0] = pixelShadow + 2000 * ice.amountOfOSLocationsUsed) + 2000) + 2000;
 }

@@ -1,6 +1,6 @@
 #include "hooks/ti84pce.inc"
 
-#define AMOUNT_OF_CUSTOM_TOKENS 4
+#define AMOUNT_OF_CUSTOM_TOKENS 5
 #define AMOUNT_OF_GRAPHX_FUNCTIONS 92
 #define AMOUNT_OF_FILEIOC_FUNCTIONS 21
 
@@ -393,6 +393,7 @@ C1:   .db "DefineSprite(", 0
 C2:   .db "Call ", 0
 C3:   .db "Data(", 0
 C4:   .db "Copy(", 0
+C5:   .db "Alloc(", 0
 
 F01:  .db "CloseAll", 0
 F02:  .db "Open(", 0
@@ -405,8 +406,8 @@ F08:  .db "PutChar(", 0
 F09:  .db "Delete(", 0
 F10:  .db "DeleteVar(", 0
 F11:  .db "Seek(", 0
-F12:  .db "Resize(", 0
 Tab2:
+F12:  .db "Resize(", 0
 F13:  .db "IsArchived(", 0
 F14:  .db "SetArchiveStatus(", 0
 F15:  .db "Tell(", 0
@@ -423,8 +424,8 @@ G03:  .db "SetColor", 0
 G04:  .db "SetDefaultPalette", 0
 G05:  .db "SetPalette", 0
 G06:  .db "FillScreen", 0
-G07:  .db "SetPixel", 0
 Tab3:
+G07:  .db "SetPixel", 0
 G08:  .db "GetPixel", 0
 G09:  .db "GetDraw", 0
 G10:  .db "SetDraw", 0
@@ -440,8 +441,8 @@ G19:  .db "PrintStringXY", 0
 G20:  .db "SetTextXY", 0
 G21:  .db "SetTextBGColor", 0
 G22:  .db "SetTextFGColor", 0
-G23:  .db "SetTextTransparentColor", 0
 Tab4:
+G23:  .db "SetTextTransparentColor", 0
 G24:  .db "SetCustomFontData", 0
 G25:  .db "SetCustomFontSpacing", 0
 G26:  .db "SetMonospaceFont", 0
@@ -457,8 +458,8 @@ G35:  .db "FillCircle", 0
 G36:  .db "Rectangle", 0
 G37:  .db "FillRectangle", 0
 G38:  .db "Line_NoClip", 0
-G39:  .db "HorizLine_NoClip", 0
 Tab5:
+G39:  .db "HorizLine_NoClip", 0
 G40:  .db "VertLine_NoClip", 0
 G41:  .db "FillCircle_NoClip", 0
 G42:  .db "Rectangle_NoClip", 0
@@ -474,8 +475,8 @@ G51:  .db "Tilemap_NoClip", 0
 G52:  .db "TransparentTilemap", 0
 G53:  .db "TransparentTilemap_NoClip", 0
 G54:  .db "TilePtr", 0
-G55:  .db "TilePtrMapped", 0
 Tab6:
+G55:  .db "TilePtrMapped", 0
 G56:  .db "LZDecompress", 0
 G57:  .db "AllocSprite", 0
 G58:  .db "Sprite", 0
@@ -491,8 +492,8 @@ G67:  .db "RotateSpriteC", 0
 G68:  .db "RotateSpriteCC", 0
 G69:  .db "RotateSpriteHalf", 0
 G70:  .db "Polygon", 0
-G71:  .db "Polygon_NoClip", 0
 Tab7:
+G71:  .db "Polygon_NoClip", 0
 G72:  .db "FillTriangle", 0
 G73:  .db "FillTriangle_NoClip", 0
 G74:  .db "LZDecompressSprite", 0
@@ -508,8 +509,8 @@ G83:  .db "ScaledSprite", 0
 G84:  .db "FloodFill", 0
 G85:  .db "RLETSprite", 0
 G86:  .db "RLETSprite_NoClip", 0
-G87:  .db "ConvertFromRLETSprite", 0
 Tab8:
+G87:  .db "ConvertFromRLETSprite", 0
 G88:  .db "ConvertToRLETSprite", 0
 G89:  .db "ConvertToNewRLETSprite", 0
 G90:  .db "RotateScaleSprite(", 0
@@ -522,6 +523,7 @@ Tok1: .db 13, "DefineSprite("
 Tok2: .db 5,  "Call "
 Tok3: .db 5,  "Data("
 Tok4: .db 5,  "Copy("
+Tok5: .db 6,  "Alloc("
 
 TabData:
 	.dl Tab1 - KeyHook_start
@@ -655,6 +657,7 @@ TokenHook_data:
 	.dl Tok2 - KeyHook_start - 1
 	.dl Tok3 - KeyHook_start - 1
 	.dl Tok4 - KeyHook_start - 1
+	.dl Tok5 - KeyHook_start - 1
 
 CustomTokensProgramText:
 	.db "PROGRAM:", 0

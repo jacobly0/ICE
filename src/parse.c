@@ -19,12 +19,13 @@ INCBIN(Prgm, "src/asm/prgm.bin");
 
 extern uint8_t (*functions[256])(int token);
 const char implementedFunctions[] = {tNot, tMin, tMax, tMean, tSqrt, tDet, tSum, tSin, tCos};
-const uint8_t implementedFunctions2[12] = {tExtTok, tRemainder,
+const uint8_t implementedFunctions2[14] = {tExtTok, tRemainder,
                                            t2ByteTok, tSubStrng,
                                            t2ByteTok, tLength,
                                            tVarOut, tDefineSprite,
                                            tVarOut, tData,
-                                           tVarOut, tCopy
+                                           tVarOut, tCopy,
+                                           tVarOut, tAlloc
                                           };
 element_t outputStack[400];
 element_t stack[200];
@@ -1465,8 +1466,8 @@ static uint8_t functionPrgm(int token) {
 static uint8_t functionCustom(int token) {
     uint8_t tok = _getc(ice.inPrgm);
     
-    // DefineSprite(, Data(, Copy(
-    if (tok == tDefineSprite || tok == tData || tok == tCopy) {
+    // DefineSprite(, Data(, Copy(, Alloc(
+    if (tok == tDefineSprite || tok == tData || tok == tCopy || tok == tAlloc) {
         _seek(-1, SEEK_CUR, ice.inPrgm);
         return parseExpression(token);
     }

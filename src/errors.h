@@ -16,8 +16,8 @@
 #define E_PROG_NOT_FOUND   12
 #define E_NO_SUBPROG       13
 #define E_NO_FUNC_ALLOW    14
+#define E_MEMORY           15
 
-#define E_VALID            254
 #define VALID              255
 
 void displayLabelError(char *label);

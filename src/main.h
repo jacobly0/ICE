@@ -6,9 +6,10 @@
 #define STACK_SIZE 250
 
 #define tDefineSprite 0x0A
-#define tCall 0x0B
-#define tData 0x0C
-#define tCopy 0x0D
+#define tCall  0x0B
+#define tData  0x0C
+#define tCopy  0x0D
+#define tAlloc 0x0E
 
 typedef struct {
     char     outName[9];                                    // Output variable name
@@ -45,6 +46,7 @@ typedef struct {
     uint24_t GraphxRoutinesStack[AMOUNT_OF_GRAPHX_FUNCTIONS];   // The address of the relocation jumps of the GRAPHX lib
     uint24_t FileiocRoutinesStack[AMOUNT_OF_FILEIOC_FUNCTIONS]; // The address of the relocation jumps of the FILEIOC lib
     uint24_t programLength;                                 // Size of input program
+    uint24_t freeMemoryPtr;                                 // Pointer to safe RAM (after the OS variables)
     
     ti_var_t inPrgm;                                        // Used for getting tokens
     ti_var_t outPrgm;                                       // Used for writing bytes

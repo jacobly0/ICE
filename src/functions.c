@@ -29,98 +29,98 @@ INCBIN(SinCos, "src/asm/sincos.bin");
 */
 
 const uint8_t GraphxArgs[] = {
-    RET_NONE         | 0, ARG_NORM,    // Begin
-    RET_NONE         | 0, ARG_NORM,    // End
-    RET_A            | 1, SMALL_1,     // SetColor
-    RET_NONE         | 0, ARG_NORM,    // SetDefaultPalette
-    RET_NONE | modIY | 3, ARG_NORM,    // SetPalette
-    RET_NONE | modIY | 1, SMALL_1,     // FillScreen
-    RET_NONE         | 2, SMALL_2,     // SetPixel
-    RET_A            | 2, SMALL_2,     // GetPixel
-    RET_A            | 0, ARG_NORM,    // GetDraw
-    RET_NONE         | 1, SMALL_1,     // SetDraw
-    RET_NONE         | 0, ARG_NORM,    // SwapDraw
-    RET_NONE         | 1, SMALL_1,     // Blit
-    RET_NONE | modIY | 3, SMALL_123,   // BlitLines
-    RET_NONE | modIY | 5, SMALL_13,    // BlitArea
-    RET_NONE | modIY | 1, SMALL_1,     // PrintChar
-    RET_NONE | modIY | 2, SMALL_2,     // PrintInt
-    RET_NONE | modIY | 2, SMALL_2,     // PrintUInt
-    RET_NONE | modIY | 1, ARG_NORM,    // PrintString
-    RET_NONE | modIY | 3, ARG_NORM,    // PrintStringXY
-    RET_NONE         | 2, ARG_NORM,    // SetTextXY
-    RET_A            | 1, SMALL_1,     // SetTextBGColor
-    RET_A            | 1, SMALL_1,     // SetTextFGColor
-    RET_A            | 1, SMALL_1,     // SetTextTransparentColor
-    UN               | 0, ARG_NORM,    // SetCustomFontData
-    UN               | 0, ARG_NORM,    // SetCustomFontSpacing
-    RET_NONE         | 1, SMALL_1,     // SetMonoSpaceFont
-    RET_HL           | 1, ARG_NORM,    // GetStringWidth
-    RET_HL   | modIY | 1, SMALL_1,     // GetCharWidth
-    RET_HL           | 0, ARG_NORM,    // GetTextX
-    RET_HL           | 0, ARG_NORM,    // GetTextY
-    RET_NONE | modIY | 4, ARG_NORM,    // Line
-    RET_NONE | modIY | 3, ARG_NORM,    // HorizLine
-    RET_NONE | modIY | 3, ARG_NORM,    // VertLine
-    RET_NONE | modIY | 3, ARG_NORM,    // Circle
-    RET_NONE | modIY | 3, ARG_NORM,    // FillCircle
-    RET_NONE | modIY | 4, ARG_NORM,    // Rectangle
-    RET_NONE | modIY | 4, ARG_NORM,    // FillRectangle
-    RET_NONE | modIY | 4, SMALL_14,    // Line_NoClip
-    RET_NONE | modIY | 3, SMALL_2,     // HorizLine_NoClip
-    RET_NONE | modIY | 3, SMALL_2,     // VertLine_NoClip
-    RET_NONE | modIY | 3, SMALL_2,     // FillCircle_NoClip
-    RET_NONE | modIY | 4, SMALL_14,    // Rectangle_NoClip
-    RET_NONE | modIY | 4, SMALL_14,    // FillRectangle_NoClip
-    RET_NONE | modIY | 4, ARG_NORM,    // SetClipRegion
-    RET_A    | modIY | 1, ARG_NORM,    // GetClipRegion
-    RET_NONE         | 1, SMALL_1,     // ShiftDown
-    RET_NONE         | 1, SMALL_1,     // ShiftUp
-    RET_NONE         | 1, SMALL_1,     // ShiftLeft
-    RET_NONE         | 1, SMALL_1,     // ShiftRight
-    UN               | 0, ARG_NORM,    // Tilemap
-    UN               | 0, ARG_NORM,    // Tilemap_NoClip
-    UN               | 0, ARG_NORM,    // TransparentTilemap
-    UN               | 0, ARG_NORM,    // TransparentTilemap_NoClip
-    UN               | 0, ARG_NORM,    // TilePtr
-    UN               | 0, ARG_NORM,    // TilePtrMapped
-    UN               | 0, ARG_NORM,    // LZDecompress
-    UN               | 0, ARG_NORM,    // AllocSprite
-    RET_NONE | modIY | 3, ARG_NORM,    // Sprite
-    RET_NONE | modIY | 3, ARG_NORM,    // TransparentSprite
-    RET_NONE | modIY | 3, SMALL_3,     // Sprite_NoClip
-    RET_NONE | modIY | 3, SMALL_3,     // TransparentSprite_NoClip
-    RET_HL   | modIY | 3, ARG_NORM,    // GetSprite
-    RET_NONE | modIY | 5, SMALL_45,    // ScaledSprite_NoClip
-    RET_NONE | modIY | 5, SMALL_45,    // ScaledTransparentSprite_NoClip
-    RET_HL   | modIY | 2, ARG_NORM,    // FlipSpriteY
-    RET_HL   | modIY | 2, ARG_NORM,    // FlipSpriteX
-    RET_HL   | modIY | 2, ARG_NORM,    // RotateSpriteC
-    RET_HL   | modIY | 2, ARG_NORM,    // RotateSpriteCC
-    RET_HL   | modIY | 2, ARG_NORM,    // RotateSpriteHalf
-    RET_NONE | modIY | 2, ARG_NORM,    // Polygon
-    RET_NONE | modIY | 2, ARG_NORM,    // Polygon_NoClip
-    RET_NONE | modIY | 6, ARG_NORM,    // FillTriangle
-    RET_NONE | modIY | 6, ARG_NORM,    // FillTriangle_NoClip
-    UN               | 0, ARG_NORM,    // LZDecompressSprite
-    RET_NONE         | 2, SMALL_12,    // SetTextScale
-    RET_A            | 1, SMALL_1,     // SetTransparentColor
-    RET_NONE         | 0, ARG_NORM,    // ZeroScreen
-    RET_NONE         | 1, SMALL_1,     // SetTextConfig
-    RET_HL   | modIY | 1, SMALL_1,     // GetSpriteChar
-    RET_HLs          | 2, SMALL_2,     // Lighten
-    RET_HLs          | 2, SMALL_2,     // Darken
-    RET_A            | 1, SMALL_1,     // SetFontHeight
-    RET_HL   | modIY | 2, ARG_NORM,    // ScaleSprite
-    RET_NONE | modIY | 3, SMALL_12,    // FloodFill
-    RET_NONE | modIY | 3, ARG_NORM,    // RLETSprite
-    RET_NONE | modIY | 3, SMALL_3,     // RLETSprite_NoClip
-    UN               | 2, ARG_NORM,    // ConvertFromRLETSprite
-    UN               | 2, ARG_NORM,    // ConvertToRLETSprite
-    UN               | 2, ARG_NORM,    // ConvertToNewRLETSprite
-    RET_HL   | modIY | 4, SMALL_34,    // RotateScaleSprite
-    RET_HL   | modIY | 4, SMALL_34,    // RotatedScaledTransparentSprite_NoClip
-    RET_HL   | modIY | 4, SMALL_345,   // RotatedScaledSprite_NoClip
+    RET_NONE | 0, ARG_NORM,    // Begin
+    RET_NONE | 0, ARG_NORM,    // End
+    RET_A    | 1, SMALL_1,     // SetColor
+    RET_NONE | 0, ARG_NORM,    // SetDefaultPalette
+    RET_NONE | 3, ARG_NORM,    // SetPalette
+    RET_NONE | 1, SMALL_1,     // FillScreen
+    RET_NONE | 2, SMALL_2,     // SetPixel
+    RET_A    | 2, SMALL_2,     // GetPixel
+    RET_A    | 0, ARG_NORM,    // GetDraw
+    RET_NONE | 1, SMALL_1,     // SetDraw
+    RET_NONE | 0, ARG_NORM,    // SwapDraw
+    RET_NONE | 1, SMALL_1,     // Blit
+    RET_NONE | 3, SMALL_123,   // BlitLines
+    RET_NONE | 5, SMALL_13,    // BlitArea
+    RET_NONE | 1, SMALL_1,     // PrintChar
+    RET_NONE | 2, SMALL_2,     // PrintInt
+    RET_NONE | 2, SMALL_2,     // PrintUInt
+    RET_NONE | 1, ARG_NORM,    // PrintString
+    RET_NONE | 3, ARG_NORM,    // PrintStringXY
+    RET_NONE | 2, ARG_NORM,    // SetTextXY
+    RET_A    | 1, SMALL_1,     // SetTextBGColor
+    RET_A    | 1, SMALL_1,     // SetTextFGColor
+    RET_A    | 1, SMALL_1,     // SetTextTransparentColor
+    UN       | 0, ARG_NORM,    // SetCustomFontData
+    UN       | 0, ARG_NORM,    // SetCustomFontSpacing
+    RET_NONE | 1, SMALL_1,     // SetMonoSpaceFont
+    RET_HL   | 1, ARG_NORM,    // GetStringWidth
+    RET_HL   | 1, SMALL_1,     // GetCharWidth
+    RET_HL   | 0, ARG_NORM,    // GetTextX
+    RET_HL   | 0, ARG_NORM,    // GetTextY
+    RET_NONE | 4, ARG_NORM,    // Line
+    RET_NONE | 3, ARG_NORM,    // HorizLine
+    RET_NONE | 3, ARG_NORM,    // VertLine
+    RET_NONE | 3, ARG_NORM,    // Circle
+    RET_NONE | 3, ARG_NORM,    // FillCircle
+    RET_NONE | 4, ARG_NORM,    // Rectangle
+    RET_NONE | 4, ARG_NORM,    // FillRectangle
+    RET_NONE | 4, SMALL_14,    // Line_NoClip
+    RET_NONE | 3, SMALL_2,     // HorizLine_NoClip
+    RET_NONE | 3, SMALL_2,     // VertLine_NoClip
+    RET_NONE | 3, SMALL_2,     // FillCircle_NoClip
+    RET_NONE | 4, SMALL_14,    // Rectangle_NoClip
+    RET_NONE | 4, SMALL_14,    // FillRectangle_NoClip
+    RET_NONE | 4, ARG_NORM,    // SetClipRegion
+    RET_A    | 1, ARG_NORM,    // GetClipRegion
+    RET_NONE | 1, SMALL_1,     // ShiftDown
+    RET_NONE | 1, SMALL_1,     // ShiftUp
+    RET_NONE | 1, SMALL_1,     // ShiftLeft
+    RET_NONE | 1, SMALL_1,     // ShiftRight
+    UN       | 0, ARG_NORM,    // Tilemap
+    UN       | 0, ARG_NORM,    // Tilemap_NoClip
+    UN       | 0, ARG_NORM,    // TransparentTilemap
+    UN       | 0, ARG_NORM,    // TransparentTilemap_NoClip
+    UN       | 0, ARG_NORM,    // TilePtr
+    UN       | 0, ARG_NORM,    // TilePtrMapped
+    UN       | 0, ARG_NORM,    // LZDecompress
+    UN       | 0, ARG_NORM,    // AllocSprite
+    RET_NONE | 3, ARG_NORM,    // Sprite
+    RET_NONE | 3, ARG_NORM,    // TransparentSprite
+    RET_NONE | 3, SMALL_3,     // Sprite_NoClip
+    RET_NONE | 3, SMALL_3,     // TransparentSprite_NoClip
+    RET_HL   | 3, ARG_NORM,    // GetSprite
+    RET_NONE | 5, SMALL_45,    // ScaledSprite_NoClip
+    RET_NONE | 5, SMALL_45,    // ScaledTransparentSprite_NoClip
+    RET_HL   | 2, ARG_NORM,    // FlipSpriteY
+    RET_HL   | 2, ARG_NORM,    // FlipSpriteX
+    RET_HL   | 2, ARG_NORM,    // RotateSpriteC
+    RET_HL   | 2, ARG_NORM,    // RotateSpriteCC
+    RET_HL   | 2, ARG_NORM,    // RotateSpriteHalf
+    RET_NONE | 2, ARG_NORM,    // Polygon
+    RET_NONE | 2, ARG_NORM,    // Polygon_NoClip
+    RET_NONE | 6, ARG_NORM,    // FillTriangle
+    RET_NONE | 6, ARG_NORM,    // FillTriangle_NoClip
+    UN       | 0, ARG_NORM,    // LZDecompressSprite
+    RET_NONE | 2, SMALL_12,    // SetTextScale
+    RET_A    | 1, SMALL_1,     // SetTransparentColor
+    RET_NONE | 0, ARG_NORM,    // ZeroScreen
+    RET_NONE | 1, SMALL_1,     // SetTextConfig
+    RET_HL   | 1, SMALL_1,     // GetSpriteChar
+    RET_HLs  | 2, SMALL_2,     // Lighten
+    RET_HLs  | 2, SMALL_2,     // Darken
+    RET_A    | 1, SMALL_1,     // SetFontHeight
+    RET_HL   | 2, ARG_NORM,    // ScaleSprite
+    RET_NONE | 3, SMALL_12,    // FloodFill
+    RET_NONE | 3, ARG_NORM,    // RLETSprite
+    RET_NONE | 3, SMALL_3,     // RLETSprite_NoClip
+    UN       | 2, ARG_NORM,    // ConvertFromRLETSprite
+    UN       | 2, ARG_NORM,    // ConvertToRLETSprite
+    UN       | 2, ARG_NORM,    // ConvertToNewRLETSprite
+    RET_HL   | 4, SMALL_34,    // RotateScaleSprite
+    RET_HL   | 4, SMALL_34,    // RotatedScaledTransparentSprite_NoClip
+    RET_HL   | 4, SMALL_345,   // RotatedScaledSprite_NoClip
 };
 
 const uint8_t FileiocArgs[] = {
@@ -355,6 +355,25 @@ uint8_t parseFunction(uint24_t index) {
         POP_BC();
     }
     
+    // Alloc(
+    else if (function2 == tAlloc) {
+        if (outputPrev->type != TYPE_NUMBER) {
+            return E_SYNTAX;
+        }
+        
+        if (amountOfArguments != 1) {
+            return E_ARGUMENTS;
+        }
+        
+        LD_HL_IMM(ice.freeMemoryPtr);
+        ice.freeMemoryPtr += outputPrev->operand;
+        
+        // If too much memory allocated, it will overwrite variables and eventually cause a crash
+        if (ice.freeMemoryPtr > 0xD13EC5) {
+            return E_MEMORY;
+        }
+    }
+    
     // Here are coming the special functions, with abnormal arguments
     
     // Data(
@@ -362,16 +381,26 @@ uint8_t parseFunction(uint24_t index) {
         element_t *outputTemp;
         uint24_t startIndex = -1 - amountOfArguments;
         uint8_t a;
+        uint8_t dataSize = (&outputPtr[getIndexOffset(startIndex)])->operand;
         
         ProgramPtrToOffsetStack();
         LD_HL_IMM((uint24_t)ice.programDataPtr);
         
-        for (a = 0; a < amountOfArguments; a++) {
+        for (a = 1; a < amountOfArguments; a++) {
             outputTemp = &outputPtr[getIndexOffset(startIndex + a)];
             if (outputTemp->type != TYPE_NUMBER) {
                 return E_SYNTAX;
             }
-            *ice.programDataPtr++ = outputTemp->operand;
+            memset(ice.programDataPtr, 0, dataSize);
+            if (dataSize == 1) {
+                *ice.programDataPtr++ = outputTemp->operand;
+            } else if (dataSize == 2) {
+                *(uint16_t*)ice.programDataPtr = outputTemp->operand;
+                ice.programDataPtr += 2;
+            } else {
+                *(uint24_t*)ice.programDataPtr = outputTemp->operand;
+                ice.programDataPtr += 3;
+            }
         }
     }
     
@@ -381,6 +410,10 @@ uint8_t parseFunction(uint24_t index) {
         uint8_t outputPrevPrevType = outputPrevPrev->type;
         uint24_t outputPrevPrevPrevOperand = outputPrevPrevPrev->operand;
         uint24_t outputPrevPrevOperand = outputPrevPrev->operand;
+        
+        if (amountOfArguments != 3) {
+            return E_ARGUMENTS;
+        }
         
         if (outputPrevPrevPrevType == TYPE_FUNCTION_RETURN || outputPrevPrevType == TYPE_FUNCTION_RETURN || outputPrevType == TYPE_FUNCTION_RETURN) {
             return E_NO_FUNC_ALLOW;
@@ -439,23 +472,36 @@ uint8_t parseFunction(uint24_t index) {
     
     // DefineSprite(
     else if (function2 == tDefineSprite) {
-        ProgramPtrToOffsetStack();
-        
         if (amountOfArguments == 2) {
             if (outputPrevPrev->type != TYPE_NUMBER || outputPrevType != TYPE_NUMBER) {
                 return E_SYNTAX;
             }
             
-            LD_HL_IMM((uint24_t)ice.programDataPtr);
-            ice.programDataPtr += outputPrevPrev->operand * outputPrev->operand;
+            LD_HL_IMM(ice.freeMemoryPtr);
+            ice.freeMemoryPtr += outputPrevPrev->operand * outputPrev->operand + 2;
+            
+            // If too much memory allocated, it will overwrite variables and eventually cause a crash
+            if (ice.freeMemoryPtr > 0xD13EC5) {
+                return E_MEMORY;
+            }
         } else if (amountOfArguments == 3) {
+            uint8_t *a;
+            
             if(outputPrevPrevPrev->type != TYPE_NUMBER || outputPrevPrev->type != TYPE_NUMBER || outputPrev->type != TYPE_STRING) {
                 return E_SYNTAX;
             }
             
+            for (a = ice.programDataPtr - 1; a >= (uint8_t*)outputPrev->operand; a--) {
+                *(a + 2) = *a;
+            }
+            ice.programDataPtr += 2;
+            ProgramPtrToOffsetStack();
             LD_HL_IMM(outputPrev->operand);
             
-            if ((res = SquishHexadecimals((uint8_t*)outputPrev->operand)) != VALID) {
+            *(uint8_t*)outputPrev->operand = outputPrevPrevPrev->operand;
+            *(uint8_t*)(outputPrev->operand + 1) = outputPrevPrev->operand;
+            
+            if ((res = SquishHexadecimals((uint8_t*)outputPrev->operand + 2)) != VALID) {
                 return res;
             }
         } else {
@@ -637,12 +683,8 @@ uint8_t parseFunction(uint24_t index) {
             expr.outputRegister2 = OUTPUT_IN_DE;
         }
         
-        // Check if IY is messed up
-        if (temp & modIY) {
-            ice.modifiedIY = true;
-        }
-        
         expr.outputIsNumber = expr.outputIsVariable = expr.outputIsString = false;
+        ice.modifiedIY = true;
     }
     
     expr.outputRegister = expr.outputRegister2;
