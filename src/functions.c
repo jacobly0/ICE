@@ -221,13 +221,16 @@ uint8_t parseFunction(uint24_t index) {
         
         if (!ice.usedAlreadySinCos) {
             ice.SinCosAddr = (uintptr_t)ice.programDataPtr;
-            memcpy(ice.programDataPtr, SinCosData, 95);
-            ice.programDataPtr += 95;
+            memcpy(ice.programDataPtr, SinCosData, 99);
+            ice.programDataPtr += 16;
+            ProgramDataPtrToOffsetStack();
+            
+            // This is the "ld de, SinTable"
+            *(uint24_t*)ice.programDataPtr = (uint24_t)ice.programDataPtr + 18;
+            ice.programDataPtr += 99-16;
             ice.usedAlreadySinCos = true;
         }
-        ProgramPtrToOffsetStack();
-        LD_DE_IMM(ice.SinCosAddr + 30);
-        
+
         ProgramPtrToOffsetStack();
         CALL(ice.SinCosAddr + (function == tSin ? 4 : 0));
         

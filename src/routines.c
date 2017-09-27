@@ -21,6 +21,10 @@ void ProgramPtrToOffsetStack(void) {
     ice.dataOffsetStack[ice.dataOffsetElements++] = (uint24_t*)(ice.programPtr + 1);
 }
 
+void ProgramDataPtrToOffsetStack(void) {
+    ice.dataOffsetStack[ice.dataOffsetElements++] = (uint24_t*)ice.programDataPtr;
+}
+
 void AnsToHL(void) {
     if (expr.outputRegister == OUTPUT_IN_DE) {
         EX_DE_HL();

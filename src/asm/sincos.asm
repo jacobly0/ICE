@@ -16,6 +16,7 @@ _FP_Sin:
 	add	a, -65
 	cpl
 _FP_Sin_Change:
+	ld	de, 0
 	sbc	hl, hl
 	ld	l, a
 	ex	de, hl

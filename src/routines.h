@@ -2,6 +2,7 @@
 #define ROUTINES_H
 
 void ProgramPtrToOffsetStack(void);
+void ProgramDataPtrToOffsetStack(void);
 void displayLoadingBarFrame(void);
 void displayLoadingBar(ti_var_t);
 uint24_t getNextToken(ti_var_t);
