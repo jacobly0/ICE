@@ -201,6 +201,7 @@
 #define JR_C(off)             do { output(uint8_t, OP_JR_C); output(uint8_t, off); } while (0)
     
 #define LDIR()                do { output(uint16_t, 0xB0ED); } while (0)
+#define LDDR()                do { output(uint16_t, 0xB8ED); } while (0)
 
 #define OR_A_A()              do { output(uint8_t, OP_OR_A_A); } while (0)
 #define OR_A_C()              do { output(uint8_t, OP_OR_A_C); } while (0)

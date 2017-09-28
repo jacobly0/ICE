@@ -4,6 +4,14 @@
 #define AMOUNT_OF_GRAPHX_FUNCTIONS 92
 #define AMOUNT_OF_FILEIOC_FUNCTIONS 21
 #define STACK_SIZE 250
+#define SIZEOF_KEYPAD_DATA 18
+#define SIZEOF_RAND_DATA   54
+#define SIZEOF_SQRT_DATA   43
+#define SIZEOF_SINCOS_DATA 99
+#define SIZEOF_MEAN_DATA   19
+#define SIZEOF_OR_DATA     10
+#define SIZEOF_AND_DATA    11
+#define SIZEOF_XOR_DATA    13
 
 #define tDefineSprite 0x0A
 #define tCall  0x0B
@@ -92,7 +100,7 @@ typedef struct {
     
     uint8_t  ZeroCarryFlagRemoveAmountOfBytes;
     uint8_t  outputRegister;
-    uint8_t  outputRegister2;
+    uint8_t  outputReturnRegister;
     
     uint24_t outputNumber;
 } expr_t;

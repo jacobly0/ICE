@@ -897,12 +897,14 @@ static uint8_t functionI(int token) {
 }
 
 static uint8_t functionIf(int token) {
-    uint8_t *IfStartAddr, *IfElseAddr = NULL, res;
-    uint24_t tempDataOffsetElements, tempDataOffsetElements2;
+    uint8_t *IfElseAddr = NULL;
     uint8_t tempGotoElements = ice.amountOfGotos;
     uint8_t tempLblElements = ice.amountOfLbls;
     
     if ((token = _getc(ice.inPrgm)) != EOF && token != tEnter) {
+        uint8_t *IfStartAddr, res;
+        uint24_t tempDataOffsetElements;
+        
         // Parse the argument
         if ((res = parseExpression(token)) != VALID) {
             return res;
@@ -944,6 +946,7 @@ static uint8_t functionIf(int token) {
             bool shortElseCode;
             uint8_t tempGotoElements2 = ice.amountOfGotos;
             uint8_t tempLblElements2 = ice.amountOfLbls;
+            uint24_t tempDataOffsetElements2;;
             
             // Backup stuff
             IfElseAddr = ice.programPtr;
@@ -1060,7 +1063,7 @@ static uint8_t functionWhile(int token) {
 uint8_t functionRepeat(int token) {
     uint24_t tempCurrentLine, tempCurrentLine2;
     uint16_t RepeatCondStart, RepeatProgEnd;
-    uint8_t *RepeatCodeStart, *RepeatCondEnd, res;
+    uint8_t *RepeatCodeStart, res;
     
     RepeatCondStart = _tell(ice.inPrgm);
     RepeatCodeStart = ice.programPtr;
@@ -1438,7 +1441,7 @@ static uint8_t functionFor(int token) {
 }
 
 static uint8_t functionPrgm(int token) {
-    uint8_t a = 0, res;
+    uint8_t a = 0;
     uint8_t *tempProgramPtr;
     
     MaybeLDIYFlags();
@@ -1449,7 +1452,7 @@ static uint8_t functionPrgm(int token) {
     *ice.programDataPtr++ = TI_PRGM_TYPE;
 
     // Fetch the name
-    while ((token = _getc(ice.inPrgm)) != EOF && (uint8_t)token != tEnter && a < 9) {
+    while ((token = _getc(ice.inPrgm)) != EOF && (uint8_t)token != tEnter && ++a < 9) {
         *ice.programDataPtr++ = token;
     }
     *ice.programDataPtr++ = 0;
@@ -1659,7 +1662,7 @@ static uint8_t tokenUnimplemented(int token) {
 }
 
 void optimizeZeroCarryFlagOutput(void) {
-    if (!expr.AnsSetZeroFlag && !expr.AnsSetCarryFlag) {
+    if (!expr.AnsSetZeroFlag && !expr.AnsSetCarryFlag && !expr.AnsSetZeroFlagReversed && !expr.AnsSetCarryFlagReversed) {
         if (expr.outputRegister == OUTPUT_IN_HL) {
             ADD_HL_DE();
             OR_A_SBC_HL_DE();

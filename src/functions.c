@@ -166,7 +166,7 @@ uint8_t parseFunction(uint24_t index) {
     outputPrevOperand     = outputPrev->operand;
     outputPrevType        = outputPrev->type;
     
-    expr.outputRegister2 = OUTPUT_IN_HL;
+    expr.outputReturnRegister = OUTPUT_IN_HL;
     expr.AnsSetZeroFlag = expr.AnsSetZeroFlagReversed = expr.AnsSetCarryFlag = expr.AnsSetCarryFlagReversed = false;
     
     // not(
@@ -179,8 +179,7 @@ uint8_t parseFunction(uint24_t index) {
             ADD_A(255);
             SBC_A_A();
             INC_A();
-            expr.outputRegister2 = OUTPUT_IN_A;
-            expr.AnsSetCarryFlag = true;
+            expr.outputReturnRegister = OUTPUT_IN_A;
             expr.ZeroCarryFlagRemoveAmountOfBytes = 2;
         } else {
             if (expr.outputRegister == OUTPUT_IN_HL) {
@@ -190,9 +189,10 @@ uint8_t parseFunction(uint24_t index) {
             }
             ADD_HL_DE();
             SBC_HL_HL_INC_HL();
-            expr.AnsSetCarryFlag = true;
             expr.ZeroCarryFlagRemoveAmountOfBytes = 3;
         }
+        
+        expr.AnsSetCarryFlag = true;
     }
     
     // sqrt(
@@ -204,12 +204,12 @@ uint8_t parseFunction(uint24_t index) {
         ProgramPtrToOffsetStack();
         if (!ice.usedAlreadySqrt) {
             ice.SqrtAddr = (uintptr_t)ice.programDataPtr;
-            memcpy(ice.programDataPtr, SqrtData, 43);
-            ice.programDataPtr += 43;
+            memcpy(ice.programDataPtr, SqrtData, SIZEOF_SQRT_DATA);
+            ice.programDataPtr += SIZEOF_SQRT_DATA;
             ice.usedAlreadySqrt = true;
         }
         CALL(ice.SqrtAddr);
-        expr.outputRegister2 = OUTPUT_IN_DE;
+        expr.outputReturnRegister = OUTPUT_IN_DE;
         ice.modifiedIY = true;
     }
     
@@ -221,20 +221,22 @@ uint8_t parseFunction(uint24_t index) {
         
         if (!ice.usedAlreadySinCos) {
             ice.SinCosAddr = (uintptr_t)ice.programDataPtr;
-            memcpy(ice.programDataPtr, SinCosData, 99);
+            memcpy(ice.programDataPtr, SinCosData, SIZEOF_SINCOS_DATA);
+            
+            // 16 = distance from start of routine to "ld de, SinTable"
             ice.programDataPtr += 16;
             ProgramDataPtrToOffsetStack();
             
-            // This is the "ld de, SinTable"
+            // This is the "ld de, SinTable", 18 is the distance from "ld de, SinTable" to "SinTable"
             *(uint24_t*)ice.programDataPtr = (uint24_t)ice.programDataPtr + 18;
-            ice.programDataPtr += 99-16;
+            ice.programDataPtr += SIZEOF_SINCOS_DATA - 16;
             ice.usedAlreadySinCos = true;
         }
 
         ProgramPtrToOffsetStack();
         CALL(ice.SinCosAddr + (function == tSin ? 4 : 0));
         
-        expr.outputRegister2 = OUTPUT_IN_DE;
+        expr.outputReturnRegister = OUTPUT_IN_DE;
     }
     
     // min(
@@ -267,8 +269,8 @@ uint8_t parseFunction(uint24_t index) {
         ProgramPtrToOffsetStack();
         if (!ice.usedAlreadyMean) {
             ice.MeanAddr = (uintptr_t)ice.programDataPtr;
-            memcpy(ice.programDataPtr, MeanData, 19);
-            ice.programDataPtr += 19;
+            memcpy(ice.programDataPtr, MeanData, SIZEOF_MEAN_DATA);
+            ice.programDataPtr += SIZEOF_MEAN_DATA;
             ice.usedAlreadyMean = true;
         }
         CALL(ice.MeanAddr);
@@ -414,7 +416,7 @@ uint8_t parseFunction(uint24_t index) {
         uint24_t outputPrevPrevPrevOperand = outputPrevPrevPrev->operand;
         uint24_t outputPrevPrevOperand = outputPrevPrev->operand;
         
-        if (amountOfArguments != 3) {
+        if (amountOfArguments < 3 || amountOfArguments > 4) {
             return E_ARGUMENTS;
         }
         
@@ -468,7 +470,11 @@ uint8_t parseFunction(uint24_t index) {
         } else if (outputPrevPrevPrevType == TYPE_VARIABLE) {
             LD_BC_IND_IX_OFF(outputPrevOperand);
         }
-        LDIR();
+        if (amountOfArguments == 4) {
+            LDDR();
+        } else {
+            LDIR();
+        }
         
         return VALID;
     }
@@ -523,7 +529,7 @@ uint8_t parseFunction(uint24_t index) {
             } else if (outputCurr->mask == TYPE_MASK_U16) {
                 LD_HL_ADDR(outputPrevOperand);
                 EX_S_DE_HL();
-                expr.outputRegister2 = OUTPUT_IN_DE;
+                expr.outputReturnRegister = OUTPUT_IN_DE;
             } else {
                 LD_HL_ADDR(outputPrevOperand);
             }
@@ -534,7 +540,7 @@ uint8_t parseFunction(uint24_t index) {
             } else if (outputCurr->mask == TYPE_MASK_U16) {
                 LD_HL_HL();
                 EX_S_DE_HL();
-                expr.outputRegister2 = OUTPUT_IN_DE;
+                expr.outputReturnRegister = OUTPUT_IN_DE;
             } else {
                 LD_HL_HL();
             }
@@ -545,7 +551,7 @@ uint8_t parseFunction(uint24_t index) {
             } else if (outputCurr->mask == TYPE_MASK_U16) {
                 LD_HL_HL();
                 EX_S_DE_HL();
-                expr.outputRegister2 = OUTPUT_IN_DE;
+                expr.outputReturnRegister = OUTPUT_IN_DE;
             } else {
                 LD_HL_HL();
             }
@@ -560,7 +566,7 @@ uint8_t parseFunction(uint24_t index) {
                 AnsToHL();
                 LD_HL_HL();
                 EX_S_DE_HL();
-                expr.outputRegister2 = OUTPUT_IN_DE;
+                expr.outputReturnRegister = OUTPUT_IN_DE;
             } else {
                 AnsToHL();
                 LD_HL_HL();
@@ -680,17 +686,17 @@ uint8_t parseFunction(uint24_t index) {
         
         // Check if the output is 16-bits OR in A
         if (temp & RET_A) {
-            expr.outputRegister2 = OUTPUT_IN_A;
+            expr.outputReturnRegister = OUTPUT_IN_A;
         } else if (temp & RET_HLs) {
             EX_S_DE_HL();
-            expr.outputRegister2 = OUTPUT_IN_DE;
+            expr.outputReturnRegister = OUTPUT_IN_DE;
         }
         
         expr.outputIsNumber = expr.outputIsVariable = expr.outputIsString = false;
         ice.modifiedIY = true;
     }
     
-    expr.outputRegister = expr.outputRegister2;
+    expr.outputRegister = expr.outputReturnRegister;
     
     return VALID;
 }
@@ -723,7 +729,7 @@ uint8_t parseFunction1Arg(uint24_t index, uint8_t outputRegister1, uint8_t amoun
     return VALID;
 }
 
-uint8_t parseFunction2Args(uint24_t index, uint8_t outputRegister2, uint8_t amountOfArguments, bool orderDoesMatter) {
+uint8_t parseFunction2Args(uint24_t index, uint8_t outputReturnRegister, uint8_t amountOfArguments, bool orderDoesMatter) {
     element_t *outputPtr = (element_t*)outputStack, *outputPrev, *outputPrevPrev;
     uint8_t outputPrevType, outputPrevPrevType;
     uint24_t outputPrevOperand, outputPrevPrevOperand;
@@ -742,14 +748,14 @@ uint8_t parseFunction2Args(uint24_t index, uint8_t outputRegister2, uint8_t amou
     if (outputPrevPrevType == TYPE_NUMBER) {
         if (outputPrevType == TYPE_VARIABLE) {
             LD_HL_NUMBER(outputPrevPrevOperand);
-            if (outputRegister2 == OUTPUT_IN_DE) {
+            if (outputReturnRegister == OUTPUT_IN_DE) {
                 LD_DE_IND_IX_OFF(outputPrevOperand);
             } else {
                 LD_BC_IND_IX_OFF(outputPrevOperand);
             }
         } else if (outputPrevType == TYPE_FUNCTION_RETURN) {
             if (orderDoesMatter) {
-                insertFunctionReturnNoPush(outputPrevOperand, outputRegister2);
+                insertFunctionReturnNoPush(outputPrevOperand, outputReturnRegister);
                 LD_HL_NUMBER(outputPrevPrevOperand);
             } else {
                 insertFunctionReturnNoPush(outputPrevOperand, OUTPUT_IN_HL);
@@ -757,7 +763,7 @@ uint8_t parseFunction2Args(uint24_t index, uint8_t outputRegister2, uint8_t amou
             }
         } else if (outputPrevType == TYPE_CHAIN_ANS) {
             if (orderDoesMatter) {
-                if (outputRegister2 == OUTPUT_IN_DE) {
+                if (outputReturnRegister == OUTPUT_IN_DE) {
                     AnsToDE();
                 } else {
                     PushHLDE();
@@ -778,7 +784,7 @@ uint8_t parseFunction2Args(uint24_t index, uint8_t outputRegister2, uint8_t amou
         if (outputPrevType == TYPE_NUMBER) {
             if (orderDoesMatter) {
                 LD_HL_IND_IX_OFF(outputPrevPrevOperand);
-                if (outputRegister2 == OUTPUT_IN_DE) {
+                if (outputReturnRegister == OUTPUT_IN_DE) {
                     LD_DE_IMM(outputPrevOperand);
                 } else {
                     LD_BC_IMM(outputPrevOperand);
@@ -789,14 +795,14 @@ uint8_t parseFunction2Args(uint24_t index, uint8_t outputRegister2, uint8_t amou
             }
         } else if (outputPrevType == TYPE_VARIABLE) {
             LD_HL_IND_IX_OFF(outputPrevPrevOperand);
-            if (outputRegister2 == OUTPUT_IN_DE) {
+            if (outputReturnRegister == OUTPUT_IN_DE) {
                 LD_DE_IND_IX_OFF(outputPrevOperand);
             } else {
                 LD_BC_IND_IX_OFF(outputPrevOperand);
             }
         } else if (outputPrevType == TYPE_FUNCTION_RETURN) {
             if (orderDoesMatter) {
-                insertFunctionReturnNoPush(outputPrevOperand, outputRegister2);
+                insertFunctionReturnNoPush(outputPrevOperand, outputReturnRegister);
                 LD_HL_IND_IX_OFF(outputPrevPrevOperand);
             } else {
                 insertFunctionReturnNoPush(outputPrevOperand, OUTPUT_IN_HL);
@@ -804,7 +810,7 @@ uint8_t parseFunction2Args(uint24_t index, uint8_t outputRegister2, uint8_t amou
             }
         } else if (outputPrevType == TYPE_CHAIN_ANS) {
             if (orderDoesMatter) {
-                if (outputRegister2 == OUTPUT_IN_DE) {
+                if (outputReturnRegister == OUTPUT_IN_DE) {
                     AnsToDE();
                 } else {
                     PushHLDE();
@@ -824,26 +830,26 @@ uint8_t parseFunction2Args(uint24_t index, uint8_t outputRegister2, uint8_t amou
     } else if (outputPrevPrevType == TYPE_FUNCTION_RETURN) {
         if (outputPrevType == TYPE_NUMBER) {
             insertFunctionReturnNoPush(outputPrevPrevOperand, OUTPUT_IN_HL);
-            if (outputRegister2 == OUTPUT_IN_DE) {
+            if (outputReturnRegister == OUTPUT_IN_DE) {
                 LD_DE_IMM(outputPrevOperand);
             } else {
                 LD_BC_IMM(outputPrevOperand);
             }
         } else if (outputPrevType == TYPE_VARIABLE) {
             insertFunctionReturnNoPush(outputPrevPrevOperand, OUTPUT_IN_HL);
-            if (outputRegister2 == OUTPUT_IN_DE) {
+            if (outputReturnRegister == OUTPUT_IN_DE) {
                 LD_DE_IND_IX_OFF(outputPrevOperand);
             } else {
                 LD_BC_IND_IX_OFF(outputPrevOperand);
             }
         } else if (outputPrevType == TYPE_FUNCTION_RETURN) {
-            insertFunctionReturnNoPush(outputPrevOperand, outputRegister2);
+            insertFunctionReturnNoPush(outputPrevOperand, outputReturnRegister);
             insertFunctionReturnNoPush(outputPrevPrevOperand, OUTPUT_IN_HL);
         } else if (outputPrevType == TYPE_CHAIN_ANS) {
             if (orderDoesMatter) {
                 PushHLDE();
                 insertFunctionReturnNoPush(outputPrevPrevOperand, OUTPUT_IN_HL);
-                if (outputRegister2 == OUTPUT_IN_DE) {
+                if (outputReturnRegister == OUTPUT_IN_DE) {
                     POP_DE();
                 } else {
                     POP_BC();
@@ -865,7 +871,7 @@ uint8_t parseFunction2Args(uint24_t index, uint8_t outputRegister2, uint8_t amou
         if (outputPrevType == TYPE_NUMBER) {
             AnsToHL();
             if (orderDoesMatter) {
-                if (outputRegister2 == OUTPUT_IN_DE) {
+                if (outputReturnRegister == OUTPUT_IN_DE) {
                     LD_DE_IMM(outputPrevOperand);
                 } else {
                     LD_BC_IMM(outputPrevOperand);
@@ -880,7 +886,7 @@ uint8_t parseFunction2Args(uint24_t index, uint8_t outputRegister2, uint8_t amou
         } else if (outputPrevType == TYPE_VARIABLE) {
             AnsToHL();
             if (orderDoesMatter) {
-                if (outputRegister2 == OUTPUT_IN_DE) {
+                if (outputReturnRegister == OUTPUT_IN_DE) {
                     LD_DE_IND_IX_OFF(outputPrevOperand);
                 } else {
                     LD_BC_IND_IX_OFF(outputPrevOperand);
@@ -895,7 +901,7 @@ uint8_t parseFunction2Args(uint24_t index, uint8_t outputRegister2, uint8_t amou
         } else if (outputPrevType == TYPE_FUNCTION_RETURN) {
             if (orderDoesMatter) {
                 PushHLDE();
-                insertFunctionReturnNoPush(outputPrevOperand, outputRegister2);
+                insertFunctionReturnNoPush(outputPrevOperand, outputReturnRegister);
                 POP_HL();
             } else {
                 MaybeAToHL();
@@ -915,7 +921,7 @@ uint8_t parseFunction2Args(uint24_t index, uint8_t outputRegister2, uint8_t amou
             return E_ICE_ERROR;
         }
         if (orderDoesMatter) {
-            if (outputRegister2 == OUTPUT_IN_DE) {
+            if (outputReturnRegister == OUTPUT_IN_DE) {
                 AnsToDE();
             } else {
                 PushHLDE();
