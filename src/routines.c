@@ -43,6 +43,7 @@ void AnsToDE(void) {
         LD_DE_IMM(0);
         LD_E_A();
     }
+    expr.outputRegister = OUTPUT_IN_DE;
 }
 
 void MaybeAToHL(void) {
@@ -174,7 +175,7 @@ uint24_t getNextToken(ti_var_t inPrgm) {
     
 uint24_t getNextToken(ti_var_t inPrgm) {
     if ((uint24_t)_tell(inPrgm) < ice.programLength - 2) {
-        return _getc(inPrgm);
+        return fgetc(inPrgm);
     }
     return EOF;
 }

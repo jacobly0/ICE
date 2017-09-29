@@ -118,6 +118,12 @@ uint24_t executeOperator(uint24_t operand1, uint24_t operand2, uint8_t operator)
             return operand1 || operand2;
         case tXor:
             return !operand1 != !operand2;
+        case tDotIcon:
+            return operand1 & operand2;
+        case tCrossIcon:
+            return operand1 | operand2;
+        case tBoxIcon:
+            return operand1 ^ operand2;
         default:
             return operand1 && operand2;
     }
@@ -186,6 +192,7 @@ uint8_t parseOperator(element_t *outputPrevPrevPrev, element_t *outputPrevPrev, 
     
     // If you have something like "A or 1", the output is always 1, so we can remove the "ld hl, (A)"
     ice.programPtrBackup = ice.programPtr;
+    ice.dataOffsetElementsBackup = ice.dataOffsetElements;
 
     // Swap operands for compiler optimizations
     if (oper == tLE || oper == tLT ||
@@ -392,6 +399,8 @@ void LD_HL_NUMBER(uint24_t number) {
     if (!number) {
         OR_A_A();
         SBC_HL_HL();
+        expr.AnsSetZeroFlag = true;
+        expr.ZeroCarryFlagRemoveAmountOfBytes = 0;
     } else {
         LD_HL_IMM(number);
     }
@@ -787,6 +796,7 @@ NumberNotZero1:
                 INC_A();
             } else {
                 ice.programPtr = ice.programPtrBackup;
+                ice.dataOffsetElements = ice.dataOffsetElementsBackup;
                 LD_HL_IMM(1);
                 expr.outputReturnRegister = OUTPUT_IN_HL;
             }
@@ -811,6 +821,7 @@ NumberNotZero1:
         } else if (oper == tAnd) {
             if (!entry2_operand) {
                 ice.programPtr = ice.programPtrBackup;
+                ice.dataOffsetElements = ice.dataOffsetElementsBackup;
                 LD_HL_NUMBER(0);
             } else {
                 goto numberNotZero2;
@@ -831,6 +842,7 @@ numberNotZero2:
                 expr.AnsSetCarryFlagReversed = true;
             } else {
                 ice.programPtr = ice.programPtrBackup;
+                ice.dataOffsetElements = ice.dataOffsetElementsBackup;
                 LD_HL_IMM(1);
             }
         }
@@ -1214,6 +1226,7 @@ void MulChainAnsNumber(void) {
         MaybeAToHL();
         if (!number) {
             ice.programPtr = ice.programPtrBackup;
+            ice.dataOffsetElements = ice.dataOffsetElementsBackup;
             LD_HL_NUMBER(0);
         } else {
             MultWithNumber(number, (uint8_t*)&ice.programPtr, 16*expr.outputRegister);

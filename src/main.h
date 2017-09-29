@@ -40,6 +40,7 @@ typedef struct {
     
     uint24_t *dataOffsetStack[500];                         // Stack of the address to point to the data, which needs to be changed after compiling
     uint24_t dataOffsetElements;                            // Amount of stack elements of above
+    uint24_t dataOffsetElementsBackup;                      // Same as above
     uint24_t currentLine;                                   // The amount of parsed lines, useful for displaying it when an error occurs
     uint24_t programSize;                                   // Size of the output program
     uint24_t *stack[STACK_SIZE*5];                          // Stacks for compiling arguments

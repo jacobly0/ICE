@@ -36,7 +36,7 @@ typedef FILE* ti_var_t;
 #define _new(x)      fopen(x, "w")
 #define _tell(x)     ftell(x)
 #define _seek(x,y,z) fseek(z,x,y);
-#define _getc(x)     fgetc(x)
+#define _getc(x)     getNextToken(x)
 #define TI_PRGM_TYPE 5
 #define M_PI         3.14159265358979323846
 

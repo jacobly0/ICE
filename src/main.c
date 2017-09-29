@@ -222,9 +222,8 @@ findNextLabel:;
         }
         totalSize = ice.programSize + programDataSize + 3;
         
-        ice.outPrgm = _new(ice.outName);
-        
 #ifndef COMPUTER_ICE
+        ice.outPrgm = _new(ice.outName);
         if (!ice.outPrgm) {
             gfx_PrintStringXY("Failed to open output file", 1, iceMessageLine);
             goto stop;
@@ -253,11 +252,6 @@ findNextLabel:;
         sprintf(buf, "Output size: %u bytes", totalSize);
         gfx_PrintStringXY(buf, 1, iceMessageLine);
 #else
-        if (!ice.outPrgm) {
-            fprintf(stdout, "Failed to open output file");
-            goto stop;
-        }
-        
         uint8_t *export = malloc(0x10000);
         
         // Write ASM header

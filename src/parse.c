@@ -1016,7 +1016,9 @@ uint8_t JumpForward(uint8_t *startAddr, uint8_t *endAddr, uint24_t tempDataOffse
             tempLblElements++;
         }
         
-        memcpy(startAddr, startAddr + 2, ice.programPtr - startAddr);
+        if (ice.programPtr != startAddr) {
+            memcpy(startAddr, startAddr + 2, ice.programPtr - startAddr);
+        }
         ice.programPtr -= 2;
         return true;
     } else {
@@ -1045,23 +1047,19 @@ uint8_t *WhileRepeatCondStart = NULL;
 static uint8_t functionWhile(int token) {
     uint24_t tempDataOffsetElements = ice.dataOffsetElements;
     uint8_t tempGotoElements = ice.amountOfGotos;
-    uint8_t tempLblElements = ice.amountOfLbls;
+    uint8_t tempLblElements = ice.amountOfLbls, *programPtrBackup = ice.programPtr;
     uint8_t *WhileStartAddr = ice.programPtr, *TempStartAddr = WhileStartAddr, res;
     
     // Basically the same as "Repeat", but jump to condition checking first
     JP(0);
-    if ((res = functionRepeat(token)) != VALID) {
-        return res;
-    }
-    
-    // Check if we can optimize the JP(0) to JR
+    res = functionRepeat(token);
     JumpForward(WhileStartAddr, WhileRepeatCondStart, tempDataOffsetElements, tempGotoElements, tempLblElements);
-
-    return VALID;
+    
+    return res;
 }
 
 uint8_t functionRepeat(int token) {
-    uint24_t tempCurrentLine, tempCurrentLine2;
+    uint24_t tempCurrentLine, tempCurrentLine2, dataOffsetElementsBackup = ice.dataOffsetElements;
     uint16_t RepeatCondStart, RepeatProgEnd;
     uint8_t *RepeatCodeStart, res;
     
@@ -1095,12 +1093,31 @@ uint8_t functionRepeat(int token) {
     }
     ice.currentLine = tempCurrentLine2;
     
+    // And set the pointer after the "End"
+    _seek(RepeatProgEnd, SEEK_SET, ice.inPrgm);
+    
+    if (expr.outputIsNumber) {
+        ice.programPtr -= 4 - !expr.outputNumber;
+        if ((expr.outputNumber && (uint8_t)token == tWhile) || (!expr.outputNumber && (uint8_t)token == tRepeat)) {
+            JumpBackwards(RepeatCodeStart, OP_JR);
+        }
+        return VALID;
+    }
+    
     if (expr.outputIsString) {
         return E_SYNTAX;
     }
     
-    // And set the pointer after the "End"
-    _seek(RepeatProgEnd, SEEK_SET, ice.inPrgm);
+    if ((uint8_t)token == tWhile) {
+        // Switch the flags
+        bool a = expr.AnsSetZeroFlag;
+        expr.AnsSetZeroFlag = expr.AnsSetZeroFlagReversed;
+        expr.AnsSetZeroFlagReversed = a;
+        a = expr.AnsSetCarryFlag;
+        expr.AnsSetCarryFlag = expr.AnsSetCarryFlagReversed;
+        expr.AnsSetCarryFlagReversed = a;
+    }
+    
     optimizeZeroCarryFlagOutput();
     
     JumpBackwards(RepeatCodeStart, expr.AnsSetCarryFlag || expr.AnsSetCarryFlagReversed ?
