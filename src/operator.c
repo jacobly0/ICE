@@ -19,12 +19,12 @@ INCBIN(Rand, "src/asm/rand.bin");
 INCBIN(Keypad, "src/asm/keypad.bin");
 #endif
 
-extern void (*operatorFunctions[224])(void);
-extern void (*operatorChainPushChainAnsFunctions[14])(void);
-const char operators[]              = {tStore, tAnd, tXor, tOr, tEQ, tLT, tGT, tLE, tGE, tNE, tMul, tDiv, tAdd, tSub};
-const uint8_t operatorPrecedence[]  = {0, 2, 1, 1, 3, 3, 3, 3, 3, 3, 5, 5, 4, 4};
-const uint8_t operatorPrecedence2[] = {6, 2, 1, 1, 3, 3, 3, 3, 3, 3, 5, 5, 4, 4};
-const uint8_t operatorCanSwap[]     = {0, 1, 1, 1, 1, 0, 0, 0, 0, 1, 1, 0, 1, 0};        // Used for operators which can swap the operands, i.e. A*B = B*A
+extern void (*operatorFunctions[272])(void);
+extern void (*operatorChainPushChainAnsFunctions[17])(void);
+const char operators[]              = {tStore, tDotIcon, tCrossIcon, tBoxIcon, tAnd, tXor, tOr, tEQ, tLT, tGT, tLE, tGE, tNE, tMul, tDiv, tAdd, tSub};
+const uint8_t operatorPrecedence[]  = {0, 6, 8, 8, 2, 1, 1, 3, 3, 3, 3, 3, 3, 5, 5, 4, 4};
+const uint8_t operatorPrecedence2[] = {9, 6, 8, 8, 2, 1, 1, 3, 3, 3, 3, 3, 3, 5, 5, 4, 4};
+const uint8_t operatorCanSwap[]     = {0, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 1, 1, 0, 1, 0}; // Used for operators which can swap the operands, i.e. A*B = B*A
 
 static element_t *entry0;
 static element_t *entry1;
@@ -188,10 +188,12 @@ uint8_t parseOperator(element_t *outputPrevPrevPrev, element_t *outputPrevPrev, 
     ice.programPtrBackup = ice.programPtr;
 
     // Swap operands for compiler optimizations
-    if (oper == tLE || oper == tLT || (operatorCanSwap[getIndexOfOperator(oper) - 1] && 
-         (typeMasked1 == TYPE_NUMBER || typeMasked2 == TYPE_CHAIN_ANS || 
-           (typeMasked1 == TYPE_VARIABLE && typeMasked2 == TYPE_FUNCTION)
-         ))
+    if (oper == tLE || oper == tLT ||
+         (operatorCanSwap[getIndexOfOperator(oper) - 1] && 
+           (typeMasked1 == TYPE_NUMBER || typeMasked2 == TYPE_CHAIN_ANS || 
+             (typeMasked1 == TYPE_VARIABLE && typeMasked2 == TYPE_FUNCTION_RETURN)
+           )
+         )
        ) {
         uint8_t temp = typeMasked1;
         
@@ -225,6 +227,16 @@ uint8_t parseOperator(element_t *outputPrevPrevPrev, element_t *outputPrevPrev, 
     // If the operator is *, and both operands not a number, it always ends with call __imuls
     if (oper == tMul && typeMasked1 != TYPE_NUMBER && typeMasked2 != TYPE_NUMBER && !(expr.outputRegister == OUTPUT_IN_A && entry2_operand < 256)) {
         CALL(__imuls);
+    }
+    
+    if (expr.outputRegister != OUTPUT_IN_A && !(typeMasked2 == TYPE_NUMBER && entry2_operand < 256)) {
+        if (oper == tDotIcon) {
+            CALL(__iand);
+        } else if (oper == tBoxIcon) {
+            CALL(__ixor);
+        } else if (oper == tCrossIcon) {
+            CALL(__ior);
+        }
     }
     
     // If the operator is -, and the second operand not a number, it always ends with or a, a \ sbc hl, de
@@ -644,6 +656,97 @@ void StoStringString(void) {
     POP_BC();
     POP_BC();
 }
+void BitAndChainAnsNumber(void) {
+    if (expr.outputRegister == OUTPUT_IN_A) {
+        if (oper == tDotIcon) {
+            AND_A(entry2_operand);
+        } else if (oper == tBoxIcon) {
+            XOR_A(entry2_operand);
+        } else {
+            OR_A(entry2_operand);
+        }
+        expr.AnsSetZeroFlag = true;
+        expr.outputReturnRegister = OUTPUT_IN_A;
+        expr.ZeroCarryFlagRemoveAmountOfBytes = 0;
+    } else {
+        if (entry2_operand < 256) {
+            if (expr.outputRegister == OUTPUT_IN_HL) {
+                LD_A_L();
+            } else {
+                LD_A_E();
+            }
+            if (oper == tDotIcon) {
+                AND_A(entry2_operand);
+            } else if (oper == tBoxIcon) {
+                XOR_A(entry2_operand);
+            } else {
+                OR_A(entry2_operand);
+            }
+            SBC_HL_HL();
+            LD_L_A();
+            expr.AnsSetZeroFlag = true;
+            expr.ZeroCarryFlagRemoveAmountOfBytes = 3;
+        } else {
+            if (expr.outputRegister != OUTPUT_IN_HL) {
+                EX_DE_HL();
+            }
+            LD_BC_IMM(entry2_operand);
+        }
+    }
+}
+void BitAndChainAnsVariable(void) {
+    AnsToHL();
+    LD_BC_IND_IX_OFF(entry2_operand);
+}
+void BitAndVariableNumber(void) {
+    LD_HL_IND_IX_OFF(entry1_operand);
+    BitAndChainAnsNumber();
+}
+void BitAndVariableVariable(void) {
+    LD_HL_IND_IX_OFF(entry1_operand);
+    BitAndChainAnsVariable();
+}
+void BitAndFunctionNumber(void) {
+    insertFunctionReturnEntry1HLNoPush();
+    BitAndChainAnsNumber();
+}
+void BitAndFunctionVariable(void) {
+    insertFunctionReturnEntry1HLNoPush();
+    BitAndChainAnsVariable();
+}
+void BitAndFunctionFunction(void) {
+    insertFunctionReturnEntry1HLNoPush();
+    insertFunctionReturn(entry2_operand, OUTPUT_IN_BC, NEED_PUSH);
+}
+void BitAndChainAnsFunction(void) {
+    AnsToHL();
+    insertFunctionReturn(entry2_operand, OUTPUT_IN_BC, NEED_PUSH);
+}
+void BitAndChainPushChainAns(void) {
+    AnsToHL();
+    POP_BC();
+}
+
+#define BitOrVariableNumber     BitAndVariableNumber
+#define BitOrVariableVariable   BitAndVariableVariable
+#define BitOrFunctionNumber     BitAndFunctionNumber
+#define BitOrFunctionVariable   BitAndFunctionVariable
+#define BitOrFunctionFunction   BitAndFunctionFunction
+#define BitOrChainAnsNumber     BitAndChainAnsNumber
+#define BitOrChainAnsVariable   BitAndChainAnsVariable
+#define BitOrChainAnsFunction   BitAndChainAnsFunction
+#define BitOrChainPushChainAns  BitAndChainPushChainAns
+
+#define BitXorVariableNumber    BitAndVariableNumber
+#define BitXorVariableVariable  BitAndVariableVariable
+#define BitXorFunctionNumber    BitAndFunctionNumber
+#define BitXorFunctionVariable  BitAndFunctionVariable
+#define BitXorFunctionFunction  BitAndFunctionFunction
+#define BitXorChainAnsNumber    BitAndChainAnsNumber
+#define BitXorChainAnsVariable  BitAndChainAnsVariable
+#define BitXorChainAnsFunction  BitAndChainAnsFunction
+#define BitXorChainPushChainAns BitAndChainPushChainAns
+
 void AndInsert(void) {
     if (oper == tOr) {
         memcpy(ice.programPtr, OrData, SIZEOF_OR_DATA);
@@ -1430,8 +1533,11 @@ void SubChainPushChainAns(void) {
     OR_A_SBC_HL_DE();
 }
 
-void (*operatorChainPushChainAnsFunctions[14])(void) = {
+void (*operatorChainPushChainAnsFunctions[17])(void) = {
     StoChainPushChainAns,
+    BitAndChainPushChainAns,
+    BitOrChainPushChainAns,
+    BitXorChainPushChainAns,
     AndChainPushChainAns,
     XorChainPushChainAns,
     OrChainPushChainAns,
@@ -1447,7 +1553,7 @@ void (*operatorChainPushChainAnsFunctions[14])(void) = {
     SubChainPushChainAns
 };
 
-void (*operatorFunctions[224])(void) = {
+void (*operatorFunctions[272])(void) = {
     OperatorError,
     StoNumberVariable,
     OperatorError,
@@ -1464,6 +1570,57 @@ void (*operatorFunctions[224])(void) = {
     StoChainAnsVariable,
     OperatorError,
     StoChainAnsChainAns,
+    
+    OperatorError,
+    OperatorError,
+    OperatorError,
+    OperatorError,
+    BitAndVariableNumber,
+    BitAndVariableVariable,
+    OperatorError,
+    OperatorError,
+    BitAndFunctionNumber,
+    BitAndFunctionVariable,
+    BitAndFunctionFunction,
+    OperatorError,
+    BitAndChainAnsNumber,
+    BitAndChainAnsVariable,
+    BitAndChainAnsFunction,
+    OperatorError,
+    
+    OperatorError,
+    OperatorError,
+    OperatorError,
+    OperatorError,
+    BitOrVariableNumber,
+    BitOrVariableVariable,
+    OperatorError,
+    OperatorError,
+    BitOrFunctionNumber,
+    BitOrFunctionVariable,
+    BitOrFunctionFunction,
+    OperatorError,
+    BitOrChainAnsNumber,
+    BitOrChainAnsVariable,
+    BitOrChainAnsFunction,
+    OperatorError,
+    
+    OperatorError,
+    OperatorError,
+    OperatorError,
+    OperatorError,
+    BitXorVariableNumber,
+    BitXorVariableVariable,
+    OperatorError,
+    OperatorError,
+    BitXorFunctionNumber,
+    BitXorFunctionVariable,
+    BitXorFunctionFunction,
+    OperatorError,
+    BitXorChainAnsNumber,
+    BitXorChainAnsVariable,
+    BitXorChainAnsFunction,
+    OperatorError,
     
     OperatorError,
     OperatorError,

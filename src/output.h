@@ -25,9 +25,12 @@
 #define __strcat          0x0000C0
 #define __strcpy          0x0000CC
 #define __strlen          0x0000D4
+#define __iand            0x000134
 #define __idvrmu          0x000144
 #define __imul_b          0x000150
 #define __imuls           0x000154
+#define __ior             0x000168
+#define __ixor            0x000198
 
 #define OP_LD_BC      0x01
 #define OP_LD_B       0x06
