@@ -790,8 +790,8 @@ uint8_t parseFunction2Args(uint24_t index, uint8_t outputReturnRegister, uint8_t
                     LD_BC_IMM(outputPrevOperand);
                 }
             } else {
-                LD_HL_NUMBER(outputPrevPrevOperand);
-                LD_DE_IND_IX_OFF(outputPrevOperand);
+                LD_HL_NUMBER(outputPrevOperand);
+                LD_DE_IND_IX_OFF(outputPrevPrevOperand);
             }
         } else if (outputPrevType == TYPE_VARIABLE) {
             LD_HL_IND_IX_OFF(outputPrevPrevOperand);

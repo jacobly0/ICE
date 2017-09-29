@@ -98,6 +98,7 @@ uint8_t parseExpression(int token) {
         if (storeDepth) {
             storeDepth--;
         }
+        
 
         // Process a number
         if (tok >= t0 && tok <= t9) {
@@ -269,6 +270,8 @@ stackToOutputReturn1:
         
         // Pop a ) } ] ,
         else if (tok == tRParen || tok == tComma || tok == tRBrace || tok == tRBrack) {
+            uint24_t temp;
+            
             // Move until stack is empty or a function is encountered
             while (stackElements) {
                 stackPrev = &stackPtr[stackElements-1];
@@ -308,16 +311,19 @@ stackToOutputReturn1:
             }
             
             // If the right parenthesis belongs to a function, move the function as well
-            if (tok != tComma && stackPrev->operand != tLParen) {
-                outputCurr->type = stackPrev->type;
-                outputCurr->mask = stackPrev->mask;
-                outputCurr->operand = stackPrev->operand + ((*amountOfArgumentsStackPtr--) << 8);
-                stackElements--;
-                outputElements++;
+            if (tok != tComma) {
+                temp = (*amountOfArgumentsStackPtr--) << 8;
+                if ((uint8_t)stackPrev->operand != tLParen) {
+                    outputCurr->type = stackPrev->type;
+                    outputCurr->mask = stackPrev->mask;
+                    outputCurr->operand = stackPrev->operand + temp;
+                    stackElements--;
+                    outputElements++;
+                }
             }
             
             // Increment the amount of arguments for that function
-            if (tok == tComma) {
+            else {
                 (*amountOfArgumentsStackPtr)++;
                 canUseMask = 2;
             }
@@ -474,6 +480,7 @@ stackToOutputReturn2:
                     goto DontDeleteFunction;
                 }
             }
+            
             // The function has only numbers as argument, so remove them as well :)
             switch ((uint8_t)outputCurr->operand) {
                 case tNot:
@@ -492,7 +499,7 @@ stackToOutputReturn2:
                     temp = sqrt(outputPrevOperand);
                     break;
                 case tExtTok:
-                    if ((uint8_t)(outputPrevOperand >> 16) != tRemainder) {
+                    if ((uint8_t)(outputCurr->operand >> 16) != tRemainder) {
                         return E_ICE_ERROR;
                     }
                     temp = outputPrevOperand % outputPrevPrevOperand;
@@ -1146,6 +1153,8 @@ static uint8_t functionReturn(int token) {
         *ice.programPtr++ = (expr.AnsSetCarryFlag || expr.AnsSetCarryFlagReversed ? 
             (expr.AnsSetCarryFlagReversed ? OP_RET_C : OP_RET_NC) :
             (expr.AnsSetZeroFlagReversed ? OP_RET_Z : OP_RET_NZ));
+    } else {
+        return E_SYNTAX;
     }
     return VALID;
 }

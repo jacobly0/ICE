@@ -186,42 +186,40 @@ uint8_t parseOperator(element_t *outputPrevPrevPrev, element_t *outputPrevPrev, 
         }
         // Call the right CHAIN_PUSH | CHAIN_ANS function
         (*operatorChainPushChainAnsFunctions[getIndexOfOperator(oper) - 1])();
-        expr.outputRegister = expr.outputReturnRegister;
-        return VALID;
-    }
-    
-    // If you have something like "A or 1", the output is always 1, so we can remove the "ld hl, (A)"
-    ice.programPtrBackup = ice.programPtr;
-    ice.dataOffsetElementsBackup = ice.dataOffsetElements;
-
-    // Swap operands for compiler optimizations
-    if (oper == tLE || oper == tLT ||
-         (operatorCanSwap[getIndexOfOperator(oper) - 1] && 
-           (typeMasked1 == TYPE_NUMBER || typeMasked2 == TYPE_CHAIN_ANS || 
-             (typeMasked1 == TYPE_VARIABLE && typeMasked2 == TYPE_FUNCTION_RETURN)
-           )
-         )
-       ) {
-        uint8_t temp = typeMasked1;
-        
-        typeMasked1 = typeMasked2;
-        typeMasked2 = temp;
-        swapEntries();
-        if (oper == tLE) {
-            oper = tGE;
-        } else if (oper == tLT) {
-            oper = tGT;
-        }
-    }
-    
-    if (typeMasked1 < TYPE_STRING) {
-        // Call the right function!
-        (*operatorFunctions[((getIndexOfOperator(oper) - 1) * 16) + (typeMasked1 * 4) + typeMasked2])();
     } else {
-        if (oper == tAdd) {
-            AddStringString();
+        // If you have something like "A or 1", the output is always 1, so we can remove the "ld hl, (A)"
+        ice.programPtrBackup = ice.programPtr;
+        ice.dataOffsetElementsBackup = ice.dataOffsetElements;
+
+        // Swap operands for compiler optimizations
+        if (oper == tLE || oper == tLT ||
+             (operatorCanSwap[getIndexOfOperator(oper) - 1] && 
+               (typeMasked1 == TYPE_NUMBER || typeMasked2 == TYPE_CHAIN_ANS || 
+                 (typeMasked1 == TYPE_VARIABLE && typeMasked2 == TYPE_FUNCTION_RETURN)
+               )
+             )
+           ) {
+            uint8_t temp = typeMasked1;
+            
+            typeMasked1 = typeMasked2;
+            typeMasked2 = temp;
+            swapEntries();
+            if (oper == tLE) {
+                oper = tGE;
+            } else if (oper == tLT) {
+                oper = tGT;
+            }
+        }
+        
+        if (typeMasked1 < TYPE_STRING) {
+            // Call the right function!
+            (*operatorFunctions[((getIndexOfOperator(oper) - 1) * 16) + (typeMasked1 * 4) + typeMasked2])();
         } else {
-            StoStringString();
+            if (oper == tAdd) {
+                AddStringString();
+            } else {
+                StoStringString();
+            }
         }
     }
     
