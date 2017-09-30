@@ -24,10 +24,6 @@
                 border-collapse: collapse;
                 width: 100%;
             }
-            td:nth-child(3) {
-                text-align: center;
-                width: 50px;
-            }
             table#special td:nth-child(3) {
                 width: 100%;
                 text-align: left;
@@ -245,19 +241,19 @@
                                 <td>Returns the negation of <code><span id="red">EXP</span></code>, so if <code><span id="red">EXP</span></code> is nonzero, it returns 0, and 1 otherwise.</td>
                             </tr>
                             <tr>
-                                <td><code><span id="bl">remainder(</span><span id="red">EXP1</span></code>,<code><span id="red">EXP2</span><span id="bl">)</span></code></td>
+                                <td><code><span id="bl">remainder(</span><span id="red">EXP1</span>,<span id="red">EXP2</span><span id="bl">)</span></code></td>
                                 <td>Returns the remainder of <code><span id="red">EXP1</span>/<span id="red">EXP2</span></code>.</td>
                             </tr>
                             <tr>
-                                <td><code><span id="bl">min(</span><span id="red">EXP1</span></code>,<code><span id="red">EXP2</span><span id="bl">)</span></code></td>
+                                <td><code><span id="bl">min(</span><span id="red">EXP1</span>,<span id="red">EXP2</span><span id="bl">)</span></code></td>
                                 <td>Returns the minimum of <code><span id="red">EXP1</span></code> and <code><span id="red">EXP2</span></code>.</td>
                             </tr>
                             <tr>
-                                <td><code><span id="bl">max(</span><span id="red">EXP1</span></code>,<code><span id="red">EXP2</span><span id="bl">)</span></code></td>
+                                <td><code><span id="bl">max(</span><span id="red">EXP1</span>,<span id="red">EXP2</span><span id="bl">)</span></code></td>
                                 <td>Returns the maximum of <code><span id="red">EXP1</span></code> and <code><span id="red">EXP2</span></code>.</td>
                             </tr>
                             <tr>
-                                <td><code><span id="bl">mean(</span><span id="red">EXP1</span></code>,<code><span id="red">EXP2</span><span id="bl">)</span></code></td>
+                                <td><code><span id="bl">mean(</span><span id="red">EXP1</span>,<span id="red">EXP2</span><span id="bl">)</span></code></td>
                                 <td>Returns the mean of <code><span id="red">EXP1</span></code> and <code><span id="red">EXP2</span></code>.</td>
                             </tr>
                             <tr>
@@ -296,11 +292,11 @@
                                 <td>Executes <code><span id="pu">code</span></code> until <code><span id="red">EXP</span></code> is true. <code><span id="red">EXP</span></code> is checked first.</td>
                             </tr>
                             <tr>
-                                <td><code><span id="bl">For(</span><span id="gr">VAR</span></code>,<code><span id="red">EXP1</span></code>,<code><span id="red">EXP2</span><span id="bl">)</span>:<span id="pu">code</span>:<span id="bl">End</span></code></td>
+                                <td><code><span id="bl">For(</span><span id="gr">VAR</span>,<span id="red">EXP1</span>,<span id="red">EXP2</span><span id="bl">)</span>:<span id="pu">code</span>:<span id="bl">End</span></code></td>
                                 <td><code><span id="gr">VAR</span></code> is initialized with <code><span id="red">EXP1</span></code>. If <code><span id="gr">VAR</span></code> is greater than <code><span id="red">EXP2</span></code>, the loop ends. Otherwise, <code><span id="pu">code</span></code> is executed and <code><span id="gr">VAR</span></code> is incremented.</td>
                             </tr>
                             <tr>
-                                <td><code><span id="bl">For(</span><span id="gr">VAR</span></code>,<code><span id="red">EXP1</span></code>,<code><span id="red">EXP2</span></code>,<code><span id="red">EXP3</span><span id="bl">)</span>:<span id="pu">code</span>:<span id="bl">End</span></code></td>
+                                <td><code><span id="bl">For(</span><span id="gr">VAR</span>,<span id="red">EXP1</span>,<span id="red">EXP2</span>,<span id="red">EXP3</span><span id="bl">)</span>:<span id="pu">code</span>:<span id="bl">End</span></code></td>
                                 <td><code><span id="gr">VAR</span></code> is initialized with <code><span id="red">EXP1</span></code>. If <code><span id="gr">VAR</span></code> is greater than <code><span id="red">EXP2</span></code>, the loop ends. Otherwise, <code><span id="pu">code</span></code> is executed and <code><span id="red">EXP3</span></code> is added to <code><span id="gr">VAR</span></code>. If <code><span id="red">EXP3</span></code> is a negative constant, it will loop until <code><span id="gr">VAR</span></code> is smaller than <code><span id="RED">EXP1</span></code>.</td>
                             </tr>
                         </table>
@@ -353,7 +349,7 @@
                                 <td>Closes the graphics library and sets up for the TI-OS.</td>
                             </tr>
                             <tr>
-                                <td><code><span id="bl">det(</span>2,<code><span id="red">COLOR</span><span id="bl">)</span></code></td>
+                                <td><code><span id="bl">det(</span>2,<span id="red">COLOR</span><span id="bl">)</span></code></td>
                                 <td>SetColor</td>
                                 <td>Sets the global color index for all routines.</td>
                             </tr>
@@ -363,22 +359,32 @@
                                 <td>Sets up the default palette where H=L (xLIBC palette).</td>
                             </tr>
                             <tr>
-                                <td><code><span id="bl">det(</span>5,<code><span id="red">COLOR</span><span id="bl">)</span></code></td>
+                                <td><code><span id="bl">det(</span>4,<span id="grey">"DATA"</span>,<span id="red">SIZE</span>,<span id="red">OFFSET</span><span id="bl">)</span></code></td>
+                                <td>SetPalette</td>
+                                <td>Sets entries in the palette. Each entry is 2 bytes, so <code><span id="red">SIZE</span></code> should be the amount of entries you want to set times 2.</td>
+                            </tr>
+                            <tr>
+                                <td><code><span id="bl">det(</span>5,<span id="red">COLOR</span><span id="bl">)</span></code></td>
                                 <td>FillScreen</td>
                                 <td>Fills the screen with the specified color index.</td>
                             </tr>
                             <tr>
-                                <td><code><span id="bl">det(</span>6,<code><span id="red">X</span></code>,<code><span id="red">Y</span><span id="bl">)</span></code></td>
+                                <td><code><span id="bl">det(</span>6,<span id="red">X</span>,<span id="red">Y</span><span id="bl">)</span></code></td>
                                 <td>SetPixel</td>
                                 <td>Sets the color pixel to the global color index.</td>
                             </tr>
                             <tr>
-                                <td><code><span id="bl">det(</span>7,<code><span id="red">X</span></code>,<code><span id="red">Y</span><span id="bl">)</span></code></td>
+                                <td><code><span id="bl">det(</span>7,<span id="red">X</span>,<span id="red">Y</span><span id="bl">)</span></code></td>
                                 <td>GetPixel</td>
-                                <td>Gets a pixel's color index. If you want to store the index to a variable, you <b>should</b> close the function with a parenthesis, and a "-><span id="gr">VAR</span>" directly after it.</td>
+                                <td>Gets a pixel's color index.</td>
                             </tr>
                             <tr>
-                                <td><code><span id="bl">det(</span>9,<code><span id="red">BUFFER</span><span id="bl">)</span></code></td>
+                                <td><code><span id="bl">det(</span>8<span id="bl">)</span></code></td>
+                                <td>GetDraw</td>
+                                <td>Gets the current draw location. 0 = screen, 1 = buffer.</td>
+                            </tr>
+                            <tr>
+                                <td><code><span id="bl">det(</span>9,<span id="red">BUFFER</span><span id="bl">)</span></code></td>
                                 <td>SetDraw</td>
                                 <td>Forces drawing routines to operate on the offscreen buffer or to operate on the visible screen. 0 = draw at screen, 1 = draw at buffer.</td>
                             </tr>
@@ -388,192 +394,222 @@
                                 <td>Safely swap the vram buffer pointers for double buffered output.</td>
                             </tr>
                             <tr>
-                                <td><code><span id="bl">det(</span>11,<code><span id="red">BUFFER</span><span id="bl">)</span></code></td>
+                                <td><code><span id="bl">det(</span>11,<span id="red">BUFFER</span><span id="bl">)</span></code></td>
                                 <td>Blit</td>
                                 <td>Copies the buffer image to the screen and vice versa. 0 = copy screen to buffer, 1 = copy buffer to screen.</td>
                             </tr>
                             <tr>
-                                <td><code><span id="bl">det(</span>12,<code><span id="red">BUFFER</span></code>,<code><span id="red">Y</span></code>,<code><span id="red">LINES</span><span id="bl">)</span></code></td>
+                                <td><code><span id="bl">det(</span>12,<span id="red">BUFFER</span>,<span id="red">Y</span>,<span id="red">LINES</span><span id="bl">)</span></code></td>
                                 <td>BlitLines</td>
                                 <td>Copies <code><span id="red">LINES</span></code> lines starting at position <code><span id="red">Y</span></code> from the buffer to the screen or vice versa. 0 = copy screen to buffer, 1 = copy buffer to screen.</td>
                             </tr>
                             <tr>
-                                <td><code><span id="bl">det(</span>13,<code><span id="red">BUFFER</span></code>,<code><span id="red">X</span></code>,<code><span id="red">Y</span></code>,<code><span id="red">WIDTH</span></code>,<code><span id="red">HEIGHT</span><span id="bl">)</span></code></td>
+                                <td><code><span id="bl">det(</span>13,<span id="red">BUFFER</span>,<span id="red">X</span>,<span id="red">Y</span>,<span id="red">WIDTH</span>,<span id="red">HEIGHT</span><span id="bl">)</span></code></td>
                                 <td>BlitArea</td>
-                                <td>Copies a specific rectangle starting at (<span id="red">X</span></code>,<code><span id="red">Y</span>) and dimensions (<span id="red">WIDTH</span></code>,<code><span id="red">HEIGHT</span>) from the buffer to the screen or vice versa. 0 = copy screen to buffer, 1 = copy buffer to screen.</td>
+                                <td>Copies a specific rectangle starting at (<code><span id="red">X</span>,<span id="red">Y</span></code>) and dimensions (<code><span id="red">WIDTH</span>,<span id="red">HEIGHT</span></code>) from the buffer to the screen or vice versa. 0 = copy screen to buffer, 1 = copy buffer to screen.</td>
                             </tr>
                             <tr>
-                                <td><code><span id="bl">det(</span>14,<code><span id="red">CHAR</span><span id="bl">)</span></code></td>
+                                <td><code><span id="bl">det(</span>14,<span id="red">CHAR</span><span id="bl">)</span></code></td>
                                 <td>PrintChar</td>
                                 <td>Places a character at the current cursor position. (Should be a number, you can find them <a href="http://tibasicdev.wikidot.com/83lgfont">here</a>. Default coordinates are (0,0).</td>
                             </tr>
                             <tr>
-                                <td><code><span id="bl">det(</span>16,<code><span id="red">EXP</span></code>,<code><span id="red">CHARS</span><span id="bl">)</span></code></td>
-                                <td>PrintUInt</td>
-                                <td>Places <code><span id="red">EXP</span></code> at the current cursor position with <code><span id="red">CHARS</span></code> characters. Default coordinates are (0,0).</td>
+                                <td><code><span id="bl">det(</span>15,<span id="red">EXP</span>,<span id="red">CHARS</span><span id="bl">)</span></code></td>
+                                <td>PrintInt</td>
+                                <td>Places signed <code><span id="red">EXP</span></code> at the current cursor position with <code><span id="red">CHARS</span></code> characters. Default coordinates are (0,0).</td>
                             </tr>
                             <tr>
-                                <td><code><span id="bl">det(</span>17,<code><span id="grey">"STRING"</span><span id="bl">)</span></code></td>
+                                <td><code><span id="bl">det(</span>16,<span id="red">EXP</span>,<span id="red">CHARS</span><span id="bl">)</span></code></td>
+                                <td>PrintUInt</td>
+                                <td>Places unsigned <code><span id="red">EXP</span></code> at the current cursor position with <code><span id="red">CHARS</span></code> characters. Default coordinates are (0,0).</td>
+                            </tr>
+                            <tr>
+                                <td><code><span id="bl">det(</span>17,<span id="grey">"STRING"</span><span id="bl">)</span></code></td>
                                 <td>PrintString</td>
                                 <td>Places a string at the current cursor position. Default coordinates are (0,0).</td>
                             </tr>
                             <tr>
-                                <td><code><span id="bl">det(</span>18,<code><span id="grey">"STRING"</span></code>,<code><span id="red">X</span></code>,<code><span id="red">Y</span><span id="bl">)</span></code></td>
+                                <td><code><span id="bl">det(</span>18,<span id="grey">"STRING"</span>,<span id="red">X</span>,<span id="red">Y</span><span id="bl">)</span></code></td>
                                 <td>PrintStringXY</td>
                                 <td>Places a string at the given coordinates.</td>
                             </tr>
                             <tr>
-                                <td><code><span id="bl">det(</span>19,<code><span id="red">X</span></code>,<code><span id="red">Y</span><span id="bl">)</span></code></td>
+                                <td><code><span id="bl">det(</span>19,<span id="red">X</span>,<span id="red">Y</span><span id="bl">)</span></code></td>
                                 <td>SetTextXY</td>
                                 <td>Sets the coordinates for text routines.</td>
                             </tr>
                             <tr>
-                                <td><code><span id="bl">det(</span>20,<code><span id="red">COLOR</span><span id="bl">)</span></code></td>
+                                <td><code><span id="bl">det(</span>20,<span id="red">COLOR</span><span id="bl">)</span></code></td>
                                 <td>SetTextBGColor</td>
                                 <td>Sets the background text color for text routines. Default color is 255.</td>
                             </tr>
                             <tr>
-                                <td><code><span id="bl">det(</span>21,<code><span id="red">COLOR</span><span id="bl">)</span></code></td>
+                                <td><code><span id="bl">det(</span>21,<span id="red">COLOR</span><span id="bl">)</span></code></td>
                                 <td>SetTextFGColor</td>
                                 <td>Sets the foreground text color for text routines. Default color is 0.</td>
                             </tr>
                             <tr>
-                                <td><code><span id="bl">det(</span>22,<code><span id="red">COLOR</span><span id="bl">)</span></code></td>
+                                <td><code><span id="bl">det(</span>22,<span id="red">COLOR</span><span id="bl">)</span></code></td>
                                 <td>SetTextTransparentColor</td>
                                 <td>Sets the transparency text color for text routines. Default color is 255.</td>
                             </tr>
                             <tr>
-                                <td><code><span id="bl">det(</span>25,<code><span id="red">SPACE</span><span id="bl">)</span></code></td>
+                                <td><code><span id="bl">det(</span>25,<span id="red">SPACE</span><span id="bl">)</span></code></td>
                                 <td>SetMonoSpaceFont</td>
                                 <td>Sets the font to be monospace.</td>
                             </tr>
                             <tr>
-                                <td><code><span id="bl">det(</span>30,<code><span id="red">X1</span></code>,<code><span id="red">Y1</span></code>,<code><span id="red">X2</span></code>,<code><span id="red">Y2</span><span id="bl">)</span></code></td>
+                                <td><code><span id="bl">det(</span>26,<span id="grey">"STRING"</span><span id="bl">)</span></code></td>
+                                <td>GetStringWidth</td>
+                                <td>Gets the pixel width of <code><span id="grey">"STRING"</span></code>.</td>
+                            </tr>
+                            <tr>
+                                <td><code><span id="bl">det(</span>27,<span id="grey">"CHAR"</span><span id="bl">)</span></code></td>
+                                <td>GetCharWidth</td>
+                                <td>Gets the pixel width of the char <code><span id="grey">"CHAR"</span></code>.</td>
+                            </tr>
+                            <tr>
+                                <td><code><span id="bl">det(</span>28<span id="bl">)</span></code></td>
+                                <td>GetTextX</td>
+                                <td>Returns the current text cursor X position.</td>
+                            </tr>
+                            <tr>
+                                <td><code><span id="bl">det(</span>29<span id="bl">)</span></code></td>
+                                <td>GetTextY</td>
+                                <td>Returns the current text cursor Y position.</td>
+                            </tr>
+                            <tr>
+                                <td><code><span id="bl">det(</span>30,<span id="red">X1</span>,<span id="red">Y1</span>,<span id="red">X2</span>,<span id="red">Y2</span><span id="bl">)</span></code></td>
                                 <td>Line</td>
                                 <td>Draws an arbitrarily clipped line.</td>
                             </tr>
                             <tr>
-                                <td><code><span id="bl">det(</span>31,<code><span id="red">X</span></code>,<code><span id="red">Y</span></code>,<code><span id="red">LENGTH</span><span id="bl">)</span></code></td>
+                                <td><code><span id="bl">det(</span>31,<span id="red">X</span>,<span id="red">Y</span>,<span id="red">LENGTH</span><span id="bl">)</span></code></td>
                                 <td>HorizLine</td>
                                 <td>Draws an clipped horizontal line with the global color index.</td>
                             </tr>
                             <tr>
-                                <td><code><span id="bl">det(</span>32,<code><span id="red">X</span></code>,<code><span id="red">Y</span></code>,<code><span id="red">LENGTH</span><span id="bl">)</span></code></td>
+                                <td><code><span id="bl">det(</span>32,<span id="red">X</span>,<span id="red">Y</span>,<span id="red">LENGTH</span><span id="bl">)</span></code></td>
                                 <td>VertLine</td>
                                 <td>Draws an clipped vertical line with the global color index.</td>
                             </tr>
                             <tr>
-                                <td><code><span id="bl">det(</span>33,<code><span id="red">X</span></code>,<code><span id="red">Y</span></code>,<code><span id="red">RADIUS</span><span id="bl">)</span></code></td>
+                                <td><code><span id="bl">det(</span>33,<span id="red">X</span>,<span id="red">Y</span>,<span id="red">RADIUS</span><span id="bl">)</span></code></td>
                                 <td>Circle</td>
                                 <td>Draws a clipped circle outline.</td>
                             </tr>
                             <tr>
-                                <td><code><span id="bl">det(</span>34,<code><span id="red">X</span></code>,<code><span id="red">Y</span></code>,<code><span id="red">RADIUS</span><span id="bl">)</span></code></td>
+                                <td><code><span id="bl">det(</span>34,<span id="red">X</span>,<span id="red">Y</span>,<span id="red">RADIUS</span><span id="bl">)</span></code></td>
                                 <td>FillCircle</td>
                                 <td>Draws an clipped filled circle.</td>
                             </tr>
                             <tr>
-                                <td><code><span id="bl">det(</span>35,<code><span id="red">X</span></code>,<code><span id="red">Y</span></code>,<code><span id="red">WIDTH</span></code>,<code><span id="red">HEIGHT</span><span id="bl">)</span></code></td>
+                                <td><code><span id="bl">det(</span>35,<span id="red">X</span>,<span id="red">Y</span>,<span id="red">WIDTH</span>,<span id="red">HEIGHT</span><span id="bl">)</span></code></td>
                                 <td>Rectangle</td>
                                 <td>Draws an clipped rectangle outline with the global color index.</td>
                             </tr>
                             <tr>
-                                <td><code><span id="bl">det(</span>36,<code><span id="red">X</span></code>,<code><span id="red">Y</span></code>,<code><span id="red">WIDTH</span></code>,<code><span id="red">HEIGHT</span><span id="bl">)</span></code></td>
+                                <td><code><span id="bl">det(</span>36,<span id="red">X</span>,<span id="red">Y</span>,<span id="red">WIDTH</span>,<span id="red">HEIGHT</span><span id="bl">)</span></code></td>
                                 <td>FillRectangle</td>
                                 <td>Draws an clipped rectangle with the global color index.</td>
                             </tr>
                             <tr>
-                                <td><code><span id="bl">det(</span>37,<code><span id="red">X1</span></code>,<code><span id="red">Y1</span></code>,<code><span id="red">X2</span></code>,<code><span id="red">Y2</span><span id="bl">)</span></code></td>
+                                <td><code><span id="bl">det(</span>37,<span id="red">X1</span>,<span id="red">Y1</span>,<span id="red">X2</span>,<span id="red">Y2</span><span id="bl">)</span></code></td>
                                 <td>Line_NoClip</td>
                                 <td>Draws an arbitrarily unclipped line.</td>
                             </tr>
                             <tr>
-                                <td><code><span id="bl">det(</span>38,<code><span id="red">X</span></code>,<code><span id="red">Y</span></code>,<code><span id="red">LENGTH</span><span id="bl">)</span></code></td>
+                                <td><code><span id="bl">det(</span>38,<span id="red">X</span>,<span id="red">Y</span>,<span id="red">LENGTH</span><span id="bl">)</span></code></td>
                                 <td>HorizLine_NoClip</td>
                                 <td>Draws an unclipped horizontal line with the global color index.</td>
                             </tr>
                             <tr>
-                                <td><code><span id="bl">det(</span>39,<code><span id="red">X</span></code>,<code><span id="red">Y</span></code>,<code><span id="red">LENGTH</span><span id="bl">)</span></code></td>
+                                <td><code><span id="bl">det(</span>39,<span id="red">X</span>,<span id="red">Y</span>,<span id="red">LENGTH</span><span id="bl">)</span></code></td>
                                 <td>VertLine_NoClip</td>
                                 <td>Draws an unclipped vertical line with the global color index.</td>
                             </tr>
                             <tr>
-                                <td><code><span id="bl">det(</span>40,<code><span id="red">X</span></code>,<code><span id="red">Y</span></code>,<code><span id="red">RADIUS</span><span id="bl">)</span></code></td>
+                                <td><code><span id="bl">det(</span>40,<span id="red">X</span>,<span id="red">Y</span>,<span id="red">RADIUS</span><span id="bl">)</span></code></td>
                                 <td>FillCircle_NoClip</td>
                                 <td>Draws an unclipped filled circle.</td>
                             </tr>
                             <tr>
-                                <td><code><span id="bl">det(</span>41,<code><span id="red">X</span></code>,<code><span id="red">Y</span></code>,<code><span id="red">WIDTH</span></code>,<code><span id="red">HEIGHT</span><span id="bl">)</span></code></td>
+                                <td><code><span id="bl">det(</span>41,<span id="red">X</span>,<span id="red">Y</span>,<span id="red">WIDTH</span>,<span id="red">HEIGHT</span><span id="bl">)</span></code></td>
                                 <td>Rectangle_NoClip</td>
                                 <td>Draws an unclipped rectangle outline with the global color index.</td>
                             </tr>
                             <tr>
-                                <td><code><span id="bl">det(</span>42,<code><span id="red">X</span></code>,<code><span id="red">Y</span></code>,<code><span id="red">WIDTH</span></code>,<code><span id="red">HEIGHT</span><span id="bl">)</span></code></td>
+                                <td><code><span id="bl">det(</span>42,<span id="red">X</span>,<span id="red">Y</span>,<span id="red">WIDTH</span>,<span id="red">HEIGHT</span><span id="bl">)</span></code></td>
                                 <td>FillRectangle_NoClip</td>
                                 <td>Draws an unclipped rectangle with the global color index.</td>
                             </tr>
                             <tr>
-                                <td><code><span id="bl">det(</span>43,<code><span id="red">XMIN</span></code>,<code><span id="red">YMIN</span></code>,<code><span id="red">XMAX</span></code>,<code><span id="red">YMAX</span><span id="bl">)</span></code></td>
+                                <td><code><span id="bl">det(</span>43,<span id="red">XMIN</span>,<span id="red">YMIN</span>,<span id="red">XMAX</span>,<span id="red">YMAX</span><span id="bl">)</span></code></td>
                                 <td>SetClipRegion</td>
                                 <td>Sets the clipping  for clipped routines.</td>
                             </tr>
                             <tr>
-                                <td><code><span id="bl">det(</span>45,<code><span id="red">PIXELS</span><span id="bl">)</span></code></td>
+                                <td><code><span id="bl">det(</span>44,<span id="red">CLIP_REGION</span><span id="bl">)</span></code></td>
+                                <td>GetClipRegion</td>
+                                <td><code><span id="red">CLIP_REGION</span></code> is a pointer to the region bounds. Returns 0 if offscreen, 1 if onscreen.</td>
+                            </tr>
+                            <tr>
+                                <td><code><span id="bl">det(</span>45,<span id="red">PIXELS</span><span id="bl">)</span></code></td>
                                 <td>ShiftDown</td>
                                 <td>Shifts whatever is in the clip down by some pixels.</td>
                             </tr>
                             <tr>
-                                <td><code><span id="bl">det(</span>46,<code><span id="red">PIXELS</span><span id="bl">)</span></code></td>
+                                <td><code><span id="bl">det(</span>46,<span id="red">PIXELS</span><span id="bl">)</span></code></td>
                                 <td>ShiftUp</td>
                                 <td>Shifts whatever is in the clip up by some pixels.</td>
                             </tr>
                             <tr>
-                                <td><code><span id="bl">det(</span>47,<code><span id="red">PIXELS</span><span id="bl">)</span></code></td>
+                                <td><code><span id="bl">det(</span>47,<span id="red">PIXELS</span><span id="bl">)</span></code></td>
                                 <td>ShiftLeft</td>
                                 <td>Shifts whatever is in the clip left by some pixels.</td>
                             </tr>
                             <tr>
-                                <td><code><span id="bl">det(</span>48,<code><span id="red">PIXELS</span><span id="bl">)</span></code></td>
+                                <td><code><span id="bl">det(</span>48,<span id="red">PIXELS</span><span id="bl">)</span></code></td>
                                 <td>ShiftRight</td>
                                 <td>Shifts whatever is in the clip right by some pixels.</td>
                             </tr>
                             <tr>
-                                <td><code><span id="bl">det(</span>59,<code><span id="or">INDEX</span></code>,<code><span id="red">X</span></code>,<code><span id="red">Y</span><span id="bl">)</span></code></td>
+                                <td><code><span id="bl">det(</span>59,<span id="or">INDEX</span>,<span id="red">X</span>,<span id="red">Y</span><span id="bl">)</span></code></td>
                                 <td>Sprite_NoClip</td>
                                 <td>Places an sprite on the screen as fast as possible.</td>
                             </tr>
                             <tr>
-                                <td><code><span id="bl">det(</span>60,<code><span id="or">INDEX</span></code>,<code><span id="red">X</span></code>,<code><span id="red">Y</span><span id="bl">)</span></code></td>
+                                <td><code><span id="bl">det(</span>60,<span id="or">INDEX</span>,<span id="red">X</span>,<span id="red">Y</span><span id="bl">)</span></code></td>
                                 <td>TransparentSprite_NoClip</td>
                                 <td>Draws a transparent sprite to the current buffer. The transparent color is 0.</td>
                             </tr>
                             <tr>
-                                <td><code><span id="bl">det(</span>62,<code><span id="or">INDEX</span></code>,<code><span id="red">X</span></code>,<code><span id="red">Y</span></code>,<code><span id="red">WSCALE</span></code>,<code><span id="red">HSCALE</span><span id="bl">)</span></code></td>
+                                <td><code><span id="bl">det(</span>62,<span id="or">INDEX</span>,<span id="red">X</span>,<span id="red">Y</span>,<span id="red">WSCALE</span>,<span id="red">HSCALE</span><span id="bl">)</span></code></td>
                                 <td>ScaledSprite_NoClip</td>
                                 <td>Draws a scaled sprite to the screen.</td>
                             </tr>
                             <tr>
-                                <td><code><span id="bl">det(</span>63,<code><span id="or">INDEX</span></code>,<code><span id="red">X</span></code>,<code><span id="red">Y</span></code>,<code><span id="red">WSCALE</span></code>,<code><span id="red">HSCALE</span><span id="bl">)</span></code></td>
+                                <td><code><span id="bl">det(</span>63,<span id="or">INDEX</span>,<span id="red">X</span>,<span id="red">Y</span>,<span id="red">WSCALE</span>,<span id="red">HSCALE</span><span id="bl">)</span></code></td>
                                 <td>ScaledTransparentSprite_NoClip</td>
                                 <td>Draws a scaled sprite to the screen with transparency. The transparent color is 0.</td>
                             </tr>
                             <tr>
-                                <td><code><span id="bl">det(</span>71,<code><span id="red">X1</span></code>,<code><span id="red">Y1</span></code>,<code><span id="red">X2</span></code>,<code><span id="red">Y2</span></code>,<code><span id="red">X3</span></code>,<code><span id="red">Y3</span><span id="bl">)</span></code></td>
+                                <td><code><span id="bl">det(</span>71,<span id="red">X1</span>,<span id="red">Y1</span>,<span id="red">X2</span>,<span id="red">Y2</span>,<span id="red">X3</span>,<span id="red">Y3</span><span id="bl">)</span></code></td>
                                 <td>FillTriangle</td>
                                 <td>Draws a filled triangle with clipping.</td>
                             </tr>
                             <tr>
-                                <td><code><span id="bl">det(</span>72,<code><span id="red">X1</span></code>,<code><span id="red">Y1</span></code>,<code><span id="red">X2</span></code>,<code><span id="red">Y2</span></code>,<code><span id="red">X3</span></code>,<code><span id="red">Y3</span><span id="bl">)</span></code></td>
+                                <td><code><span id="bl">det(</span>72,<span id="red">X1</span>,<span id="red">Y1</span>,<span id="red">X2</span>,<span id="red">Y2</span>,<span id="red">X3</span>,<span id="red">Y3</span><span id="bl">)</span></code></td>
                                 <td>FillTriangle_NoClip</td>
                                 <td>Draws a filled triangle without clipping.</td>
                             </tr>
                             <tr>
-                                <td><code><span id="bl">det(</span>74,<code><span id="red">XSCALE</span></code>,<code><span id="red">YSCALE</span><span id="bl">)</span></code></td>
+                                <td><code><span id="bl">det(</span>74,<span id="red">XSCALE</span>,<span id="red">YSCALE</span><span id="bl">)</span></code></td>
                                 <td>SetTextScale</td>
                                 <td>Changes the amount of text scaling (note that height and width are independent).</td>
                             </tr>
                             <tr>
-                                <td><code><span id="bl">det(</span>75,<code><span id="red">COLOR</span><span id="bl">)</span></code></td>
+                                <td><code><span id="bl">det(</span>75,<span id="red">COLOR</span><span id="bl">)</span></code></td>
                                 <td>SetTransparentColor</td>
                                 <td>Sets the global transparent color index for all routines.</td>
                             </tr>
@@ -583,17 +619,17 @@
                                 <td>Fills the current screen with a bunch of zeros. Same as det(5,0) but faster.</td>
                             </tr>
                             <tr>
-                                <td><code><span id="bl">det(</span>77,<code><span id="red">CONFIG</span><span id="bl">)</span></code></td>
+                                <td><code><span id="bl">det(</span>77,<span id="red">CONFIG</span><span id="bl">)</span></code></td>
                                 <td>SetTextConfig</td>
                                 <td>Configures text depending on the arguments. 1 = clipping, 2 = no clipping.</td>
                             </tr>
                             <tr>
-                                <td><code><span id="bl">det(</span>81,<code><span id="red">HEIGHT</span><span id="bl">)</span></code></td>
+                                <td><code><span id="bl">det(</span>81,<span id="red">HEIGHT</span><span id="bl">)</span></code></td>
                                 <td>SetFontHeight</td>
                                 <td>Sets the height of the font in pixels.</td>
                             </tr>
                             <tr>
-                                <td><code><span id="bl">det(</span>83,<code><span id="red">X</span></code>,<code><span id="red">Y</span></code>,<code><span id="red">COLOR</span><span id="bl">)</span></code></td>
+                                <td><code><span id="bl">det(</span>83,<span id="red">X</span>,<span id="red">Y</span>,<span id="red">COLOR</span><span id="bl">)</span></code></td>
                                 <td>FloodFill</td>
                                 <td>Fills an area with a color.</td>
                             </tr>
