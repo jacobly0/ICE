@@ -668,6 +668,34 @@
                                 <td><code><span id="grey">L₁</span>...<span id="grey">L₆</span></code></td>
                                 <td>Returns the pointer to one of the OS lists as an integer.</td>
                             </tr>
+                            <tr>
+                                <td><code><span id="grey">LIST</span>(<span id="red">EXP</span>)</code></td>
+                                <td>Same as <code>{<span id="grey">LIST</span>+<span id="red">EXP</span>}</code> but easier to remember.</td>
+                            </tr>
+                            <tr>
+                                <td><code>*{<span id="red">EXP</span>}</code></td>
+                                <td>Returns the single byte <code><span id="red">EXP</span></code> points to.</td>
+                            </tr>
+                            <tr>
+                                <td><code>**{<span id="red">EXP</span>}</code></td>
+                                <td>Returns the 2-byte value <code><span id="red">EXP</span></code> points to.</td>
+                            </tr>
+                            <tr>
+                                <td><code>{<span id="red">EXP</span>}</code></td>
+                                <td>Returns the word <code><span id="red">EXP</span></code> points to. <code>***{<span id="red">EXP</span>}</code> is valid syntax as well.</td>
+                            </tr>
+                            <tr>
+                                <td><code><span id="red">EXP1</span>→*{<span id="red">EXP2</span>}</code></td>
+                                <td>The single byte of <code><span id="red">EXP1</span></code> is stored where <code><span id="red">EXP2</span></code> points to.</td>
+                            </tr>
+                            <tr>
+                                <td><code><span id="red">EXP1</span>→**{<span id="red">EXP2</span>}</code></td>
+                                <td>The 2-byte value <code><span id="red">EXP1</span></code> is stored where <code><span id="red">EXP2</span></code> points to.</td>
+                            </tr>
+                            <tr>
+                                <td><code><span id="red">EXP1</span>→{<span id="red">EXP2</span>}</code></td>
+                                <td>The word <code><span id="red">EXP1</span></code> is stored where <code><span id="red">EXP2</span></code> points to.</td>
+                            </tr>
                         </table>
                         <h3 id="strings">Strings</h3>
                         <table cellspacing="0" border="1" cellpadding="3" border-collapse="collapse">
