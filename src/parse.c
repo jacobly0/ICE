@@ -98,7 +98,6 @@ uint8_t parseExpression(int token) {
         if (storeDepth) {
             storeDepth--;
         }
-        
 
         // Process a number
         if (tok >= t0 && tok <= t9) {
@@ -175,12 +174,33 @@ uint8_t parseExpression(int token) {
             }
         }
         
-        // Process an OS list (number)
+        // Process an OS list (number or list element)
         else if (tok == tVarLst) {
             outputCurr->type = TYPE_NUMBER;
             outputCurr->operand = ice.OSLists[_getc(ice.inPrgm)];
             outputElements++;
             mask = TYPE_MASK_U24;
+            
+            // Check if it's a list element
+            if ((uint8_t)(token = _getc(ice.inPrgm)) == tLParen) {
+                // Trick ICE to think it's a {L1+...}
+                *++amountOfArgumentsStackPtr = 1;
+                stackCurr->type = TYPE_FUNCTION;
+                stackCurr->mask = mask;
+                
+                // I have to create a non-existent token, because L1(...) the right parenthesis should pretend it's a },
+                // but that is impossible if I just push { or (. Then when a ) appears and it hits the 0x0F, just replace it with a }
+                stackCurr->operand = 0x0F + ((storeDepth && 1) << 16);
+                stackElements++;
+                mask = TYPE_MASK_U24;
+                canUseMask = 2;
+                
+                // :D
+                token = tAdd;
+            }
+            
+            // Don't grab next token
+            continue;
         }
 
         // Process a variable
@@ -287,11 +307,12 @@ stackToOutputReturn1:
                 }
             }
             
-            stackPrev = &stackPtr[stackElements-1];
+            stackPrev = &stackPtr[stackElements - 1];
             
             // Closing tag should match it's open tag
             if (((tok == tRBrace || tok == tRBrack) && ((uint8_t)stackPrev->operand != token - 1)) ||
-                 (tok == tRParen && (stackPrev->operand == tLBrace || stackPrev->operand == tLBrack))) {
+                 (tok == tRParen && (uint8_t)stackPrev->operand != 0x0F && 
+                   ((uint8_t)stackPrev->operand == tLBrace || (uint8_t)stackPrev->operand == tLBrack))) {
                 return E_SYNTAX;
             }
             
@@ -316,7 +337,7 @@ stackToOutputReturn1:
                 if ((uint8_t)stackPrev->operand != tLParen) {
                     outputCurr->type = stackPrev->type;
                     outputCurr->mask = stackPrev->mask;
-                    outputCurr->operand = stackPrev->operand + temp;
+                    outputCurr->operand = stackPrev->operand + temp - ((uint8_t)stackPrev->operand == 0x0F ? 0x0F - tLBrace : 0);
                     stackElements--;
                     outputElements++;
                 }
@@ -546,6 +567,11 @@ stackToOutput:
         outputCurr->type = stackPrev->type;
         outputCurr->mask = stackPrev->mask;
         temp = stackPrev->operand;
+        
+        if ((uint8_t)temp == 0x0F) {
+            // :D
+            temp = tLBrace;
+        }
         
         // If it's a function, add the amount of arguments as well
         if (stackPrev->type == TYPE_FUNCTION) {
