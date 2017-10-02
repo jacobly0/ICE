@@ -115,8 +115,8 @@ const uint8_t GraphxArgs[] = {
     RET_NONE | 3, SMALL_12,    // FloodFill
     RET_NONE | 3, ARG_NORM,    // RLETSprite
     RET_NONE | 3, SMALL_3,     // RLETSprite_NoClip
-    UN       | 2, ARG_NORM,    // ConvertFromRLETSprite
-    UN       | 2, ARG_NORM,    // ConvertToRLETSprite
+    RET_HL   | 2, ARG_NORM,    // ConvertFromRLETSprite
+    RET_HL   | 2, ARG_NORM,    // ConvertToRLETSprite
     UN       | 2, ARG_NORM,    // ConvertToNewRLETSprite
     RET_HL   | 4, SMALL_34,    // RotateScaleSprite
     RET_HL   | 4, SMALL_34,    // RotatedScaledTransparentSprite_NoClip
@@ -482,12 +482,20 @@ uint8_t parseFunction(uint24_t index) {
     // DefineSprite(
     else if (function2 == tDefineSprite) {
         if (amountOfArguments == 2) {
+            uint8_t width = outputPrevPrev->operand;
+            uint8_t height = outputPrev->operand;
+            
             if (outputPrevPrev->type != TYPE_NUMBER || outputPrevType != TYPE_NUMBER) {
                 return E_SYNTAX;
             }
             
             LD_HL_IMM(ice.freeMemoryPtr);
-            ice.freeMemoryPtr += outputPrevPrev->operand * outputPrev->operand + 2;
+            ice.freeMemoryPtr += width * height + 2;
+            
+            LD_HL_VAL(width);
+            INC_HL();
+            LD_HL_VAL(height);
+            DEC_HL();
             
             // If too much memory allocated, it will overwrite variables and eventually cause a crash
             if (ice.freeMemoryPtr > 0xD13EC5) {

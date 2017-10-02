@@ -302,7 +302,7 @@ void preScanProgram(void) {
     _rewind(ice.inPrgm);
     
     // Scan the entire program
-    while ((int)(token = _getc(ice.inPrgm)) != EOF) {
+    while ((int)(token = _getc()) != EOF) {
         uint8_t tok = (uint8_t)token;
         
         if (tok == tString) {
@@ -314,21 +314,21 @@ void preScanProgram(void) {
         } else if (tok == tStore) {
             expr.inString = false;
         } else if (tok == tVarLst && !expr.inString) {
-            if (!ice.OSLists[token = _getc(ice.inPrgm)]) {
+            if (!ice.OSLists[token = _getc()]) {
                 ice.OSLists[token] = pixelShadow + 2000 * (ice.amountOfOSLocationsUsed++);
             }
         } else if (tok == tVarStrng && !expr.inString) {
-            if (!ice.OSStrings[token = _getc(ice.inPrgm)]) {
+            if (!ice.OSStrings[token = _getc()]) {
                 ice.OSStrings[token] = pixelShadow + 2000 * (ice.amountOfOSLocationsUsed++);
             }
         } else if (tok == t2ByteTok && !expr.inString) {
             // CompilePrgm( - AsmComp(
-            if ((uint8_t)_getc(ice.inPrgm) == tAsmComp) {
+            if ((uint8_t)_getc() == tAsmComp) {
                 char tempName[9];
                 uint8_t a = 0;
                 ti_var_t tempProg = ice.inPrgm;
 
-                while ((int)(token = _getc(ice.inPrgm)) != EOF && (tok = (uint8_t)token) != tEnter && a < 9) {
+                while ((int)(token = _getc()) != EOF && (tok = (uint8_t)token) != tEnter && a < 9) {
                     tempName[a++] = tok;
                 }
                 tempName[a] = 0;
@@ -344,8 +344,8 @@ void preScanProgram(void) {
                 ice.inPrgm = tempProg;
             }
         } else if (tok == tDet && !expr.inString) {
-            uint8_t tok1 = _getc(ice.inPrgm);
-            uint8_t tok2 = _getc(ice.inPrgm);
+            uint8_t tok1 = _getc();
+            uint8_t tok2 = _getc();
 
             // Invalid det( command
             if (tok1 < t0 || tok1 > t9) {
@@ -383,7 +383,7 @@ void preScanProgram(void) {
     _rewind(ice.inPrgm);
     expr.inString = false;
     
-    while ((int)(token = _getc(ice.inPrgm)) != EOF) {
+    while ((int)(token = _getc()) != EOF) {
         uint8_t tok = (uint8_t)token;
         
         if (tok == tString) {
@@ -391,8 +391,8 @@ void preScanProgram(void) {
         } else if (tok == tEnter) {
             expr.inString = false;
         } else if (tok == tSum && !expr.inString) {
-            uint8_t tok1 = _getc(ice.inPrgm);
-            uint8_t tok2 = _getc(ice.inPrgm);
+            uint8_t tok1 = _getc();
+            uint8_t tok2 = _getc();
 
             // Invalid det( command
             if (tok1 < t0 || tok1 > t9) {

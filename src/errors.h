@@ -17,6 +17,7 @@
 #define E_NO_SUBPROG       13
 #define E_NO_FUNC_ALLOW    14
 #define E_MEMORY           15
+#define E_WRONG_CHAR       16
 
 #define VALID              255
 

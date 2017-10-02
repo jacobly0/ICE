@@ -39,7 +39,7 @@ uint8_t parseProgram(void) {
     uint8_t ret = VALID;
 
     // Do things based on the token
-    while ((token = _getc(ice.inPrgm)) != EOF) {
+    while ((token = _getc()) != EOF) {
         if ((uint8_t)token != tii) {
             ice.usedCodeAfterHeader = true;
         }
@@ -103,7 +103,7 @@ uint8_t parseExpression(int token) {
         if (tok >= t0 && tok <= t9) {
             uint24_t output = token - t0;
             
-            while ((uint8_t)(token = _getc(ice.inPrgm)) >= t0 && (uint8_t)token <= t9) {
+            while ((uint8_t)(token = _getc()) >= t0 && (uint8_t)token <= t9) {
                 output = output * 10 + token - t0;
             }
             outputCurr->type = TYPE_NUMBER;
@@ -119,7 +119,7 @@ uint8_t parseExpression(int token) {
         else if (tok == tee) {
             uint24_t output = 0;
             
-            while ((tok = IsHexadecimal(token = _getc(ice.inPrgm))) != 16) {
+            while ((tok = IsHexadecimal(token = _getc())) != 16) {
                 output = (output << 4) + tok;
             }
             outputCurr->type = TYPE_NUMBER;
@@ -135,7 +135,7 @@ uint8_t parseExpression(int token) {
         else if (tok == tPi) {
             uint24_t output = 0;
             
-            while ((tok = (token = _getc(ice.inPrgm))) >= t0 && tok <= t1) {
+            while ((tok = (token = _getc())) >= t0 && tok <= t1) {
                 output = (output << 1) + tok - t0;
             }
             outputCurr->type = TYPE_NUMBER;
@@ -149,10 +149,10 @@ uint8_t parseExpression(int token) {
         
         // Process a 'negative' number or expression
         else if (tok == tChs) {
-            if ((token = _getc(ice.inPrgm)) >= t0 && token <= t9) {
+            if ((token = _getc()) >= t0 && token <= t9) {
                 uint24_t output = token - t0;
                 
-                while ((uint8_t)(token = _getc(ice.inPrgm)) >= t0 && (uint8_t)token <= t9) {
+                while ((uint8_t)(token = _getc()) >= t0 && (uint8_t)token <= t9) {
                     output = output * 10 + token - t0;
                 }
                 outputCurr->type = TYPE_NUMBER;
@@ -177,12 +177,12 @@ uint8_t parseExpression(int token) {
         // Process an OS list (number or list element)
         else if (tok == tVarLst) {
             outputCurr->type = TYPE_NUMBER;
-            outputCurr->operand = ice.OSLists[_getc(ice.inPrgm)];
+            outputCurr->operand = ice.OSLists[_getc()];
             outputElements++;
             mask = TYPE_MASK_U24;
             
             // Check if it's a list element
-            if ((uint8_t)(token = _getc(ice.inPrgm)) == tLParen) {
+            if ((uint8_t)(token = _getc()) == tLParen) {
                 // Trick ICE to think it's a {L1+...}
                 *++amountOfArgumentsStackPtr = 1;
                 stackCurr->type = TYPE_FUNCTION;
@@ -215,7 +215,7 @@ uint8_t parseExpression(int token) {
         else if (tok == tMul && canUseMask) {
             uint8_t a = 0;
             
-            while ((uint8_t)(token = _getc(ice.inPrgm)) == tMul) {
+            while ((uint8_t)(token = _getc()) == tMul) {
                 a++;
             }
             if (a > 2 || (uint8_t)token != tLBrace) {
@@ -272,7 +272,7 @@ stackToOutputReturn1:
             outputCurr->type = TYPE_NUMBER;
             outputElements++;
             mask = TYPE_MASK_U24;
-            tok = _getc(ice.inPrgm);
+            tok = _getc();
             
             // Get the address of the variable
             if (tok >= tA && tok <= tTheta) {
@@ -280,9 +280,9 @@ stackToOutputReturn1:
                 
                 outputCurr->operand = 0xD13F47 + offset;
             } else if (tok == tVarLst) {
-                outputCurr->operand = ice.OSLists[_getc(ice.inPrgm)];
+                outputCurr->operand = ice.OSLists[_getc()];
             } else if (tok == tVarStrng) {
-                outputCurr->operand = ice.OSStrings[_getc(ice.inPrgm)];
+                outputCurr->operand = ice.OSStrings[_getc()];
             } else {
                 return E_SYNTAX;
             }
@@ -355,7 +355,7 @@ stackToOutputReturn1:
         // Process a function, ( { [
         else if (strchr(implementedFunctions, tok) || IsA2ByteToken || tok == tLParen || tok == tLBrace || tok == tLBrack) {
             if (IsA2ByteToken) {
-                uint8_t temp2 = _getc(ice.inPrgm);
+                uint8_t temp2 = _getc();
                 uint24_t temp3;
                 
                 for (temp3 = 0; temp3 < sizeof(implementedFunctions2); temp3 += 2) {
@@ -393,19 +393,19 @@ foundRight2ByteToken:
             // Check for fast key input, i.e. getKey(X)
             if (tok == tGetKey) {
                 // The next token must be a left parenthesis
-                if ((uint8_t)(token = _getc(ice.inPrgm)) != tLParen) {
+                if ((uint8_t)(token = _getc()) != tLParen) {
                     continue;
                 }
                 
                 // The next token must be a number
-                if ((uint8_t)(token = _getc(ice.inPrgm)) >= t0 && (uint8_t)token <= t9) {
+                if ((uint8_t)(token = _getc()) >= t0 && (uint8_t)token <= t9) {
                     uint24_t temp2 = token - t0;
                     
                     // The next token can be a number, but also right parenthesis or EOF
-                    if ((uint8_t)(token = _getc(ice.inPrgm)) >= t0 && (uint8_t)token <= t9) {
+                    if ((uint8_t)(token = _getc()) >= t0 && (uint8_t)token <= t9) {
                         // Add the direct key to the operand
                         outputCurr->operand = tGetKey + ((temp2 * 10 + token - t0) << 8);
-                        if ((uint8_t)(token = _getc(ice.inPrgm)) == tStore || (uint8_t)token == tEnter) {
+                        if ((uint8_t)(token = _getc()) == tStore || (uint8_t)token == tEnter) {
                             // Don't grab new token
                             continue;
                         } else if (token != EOF && (uint8_t)token != tRParen) {
@@ -434,10 +434,9 @@ foundRight2ByteToken:
             outputElements++;
             mask = TYPE_MASK_U24;
             
-            // Get the string until it hits EOF, Enter, " or ->
-            while ((token = _getc(ice.inPrgm)) != EOF && (uint8_t)token != tString && (uint8_t)token != tStore && (uint8_t)token != tEnter) {
-                *ice.programDataPtr++ = token;
-            }
+            // Grab string
+            token = grabString(&ice.programDataPtr, true);
+
             *ice.programDataPtr++ = 0;
             if ((uint8_t)token == tStore || (uint8_t)token == tEnter) {
                 continue;
@@ -447,7 +446,7 @@ foundRight2ByteToken:
         // Parse an OS string
         else if (tok == tVarStrng) {
             outputCurr->type = TYPE_OS_STRING;
-            outputCurr->operand = ice.OSStrings[_getc(ice.inPrgm)];
+            outputCurr->operand = ice.OSStrings[_getc()];
             outputElements++;
             mask = TYPE_MASK_U24;
         }
@@ -458,7 +457,7 @@ foundRight2ByteToken:
         }
         
         // Yay, fetch the next token, it's great, it's true, I like it
-        token = _getc(ice.inPrgm);
+        token = _getc();
     }
     
     // If the expression quits normally, rather than an argument seperator
@@ -813,7 +812,7 @@ static uint8_t functionI(int token) {
         if (!ice.gotName) {
             uint8_t a = 0;
             
-            while ((token = _getc(ice.inPrgm)) != EOF && (uint8_t)token != tEnter && a < 9) {
+            while ((token = _getc()) != EOF && (uint8_t)token != tEnter && a < 9) {
                 ice.outName[a++] = token;
             }
             ice.gotName = true;
@@ -834,7 +833,7 @@ static uint8_t functionI(int token) {
             ice.programPtr += 7;
             
             // Icon should start with a "
-            if ((uint8_t)_getc(ice.inPrgm) != tString) {
+            if ((uint8_t)_getc() != tString) {
                 return E_WRONG_ICON;
             }
 
@@ -842,15 +841,15 @@ static uint8_t functionI(int token) {
             do {
                 uint8_t tok;
                 
-                if ((tok = IsHexadecimal(_getc(ice.inPrgm))) == 16) {
+                if ((tok = IsHexadecimal(_getc())) == 16) {
                     return E_INVALID_HEX;
                 }
                 *ice.programPtr++ = colorTable[tok];
             } while (++b);
             
             // Move on to the description
-            if ((uint8_t)(token = _getc(ice.inPrgm)) == tString) {
-                token = _getc(ice.inPrgm);
+            if ((uint8_t)(token = _getc()) == tString) {
+                token = _getc();
             }
 
             if (token != EOF) {
@@ -859,35 +858,8 @@ static uint8_t functionI(int token) {
                 }
                 
                 // Check if there is a description
-                if ((uint8_t)(token = _getc(ice.inPrgm)) == tii) {
-#ifndef COMPUTER_ICE
-                    void *dataPtr = ti_GetDataPtr(ice.inPrgm);
-                    
-                    // Grab description
-                    while ((token = _getc(ice.inPrgm)) != EOF && (uint8_t)token != tEnter) {
-                        uint24_t strLength;
-                        const char *dataString;
-                        uint8_t tokSize;
-                        
-                        // Get the token in characters, and copy to the output
-                        dataString = ti_GetTokenString(&dataPtr, &tokSize, &strLength);
-                        memcpy(ice.programPtr, dataString, strLength);
-                        ice.programPtr += strLength;
-                        
-                        // If it's a 2-byte token, we also need to get the second byte of it
-                        if (tokSize == 2) {
-                            _getc(ice.inPrgm);
-                        }
-                    }
-#else
-                    while ((token = _getc(ice.inPrgm)) != EOF && (uint8_t)token != tEnter) {
-                        const uint8_t token2byte[] = { 0x5C, 0x5D, 0x5E, 0x60, 0x61, 0x62, 0x63, 0x7E, 0xBB, 0xAA, 0xEF };
-                        *ice.programPtr++ = (uint8_t)token;
-                        if (memchr(token2byte, token, sizeof token2byte)) {
-                            _getc(ice.inPrgm);
-                        }
-                    }
-#endif
+                if ((uint8_t)(token = _getc()) == tii) {
+                    grabString(&ice.programPtr, false);
                 } else if (token != EOF) {
                     _seek(-1, SEEK_CUR, ice.inPrgm);
                 }
@@ -934,7 +906,7 @@ static uint8_t functionIf(int token) {
     uint8_t tempGotoElements = ice.amountOfGotos;
     uint8_t tempLblElements = ice.amountOfLbls;
     
-    if ((token = _getc(ice.inPrgm)) != EOF && token != tEnter) {
+    if ((token = _getc()) != EOF && token != tEnter) {
         uint8_t *IfStartAddr, res;
         uint24_t tempDataOffsetElements;
         
@@ -1121,7 +1093,7 @@ uint8_t functionRepeat(int token) {
     _seek(RepeatCondStart, SEEK_SET, ice.inPrgm);
     tempCurrentLine2 = ice.currentLine;
     ice.currentLine = tempCurrentLine;
-    if ((res = parseExpression(_getc(ice.inPrgm))) != VALID) {
+    if ((res = parseExpression(_getc())) != VALID) {
         return res;
     }
     ice.currentLine = tempCurrentLine2;
@@ -1162,11 +1134,11 @@ uint8_t functionRepeat(int token) {
 static uint8_t functionReturn(int token) {
     uint8_t res;
     
-    if ((token = _getc(ice.inPrgm)) == EOF || (uint8_t)token == tEnter) {
+    if ((token = _getc()) == EOF || (uint8_t)token == tEnter) {
         RET();
         ice.lastTokenIsReturn = true;
     } else if (token == tIf) {
-        if ((res = parseExpression(_getc(ice.inPrgm))) != VALID) {
+        if ((res = parseExpression(_getc())) != VALID) {
             return res;
         }
         if (expr.outputIsString) {
@@ -1190,8 +1162,8 @@ static uint8_t functionDisp(int token) {
     do {
         uint8_t res;
 
-        if ((uint8_t)(token = _getc(ice.inPrgm)) == tii) {
-            if ((token = _getc(ice.inPrgm)) == EOF) {
+        if ((uint8_t)(token = _getc()) == tii) {
+            if ((token = _getc()) == EOF) {
                 ice.tempToken = tEnter;
             } else {
                 ice.tempToken = (uint8_t)token;
@@ -1226,7 +1198,7 @@ static uint8_t functionOutput(int token) {
     
     // Get the first argument = column
     expr.inFunction = true;
-    if ((res = parseExpression(_getc(ice.inPrgm))) != VALID) {
+    if ((res = parseExpression(_getc())) != VALID) {
         return res;
     }
     
@@ -1244,7 +1216,7 @@ static uint8_t functionOutput(int token) {
         
         // Get the second argument = row
         expr.inFunction = true;
-        if ((res = parseExpression(_getc(ice.inPrgm))) != VALID) {
+        if ((res = parseExpression(_getc())) != VALID) {
             return res;
         }
         if (expr.outputIsString) {
@@ -1279,7 +1251,7 @@ static uint8_t functionOutput(int token) {
         
         // Get the second argument = row
         expr.inFunction = true;
-        if ((res = parseExpression(_getc(ice.inPrgm))) != VALID) {
+        if ((res = parseExpression(_getc())) != VALID) {
             return res;
         }
         if (expr.outputIsString) {
@@ -1302,7 +1274,7 @@ static uint8_t functionOutput(int token) {
     // Get the third argument = output thing
     if (ice.tempToken == tComma) {
         MaybeLDIYFlags();
-        if ((res = parseExpression(_getc(ice.inPrgm))) != VALID) {
+        if ((res = parseExpression(_getc())) != VALID) {
             return res;
         }
         
@@ -1339,17 +1311,17 @@ static uint8_t functionFor(int token) {
     uint8_t *endPointExpressionValue = 0, *stepExpression = 0, *jumpToCond, *loopStart;
     uint8_t tok, variable, res;
     
-    if ((tok = _getc(ice.inPrgm)) < tA || tok > tTheta) {
+    if ((tok = _getc()) < tA || tok > tTheta) {
         return E_SYNTAX;
     }
     variable = GetVariableOffset(tok);
     expr.inFunction = true;
-    if (_getc(ice.inPrgm) != tComma) {
+    if (_getc() != tComma) {
         return E_SYNTAX;
     }
     
     // Get the start value, followed by a comma
-    if ((res = parseExpression(_getc(ice.inPrgm))) != VALID) {
+    if ((res = parseExpression(_getc())) != VALID) {
         return res;
     }
     if (ice.tempToken != tComma) {
@@ -1366,7 +1338,7 @@ static uint8_t functionFor(int token) {
     
     // Get the end value
     expr.inFunction = true;
-    if ((res = parseExpression(_getc(ice.inPrgm))) != VALID) {
+    if ((res = parseExpression(_getc())) != VALID) {
         return res;
     }
     
@@ -1390,7 +1362,7 @@ static uint8_t functionFor(int token) {
         expr.inFunction = true;
         
         // Get the step value
-        if ((res = parseExpression(_getc(ice.inPrgm))) != VALID) {
+        if ((res = parseExpression(_getc())) != VALID) {
             return res;
         }
         if (ice.tempToken == tComma) {
@@ -1504,7 +1476,7 @@ static uint8_t functionPrgm(int token) {
     *ice.programDataPtr++ = TI_PRGM_TYPE;
 
     // Fetch the name
-    while ((token = _getc(ice.inPrgm)) != EOF && (uint8_t)token != tEnter && ++a < 9) {
+    while ((token = _getc()) != EOF && (uint8_t)token != tEnter && ++a < 9) {
         *ice.programDataPtr++ = token;
     }
     *ice.programDataPtr++ = 0;
@@ -1519,7 +1491,7 @@ static uint8_t functionPrgm(int token) {
 }
 
 static uint8_t functionCustom(int token) {
-    uint8_t tok = _getc(ice.inPrgm);
+    uint8_t tok = _getc();
     
     // DefineSprite(, Data(, Copy(, Alloc(
     if (tok == tDefineSprite || tok == tData || tok == tCopy || tok == tAlloc) {
@@ -1544,7 +1516,7 @@ static uint8_t functionLbl(int token) {
     uint8_t a = 0;
     
     // Get the label name
-    while ((token = _getc(ice.inPrgm)) != EOF && (uint8_t)token != tEnter) {
+    while ((token = _getc()) != EOF && (uint8_t)token != tEnter) {
         labelCurr->name[a++] = token;
     }
     labelCurr->addr = (uint24_t)ice.programPtr;
@@ -1565,7 +1537,7 @@ void insertGotoLabel(void) {
     uint8_t a = 0;
     int token;
     
-    while ((token = _getc(ice.inPrgm)) != EOF && (uint8_t)token != tEnter) {
+    while ((token = _getc()) != EOF && (uint8_t)token != tEnter) {
         gotoCurr->name[a++] = token;
     }
     gotoCurr->addr = (uint24_t)ice.programPtr;
@@ -1582,7 +1554,7 @@ static uint8_t functionPause(int token) {
         uint8_t res;
         
         _seek(-1, SEEK_CUR, ice.inPrgm);
-        if ((res = parseExpression(_getc(ice.inPrgm))) != VALID) {
+        if ((res = parseExpression(_getc())) != VALID) {
             return res;
         }
         AnsToHL();
@@ -1606,7 +1578,7 @@ static uint8_t functionPause(int token) {
 static uint8_t functionInput(int token) {
     uint8_t tok;
     
-    if ((tok = _getc(ice.inPrgm)) < tA || tok > tTheta) {
+    if ((tok = _getc()) < tA || tok > tTheta) {
         return E_SYNTAX;
     }
     LD_A(GetVariableOffset(tok));
@@ -1637,8 +1609,8 @@ static uint8_t functionInput(int token) {
 
 static uint8_t functionBB(int token) {
     // Asm(
-    if ((uint8_t)(token = _getc(ice.inPrgm)) == tAsm) {
-        while ((token = _getc(ice.inPrgm)) != EOF && (uint8_t)token != tEnter && (uint8_t)token != tRParen) {
+    if ((uint8_t)(token = _getc()) == tAsm) {
+        while ((token = _getc()) != EOF && (uint8_t)token != tEnter && (uint8_t)token != tRParen) {
             uint8_t tok1, tok2;
             
             // Get hexadecimal 1
@@ -1647,7 +1619,7 @@ static uint8_t functionBB(int token) {
             }
             
             // Get hexadecimal 2
-            if ((tok2 = IsHexadecimal(_getc(ice.inPrgm))) == 16) {
+            if ((tok2 = IsHexadecimal(_getc())) == 16) {
                 return E_INVALID_HEX;
             }
             
@@ -1671,7 +1643,7 @@ static uint8_t functionBB(int token) {
 #ifdef COMPUTER_ICE
         return E_NO_SUBPROG;
 #else
-        while ((token = _getc(ice.inPrgm)) != EOF && (uint8_t)token != tEnter && a < 9) {
+        while ((token = _getc()) != EOF && (uint8_t)token != tEnter && a < 9) {
             tempName[a++] = token;
         }
         tempName[a] = 0;

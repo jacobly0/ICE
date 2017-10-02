@@ -34,6 +34,7 @@ static const char *errors[] = {
     "Compiling subprograms not supported",
     "rand and getKey are disabled in this function",
     "Too much memory allocated",
+    "Warning: Unknown char in the string!",
 };
 
 void displayLabelError(char *label) {
@@ -54,7 +55,7 @@ void displayError(uint8_t index) {
     char buf[30];
     char c;
     
-    gfx_SetTextFGColor(224);
+    gfx_SetTextFGColor(224 + 3 * (index == E_WRONG_CHAR));
     gfx_SetTextXY(1, iceMessageLine);
     
     // Display the error
