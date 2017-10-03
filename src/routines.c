@@ -9,11 +9,10 @@
 #include "output.h"
 #include "operator.h"
 
-#define LB_X 40
+#define LB_X 80
 #define LB_Y 200
-#define LB_W 240
-#define LB_H 14
-#define LB_R (LB_H / 2)
+#define LB_W 160
+#define LB_H 10
 
 extern variable_t variableStack[85];
 
@@ -140,34 +139,19 @@ uint8_t GetVariableOffset(uint8_t tok) {
 
 void displayLoadingBarFrame(void) {
     // Display a fancy loading bar during compiling ;)
-    gfx_SetColor(255);
-    gfx_FillRectangle_NoClip(LB_X - LB_R, LB_Y - LB_R, LB_W + LB_H, LB_H);
     gfx_SetColor(0);
-    gfx_Circle_NoClip(LB_X, LB_Y, LB_R);
-    gfx_Circle_NoClip(LB_X + LB_W, LB_Y, LB_R);
-    gfx_HorizLine_NoClip(LB_X, LB_Y - LB_R, LB_W);
-    gfx_HorizLine_NoClip(LB_X, LB_Y + LB_R, LB_W);
+    gfx_Rectangle_NoClip(LB_X, LB_Y, LB_W, LB_H);
     gfx_SetColor(255);
-    gfx_FillRectangle_NoClip(LB_X, LB_Y - LB_R + 1, LB_R + 1, LB_H - 1);
-    gfx_FillRectangle_NoClip(LB_X + LB_W - LB_R, LB_Y - LB_R + 1, LB_R + 1, LB_H - 1);
+    gfx_FillRectangle_NoClip(LB_X + 1, LB_Y + 1, LB_W - 2, LB_H - 2);
 }
 
-void displayLoadingBar(ti_var_t inPrgm) {
-    gfx_SetClipRegion(
-        LB_X - LB_R + 1, 
-        LB_Y - LB_R, 
-        LB_X - LB_R + 2 + ti_Tell(inPrgm) * (LB_W + LB_R - 1 + LB_R - 1) / ti_GetSize(inPrgm), 
-        LB_Y + LB_R
-    );
+void displayLoadingBar(void) {
     gfx_SetColor(4);
-    gfx_FillCircle(LB_X, LB_Y, LB_R - 1);
-    gfx_FillCircle(LB_X + LB_W, LB_Y, LB_R - 1);
-    gfx_FillRectangle(LB_X, LB_Y - LB_R + 1, LB_W, LB_H);
+    gfx_FillRectangle_NoClip(LB_X + 1, LB_Y + 1, ti_Tell(ice.inPrgm) * (LB_W - 2) / ti_GetSize(ice.inPrgm), LB_H - 2);
 }
 
 uint24_t getNextToken(void) {
     // Display loading bar
-    displayLoadingBar(ice.inPrgm);
     return ti_GetC(ice.inPrgm);
 }
 

@@ -18,13 +18,15 @@
 #define tData  0x0C
 #define tCopy  0x0D
 #define tAlloc 0x0E
+#define tDefineTilemap 0x0F
+#define tConfigTilemap 0x10
 
 typedef struct {
     char     outName[9];                                    // Output variable name
     
     uint8_t  nestedBlocks;                                  // Amount of nested If/Repeat/While
     uint8_t  *programData;                                  // Address of the program
-    uint8_t  programDataData[40000];                        // Address of the program data
+    uint8_t  programDataData[50000];                        // Address of the program data
     uint8_t  *programPtr;                                   // Pointer to the program
     uint8_t  *programPtrBackup;                             // Same as above
     uint8_t  *programDataPtr;                               // Pointer to the program data
@@ -98,6 +100,7 @@ typedef struct {
     bool     AnsSetZeroFlagReversed;
     bool     AnsSetCarryFlag;
     bool     AnsSetCarryFlagReversed;
+    bool     needToSquishHexadecimals;
     
     uint8_t  ZeroCarryFlagRemoveAmountOfBytes;
     uint8_t  outputRegister;

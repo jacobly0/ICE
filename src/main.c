@@ -322,7 +322,7 @@ void preScanProgram(void) {
                 ice.OSStrings[token] = pixelShadow + 2000 * (ice.amountOfOSLocationsUsed++);
             }
         } else if (tok == t2ByteTok && !expr.inString) {
-            // CompilePrgm( - AsmComp(
+            // AsmComp(
             if ((uint8_t)_getc() == tAsmComp) {
                 char tempName[9];
                 uint8_t a = 0;

@@ -1541,7 +1541,6 @@ void SubChainAnsFunction(void) {
 void SubChainPushChainAns(void) {
     AnsToDE();
     POP_HL();
-    OR_A_SBC_HL_DE();
 }
 
 void (*operatorChainPushChainAnsFunctions[17])(void) = {

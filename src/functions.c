@@ -381,6 +381,48 @@ uint8_t parseFunction(uint24_t index) {
     
     // Here are coming the special functions, with abnormal arguments
     
+    // DefineTilemap(
+    else if (function2 == tDefineTilemap) {
+        /** 
+        * C arguments:
+        *  - uint8_t *mapData (pointer to data)
+        *  - uint8_t **tilesData (pointer to table with pointers to data)
+        *  - uint8_t TILE_HEIGHT
+        *  - uint8_t TILE_WIDTH
+        *  - uint8_t DRAW_HEIGHT
+        *  - uint8_t DRAW_WIDTH
+        *  - uint8_t TYPE_WIDTH
+        *  - uint8_t TYPE_HEIGHT
+        *  - uint8_t HEIGHT
+        *  - uint8_t WIDTH
+        *  - uint8_t Y_LOC
+        *  - uint24_t X_LOC
+        *****************************************************************
+        * ICE arguments:
+        *  - uint8_t TILE_HEIGHT
+        *  - uint8_t TILE_WIDTH
+        *  - uint8_t DRAW_HEIGHT
+        *  - uint8_t DRAW_WIDTH
+        *  - uint8_t TYPE_WIDTH
+        *  - uint8_t TYPE_HEIGHT
+        *  - uint8_t HEIGHT
+        *  - uint8_t WIDTH
+        *  - uint8_t Y_LOC
+        *  - uint24_t X_LOC
+        *  - uint8_t **tilesData pointer to data, we have to 
+        *       create our own table, by getting the size of
+        *       each sprite, and thus finding all the sprites
+        *  (- uint8_t *mapData (pointer to data))
+        *****************************************************************
+        * Other possibility:
+        *  - - uint8_t *mapData (pointer to data)
+        **/
+    }
+    
+    // ConfigTilemap(
+    else if (function2 == tConfigTilemap) {
+    }
+    
     // Data(
     else if (function == tVarOut && function2 == tData) {
         element_t *outputTemp;
@@ -517,10 +559,6 @@ uint8_t parseFunction(uint24_t index) {
             
             *(uint8_t*)outputPrev->operand = outputPrevPrevPrev->operand;
             *(uint8_t*)(outputPrev->operand + 1) = outputPrevPrev->operand;
-            
-            if ((res = SquishHexadecimals((uint8_t*)outputPrev->operand + 2)) != VALID) {
-                return res;
-            }
         } else {
             return E_ARGUMENTS;
         }

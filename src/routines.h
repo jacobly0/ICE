@@ -4,7 +4,7 @@
 void ProgramPtrToOffsetStack(void);
 void ProgramDataPtrToOffsetStack(void);
 void displayLoadingBarFrame(void);
-void displayLoadingBar(ti_var_t);
+void displayLoadingBar(void);
 uint24_t getNextToken(void);
 void AnsToHL(void);
 void AnsToDE(void);

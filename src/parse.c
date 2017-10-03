@@ -19,13 +19,15 @@ INCBIN(Prgm, "src/asm/prgm.bin");
 
 extern uint8_t (*functions[256])(int token);
 const char implementedFunctions[] = {tNot, tMin, tMax, tMean, tSqrt, tDet, tSum, tSin, tCos};
-const uint8_t implementedFunctions2[14] = {tExtTok, tRemainder,
+const uint8_t implementedFunctions2[18] = {tExtTok, tRemainder,
                                            t2ByteTok, tSubStrng,
                                            t2ByteTok, tLength,
                                            tVarOut, tDefineSprite,
                                            tVarOut, tData,
                                            tVarOut, tCopy,
-                                           tVarOut, tAlloc
+                                           tVarOut, tAlloc,
+                                           tVarOut, tDefineTilemap,
+                                           tVarOut, tConfigTilemap
                                           };
 element_t outputStack[400];
 element_t stack[200];
@@ -46,6 +48,9 @@ uint8_t parseProgram(void) {
         
         ice.lastTokenIsReturn = false;
         ice.currentLine++;
+#ifndef COMPUTER_ICE
+        displayLoadingBar();
+#endif
 
         if ((ret = (*functions[token])(token)) != VALID) {
             break;
@@ -98,7 +103,7 @@ uint8_t parseExpression(int token) {
         if (storeDepth) {
             storeDepth--;
         }
-
+        
         // Process a number
         if (tok >= t0 && tok <= t9) {
             uint24_t output = token - t0;
@@ -294,7 +299,7 @@ stackToOutputReturn1:
             
             // Move until stack is empty or a function is encountered
             while (stackElements) {
-                stackPrev = &stackPtr[stackElements-1];
+                stackPrev = &stackPtr[stackElements - 1];
                 outputCurr = &outputPtr[outputElements];
                 if (stackPrev->type != TYPE_FUNCTION) {
                     outputCurr->type = stackPrev->type;
@@ -338,9 +343,11 @@ stackToOutputReturn1:
                     outputCurr->type = stackPrev->type;
                     outputCurr->mask = stackPrev->mask;
                     outputCurr->operand = stackPrev->operand + temp - ((uint8_t)stackPrev->operand == 0x0F ? 0x0F - tLBrace : 0);
-                    stackElements--;
                     outputElements++;
                 }
+                
+                // If you moved the function or not, it should always pop the last stack element
+                stackElements--;
             }
             
             // Increment the amount of arguments for that function
@@ -366,6 +373,10 @@ stackToOutputReturn1:
                 return E_UNIMPLEMENTED;
 foundRight2ByteToken:
                 token = token + (temp2 << 16);
+                
+                if (temp2 == tDefineSprite || temp2 == tDefineTilemap) {
+                    expr.needToSquishHexadecimals = true;
+                }
             }
             // We always have at least 1 argument
             *++amountOfArgumentsStackPtr = 1;
@@ -434,9 +445,27 @@ foundRight2ByteToken:
             outputElements++;
             mask = TYPE_MASK_U24;
             
-            // Grab string
-            token = grabString(&ice.programDataPtr, true);
-
+            if (expr.needToSquishHexadecimals) {
+                // We need to squish it, since these are the data of DefineSprite or DefineTilemap
+                while ((token = _getc()) != EOF && (uint8_t)token != tEnter && (uint8_t)token != tStore && (uint8_t)token != tString) {
+                    uint8_t tok1, tok2;
+                    
+                    // Get hexadecimal 1
+                    if ((tok1 = IsHexadecimal(token)) == 16) {
+                        return E_INVALID_HEX;
+                    }
+                    
+                    // Get hexadecimal 2
+                    if ((tok2 = IsHexadecimal(_getc())) == 16) {
+                        return E_INVALID_HEX;
+                    }
+                    
+                    *ice.programDataPtr++ = (tok1 << 4) + tok2;
+                }
+            } else {
+                // Grab string
+                token = grabString(&ice.programDataPtr, true);
+            }
             *ice.programDataPtr++ = 0;
             if ((uint8_t)token == tStore || (uint8_t)token == tEnter) {
                 continue;
@@ -557,6 +586,13 @@ stackToOutput:
         outputCurr = &outputPtr[outputElements++];
         stackPrev = &stackPtr[--stackElements];
         
+        temp = stackPrev->operand;
+        
+        // If it's a function, add the amount of arguments as well
+        if (stackPrev->type == TYPE_FUNCTION) {
+            temp += (*amountOfArgumentsStackPtr--) << 8;
+        }
+        
         // Don't move the left paren...
         if (stackPrev->type == TYPE_FUNCTION && (uint8_t)stackPrev->operand == tLParen) {
             outputElements--;
@@ -565,18 +601,11 @@ stackToOutput:
         
         outputCurr->type = stackPrev->type;
         outputCurr->mask = stackPrev->mask;
-        temp = stackPrev->operand;
         
         if ((uint8_t)temp == 0x0F) {
             // :D
             temp = tLBrace;
         }
-        
-        // If it's a function, add the amount of arguments as well
-        if (stackPrev->type == TYPE_FUNCTION) {
-            temp += (*amountOfArgumentsStackPtr--) << 8;
-        }
-
         outputCurr->operand = temp;
     }
     
@@ -1493,17 +1522,16 @@ static uint8_t functionPrgm(int token) {
 static uint8_t functionCustom(int token) {
     uint8_t tok = _getc();
     
-    // DefineSprite(, Data(, Copy(, Alloc(
-    if (tok == tDefineSprite || tok == tData || tok == tCopy || tok == tAlloc) {
-        _seek(-1, SEEK_CUR, ice.inPrgm);
-        return parseExpression(token);
-    }
-    
-    // Call
-    else if (tok == tCall) {
-        insertGotoLabel();
-        CALL(0);
-        return VALID;
+    if (tok >= tDefineSprite && tok <= tConfigTilemap) {
+        // Call
+        if (tok == tCall) {
+            insertGotoLabel();
+            CALL(0);
+            return VALID;
+        } else {
+            _seek(-1, SEEK_CUR, ice.inPrgm);
+            return parseExpression(token);
+        }
     } else {
         return E_UNIMPLEMENTED;
     }

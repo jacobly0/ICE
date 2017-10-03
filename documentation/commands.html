@@ -39,7 +39,7 @@
             }
             #nav {
                 float: left;
-                width: 230px;
+                width: 200px;
                 padding-bottom: 10010px;
                 margin-bottom: -10000px;
                 background: #eee;
@@ -49,7 +49,7 @@
                 overflow: hidden;
             }
             #content {
-                margin-left: 230px; /* Same as 'nav' width */
+                margin-left: 200px; /* Same as 'nav' width */
             }
             .innertube{
                 margin: 15px; /* Padding for content */
@@ -107,7 +107,7 @@
                             </tr>
                             <tr>
                                 <td><code><span id="bl">getKey(</span><span id="or">KEY</span><span id="bl">)</span></code></td>
-                                <td>Returns 1 if the key <code><span id="or">KEY</span></code> is pressed, 0 otherwise. This routine is much faster than <code><span id="bl">getKey</span></code>, and handles repeated keypresses as well. See <i>keycodes.png</i> for the key codes.</td>
+                                <td>Returns 1 if the key <code><span id="or">KEY</span></code> is pressed, 0 otherwise. This routine is much faster than <code><span id="bl">getKey</span></code>, and handles repeated keypresses as well. See <i>keycodes.png</i> for the keycodes.</td>
                             </tr>
                             <tr>
                                 <td><code><span id="bl">rand</span></code></td>
@@ -411,7 +411,7 @@
                             <tr>
                                 <td><code><span id="bl">det(</span>14,<span id="red">CHAR</span><span id="bl">)</span></code></td>
                                 <td>PrintChar</td>
-                                <td>Places a character at the current cursor position. (Should be a number, you can find them <a href="http://tibasicdev.wikidot.com/83lgfont">here</a>. Default coordinates are (0,0).</td>
+                                <td>Places a character at the current cursor position. (Should be a number, you can find them <a href="http://tibasicdev.wikidot.com/83lgfont">here</a>). Default coordinates are (0,0).</td>
                             </tr>
                             <tr>
                                 <td><code><span id="bl">det(</span>15,<span id="red">EXP</span>,<span id="red">CHARS</span><span id="bl">)</span></code></td>
@@ -574,24 +574,78 @@
                                 <td>Shifts whatever is in the clip right by some pixels.</td>
                             </tr>
                             <tr>
-                                <td><code><span id="bl">det(</span>59,<span id="or">INDEX</span>,<span id="red">X</span>,<span id="red">Y</span><span id="bl">)</span></code></td>
+                                <td></td>
+                                <td colspan="2"><i>For all sprite commands: <code><span id="red">PTR</span></code> should be a pointer to the sprite data done with <code><span id="bl">DefineSprite(</span></code>. Check sprites.txt how to define sprites.</i></td>
+                            </tr>
+                            <tr>
+                                <td><code><span id="bl">det(</span>57,<span id="red">PTR</span>,<span id="red">X</span>,<span id="red">Y</span><span id="bl">)</span></code></td>
+                                <td>Sprite</td>
+                                <td>Draws a clipped sprite.</td>
+                            </tr>
+                            <tr>
+                                <td><code><span id="bl">det(</span>58,<span id="red">PTR</span>,<span id="red">X</span>,<span id="red">Y</span><span id="bl">)</span></code></td>
+                                <td>TransparentSprite</td>
+                                <td>Draws a clipped transparent sprite to the current buffer. The transparent color is 0.</td>
+                            </tr>
+                            <tr>
+                                <td><code><span id="bl">det(</span>59,<span id="red">PTR</span>,<span id="red">X</span>,<span id="red">Y</span><span id="bl">)</span></code></td>
                                 <td>Sprite_NoClip</td>
                                 <td>Places an sprite on the screen as fast as possible.</td>
                             </tr>
                             <tr>
-                                <td><code><span id="bl">det(</span>60,<span id="or">INDEX</span>,<span id="red">X</span>,<span id="red">Y</span><span id="bl">)</span></code></td>
+                                <td><code><span id="bl">det(</span>60,<span id="red">PTR</span>,<span id="red">X</span>,<span id="red">Y</span><span id="bl">)</span></code></td>
                                 <td>TransparentSprite_NoClip</td>
-                                <td>Draws a transparent sprite to the current buffer. The transparent color is 0.</td>
+                                <td>Draws a transparent sprite to the current buffer. Default transparent color is 0.</td>
                             </tr>
                             <tr>
-                                <td><code><span id="bl">det(</span>62,<span id="or">INDEX</span>,<span id="red">X</span>,<span id="red">Y</span>,<span id="red">WSCALE</span>,<span id="red">HSCALE</span><span id="bl">)</span></code></td>
+                                <td><code><span id="bl">det(</span>61,<span id="red">PTR</span>,<span id="red">X</span>,<span id="red">Y</span>,<span id="red">WSCALE</span>,<span id="red">HSCALE</span><span id="bl">)</span></code></td>
+                                <td>GetSprite</td>
+                                <td>Gets a sprite off the buffer, and stores it to the memory pointed to by <code><span id="red">PTR</span></code>. Note: you need to store the width and the height (both 1-byte values) to the memory first.</td>
+                            </tr>
+                            <tr>
+                                <td><code><span id="bl">det(</span>62,<span id="red">PTR</span>,<span id="red">X</span>,<span id="red">Y</span>,<span id="red">WSCALE</span>,<span id="red">HSCALE</span><span id="bl">)</span></code></td>
                                 <td>ScaledSprite_NoClip</td>
                                 <td>Draws a scaled sprite to the screen.</td>
                             </tr>
                             <tr>
-                                <td><code><span id="bl">det(</span>63,<span id="or">INDEX</span>,<span id="red">X</span>,<span id="red">Y</span>,<span id="red">WSCALE</span>,<span id="red">HSCALE</span><span id="bl">)</span></code></td>
+                                <td><code><span id="bl">det(</span>63,<span id="red">PTR</span>,<span id="red">X</span>,<span id="red">Y</span>,<span id="red">WSCALE</span>,<span id="red">HSCALE</span><span id="bl">)</span></code></td>
                                 <td>ScaledTransparentSprite_NoClip</td>
-                                <td>Draws a scaled sprite to the screen with transparency. The transparent color is 0.</td>
+                                <td>Draws a scaled sprite to the screen with transparency. Default transparent color is 0.</td>
+                            </tr>
+                            <tr>
+                                <td><code><span id="bl">det(</span>64,<span id="red">PTR_IN</span>,<span id="red">PTR_OUT</span><span id="bl">)</span></code></td>
+                                <td>FlipSpriteY</td>
+                                <td>Flips a sprite along the Y-axis.</td>
+                            </tr>
+                            <tr>
+                                <td><code><span id="bl">det(</span>65,<span id="red">PTR_IN</span>,<span id="red">PTR_OUT</span><span id="bl">)</span></code></td>
+                                <td>FlipSpriteX</td>
+                                <td>Flips a sprite along the X-axis.</td>
+                            </tr>
+                            <tr>
+                                <td><code><span id="bl">det(</span>66,<span id="red">PTR_IN</span>,<span id="red">PTR_OUT</span><span id="bl">)</span></code></td>
+                                <td>RotateSpriteC</td>
+                                <td>Rotates a sprite 90 degrees clockwise.</td>
+                            </tr>
+                            <tr>
+                                <td><code><span id="bl">det(</span>67,<span id="red">PTR_IN</span>,<span id="red">PTR_OUT</span><span id="bl">)</span></code></td>
+                                <td>RotateSpriteCC</td>
+                                <td>Rotates a sprite 90 degrees counter clockwise.</td>
+                            </tr>
+                            <tr>
+                                <td><code><span id="bl">det(</span>68,<span id="red">PTR_IN</span>,<span id="red">PTR_OUT</span><span id="bl">)</span></code></td>
+                                <td>RotateSpriteHalf</td>
+                                <td>Rotates a sprite 180 degrees.</td>
+                            </tr>
+                            <tr>
+                                <td><code><span id="bl">det(</span>69,<span id="red">PTS</span>,<span id="red">NUM_PTS</span><span id="bl">)</span></code></td>
+                                <td>Polygon</td>
+                                <td>Draws a clipped polygon outline with <code><span id="red">NUM_PTS</span></code> points. <code><span id="red">PTS</span></code> should point to a 3-byte list, with all the X- and Y-coordinates of the points, so <code>{<span id="red">X1</span>,<span id="red">Y1</span>,<span id="red">X2</span>,<span id="red">Y2</span>,...}</code></td>
+                            </tr>
+                            <tr>
+                                <td><code><span id="bl">det(</span>70,<span id="red">PTS</span>,<span id="red">NUM_PTS</span><span id="bl">)</span></code></td>
+                                <td>Polygon_NoClip</td>
+                                <td>Draws a polygon outline with <code><span id="red">NUM_PTS</span></code> points. <code><span id="red">PTS</span></code> should point to a 3-byte list, with all the X- and Y-coordinates of the points, so <code>{<span id="red">X1</span>,<span id="red">Y1</span>,<span id="red">X2</span>,<span id="red">Y2</span>,...}</code></td>
                             </tr>
                             <tr>
                                 <td><code><span id="bl">det(</span>71,<span id="red">X1</span>,<span id="red">Y1</span>,<span id="red">X2</span>,<span id="red">Y2</span>,<span id="red">X3</span>,<span id="red">Y3</span><span id="bl">)</span></code></td>
@@ -616,7 +670,7 @@
                             <tr>
                                 <td><code><span id="bl">det(</span>76<span id="bl">)</span></code></td>
                                 <td>ZeroScreen</td>
-                                <td>Fills the current screen with a bunch of zeros. Same as det(5,0) but faster.</td>
+                                <td>Fills the current screen with a bunch of zeros. Same as <code>det(5,0)</code> but faster.</td>
                             </tr>
                             <tr>
                                 <td><code><span id="bl">det(</span>77,<span id="red">CONFIG</span><span id="bl">)</span></code></td>
@@ -624,14 +678,159 @@
                                 <td>Configures text depending on the arguments. 1 = clipping, 2 = no clipping.</td>
                             </tr>
                             <tr>
+                                <td><code><span id="bl">det(</span>78,<span id="red">CHAR</span><span id="bl">)</span></code></td>
+                                <td>GetSpriteChar</td>
+                                <td>Creates a temporary sprite of char <code><span id="red">CHAR</span></code>. Returns a pointer to the sprite data.</td>
+                            </tr>
+                            <tr>
+                                <td><code><span id="bl">det(</span>79,<span id="red">COLOR</span>,<span id="red">AMOUNT</span><span id="bl">)</span></code></td>
+                                <td>Lighten</td>
+                                <td>Lightens a given 1555 color; useful for palette color conversions. <code><span id="red">AMOUNT</span></code> is the amount to lighten by.</td>
+                            </tr>
+                            <tr>
+                                <td><code><span id="bl">det(</span>80,<span id="red">COLOR</span>,<span id="red">AMOUNT</span><span id="bl">)</span></code></td>
+                                <td>Darken</td>
+                                <td>Darkens a given 1555 color; useful for palette color conversions. <code><span id="red">AMOUNT</span></code> is the amount to darken by.</td>
+                            </tr>
+                            <tr>
                                 <td><code><span id="bl">det(</span>81,<span id="red">HEIGHT</span><span id="bl">)</span></code></td>
                                 <td>SetFontHeight</td>
                                 <td>Sets the height of the font in pixels.</td>
                             </tr>
                             <tr>
+                                <td><code><span id="bl">det(</span>82,<span id="red">PTR_IN</span>,<span id="red">PTR_OUT</span><span id="bl">)</span></code></td>
+                                <td>ScaleSprite</td>
+                                <td>Resizes a sprite to new dimensions.</td>
+                            </tr>
+                            <tr>
                                 <td><code><span id="bl">det(</span>83,<span id="red">X</span>,<span id="red">Y</span>,<span id="red">COLOR</span><span id="bl">)</span></code></td>
                                 <td>FloodFill</td>
                                 <td>Fills an area with a color.</td>
+                            </tr>
+                            <tr>
+                                <td><code><span id="bl">det(</span>84,<span id="red">PTR</span>,<span id="red">X</span>,<span id="red">Y</span><span id="bl">)</span></code></td>
+                                <td>RLETSprite</td>
+                                <td>Draws a sprite with RLE transparency.</td>
+                            </tr>
+                            <tr>
+                                <td><code><span id="bl">det(</span>85,<span id="red">PTR</span>,<span id="red">X</span>,<span id="red">Y</span><span id="bl">)</span></code></td>
+                                <td>RLETSprite_NoClip</td>
+                                <td>Draws an unclipped sprite with RLE transparency.</td>
+                            </tr>
+                            <tr>
+                                <td><code><span id="bl">det(</span>86,<span id="red">PTR_IN</span>,<span id="red">PTR_OUT</span><span id="bl">)</span></code></td>
+                                <td>ConvertFromRLETSprite</td>
+                                <td>Converts a sprite with RLE transpareny to a sprite with normal transparency.</td>
+                            </tr>
+                            <tr>
+                                <td><code><span id="bl">det(</span>87,<span id="red">PTR_IN</span>,<span id="red">PTR_OUT</span><span id="bl">)</span></code></td>
+                                <td>ConvertToRLETSprite</td>
+                                <td>Converts a sprite with normal transpareny to a sprite with RLE transparency.</td>
+                            </tr>
+                            <tr>
+                                <td><code><span id="bl">det(</span>89,<span id="red">PTR_IN</span>,<span id="red">PTR_OUT</span>,<span id="red">ANGLE</span>,<span id="red">SCALE</span><span id="bl">)</span></code></td>
+                                <td>RotateScaleSprite</td>
+                                <td>Fixed rotation with scaling factor for sprites. <i>A scale factor of 64 represents 100% scaling. This routine only accepts square input sprites.</i> <code><span id="red">ANGLE</span></code> should be in <code>[0,255]</code>.</td>
+                            </tr>
+                            <tr>
+                                <td><code><span id="bl">det(</span>90,<span id="red">PTR</span>,<span id="red">X</span>,<span id="red">Y</span>,<span id="red">ANGLE</span>,<span id="red">SCALE</span><span id="bl">)</span></code></td>
+                                <td>RotatedScaledTransparentSprite_NoClip</td>
+                                <td>Fixed rotation with scaling factor for sprites with transparency. <i>A scale factor of 64 represents 100% scaling. This routine only accepts square input sprites.</i> <code><span id="red">ANGLE</span></code> should be in <code>[0,255]</code>.</td>
+                            </tr>
+                            <tr>
+                                <td><code><span id="bl">det(</span>91,<span id="red">PTR</span>,<span id="red">X</span>,<span id="red">Y</span>,<span id="red">ANGLE</span>,<span id="red">SCALE</span><span id="bl">)</span></code></td>
+                                <td>RotatedScaledSprite_NoClip</td>
+                                <td>Fixed rotation with scaling factor for sprites without transparency. <i>A scale factor of 64 represents 100% scaling. This routine only accepts square input sprites.</i> <code><span id="red">ANGLE</span></code> should be in <code>[0,255]</code>.</td>
+                            </tr>
+                        </table>
+                        <h3 id="fileioc">File I/O</h3>
+                        <table cellspacing="0" border="1" cellpadding="3" border-collapse="collapse" id="special">
+                            <tr>
+                                <th>Command</th>
+                                <th>Name</th>
+                                <th>Description</th>
+                            </tr>
+                            <tr>
+                                <td><code><span id="bl">sum(</span>0<span id="bl">)</span></code></td>
+                                <td>CloseAll</td>
+                                <td>Closes all open slots.</td>
+                            </tr>
+                            <tr>
+                                <td><code><span id="bl">sum(</span>1,<span id="grey">"NAME"</span>,<span id="grey">"MODE"</span><span id="bl">)</span></code></td>
+                                <td>Open</td>
+                                <td>Opens an appvar with name <code><span id="grey">"NAME"</span></code>. Returns the slot number. <code><span id="grey">"MODE"</span></code> options:<br>
+                                    - <code><span id="grey">"r"</span></code> - Opens a file for reading. The file must exist. Keeps file in archive if in archive.<br>
+                                    - <code><span id="grey">"w"</span></code> - Creates an empty file for writing. Overwrites file if already exists.<br>
+                                    - <code><span id="grey">"a"</span></code> - Appends to a file. Writing operations, append data at the end of the file. The file is created if it does not exist.<br>
+                                    - <code><span id="grey">"r+"</span></code> - Opens a file to update both reading and writing. The file must exist. Moves file from archive to RAM if in archive.<br>
+                                    - <code><span id="grey">"w+"</span></code> - Creates an empty file for both reading and writing. Overwrites file if already exists.<br>
+                                    - <code><span id="grey">"a+"</span></code> - Opens a file for reading and appending. Moves file from archive to RAM if in archive. Created if it does not exist.
+                                </td>
+                            </tr>
+                            <tr>
+                                <td><code><span id="bl">sum(</span>2,<span id="grey">"NAME"</span>,<span id="grey">"MODE"</span>,<span id="red">TYPE</span><span id="bl">)</span></code></td>
+                                <td>OpenVar</td>
+                                <td>Opens a variable with name <code><span id="grey">"NAME"</span></code> and type <code><span id="red">TYPE</span></code>. See <code><span id="bl">sum(</span>1</code> for the <code><span id="grey">"MODE"</span></code> options. Returns the slot number. <code><span id="red">TYPE</span></code> options:<br>
+                                    - <code>0</code> - Real<br>
+                                    - <code>1</code> - Real list<br>
+                                    - <code>2</code> - Matrix<br>
+                                    - <code>3</code> - Equation<br>
+                                    - <code>4</code> - String<br>
+                                    - <code>5</code> - Program<br>
+                                    - <code>6</code> - Protected program<br>
+                                    - <code>12</code> - Complex<br>
+                                    - <code>13</code> - Complex list<br>
+                                    - <code>21</code> - Appvar<br>
+                                    - <code>22</code> - Temp program<br>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td><code><span id="bl">sum(</span>3,<span id="red">SLOT</span><span id="bl">)</span></code></td>
+                                <td>Close</td>
+                                <td>Frees an open slot.</td>
+                            </tr>
+                            <tr>
+                                <td><code><span id="bl">sum(</span>4,<span id="grey">"DATA"</span>,<span id="red">SIZE</span>,<span id="red">COUNT</span>,<span id="red">SLOT</span><span id="bl">)</span></code></td>
+                                <td>Write</td>
+                                <td>Writes <code><span id="red">COUNT</span></code> times <code><span id="red">SIZE</span></code> bytes from <code><span id="grey">"DATA"</span></code> to the variable in slot <code><span id="red">SLOT</span></code>.</td>
+                            </tr>
+                            <tr>
+                                <td><code><span id="bl">sum(</span>5,<span id="red">PTR</span>,<span id="red">SIZE</span>,<span id="red">COUNT</span>,<span id="red">SLOT</span><span id="bl">)</span></code></td>
+                                <td>Read</td>
+                                <td>Reads <code><span id="red">COUNT</span></code> times <code><span id="red">SIZE</span></code> bytes from the variable in slot <code><span id="red">SLOT</span></code> to <code><span id="red">PTR</span></code>.</td>
+                            </tr>
+                            <tr>
+                                <td><code><span id="bl">sum(</span>6,<span id="red">SLOT</span><span id="bl">)</span></code></td>
+                                <td>GetChar</td>
+                                <td>Gets a char from the variable in slot <code><span id="red">SLOT</span></code> and increments the offset.</td>
+                            </tr>
+                            <tr>
+                                <td><code><span id="bl">sum(</span>7,<span id="red">SLOT</span><span id="bl">)</span></code></td>
+                                <td>PutChar</td>
+                                <td>Writes a char to the variable in slot <code><span id="red">SLOT</span></code> and increments the offset.</td>
+                            </tr>
+                            <tr>
+                                <td><code><span id="bl">sum(</span>8,<span id="grey">"NAME"</span><span id="bl">)</span></code></td>
+                                <td>Delete</td>
+                                <td>Delets an appvar.</td>
+                            </tr>
+                            <tr>
+                                <td><code><span id="bl">sum(</span>9,<span id="grey">"NAME"</span>,<span id="red">TYPE</span><span id="bl">)</span></code></td>
+                                <td>DeleteVar</td>
+                                <td>Delets a variable with type <code><span id="red">TYPE</span></code>. See <code><span id="bl">sum(</span>2</code> for the types.</td>
+                            </tr>
+                            <tr>
+                                <td><code><span id="bl">sum(</span>10,<span id="red">OFFSET</span>,<span id="red">ORIGIN</span>,<span id="red">SLOT</span><span id="bl">)</span></code></td>
+                                <td>Seek</td>
+                                <td>Seeks the variable in slot <code><span id="red">SLOT</span></code> to an offset. <code><span id="red">ORIGIN</span></code> options:<br>
+                                    - <code>0</code> - SEEK_SET - seek from beginning of file<br>
+                                    - <code>1</code> - SEEK_CUR - seek from current offset in file<br>
+                                    - <code>2</code> - SEEK_END - seek from end of file<br></td>
+                            </tr>
+                            <tr>
+                                <td><code><span id="bl">sum(</span>11,<span id="red">SIZE</span>,<span id="red">SLOT</span><span id="bl">)</span></code></td>
+                                <td>Resize</td>
+                                <td>Resizes the variable in slot <code><span id="red">SLOT</span></code>.</td>
                             </tr>
                         </table>
                         <h3 id="memory">Memory</h3>
@@ -658,11 +857,11 @@
                             </tr>
                             <tr>
                                 <td><code><span id="bl">Copy(</span><span id="red">DEST</span>,<span id="red">SRC</span>,<span id="red">SIZE</span><span id="bl">)</span></code></td>
-                                <td>Copies <code><span id="red">SIZE</span></code> bytes from <code><span id="red">SRC</span></code> to <code><span id="red">DEST</span></code>. <code><span id="bl">rand</span></code>, <code><span id="bl">getKey</span></code> and <code><span id="bl">getKey(</span><span id="or">KEY</span><span id="bl">)</span></code> are now allowed as a standalone argument.</td>
+                                <td>Copies <code><span id="red">SIZE</span></code> bytes from <code><span id="red">SRC</span></code> to <code><span id="red">DEST</span></code>. <code><span id="bl">rand</span></code>, <code><span id="bl">getKey</span></code> and <code><span id="bl">getKey(</span><span id="or">KEY</span><span id="bl">)</span></code> are not allowed as a standalone argument.</td>
                             </tr>
                             <tr>
-                                <td><code><span id="bl">Copy(</span><span id="grey">...</span>,<span id="red">DEST</span>,<span id="red">SRC</span>,<span id="red">SIZE</span><span id="bl">)</span></code></td>
-                                <td>Copies <code><span id="red">SIZE</span></code> bytes from <code><span id="red">SRC</span></code> to <code><span id="red">DEST</span></code> backwards. The first argument can be anything you like. <code><span id="bl">rand</span></code>, <code><span id="bl">getKey</span></code> and <code><span id="bl">getKey(</span><span id="or">KEY</span><span id="bl">)</span></code> are now allowed as a standalone argument.</td>
+                                <td><code><span id="bl">Copy(</span>...,<span id="red">DEST</span>,<span id="red">SRC</span>,<span id="red">SIZE</span><span id="bl">)</span></code></td>
+                                <td>Copies <code><span id="red">SIZE</span></code> bytes from <code><span id="red">SRC</span></code> to <code><span id="red">DEST</span></code> backwards. The first argument can be anything you like. <code><span id="bl">rand</span></code>, <code><span id="bl">getKey</span></code> and <code><span id="bl">getKey(</span><span id="or">KEY</span><span id="bl">)</span></code> are not allowed as a standalone argument.</td>
                             </tr>
                             <tr>
                                 <td><code><span id="grey">L₁</span>...<span id="grey">L₆</span></code></td>
@@ -694,7 +893,7 @@
                             </tr>
                             <tr>
                                 <td><code><span id="red">EXP1</span>→{<span id="red">EXP2</span>}</code></td>
-                                <td>The word <code><span id="red">EXP1</span></code> is stored where <code><span id="red">EXP2</span></code> points to.</td>
+                                <td>The word <code><span id="red">EXP1</span></code> is stored where <code><span id="red">EXP2</span></code> points to. <code><span id="red">EXP1</span>→***{<span id="red">EXP2</span>}</code> is valid syntax as well.</td>
                             </tr>
                         </table>
                         <h3 id="strings">Strings</h3>
@@ -740,11 +939,11 @@
                             </tr>
                             <tr>
                                 <td><code><span id="bl">Output(</span><span id="red">ROW</span>,<span id="red">COLUMN</span><span id="bl">)</span></code></td>
-                                <td>Puts the cursor at coordinates (<code><span id="red">ROW</span>,<span id="red">COLUMN</span></code>).</td>
+                                <td>Puts the cursor at coordinates <code>(<span id="red">ROW</span>,<span id="red">COLUMN</span>)</code>.</td>
                             </tr>
                             <tr>
                                 <td><code><span id="bl">Output(</span><span id="red">ROW</span>,<span id="red">COLUMN</span>,<span id="red">EXP1</span><span id="bl">)</span></code></td>
-                                <td>Displays either the outcome of an expression or a string at coordinates (<code><span id="red">ROW</span>,<span id="red">COLUMN</span></code>).</td>
+                                <td>Displays either the outcome of an expression or a string at coordinates <code>(<span id="red">ROW</span>,<span id="red">COLUMN</span>)</code>.</td>
                             </tr>
                             <tr>
                                 <td><code><span id="bl">ClrHome</span></code></td>

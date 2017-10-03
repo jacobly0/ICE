@@ -1,6 +1,6 @@
 #include "hooks/ti84pce.inc"
 
-#define AMOUNT_OF_CUSTOM_TOKENS 5
+#define AMOUNT_OF_CUSTOM_TOKENS 7
 #define AMOUNT_OF_GRAPHX_FUNCTIONS 92
 #define AMOUNT_OF_FILEIOC_FUNCTIONS 21
 
@@ -394,6 +394,8 @@ C2:   .db "Call ", 0
 C3:   .db "Data(", 0
 C4:   .db "Copy(", 0
 C5:   .db "Alloc(", 0
+C6:   .db "DefineTilemap(", 0
+C7:   .db "ConfigTilemap(", 0
 
 F01:  .db "CloseAll", 0
 F02:  .db "Open(", 0
@@ -524,6 +526,8 @@ Tok2: .db 5,  "Call "
 Tok3: .db 5,  "Data("
 Tok4: .db 5,  "Copy("
 Tok5: .db 6,  "Alloc("
+Tok6: .db 14, "DefineTilemap("
+Tok7: .db 14, "ConfigTilemap("
 
 TabData:
 	.dl Tab1 - KeyHook_start
@@ -658,6 +662,8 @@ TokenHook_data:
 	.dl Tok3 - KeyHook_start - 1
 	.dl Tok4 - KeyHook_start - 1
 	.dl Tok5 - KeyHook_start - 1
+	.dl Tok6 - KeyHook_start - 1
+	.dl Tok7 - KeyHook_start - 1
 
 CustomTokensProgramText:
 	.db "PROGRAM:", 0
