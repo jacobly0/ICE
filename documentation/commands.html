@@ -464,9 +464,9 @@
                                 <td>Gets the pixel width of <code><span id="grey">"STRING"</span></code>.</td>
                             </tr>
                             <tr>
-                                <td><code><span id="bl">det(</span>27,<span id="grey">"CHAR"</span><span id="bl">)</span></code></td>
+                                <td><code><span id="bl">det(</span>27,<span id="red">CHAR</span><span id="bl">)</span></code></td>
                                 <td>GetCharWidth</td>
-                                <td>Gets the pixel width of the char <code><span id="grey">"CHAR"</span></code>.</td>
+                                <td>Gets the pixel width of the char <code><span id="red">CHAR</span></code>.</td>
                             </tr>
                             <tr>
                                 <td><code><span id="bl">det(</span>28<span id="bl">)</span></code></td>
@@ -764,7 +764,7 @@
                                     - <code><span id="grey">"a"</span></code> - Appends to a file. Writing operations, append data at the end of the file. The file is created if it does not exist.<br>
                                     - <code><span id="grey">"r+"</span></code> - Opens a file to update both reading and writing. The file must exist. Moves file from archive to RAM if in archive.<br>
                                     - <code><span id="grey">"w+"</span></code> - Creates an empty file for both reading and writing. Overwrites file if already exists.<br>
-                                    - <code><span id="grey">"a+"</span></code> - Opens a file for reading and appending. Moves file from archive to RAM if in archive. Created if it does not exist.
+                                    - <code><span id="grey">"a+"</span></code> - Opens a file for reading and appending. Moves file from archive to RAM if in archive. Created if it does not exist.<br>
                                 </td>
                             </tr>
                             <tr>
@@ -805,7 +805,7 @@
                                 <td>Gets a char from the variable in slot <code><span id="red">SLOT</span></code> and increments the offset.</td>
                             </tr>
                             <tr>
-                                <td><code><span id="bl">sum(</span>7,<span id="red">SLOT</span><span id="bl">)</span></code></td>
+                                <td><code><span id="bl">sum(</span>7,<span id="red">CHAR</span>,<span id="red">SLOT</span><span id="bl">)</span></code></td>
                                 <td>PutChar</td>
                                 <td>Writes a char to the variable in slot <code><span id="red">SLOT</span></code> and increments the offset.</td>
                             </tr>
@@ -825,12 +825,61 @@
                                 <td>Seeks the variable in slot <code><span id="red">SLOT</span></code> to an offset. <code><span id="red">ORIGIN</span></code> options:<br>
                                     - <code>0</code> - SEEK_SET - seek from beginning of file<br>
                                     - <code>1</code> - SEEK_CUR - seek from current offset in file<br>
-                                    - <code>2</code> - SEEK_END - seek from end of file<br></td>
+                                    - <code>2</code> - SEEK_END - seek from end of file<br>
+                                </td>
                             </tr>
                             <tr>
                                 <td><code><span id="bl">sum(</span>11,<span id="red">SIZE</span>,<span id="red">SLOT</span><span id="bl">)</span></code></td>
                                 <td>Resize</td>
                                 <td>Resizes the variable in slot <code><span id="red">SLOT</span></code>.</td>
+                            </tr>
+                            <tr>
+                                <td><code><span id="bl">sum(</span>12,<span id="red">SLOT</span><span id="bl">)</span></code></td>
+                                <td>IsArchived</td>
+                                <td>Returns 0 if the variable in slot <code><span id="red">SLOT</span></code> is in RAM, and 1 if in archive.</td>
+                            </tr>
+                            <tr>
+                                <td><code><span id="bl">sum(</span>13,<span id="red">ARCHIVED</span>,<span id="red">SLOT</span><span id="bl">)</span></code></td>
+                                <td>SetArchiveStatus</td>
+                                <td>Sends the variable into either the archive or RAM if needed. <code><span id="red">ARCHIVED</span></code> options:<br>
+                                    - <code>0</code> - Send to RAM<br>
+                                    - <code>1</code> - Send to archive<br>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td><code><span id="bl">sum(</span>14,<span id="red">SLOT</span><span id="bl">)</span></code></td>
+                                <td>Tell</td>
+                                <td>Returns the offset in a slot.</td>
+                            </tr>
+                            <tr>
+                                <td><code><span id="bl">sum(</span>15,<span id="red">SLOT</span><span id="bl">)</span></code></td>
+                                <td>Rewind</td>
+                                <td>Seeks to the start of the variable in slot <code><span id="red">SLOT</span></code>.</td>
+                            </tr>
+                            <tr>
+                                <td><code><span id="bl">sum(</span>16,<span id="red">SLOT</span><span id="bl">)</span></code></td>
+                                <td>GetSize</td>
+                                <td>Gets the size of the variable in slot <code><span id="red">SLOT</span></code>.</td>
+                            </tr>
+                            <tr>
+                                <td><code><span id="bl">sum(</span>17,°<span id="red">READ_PTR</span>,°<span id="gr">LEN_TOK</span>,°<span id="gr">LEN_STR</span><span id="bl">)</span></code></td>
+                                <td>GetTokenString</td>
+                                <td>Reads the token at <code><span id="red">READ_PTR</span></code> and returns a pointer to the characters. Both variables <code><span id="gr">LEN_TOK</span></code> and <code><span id="gr">LEN_STR</span></code> gets overwritten with respectively the length of the token (1- or 2-byte token) and the length of the string (the amount of characters).</td>
+                            </tr>
+                            <tr>
+                                <td><code><span id="bl">sum(</span>18,<span id="red">SLOT</span><span id="bl">)</span></code></td>
+                                <td>GetDataPtr</td>
+                                <td>Gets a pointer to the data located at the current position of the variable in slot <code><span id="red">SLOT</span></code>.</td>
+                            </tr>
+                            <tr>
+                                <td><code><span id="bl">sum(</span>19,°<span id="gr">POS</span>,<span id="grey">"DATA"</span><span id="bl">)</span></code></td>
+                                <td>Detect</td>
+                                <td>Finds the first appvar starting at <code><span id="gr">POS</span></code> which starts with the data <code><span id="grey">"DATA"</span></code>. Returns the pointer to the filename. <code><span id="gr">POS</span></code> is updated each call, and should be <code>0</code> to start the search.</td>
+                            </tr>
+                            <tr>
+                                <td><code><span id="bl">sum(</span>20,°<span id="gr">POS</span>,<span id="grey">"DATA"</span>,<span id="red">TYPE</span><span id="bl">)</span></code></td>
+                                <td>DetectVar</td>
+                                <td>Finds the first variable with type <code><span id="red">TYPE</span></code> starting at <code><span id="gr">POS</span></code> which starts with the data <code><span id="grey">"DATA"</span></code>. Returns the pointer to the filename. <code><span id="gr">POS</span></code> is updated each call, and should be <code>0</code> to start the search. Returns <code>0</code> if no more variables found. See <code><span id="bl">sum(</span>2</code> for the types.</td>
                             </tr>
                         </table>
                         <h3 id="memory">Memory</h3>
@@ -849,7 +898,7 @@
                             </tr>
                             <tr>
                                 <td><code><span id="bl">Data(</span><span id="or">SIZE</span>,<span id="or">CONST1</span>,<span id="or">CONST2</span>...<span id="bl">)</span></code></td>
-                                <td>Puts all the constants in the program data with size <code><span id="or">SIZE</span></code>. Returns a pointer to the data.</td>
+                                <td>Places constant data in program memory with each element size of <code><span id="red">SIZE</span></code> bytes. Returns a pointer to the data.</td>
                             </tr>
                             <tr>
                                 <td><code><span id="bl">Alloc(</span><span id="or">SIZE</span><span id="bl">)</span></code></td>

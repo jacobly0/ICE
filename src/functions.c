@@ -141,7 +141,7 @@ const uint8_t FileiocArgs[] = {
     RET_HL   | 1, SMALL_1,     // Tell
     RET_HL   | 1, SMALL_1,     // Rewind
     RET_HL   | 1, SMALL_1,     // GetSize
-    RET_HL   | 1, SMALL_1,     // GetTokenString
+    RET_HL   | 3, SMALL_1,     // GetTokenString
     RET_HL   | 1, SMALL_1,     // GetDataPtr
     UN       | 0, ARG_NORM,    // Detect
     UN       | 0, ARG_NORM,    // DetectVar

@@ -48,13 +48,14 @@ uint8_t parseProgram(void) {
         
         ice.lastTokenIsReturn = false;
         ice.currentLine++;
-#ifndef COMPUTER_ICE
-        displayLoadingBar();
-#endif
 
         if ((ret = (*functions[token])(token)) != VALID) {
             break;
         }
+        
+#ifndef COMPUTER_ICE
+        displayLoadingBar();
+#endif
     }
 
     return ret;
@@ -587,6 +588,10 @@ stackToOutput:
         stackPrev = &stackPtr[--stackElements];
         
         temp = stackPrev->operand;
+        if ((uint8_t)temp == 0x0F) {
+            // :D
+            temp = (temp & 0xFF0000) + tLBrace;
+        }
         
         // If it's a function, add the amount of arguments as well
         if (stackPrev->type == TYPE_FUNCTION) {
@@ -602,10 +607,6 @@ stackToOutput:
         outputCurr->type = stackPrev->type;
         outputCurr->mask = stackPrev->mask;
         
-        if ((uint8_t)temp == 0x0F) {
-            // :D
-            temp = tLBrace;
-        }
         outputCurr->operand = temp;
     }
     
@@ -1745,7 +1746,7 @@ uint8_t (*functions[256])(int) = {
     tokenUnimplemented, //5
     tokenWrongPlace,    //6
     parseExpression,    //7
-    tokenWrongPlace,    //8
+    parseExpression,    //8
     parseExpression,    //9
     tokenUnimplemented, //10
     parseExpression,    //11

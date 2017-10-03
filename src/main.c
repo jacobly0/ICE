@@ -53,6 +53,7 @@ void main(void) {
     // Install hooks
     ti_CloseAll();
     ice.inPrgm = ti_OpenVar("ICEAPPV", "r", TI_APPVAR_TYPE);
+    
     if (ice.inPrgm) {
         ti_SetArchiveStatus(true, ice.inPrgm);
         ti_GetDataPtr(ice.inPrgm);
@@ -70,14 +71,11 @@ void main(void) {
         ti_Close(ice.inPrgm);
     }
     
+    asm("ld iy, 0D00080h");
+    asm("set 3, (iy+024h)");
+    
     // Yay, GUI! :)
     gfx_Begin();
-    
-    // Display flash screen
-    /*gfx_ZeroScreen();
-    gfx_RLETSprite_NoClip(logo, 53, 70);
-    delay(2000);
-    gfx_FillScreen(0xFF);*/
 
     gfx_SetColor(189);
     gfx_FillRectangle_NoClip(0, 0, 320, 10);
@@ -422,11 +420,15 @@ void preScanProgram(void) {
         }
     }
     
-    if (ice.amountOfGraphxRoutinesUsed) {
+    if (ice.amountOfGraphxRoutinesUsed || ice.amountOfFileiocRoutinesUsed) {
         CALL(_RunIndicOff);
         CALL(ice.programPtr - ice.programData + 12 + PRGM_START);
         LD_IY_IMM(flags);
-        JP(_DrawStatusBar);
+        if (ice.amountOfGraphxRoutinesUsed) {
+            JP(_DrawStatusBar);
+        } else {
+            RET();
+        }
     }
     
     // Well, we scanned the entire program, so let's rewind it
