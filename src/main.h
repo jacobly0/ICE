@@ -23,6 +23,7 @@
 
 typedef struct {
     char     outName[9];                                    // Output variable name
+    char     currProgName[5][9];                            // Current program compiling
     
     uint8_t  nestedBlocks;                                  // Amount of nested If/Repeat/While
     uint8_t  *programData;                                  // Address of the program
@@ -149,6 +150,7 @@ void StringConcatenateData(void);
 void MeanData(void);
 void SqrtData(void);
 void PauseData(void);
+void GotoEditor(char*);
 #endif
 
 #endif

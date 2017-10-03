@@ -139,6 +139,7 @@ void main(void) {
     _seek(0, SEEK_END, ice.inPrgm);
     ice.programLength = _tell(ice.inPrgm);
     ice.programData    = (uint8_t*)0xD52C00;
+    strcpy(ice.currProgName[ice.inPrgm], var_name);
 #else
     var_name = argv[1];
     if (argc != 2) {
@@ -249,7 +250,27 @@ findNextLabel:;
         gfx_SetTextFGColor(0);
         sprintf(buf, "Output size: %u bytes", totalSize);
         gfx_PrintStringXY(buf, 1, iceMessageLine);
+    } else {
+        displayError(res);
+        if (!ti_IsArchived(ice.inPrgm)) {
+            // MAGIC
+            // Jump to error
+            GotoEditor(ice.currProgName[ice.inPrgm]);
+        }
+    }
+    
+stop:
+    gfx_SetTextFGColor(0);
+    gfx_PrintStringXY("[Press any key to quit]", 85, 230);
+    while (!os_GetCSC());
+err:
+    // Return immediately
+    ti_CloseAll();
+    gfx_End();
+    prgm_CleanUp();
+    
 #else
+    
         uint8_t *export = malloc(0x10000);
         
         // Write ASM header
@@ -270,26 +291,14 @@ findNextLabel:;
         // Display the size
         fprintf(stdout, "Succesfully compiled to %s.8xp!\n", ice.outName);
         fprintf(stdout, "Output size: %u bytes\n", totalSize);
-#endif
     } else {
         displayError(res);
     }
-
-#ifndef COMPUTER_ICE
-stop:
-    gfx_SetTextFGColor(0);
-    gfx_PrintStringXY("[Press any key to quit]", 85, 230);
-    while (!os_GetCSC());
-err:
-    // Return immediately
-    ti_CloseAll();
-    gfx_End();
-    prgm_CleanUp();
-#else
     return 0;
 stop:
     return 1;
 #endif
+
 }
 
 void preScanProgram(void) {

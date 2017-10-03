@@ -1682,6 +1682,7 @@ static uint8_t functionBB(int token) {
             
             displayLoadingBarFrame();
             sprintf(buf, "Compiling subprogram %s...", tempName);
+            strcpy(ice.currProgName[ice.inPrgm], tempName);
             gfx_PrintStringXY(buf, 1, iceMessageLine);
             
             // Compile it, and close
