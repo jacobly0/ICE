@@ -521,13 +521,14 @@ G92:  .db "RotatedScaledSprite_NoClip(", 0
       .db 0
       
 ; First token is $62 $0A
-Tok1: .db 13, "DefineSprite("
-Tok2: .db 5,  "Call "
-Tok3: .db 5,  "Data("
-Tok4: .db 5,  "Copy("
-Tok5: .db 6,  "Alloc("
-Tok6: .db 14, "DefineTilemap("
-Tok7: .db 14, "ConfigTilemap("
+; These magic bytes can be found with _GetKeyPress
+Tok1: .db 090h, 13, "DefineSprite("
+Tok2: .db 0EEh, 5,  "Call "
+Tok3: .db 038h, 5,  "Data("
+Tok4: .db 084h, 5,  "Copy("
+Tok5: .db 087h, 6,  "Alloc("
+Tok6: .db 042h, 14, "DefineTilemap("
+Tok7: .db 043h, 14, "ConfigTilemap("
 
 TabData:
 	.dl Tab1 - KeyHook_start
@@ -657,13 +658,13 @@ CData5:
 	.dl G92 - KeyHook_start
     
 TokenHook_data:
-	.dl Tok1 - KeyHook_start - 1
-	.dl Tok2 - KeyHook_start - 1
-	.dl Tok3 - KeyHook_start - 1
-	.dl Tok4 - KeyHook_start - 1
-	.dl Tok5 - KeyHook_start - 1
-	.dl Tok6 - KeyHook_start - 1
-	.dl Tok7 - KeyHook_start - 1
+	.dl Tok1 - KeyHook_start
+	.dl Tok2 - KeyHook_start
+	.dl Tok3 - KeyHook_start
+	.dl Tok4 - KeyHook_start
+	.dl Tok5 - KeyHook_start
+	.dl Tok6 - KeyHook_start
+	.dl Tok7 - KeyHook_start
 
 CustomTokensProgramText:
 	.db "PROGRAM:", 0
