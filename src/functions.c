@@ -642,6 +642,7 @@ uint8_t parseFunction(uint24_t index) {
             while (1) {
                 outputPrev = &outputPtr[--startIndex];
                 outputPrevType = outputPrev->type;
+                outputPrevOperand = outputPrev->operand;
                 
                 if (outputPrevType == TYPE_C_START) {
                     if (!temp) {
@@ -683,7 +684,7 @@ uint8_t parseFunction(uint24_t index) {
             // Push the argument
             PushHLDE();
             
-            endIndex = startIndex--;
+            endIndex = startIndex;
         }
         
         // Invalid first argument of det(

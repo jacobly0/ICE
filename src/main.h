@@ -150,7 +150,7 @@ void StringConcatenateData(void);
 void MeanData(void);
 void SqrtData(void);
 void PauseData(void);
-void GotoEditor(char*);
+void GotoEditor(char*, uint16_t);
 #endif
 
 #endif

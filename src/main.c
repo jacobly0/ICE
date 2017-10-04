@@ -43,7 +43,7 @@ void main(void) {
     
 #endif
 
-    uint8_t selectedProgram = 0, key, amountOfPrograms, res;
+    uint8_t selectedProgram = 0, key, amountOfPrograms, res = VALID;
     uint24_t programDataSize, offset, totalSize;
     const char ICEheader[] = {tii, 0};
     char buf[30], *var_name;
@@ -252,11 +252,6 @@ findNextLabel:;
         gfx_PrintStringXY(buf, 1, iceMessageLine);
     } else {
         displayError(res);
-        if (!ti_IsArchived(ice.inPrgm)) {
-            // MAGIC
-            // Jump to error
-            GotoEditor(ice.currProgName[ice.inPrgm]);
-        }
     }
     
 stop:
@@ -265,9 +260,12 @@ stop:
     while (!os_GetCSC());
 err:
     // Return immediately
-    ti_CloseAll();
     gfx_End();
     prgm_CleanUp();
+    if (res != VALID && !ti_IsArchived(ice.inPrgm)) {
+        GotoEditor(ice.currProgName[ice.inPrgm], ti_Tell(ice.inPrgm) - 1);
+    }
+    ti_CloseAll();
     
 #else
     

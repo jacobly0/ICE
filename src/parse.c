@@ -513,7 +513,7 @@ stackToOutputReturn2:
             outputPrevPrev->operand = executeOperator(outputPrevPrev->operand, outputPrev->operand, (uint8_t)outputCurr->operand);
             memcpy(outputPrev, &outputPtr[loopIndex + 1], (outputElements - 1) * sizeof(element_t));
             outputElements -= 2;
-            loopIndex--;
+            loopIndex -= 2;
             continue;
         }
         
@@ -698,6 +698,7 @@ uint8_t parsePostFixFromIndexToIndex(uint24_t startIndex, uint24_t endIndex) {
         return VALID;
     } else if (amountOfStackElements == 2) {
         outputCurr = &outputPtr[tempIndex = getNextIndex()];
+        
         if (outputCurr->type != TYPE_FUNCTION || ((uint8_t)outputCurr->operand != tDet && (uint8_t)outputCurr->operand != tSum)) {
             outputCurr = &outputPtr[tempIndex = getNextIndex()];
         }
@@ -1687,19 +1688,20 @@ static uint8_t functionBB(int token) {
             
             // Compile it, and close
             ice.currentLine = 0;
-            res = parseProgram();
+            if ((res = parseProgram()) != VALID) {
+                return res;
+            }
             ti_Close(ice.inPrgm);
             
-            if (res == VALID) {
-                displayLoadingBarFrame();
-                gfx_PrintStringXY("Return from subprogram...", 1, iceMessageLine);
-                ice.currentLine = currentLine;
-            }
+            displayLoadingBarFrame();
+            gfx_PrintStringXY("Return from subprogram...", 1, iceMessageLine);
+            ice.currentLine = currentLine;
         } else {
             return E_PROG_NOT_FOUND;
         }
         ice.inPrgm = tempProg;
-        return res;
+        
+        return VALID;
 #endif
     } else {
         _seek(-1, SEEK_CUR, ice.inPrgm);
