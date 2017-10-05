@@ -395,8 +395,8 @@ C3:   .db "Data(", 0
 C4:   .db "Copy(", 0
 C5:   .db "Alloc(", 0
 C6:   .db "DefineTilemap(", 0
-C7:   .db "ConfigTilemap(", 0
-C8:   .db "DataCopy(", 0
+C7:   .db "CopyData(", 0
+C8:   .db "LoadData(", 0
 
 F01:  .db "CloseAll", 0
 F02:  .db "Open(", 0
@@ -529,8 +529,8 @@ Tok3: .db 038h, 5,  "Data("
 Tok4: .db 084h, 5,  "Copy("
 Tok5: .db 087h, 6,  "Alloc("
 Tok6: .db 042h, 14, "DefineTilemap("
-Tok7: .db 043h, 14, "ConfigTilemap("
-Tok8: .db 0FFh, 9,  "DataCopy("
+Tok7: .db 043h, 14, "CopyData("
+Tok8: .db 0FFh, 9,  "LoadData("
 
 TabData:
 	.dl Tab1 - KeyHook_start

@@ -19,8 +19,8 @@
 #define tCopy  0x0D
 #define tAlloc 0x0E
 #define tDefineTilemap 0x0F
-#define tConfigTilemap 0x10
-#define tDataCopy 0x11
+#define tCopyData 0x10
+#define tLoadData 0x11
 
 typedef struct {
     char     outName[9];                                    // Output variable name

@@ -758,7 +758,7 @@
                             <tr>
                                 <td><code><span id="bl">sum(</span>1,<span id="grey">"NAME"</span>,<span id="grey">"MODE"</span><span id="bl">)</span></code></td>
                                 <td>Open</td>
-                                <td>Opens an appvar with name <code><span id="grey">"NAME"</span></code>. Returns the slot number. <code><span id="grey">"MODE"</span></code> options:<br>
+                                <td>Opens an appvar with name <code><span id="grey">"NAME"</span></code>. Returns the slot number or 0 if failure. <code><span id="grey">"MODE"</span></code> options:<br>
                                     - <code><span id="grey">"r"</span></code> - Opens a file for reading. The file must exist. Keeps file in archive if in archive.<br>
                                     - <code><span id="grey">"w"</span></code> - Creates an empty file for writing. Overwrites file if already exists.<br>
                                     - <code><span id="grey">"a"</span></code> - Appends to a file. Writing operations, append data at the end of the file. The file is created if it does not exist.<br>
@@ -770,7 +770,7 @@
                             <tr>
                                 <td><code><span id="bl">sum(</span>2,<span id="grey">"NAME"</span>,<span id="grey">"MODE"</span>,<span id="red">TYPE</span><span id="bl">)</span></code></td>
                                 <td>OpenVar</td>
-                                <td>Opens a variable with name <code><span id="grey">"NAME"</span></code> and type <code><span id="red">TYPE</span></code>. See <code><span id="bl">sum(</span>1</code> for the <code><span id="grey">"MODE"</span></code> options. Returns the slot number. <code><span id="red">TYPE</span></code> options:<br>
+                                <td>Opens a variable with name <code><span id="grey">"NAME"</span></code> and type <code><span id="red">TYPE</span></code>. See <code><span id="bl">sum(</span>1</code> for the <code><span id="grey">"MODE"</span></code> options. Returns the slot number or 0 if failure. <code><span id="red">TYPE</span></code> options:<br>
                                     - <code>0</code> - Real<br>
                                     - <code>1</code> - Real list<br>
                                     - <code>2</code> - Matrix<br>
@@ -874,12 +874,12 @@
                             <tr>
                                 <td><code><span id="bl">sum(</span>19,°<span id="gr">POS</span>,<span id="grey">"DATA"</span><span id="bl">)</span></code></td>
                                 <td>Detect</td>
-                                <td>Finds the first appvar starting at <code><span id="gr">POS</span></code> which starts with the data <code><span id="grey">"DATA"</span></code>. Returns the pointer to the filename. <code><span id="gr">POS</span></code> is updated each call, and should be <code>0</code> to start the search.</td>
+                                <td>Finds the first appvar starting at <code><span id="gr">POS</span></code> which starts with the data <code><span id="grey">"DATA"</span></code>. If you want to search for all appvars, you can replace <code><span id="grey">"DATA"</span></code> with <code>0</code>. Returns the pointer to the filename. <code><span id="gr">POS</span></code> is updated each call, and should be <code>0</code> to start the search. Returns 0 if no more appvars found.</td>
                             </tr>
                             <tr>
                                 <td><code><span id="bl">sum(</span>20,°<span id="gr">POS</span>,<span id="grey">"DATA"</span>,<span id="red">TYPE</span><span id="bl">)</span></code></td>
                                 <td>DetectVar</td>
-                                <td>Finds the first variable with type <code><span id="red">TYPE</span></code> starting at <code><span id="gr">POS</span></code> which starts with the data <code><span id="grey">"DATA"</span></code>. Returns the pointer to the filename. <code><span id="gr">POS</span></code> is updated each call, and should be <code>0</code> to start the search. Returns <code>0</code> if no more variables found. See <code><span id="bl">sum(</span>2</code> for the types.</td>
+                                <td>Finds the first variable with type <code><span id="red">TYPE</span></code> starting at <code><span id="gr">POS</span></code> which starts with the data <code><span id="grey">"DATA"</span></code>. If you want to search for all variables with type <code><span id="red">TYPE</span></code>, you can replace <code><span id="grey">"DATA"</span></code> with <code>0</code>. Returns the pointer to the filename. <code><span id="gr">POS</span></code> is updated each call, and should be <code>0</code> to start the search. Returns <code>0</code> if no more variables found. See <code><span id="bl">sum(</span>2</code> for the types.</td>
                             </tr>
                         </table>
                         <h3 id="memory">Memory</h3>

@@ -143,8 +143,8 @@ const uint8_t FileiocArgs[] = {
     RET_HL   | 1, SMALL_1,     // GetSize
     RET_HL   | 3, SMALL_1,     // GetTokenString
     RET_HL   | 1, SMALL_1,     // GetDataPtr
-    UN       | 0, ARG_NORM,    // Detect
-    UN       | 0, ARG_NORM,    // DetectVar
+    RET_HL   | 0, ARG_NORM,    // Detect
+    RET_HL   | 0, ARG_NORM,    // DetectVar
 };
 
 extern uint8_t outputStack[4096];
@@ -415,12 +415,76 @@ uint8_t parseFunction(uint24_t index) {
         *  (- uint8_t *mapData (pointer to data))
         *****************************************************************
         * Other possibility:
-        *  - - uint8_t *mapData (pointer to data)
+        *  - uint8_t *mapData (pointer to data)
+        *
+        * Returns: PTR to tilemap struct
         **/
+        
+        uint24_t startIndex = -1 - amountOfArguments;
+        uint8_t *tempDataPtr = ice.programDataPtr;
+        element_t *outputTemp;
+        uint8_t a, tileHeight = 0, tileWidth = 0;
+        
+        if (amountOfArguments < 10 || amountOfArguments > 12) {
+            return E_ARGUMENTS;
+        }
+        
+        // Build a new tilemap struct in the program data
+        ProgramPtrToOffsetStack();
+        LD_HL_IMM((uint24_t)tempDataPtr);
+        ice.programDataPtr += 18;
+        
+        // Fetch the 8 uint8_t variables
+        for (a = 0; a < 9; a++) {
+            outputTemp = &outputPtr[getIndexOffset(startIndex + a)];
+            if (outputTemp->type != TYPE_NUMBER) {
+                return E_SYNTAX;
+            }
+            *(tempDataPtr + a + 6) = outputTemp->operand;
+            
+            // First 2 arguments are the sprite dimensions
+            if (!a) {
+                tileHeight = outputTemp->operand;
+            }
+            if (a == 1) {
+                tileWidth = outputTemp->operand;
+            }
+        }
+        
+        // Fetch the only uint24_t variable (X_LOC)
+        outputTemp = &outputPtr[getIndexOffset(startIndex + 9)];
+        if (outputTemp->type != TYPE_NUMBER) {
+            return E_SYNTAX;
+        }
+        *(uint24_t*)(tempDataPtr + 15) = outputTemp->operand;
+        
+        // Fetch the tiles/sprites
+        if (amountOfArguments > 10) {
+        }
+        
+        // Fetch the tilemap
+        if (amountOfArguments > 11) {
+        }
     }
     
-    // ConfigTilemap(
-    else if (function2 == tConfigTilemap) {
+    // LoadData(
+    else if (function2 == tLoadData) {
+        /**************************************
+        * Inputs:
+        *  arg1: appvar name as string
+        *  arg2: offset in appvar
+        *  arg3: amount of sprites (in tilemap)
+        **************************************/
+        
+        if (amountOfArguments != 3 || outputPrevPrev->type != TYPE_NUMBER || outputPrev->type != TYPE_NUMBER) {
+            return E_SYNTAX;
+        }
+        
+        if (outputPrevPrevPrev->type == TYPE_NUMBER) {
+        } else if (outputPrevPrevPrev->type == TYPE_STRING || outputPrevPrevPrev->type == TYPE_OS_STRING) {
+        } else {
+            return E_SYNTAX;
+        }
     }
     
     // Data(
@@ -432,8 +496,8 @@ uint8_t parseFunction(uint24_t index) {
         }
     }
     
-    // DataCopy(
-    else if (function2 == tDataCopy) {
+    // CopyData(
+    else if (function2 == tCopyData) {
         element_t *outputTemp;
         uint24_t startIndex = -1 - amountOfArguments;
         uint8_t *prevProgDataPtr = ice.programDataPtr;
