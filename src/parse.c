@@ -19,7 +19,7 @@ INCBIN(Prgm, "src/asm/prgm.bin");
 
 extern uint8_t (*functions[256])(int token);
 const char implementedFunctions[] = {tNot, tMin, tMax, tMean, tSqrt, tDet, tSum, tSin, tCos};
-const uint8_t implementedFunctions2[18] = {tExtTok, tRemainder,
+const uint8_t implementedFunctions2[20] = {tExtTok, tRemainder,
                                            t2ByteTok, tSubStrng,
                                            t2ByteTok, tLength,
                                            tVarOut, tDefineSprite,
@@ -27,7 +27,8 @@ const uint8_t implementedFunctions2[18] = {tExtTok, tRemainder,
                                            tVarOut, tCopy,
                                            tVarOut, tAlloc,
                                            tVarOut, tDefineTilemap,
-                                           tVarOut, tConfigTilemap
+                                           tVarOut, tConfigTilemap,
+                                           tVarOut, tDataCopy
                                           };
 element_t outputStack[400];
 element_t stack[200];
@@ -1524,7 +1525,7 @@ static uint8_t functionPrgm(int token) {
 static uint8_t functionCustom(int token) {
     uint8_t tok = _getc();
     
-    if (tok >= tDefineSprite && tok <= tConfigTilemap) {
+    if (tok >= tDefineSprite && tok <= tDataCopy) {
         // Call
         if (tok == tCall) {
             insertGotoLabel();

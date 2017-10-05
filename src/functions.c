@@ -440,15 +440,54 @@ uint8_t parseFunction(uint24_t index) {
             }
             memset(ice.programDataPtr, 0, dataSize);
             if (dataSize == 1) {
-                *ice.programDataPtr++ = outputTemp->operand;
+                *ice.programDataPtr = outputTemp->operand;
             } else if (dataSize == 2) {
                 *(uint16_t*)ice.programDataPtr = outputTemp->operand;
-                ice.programDataPtr += 2;
             } else {
                 *(uint24_t*)ice.programDataPtr = outputTemp->operand;
-                ice.programDataPtr += 3;
             }
+            ice.programDataPtr += dataSize;
         }
+    }
+    
+    // DataCopy(
+    else if (function2 == tDataCopy) {
+        element_t *outputTemp;
+        uint24_t startIndex = -1 - amountOfArguments;
+        uint8_t *prevProgDataPtr = ice.programDataPtr;
+        uint8_t a, dataSize = (&outputPtr[getIndexOffset(startIndex + 1)])->operand;
+        
+        outputTemp = &outputPtr[getIndexOffset(startIndex)];
+        if (outputTemp->type == TYPE_NUMBER) {
+            LD_DE_IMM(outputTemp->operand);
+        } else if (outputTemp->type == TYPE_VARIABLE) {
+            LD_DE_IND_IX_OFF(outputTemp->operand);
+        } else if (outputTemp->type == TYPE_CHAIN_ANS) {
+            AnsToDE();
+        } else {
+            return E_SYNTAX;
+        }
+        
+        ProgramPtrToOffsetStack();
+        LD_HL_IMM((uint24_t)ice.programDataPtr);
+        
+        for (a = 2; a < amountOfArguments; a++) {
+            outputTemp = &outputPtr[getIndexOffset(startIndex + a)];
+            if (outputTemp->type != TYPE_NUMBER) {
+                return E_SYNTAX;
+            }
+            memset(ice.programDataPtr, 0, dataSize);
+            if (dataSize == 1) {
+                *ice.programDataPtr = outputTemp->operand;
+            } else if (dataSize == 2) {
+                *(uint16_t*)ice.programDataPtr = outputTemp->operand;
+            } else {
+                *(uint24_t*)ice.programDataPtr = outputTemp->operand;
+            }
+            ice.programDataPtr += dataSize;
+        }
+        LD_BC_IMM(ice.programDataPtr - prevProgDataPtr);
+        LDIR();
     }
     
     // Copy(
