@@ -163,19 +163,53 @@ void main(void) {
     ice.LblPtr         = ice.LblStack;
     ice.GotoPtr        = ice.GotoStack;
     
-    // Pre-scan program (and subprograms) and find all the C routines
-    preScanProgram();
+    // Pre-scan program (and subprograms) and find all the GRAPHX routines
+    memcpy(ice.programPtr, CHeaderData, 116);
+    ice.programPtr += 116;
+    preScanProgram(ice.GraphxRoutinesStack, &ice.amountOfGraphxRoutinesUsed, true);
+    
+    // If there are no GRAPHX functions, remove the GRAPHX header
+    if (!ice.amountOfGraphxRoutinesUsed) {
+        ice.programPtr -= 9;
+    }
+    
+    // Prescan the program again to detect all the FILEIOC routines
+    memcpy(ice.programPtr, FileiocHeaderData, 10);
+    ice.programPtr += 10;
+    preScanProgram(ice.FileiocRoutinesStack, &ice.amountOfFileiocRoutinesUsed, false);
+    
+    // If there are no GRAPHX functions, remove the GRAPHX header
+    if (!ice.amountOfFileiocRoutinesUsed) {
+        ice.programPtr -= 10;
+        
+        // No C function at all
+        if (!ice.amountOfGraphxRoutinesUsed) {
+            ice.programPtr = ice.programData;
+        }
+    }
+    
+    // Clear up program before and after running
+    if (ice.amountOfGraphxRoutinesUsed || ice.amountOfFileiocRoutinesUsed) {
+        CALL(_RunIndicOff);
+        CALL(ice.programPtr - ice.programData + 12 + PRGM_START);
+        LD_IY_IMM(flags);
+        if (ice.amountOfGraphxRoutinesUsed) {
+            JP(_DrawStatusBar);
+        } else {
+            RET();
+        }
+    }
+    
+    // Sorry :3
+    ice.freeMemoryPtr = (ice.tempStrings[1] = (ice.tempStrings[0] = pixelShadow + 2000 * ice.amountOfOSLocationsUsed) + 2000) + 2000;
     
     memcpy(ice.programPtr, CProgramHeaderData, 5);
     ice.programPtr += 5;
-    
-    ice.programSize = (uintptr_t)ice.programPtr - (uintptr_t)ice.programData;
    
     // Do the stuff
 #ifndef COMPUTER_ICE
     sprintf(buf, "Compiling program %s...", var_name);
     gfx_PrintStringXY(buf, 1, iceMessageLine);
-    displayLoadingBarFrame();
 #else
     fprintf(stdout, "Compiling program %s...\n", var_name);
 #endif
@@ -300,11 +334,9 @@ stop:
 
 }
 
-void preScanProgram(void) {
+void preScanProgram(uint24_t CFunctionsStack[], uint8_t *CFunctionsCounter, bool detectOSVars) {
     int token;
     
-    memcpy(ice.programPtr, CHeaderData, 116);
-    ice.programPtr += 116;
     _rewind(ice.inPrgm);
     
     // Scan the entire program
@@ -319,11 +351,11 @@ void preScanProgram(void) {
             skipLine();
         } else if (tok == tStore) {
             expr.inString = false;
-        } else if (tok == tVarLst && !expr.inString) {
+        } else if (tok == tVarLst && !expr.inString && detectOSVars) {
             if (!ice.OSLists[token = _getc()]) {
                 ice.OSLists[token] = pixelShadow + 2000 * (ice.amountOfOSLocationsUsed++);
             }
-        } else if (tok == tVarStrng && !expr.inString) {
+        } else if (tok == tVarStrng && !expr.inString && detectOSVars) {
             if (!ice.OSStrings[token = _getc()]) {
                 ice.OSStrings[token] = pixelShadow + 2000 * (ice.amountOfOSLocationsUsed++);
             }
@@ -341,15 +373,13 @@ void preScanProgram(void) {
                 
                 if ((ice.inPrgm = _open(tempName))) {
 #ifndef COMPUTER_ICE
-                    displayLoadingBarFrame();
-                    preScanProgram();
+                    preScanProgram(CFunctionsStack, CFunctionsCounter, detectOSVars);
                     ti_Close(ice.inPrgm);
-                    displayLoadingBarFrame();
 #endif
                 }
                 ice.inPrgm = tempProg;
             }
-        } else if (tok == tDet && !expr.inString) {
+        } else if (((tok == tDet && detectOSVars) || (tok == tSum && !detectOSVars)) && !expr.inString) {
             uint8_t tok1 = _getc();
             uint8_t tok2 = _getc();
 
@@ -366,82 +396,13 @@ void preScanProgram(void) {
             }
             
             // Insert the C routine
-            if (!ice.GraphxRoutinesStack[tok]) {
-                ice.GraphxRoutinesStack[tok] = ice.programPtr - ice.programData + PRGM_START;
+            if (!CFunctionsStack[tok]) {
+                CFunctionsStack[tok] = ice.programPtr - ice.programData + PRGM_START;
                 JP(tok * 3);
-                ice.amountOfGraphxRoutinesUsed++;
+                (*CFunctionsCounter)++;
             }
         }
     }
     
-    // If there are no GRAPHX functions, remove the entire header
-    if (!ice.amountOfGraphxRoutinesUsed) {
-        ice.programPtr -= 9;
-    }
-    
-#ifndef COMPUTER_ICE
-    displayLoadingBarFrame();
-#endif
-    
-    // Scan again, but now for the FILEIOC lib functions
-    memcpy(ice.programPtr, FileiocHeaderData, 10);
-    ice.programPtr += 10;
     _rewind(ice.inPrgm);
-    expr.inString = false;
-    
-    while ((int)(token = _getc()) != EOF) {
-        uint8_t tok = (uint8_t)token;
-        
-        if (tok == tString) {
-            expr.inString = !expr.inString;
-        } else if (tok == tEnter) {
-            expr.inString = false;
-        } else if (tok == tSum && !expr.inString) {
-            uint8_t tok1 = _getc();
-            uint8_t tok2 = _getc();
-
-            // Invalid det( command
-            if (tok1 < t0 || tok1 > t9) {
-                break;
-            }
-            
-            // Get the det( command
-            if (tok2 < t0 || tok2 > t9) {
-                tok = tok1 - t0;
-            } else {
-                tok = (tok1 - t0) * 10 + (tok2 - t0);
-            }
-            
-            // Insert the C routine
-            if (!ice.FileiocRoutinesStack[tok]) {
-                ice.FileiocRoutinesStack[tok] = ice.programPtr - ice.programData + PRGM_START;
-                JP(tok * 3);
-                ice.amountOfFileiocRoutinesUsed++;
-            }
-        }
-    }
-    
-    if (!ice.amountOfFileiocRoutinesUsed) {
-        ice.programPtr -= 10;
-        if (!ice.amountOfGraphxRoutinesUsed) {
-            ice.programPtr = ice.programData;
-        }
-    }
-    
-    if (ice.amountOfGraphxRoutinesUsed || ice.amountOfFileiocRoutinesUsed) {
-        CALL(_RunIndicOff);
-        CALL(ice.programPtr - ice.programData + 12 + PRGM_START);
-        LD_IY_IMM(flags);
-        if (ice.amountOfGraphxRoutinesUsed) {
-            JP(_DrawStatusBar);
-        } else {
-            RET();
-        }
-    }
-    
-    // Well, we scanned the entire program, so let's rewind it
-    _rewind(ice.inPrgm);
-    
-    // Sorry :3
-    ice.freeMemoryPtr = (ice.tempStrings[1] = (ice.tempStrings[0] = pixelShadow + 2000 * ice.amountOfOSLocationsUsed) + 2000) + 2000;
 }

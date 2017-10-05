@@ -131,7 +131,7 @@ extern ice_t ice;
 extern expr_t expr;
 extern variable_t variable;
 
-void preScanProgram(void);
+void preScanProgram(uint24_t a[], uint8_t*, bool);
 
 #ifndef COMPUTER_ICE
 void CHeaderData(void);
