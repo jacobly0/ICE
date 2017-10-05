@@ -1667,7 +1667,7 @@ static uint8_t functionBB(int token) {
     // AsmComp(
     else if ((uint8_t)token == tAsmComp) {
         char tempName[9];
-        uint8_t a = 0, res;
+        uint8_t a = 0, res = VALID;
         uint24_t currentLine = ice.currentLine;
         ti_var_t tempProg = ice.inPrgm;
         
@@ -1698,11 +1698,11 @@ static uint8_t functionBB(int token) {
             gfx_PrintStringXY("Return from subprogram...", 1, iceMessageLine);
             ice.currentLine = currentLine;
         } else {
-            return E_PROG_NOT_FOUND;
+            res = E_PROG_NOT_FOUND;
         }
         ice.inPrgm = tempProg;
         
-        return VALID;
+        return res;
 #endif
     } else {
         _seek(-1, SEEK_CUR, ice.inPrgm);
