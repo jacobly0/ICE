@@ -898,7 +898,11 @@
                             </tr>
                             <tr>
                                 <td><code><span id="bl">Data(</span><span id="or">SIZE</span>,<span id="or">CONST1</span>,<span id="or">CONST2</span>...<span id="bl">)</span></code></td>
-                                <td>Places constant data in program memory with each element size of <code><span id="red">SIZE</span></code> bytes. Returns a pointer to the data.</td>
+                                <td>Places constant data in program memory with each element size of <code><span id="or">SIZE</span></code> bytes. Returns a pointer to the end of the data.</td>
+                            </tr>
+                            <tr>
+                                <td><code><span id="bl">DataCopy(</span><span id="red">DEST</span>,<span id="or">SIZE</span>,<span id="or">CONST1</span>,<span id="or">CONST2</span>...<span id="bl">)</span></code></td>
+                                <td>Places constant data in program memory with each element size of <code><span id="or">SIZE</span></code> bytes and copies it to <code><span id="red">DEST</span></code>. Returns a pointer to the data.</td>
                             </tr>
                             <tr>
                                 <td><code><span id="bl">Alloc(</span><span id="or">SIZE</span><span id="bl">)</span></code></td>
