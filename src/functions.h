@@ -24,5 +24,6 @@
 uint8_t parseFunction(uint24_t);
 uint8_t parseFunction1Arg(uint24_t, uint8_t, uint8_t);
 uint8_t parseFunction2Args(uint24_t, uint8_t, uint8_t, bool);
+uint8_t InsertDataElements(uint8_t, uint24_t, uint8_t, uint8_t);
 
 #endif

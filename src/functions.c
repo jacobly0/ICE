@@ -425,28 +425,10 @@ uint8_t parseFunction(uint24_t index) {
     
     // Data(
     else if (function == tVarOut && function2 == tData) {
-        element_t *outputTemp;
         uint24_t startIndex = -1 - amountOfArguments;
-        uint8_t a;
-        uint8_t dataSize = (&outputPtr[getIndexOffset(startIndex)])->operand;
         
-        ProgramPtrToOffsetStack();
-        LD_HL_IMM((uint24_t)ice.programDataPtr);
-        
-        for (a = 1; a < amountOfArguments; a++) {
-            outputTemp = &outputPtr[getIndexOffset(startIndex + a)];
-            if (outputTemp->type != TYPE_NUMBER) {
-                return E_SYNTAX;
-            }
-            memset(ice.programDataPtr, 0, dataSize);
-            if (dataSize == 1) {
-                *ice.programDataPtr = outputTemp->operand;
-            } else if (dataSize == 2) {
-                *(uint16_t*)ice.programDataPtr = outputTemp->operand;
-            } else {
-                *(uint24_t*)ice.programDataPtr = outputTemp->operand;
-            }
-            ice.programDataPtr += dataSize;
+        if ((res = InsertDataElements(amountOfArguments, startIndex, (&outputPtr[getIndexOffset(startIndex)])->operand, 1)) != VALID) {
+            return res;
         }
     }
     
@@ -455,7 +437,6 @@ uint8_t parseFunction(uint24_t index) {
         element_t *outputTemp;
         uint24_t startIndex = -1 - amountOfArguments;
         uint8_t *prevProgDataPtr = ice.programDataPtr;
-        uint8_t a, dataSize = (&outputPtr[getIndexOffset(startIndex + 1)])->operand;
         
         outputTemp = &outputPtr[getIndexOffset(startIndex)];
         if (outputTemp->type == TYPE_NUMBER) {
@@ -468,23 +449,8 @@ uint8_t parseFunction(uint24_t index) {
             return E_SYNTAX;
         }
         
-        ProgramPtrToOffsetStack();
-        LD_HL_IMM((uint24_t)ice.programDataPtr);
-        
-        for (a = 2; a < amountOfArguments; a++) {
-            outputTemp = &outputPtr[getIndexOffset(startIndex + a)];
-            if (outputTemp->type != TYPE_NUMBER) {
-                return E_SYNTAX;
-            }
-            memset(ice.programDataPtr, 0, dataSize);
-            if (dataSize == 1) {
-                *ice.programDataPtr = outputTemp->operand;
-            } else if (dataSize == 2) {
-                *(uint16_t*)ice.programDataPtr = outputTemp->operand;
-            } else {
-                *(uint24_t*)ice.programDataPtr = outputTemp->operand;
-            }
-            ice.programDataPtr += dataSize;
+        if ((res = InsertDataElements(amountOfArguments, startIndex, (&outputPtr[getIndexOffset(startIndex + 1)])->operand, 2)) != VALID) {
+            return res;
         }
         LD_BC_IMM(ice.programDataPtr - prevProgDataPtr);
         LDIR();
@@ -1024,6 +990,33 @@ uint8_t parseFunction2Args(uint24_t index, uint8_t outputReturnRegister, uint8_t
         }
     } else {
         return E_SYNTAX;
+    }
+    
+    return VALID;
+}
+
+uint8_t InsertDataElements(uint8_t amountOfArguments, uint24_t startIndex, uint8_t dataSize, uint8_t startA) {
+    element_t *outputTemp;
+    element_t *outputPtr = (element_t*)outputStack;
+    uint8_t a;
+    
+    ProgramPtrToOffsetStack();
+    LD_HL_IMM((uint24_t)ice.programDataPtr);
+    
+    for (a = startA; a < amountOfArguments; a++) {
+        outputTemp = &outputPtr[getIndexOffset(startIndex + a)];
+        if (outputTemp->type != TYPE_NUMBER) {
+            return E_SYNTAX;
+        }
+        memset(ice.programDataPtr, 0, dataSize);
+        if (dataSize == 1) {
+            *ice.programDataPtr = outputTemp->operand;
+        } else if (dataSize == 2) {
+            *(uint16_t*)ice.programDataPtr = outputTemp->operand;
+        } else {
+            *(uint24_t*)ice.programDataPtr = outputTemp->operand;
+        }
+        ice.programDataPtr += dataSize;
     }
     
     return VALID;

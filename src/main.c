@@ -196,6 +196,7 @@ void main(void) {
             
             for (currentLbl = 0; currentLbl < ice.amountOfLbls; currentLbl++) {
                 label_t *curLbl = &labelStack[currentLbl];
+                
                 if (!memcmp(curLbl->name, curGoto->name, 10)) {
                     w24((uint8_t*)(curGoto->addr + 1), curLbl->addr - (uint24_t)ice.programData + PRGM_START);
                     goto findNextLabel;
