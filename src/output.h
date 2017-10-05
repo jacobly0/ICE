@@ -5,9 +5,10 @@
 
 #define PRGM_START        0xD1A882
 #define flags             0xD00080
-#define pixelShadow       0xD031F6
 #define curRow            0xD00595
 #define curCol            0xD00596
+#define OP1               0xD005F8
+#define pixelShadow       0xD031F6
                        
 #define _GetCSC           0x02014C
 #define _Mov9ToOP1        0x020320

@@ -143,8 +143,8 @@ const uint8_t FileiocArgs[] = {
     RET_HL   | 1, SMALL_1,     // GetSize
     RET_HL   | 3, SMALL_1,     // GetTokenString
     RET_HL   | 1, SMALL_1,     // GetDataPtr
-    RET_HL   | 0, ARG_NORM,    // Detect
-    RET_HL   | 0, ARG_NORM,    // DetectVar
+    RET_HL   | 2, ARG_NORM,    // Detect
+    RET_HL   | 3, ARG_NORM,    // DetectVar
 };
 
 extern uint8_t outputStack[4096];
@@ -480,11 +480,17 @@ uint8_t parseFunction(uint24_t index) {
             return E_SYNTAX;
         }
         
-        if (outputPrevPrevPrev->type == TYPE_NUMBER) {
-        } else if (outputPrevPrevPrev->type == TYPE_STRING || outputPrevPrevPrev->type == TYPE_OS_STRING) {
+        if (outputPrevPrevPrev->type == TYPE_STRING) {
+            LD_HL_STRING(outputPrevPrevPrev->operand - 1);
+        } else if (outputPrevPrevPrev->type == TYPE_OS_STRING) {
+            LD_HL_IMM(outputPrevPrevPrev->operand - 1);
         } else {
             return E_SYNTAX;
         }
+        CALL(_Mov9ToOP1);
+        LD_A(0x15);
+        LD_IMM_A(OP1);
+        CALL(_ChkFindSym);
     }
     
     // Data(
