@@ -145,22 +145,24 @@ static void swapEntries() {
 }
 
 uint8_t parseOperator(element_t *outputPrevPrevPrev, element_t *outputPrevPrev, element_t *outputPrev, element_t *outputCurr) {
-    uint8_t typeMasked1 = outputPrevPrev->type;
-    uint8_t typeMasked2 = outputPrev->type;
+    uint8_t type1 = outputPrevPrev->type;
+    uint8_t type1Masked = type1 & 0x7F;
+    uint8_t type2 = outputPrev->type;
     
     oper = outputCurr->operand;
     
     // Only call the function if both types are valid
-    if ((typeMasked1 == typeMasked2 &&
-            (typeMasked1 == TYPE_NUMBER || typeMasked1 == TYPE_CHAIN_ANS)
+    if ((type1Masked == type2 &&
+            (type1Masked == TYPE_NUMBER || type1 == TYPE_CHAIN_ANS)
         ) ||
         (oper == tStore &&
-            ((typeMasked2 != TYPE_VARIABLE && typeMasked2 != TYPE_OS_STRING && !(typeMasked2 == TYPE_FUNCTION && outputPrev->operand == 0x010108)) ||
-             (typeMasked2 == TYPE_OS_STRING && typeMasked1 < TYPE_STRING)
+            ((type2 != TYPE_VARIABLE && type2 != TYPE_OS_STRING && !(type2 == TYPE_FUNCTION && outputPrev->operand == 0x010108)) ||
+             (type2 == TYPE_OS_STRING && type1 < TYPE_STRING)
             )
         ) ||
-        (typeMasked2 == TYPE_CHAIN_PUSH) ||
-        (typeMasked1 >= TYPE_STRING && typeMasked2 >= TYPE_STRING && oper != tAdd && oper != tStore)
+        (type2 == TYPE_CHAIN_PUSH) ||
+        ((type1 >= TYPE_STRING || type2 >= TYPE_STRING) && oper != tAdd && oper != tStore) ||
+        ((type1 >= TYPE_STRING ^ type2 >= TYPE_STRING) && (oper == tAdd || oper == tStore))
     ) {
         return E_SYNTAX;
     }
@@ -169,9 +171,9 @@ uint8_t parseOperator(element_t *outputPrevPrevPrev, element_t *outputPrevPrev, 
     expr.AnsSetZeroFlag = expr.AnsSetZeroFlagReversed = expr.AnsSetCarryFlag = expr.AnsSetCarryFlagReversed = false;
 
     // Store to a pointer
-    if (oper == tStore && typeMasked2 == TYPE_FUNCTION) {
-        typeMasked2 = TYPE_CHAIN_ANS;
-        typeMasked1 = outputPrevPrevPrev->type;
+    if (oper == tStore && type2 == TYPE_FUNCTION) {
+        type2 = TYPE_CHAIN_ANS;
+        type1 = outputPrevPrevPrev->type;
     }
     
     // Get the right arguments
@@ -180,8 +182,8 @@ uint8_t parseOperator(element_t *outputPrevPrevPrev, element_t *outputPrevPrev, 
     entry2 = outputPrev;
     getEntryOperands();
     
-    if (typeMasked1 == TYPE_CHAIN_PUSH) {
-        if (typeMasked2 != TYPE_CHAIN_ANS) {
+    if (type1 == TYPE_CHAIN_PUSH) {
+        if (type2 != TYPE_CHAIN_ANS) {
             return E_ICE_ERROR;
         }
         // Call the right CHAIN_PUSH | CHAIN_ANS function
@@ -194,15 +196,15 @@ uint8_t parseOperator(element_t *outputPrevPrevPrev, element_t *outputPrevPrev, 
         // Swap operands for compiler optimizations
         if (oper == tLE || oper == tLT ||
              (operatorCanSwap[getIndexOfOperator(oper) - 1] && 
-               (typeMasked1 == TYPE_NUMBER || typeMasked2 == TYPE_CHAIN_ANS || 
-                 (typeMasked1 == TYPE_VARIABLE && typeMasked2 == TYPE_FUNCTION_RETURN)
+               (type1 == TYPE_NUMBER || type2 == TYPE_CHAIN_ANS || 
+                 (type1 == TYPE_VARIABLE && type2 == TYPE_FUNCTION_RETURN)
                )
              )
            ) {
-            uint8_t temp = typeMasked1;
+            uint8_t temp = type1;
             
-            typeMasked1 = typeMasked2;
-            typeMasked2 = temp;
+            type1 = type2;
+            type2 = temp;
             swapEntries();
             if (oper == tLE) {
                 oper = tGE;
@@ -211,9 +213,9 @@ uint8_t parseOperator(element_t *outputPrevPrevPrev, element_t *outputPrevPrev, 
             }
         }
         
-        if (typeMasked1 < TYPE_STRING) {
+        if (type1 < TYPE_STRING) {
             // Call the right function!
-            (*operatorFunctions[((getIndexOfOperator(oper) - 1) * 16) + (typeMasked1 * 4) + typeMasked2])();
+            (*operatorFunctions[((getIndexOfOperator(oper) - 1) * 16) + (type1 * 4) + type2])();
         } else {
             if (oper == tAdd) {
                 AddStringString();
@@ -230,11 +232,11 @@ uint8_t parseOperator(element_t *outputPrevPrevPrev, element_t *outputPrevPrev, 
     }
     
     // If the operator is *, and both operands not a number, it always ends with call __imuls
-    if (oper == tMul && typeMasked1 != TYPE_NUMBER && typeMasked2 != TYPE_NUMBER && !(expr.outputRegister == OUTPUT_IN_A && entry2_operand < 256)) {
+    if (oper == tMul && type1 != TYPE_NUMBER && type2 != TYPE_NUMBER && !(expr.outputRegister == OUTPUT_IN_A && entry2_operand < 256)) {
         CALL(__imuls);
     }
     
-    if (expr.outputRegister != OUTPUT_IN_A && !(typeMasked2 == TYPE_NUMBER && entry2_operand < 256)) {
+    if (expr.outputRegister != OUTPUT_IN_A && !(type2 == TYPE_NUMBER && entry2_operand < 256)) {
         if (oper == tDotIcon) {
             CALL(__iand);
         } else if (oper == tBoxIcon) {
@@ -245,7 +247,7 @@ uint8_t parseOperator(element_t *outputPrevPrevPrev, element_t *outputPrevPrev, 
     }
     
     // If the operator is -, and the second operand not a number, it always ends with or a, a \ sbc hl, de
-    if (oper == tSub && typeMasked2 != TYPE_NUMBER) {
+    if (oper == tSub && type2 != TYPE_NUMBER) {
         OR_A_SBC_HL_DE();
     }
     

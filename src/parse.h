@@ -1,20 +1,19 @@
 #ifndef PARSE_H
 #define PARSE_H
 
+// In case I want to add more types, be sure that TYPE_STRING will be the last one, otherwise operator.c will mess up
 #define TYPE_NUMBER          0
 #define TYPE_VARIABLE        1
 #define TYPE_FUNCTION_RETURN 2
 #define TYPE_CHAIN_ANS       3
 #define TYPE_CHAIN_PUSH      4
 #define TYPE_STRING          5
-#define TYPE_OS_STRING       6
-#define TYPE_LIST            7
-#define TYPE_OS_LIST         8
+#define TYPE_OS_STRING       TYPE_NUMBER + 128
 
-#define TYPE_C_START         252
-#define TYPE_ARG_DELIMITER   253
-#define TYPE_OPERATOR        254
-#define TYPE_FUNCTION        255
+#define TYPE_C_START         124
+#define TYPE_ARG_DELIMITER   125
+#define TYPE_OPERATOR        126
+#define TYPE_FUNCTION        127
 
 #define TYPE_MASK_U8         0
 #define TYPE_MASK_U16        1

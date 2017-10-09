@@ -18,7 +18,8 @@ INCBIN(Prgm, "src/asm/prgm.bin");
 #endif
 
 extern uint8_t (*functions[256])(int token);
-const char implementedFunctions[] = {tNot, tMin, tMax, tMean, tSqrt, tDet, tSum, tSin, tCos};
+const char implementedFunctions[] = {tNot, tMin, tMax, tMean, tSqrt, tDet, tSum, tSin, tCos, 0};
+const uint8_t All2ByteTokens[] = {0x5C, 0x5D, 0x5E, 0x60, 0x61, 0x62, 0x63, 0x7E, 0xAA, 0xBB, 0xEF};
 const uint8_t implementedFunctions2[22] = {tExtTok, tRemainder,
                                            t2ByteTok, tSubStrng,
                                            t2ByteTok, tLength,
@@ -91,7 +92,7 @@ uint8_t parseExpression(int token) {
     */
 
     while (token != EOF && (tok = (uint8_t)token) != tEnter) {
-        bool IsA2ByteToken = (tok == t2ByteTok || tok == tExtTok || tok == tVarOut);
+        bool IsA2ByteToken = memchr(All2ByteTokens, tok, 11) && 1;
         
         outputCurr = &outputPtr[outputElements];
         stackCurr  = &stackPtr[stackElements];
@@ -362,7 +363,9 @@ stackToOutputReturn1:
         }
         
         // Process a function, ( { [
-        else if (strchr(implementedFunctions, tok) || IsA2ByteToken || tok == tLParen || tok == tLBrace || tok == tLBrack) {
+        else if (strchr(implementedFunctions, tok) ||
+                    tok == t2ByteTok || tok == tExtTok || tok == tVarOut ||
+                    tok == tLParen || tok == tLBrace || tok == tLBrack) {
             if (IsA2ByteToken) {
                 uint8_t temp2 = _getc();
                 uint24_t temp3;
@@ -440,16 +443,16 @@ foundRight2ByteToken:
             }
         }
         
-        // Parse a string
+        // Parse a string of tokens
         else if (tok == tString) {
             outputCurr->type = TYPE_STRING;
             outputCurr->operand = (uint24_t)ice.programDataPtr;
             outputElements++;
             mask = TYPE_MASK_U24;
             
-            if (expr.needToSquishHexadecimals) {
-                // We need to squish it, since these are the data of DefineSprite or DefineTilemap
-                while ((token = _getc()) != EOF && (uint8_t)token != tEnter && (uint8_t)token != tStore && (uint8_t)token != tString) {
+            // We need to squish it, since these are the data of DefineSprite or DefineTilemap
+            while ((token = _getc()) != EOF && (uint8_t)token != tEnter && (uint8_t)token != tStore && (uint8_t)token != tString) {
+                if (expr.needToSquishHexadecimals) {
                     uint8_t tok1, tok2;
                     
                     // Get hexadecimal 1
@@ -463,11 +466,29 @@ foundRight2ByteToken:
                     }
                     
                     *ice.programDataPtr++ = (tok1 << 4) + tok2;
+                } else {
+                    *ice.programDataPtr++ = token;
+                    
+                    if (memchr(All2ByteTokens, token, 11)) {
+                        *ice.programDataPtr++ = _getc();
+                    }
                 }
-            } else {
-                // Grab string
-                token = grabString(&ice.programDataPtr, true);
             }
+            *ice.programDataPtr++ = 0;
+            if ((uint8_t)token == tStore || (uint8_t)token == tEnter) {
+                continue;
+            }
+        }
+        
+        // Parse a string of characters
+        else if (tok == tAPost) {
+            outputCurr->type = TYPE_STRING;
+            outputCurr->operand = (uint24_t)ice.programDataPtr;
+            outputElements++;
+            mask = TYPE_MASK_U24;
+            
+            token = grabString(&ice.programDataPtr, true);
+            
             *ice.programDataPtr++ = 0;
             if ((uint8_t)token == tStore || (uint8_t)token == tEnter) {
                 continue;
@@ -508,7 +529,7 @@ stackToOutputReturn2:
         index = outputCurr->operand >> 8;
         
         // Check if the types are number | number | operator
-        if (loopIndex > 1 && outputPrevPrev->type == TYPE_NUMBER && outputPrev->type == TYPE_NUMBER && 
+        if (loopIndex > 1 && (outputPrevPrev->type & 0x7F) == TYPE_NUMBER && (outputPrev->type & 0x7F) == TYPE_NUMBER && 
                outputCurr->type == TYPE_OPERATOR && (uint8_t)outputCurr->operand != tStore) {
             // If yes, execute the operator, and store it in the first entry, and remove the other 2
             outputPrevPrev->operand = executeOperator(outputPrevPrev->operand, outputPrev->operand, (uint8_t)outputCurr->operand);
@@ -527,10 +548,12 @@ stackToOutputReturn2:
             uint24_t outputPrevOperand = outputPrev->operand, outputPrevPrevOperand = outputPrevPrev->operand;
             
             for (a = 1; a <= index; a++) {
-                if ((&outputPtr[loopIndex-a])->type != TYPE_NUMBER) {
+                if (((&outputPtr[loopIndex-a])->type & 0x7F) != TYPE_NUMBER) {
                     goto DontDeleteFunction;
                 }
             }
+            
+            dbg_Debugger();
             
             // The function has only numbers as argument, so remove them as well :)
             switch ((uint8_t)outputCurr->operand) {
@@ -544,6 +567,7 @@ stackToOutputReturn2:
                     temp = (outputPrevOperand > outputPrevPrevOperand) ? outputPrevOperand : outputPrevPrevOperand;
                     break;
                 case tMean:
+                    // I can't simply add, and divide by 2, because then it *might* overflow in case that A+B > 0xFFFFFF
                     temp = ((long)outputPrevOperand + (long)outputPrevPrevOperand) / 2;
                     break;
                 case tSqrt:
@@ -555,11 +579,17 @@ stackToOutputReturn2:
                     }
                     temp = outputPrevOperand % outputPrevPrevOperand;
                     break;
+                case t2ByteTok:
+                    if ((uint8_t)(outputCurr->operand >> 16) != tLength) {
+                        return E_ICE_ERROR;
+                    }
+                    temp = strlen(outputPrevOperand);
+                    break;
                 case tSin:
-                    temp = 255*sin((double)outputPrevOperand / 256 * 2 * M_PI);
+                    temp = 255*sin((double)outputPrevOperand * (2 * M_PI / 256));
                     break;
                 case tCos:
-                    temp = 255*cos((double)outputPrevOperand / 256 * 2 * M_PI);
+                    temp = 255*cos((double)outputPrevOperand * (2 * M_PI / 256));
                     break;
                 default:
                     return E_ICE_ERROR;
@@ -720,8 +750,9 @@ uint8_t parsePostFixFromIndexToIndex(uint24_t startIndex, uint24_t endIndex) {
         outputPrevPrevPrev = &outputPtr[getIndexOffset(-4)];
         outputType = outputCurr->type;
         
-        // Clear this flag
+        // Clear these flags
         expr.AnsSetZeroFlagReversed = false;
+        expr.outputIsString = false;
         
         if (outputType == TYPE_OPERATOR) {
             element_t *outputPrev, *outputPrevPrev;
@@ -759,6 +790,7 @@ uint8_t parsePostFixFromIndexToIndex(uint24_t startIndex, uint24_t endIndex) {
                 } else {
                     outputCurr->operand = ice.tempStrings[TempString1];
                 }
+                expr.outputIsString = true;
             } else {
                 AnsDepth = 1;
                 outputCurr->type = TYPE_CHAIN_ANS;
@@ -801,6 +833,7 @@ uint8_t parsePostFixFromIndexToIndex(uint24_t startIndex, uint24_t endIndex) {
                     } else {
                         outputCurr->operand = ice.tempStrings[TempString1];
                     }
+                    expr.outputIsString = true;
                 }
                 
                 // Check chain push/ans
@@ -1145,17 +1178,18 @@ uint8_t functionRepeat(int token) {
         return E_SYNTAX;
     }
     
+    optimizeZeroCarryFlagOutput();
+    
     if ((uint8_t)token == tWhile) {
         // Switch the flags
         bool a = expr.AnsSetZeroFlag;
+        
         expr.AnsSetZeroFlag = expr.AnsSetZeroFlagReversed;
         expr.AnsSetZeroFlagReversed = a;
         a = expr.AnsSetCarryFlag;
         expr.AnsSetCarryFlag = expr.AnsSetCarryFlagReversed;
         expr.AnsSetCarryFlagReversed = a;
     }
-    
-    optimizeZeroCarryFlagOutput();
     
     JumpBackwards(RepeatCodeStart, expr.AnsSetCarryFlag || expr.AnsSetCarryFlagReversed ?
         (expr.AnsSetCarryFlagReversed ? OP_JR_NC : OP_JR_C) :
@@ -1724,6 +1758,7 @@ void optimizeZeroCarryFlagOutput(void) {
         if (expr.outputRegister == OUTPUT_IN_HL) {
             ADD_HL_DE();
             OR_A_SBC_HL_DE();
+            expr.AnsSetZeroFlag = true;
         } else if (expr.outputRegister == OUTPUT_IN_DE) {
             SCF();
             SBC_HL_HL();
@@ -1913,11 +1948,11 @@ uint8_t (*functions[256])(int) = {
     tokenUnimplemented, //167
     tokenUnimplemented, //168
     tokenUnimplemented, //169
-    tokenUnimplemented, //170
+    parseExpression,    //170
     parseExpression,    //171
     parseExpression,    //172
     parseExpression,    //173
-    tokenUnimplemented, //174
+    parseExpression,    //174
     tokenUnimplemented, //175
     parseExpression,    //176
     tokenUnimplemented, //177

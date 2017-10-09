@@ -159,7 +159,7 @@ int grabString(uint8_t **outputPtr, bool stopAtStoreAndString) {
     void *dataPtr = ti_GetDataPtr(ice.inPrgm);
     uint24_t token;
     
-    while ((token = _getc()) != EOF && !(stopAtStoreAndString && ((uint8_t)token == tString || (uint8_t)token == tStore)) && (uint8_t)token != tEnter) {
+    while ((token = _getc()) != EOF && !(stopAtStoreAndString && ((uint8_t)token == tAPost || (uint8_t)token == tStore)) && (uint8_t)token != tEnter) {
         uint24_t strLength, a;
         const char *dataString;
         uint8_t tokSize;
