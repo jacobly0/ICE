@@ -90,6 +90,12 @@ typedef struct {
     
     bool     usedAlreadySinCos;                             // Only once the "sin(" or "cos(" routine in the program data
     uint24_t SinCosAddr;                                    // Address of the "sin(" or "cos(" routine in the program data
+    
+    bool     usedAlreadyLoadSprite;                         // Only once the "LoadData(" routine in the program data
+    uint24_t LoadSpriteAddr;                                // Address of the "LoadData(" routine in the program data
+    
+    bool     usedAlreadyLoadTilemap;                        // Only once the "LoadData(" routine in the program data
+    uint24_t LoadTilemapAddr;                               // Address of the "LoadData(" routine in the program data
 } ice_t;
 
 typedef struct {
@@ -114,6 +120,7 @@ typedef struct {
 typedef struct {
     char     name[10];
     uint24_t addr;
+    uint24_t offset;
     uint24_t dataOffsetElements;
     uint8_t  LblGotoElements;
 } label_t;
@@ -148,6 +155,8 @@ void InputData(void);
 void SinCosData(void);
 void PrgmData(void);
 void StringConcatenateData(void);
+void LoadSpriteData(void);
+void LoadTilemapData(void);
 void MeanData(void);
 void SqrtData(void);
 void PauseData(void);

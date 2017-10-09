@@ -384,7 +384,7 @@ void insertFunctionReturn(uint24_t function, uint8_t outputRegister, bool needPu
                 if (outputRegister == OUTPUT_IN_DE) {
                     LD_DE_IMM(0);
                     LD_E_A();
-                } else {
+                } else if (outputRegister == OUTPUT_IN_BC) {
                     LD_BC_IMM(0);
                     LD_C_A();
                 }

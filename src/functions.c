@@ -15,6 +15,8 @@
 INCBIN(Sqrt, "src/asm/sqrt.bin");
 INCBIN(Mean, "src/asm/mean.bin");
 INCBIN(SinCos, "src/asm/sincos.bin");
+INCBIN(LoadSprite, "src/asm/loadsprite.bin");
+INCBIN(LoadTilemap, "src/asm/loadtilemap.bin");
 #endif
 
 /* First byte:  bit 7  : returns something in A
@@ -425,14 +427,9 @@ uint8_t parseFunction(uint24_t index) {
         element_t *outputTemp;
         uint8_t a, tileHeight = 0, tileWidth = 0;
         
-        if (amountOfArguments < 10 || amountOfArguments > 12) {
+        if (amountOfArguments < 11 || amountOfArguments > 12) {
             return E_ARGUMENTS;
         }
-        
-        // Build a new tilemap struct in the program data
-        ProgramPtrToOffsetStack();
-        LD_HL_IMM((uint24_t)tempDataPtr);
-        ice.programDataPtr += 18;
         
         // Fetch the 8 uint8_t variables
         for (a = 0; a < 9; a++) {
@@ -459,12 +456,36 @@ uint8_t parseFunction(uint24_t index) {
         *(uint24_t*)(tempDataPtr + 15) = outputTemp->operand;
         
         // Fetch the tiles/sprites
-        if (amountOfArguments > 10) {
+        // Fetch the only uint24_t variable (X_LOC)
+        outputTemp = &outputPtr[getIndexOffset(startIndex + 10)];
+        if (outputTemp->type == TYPE_NUMBER) {
+            LD_HL_IMM(outputTemp->operand);
+        } else if (outputTemp->type == TYPE_VARIABLE) {
+            LD_HL_IND_IX_OFF(outputTemp->operand);
+        } else if (outputTemp->type == TYPE_CHAIN_ANS) {
+            AnsToHL();
+        } else {
+            return E_SYNTAX;
         }
+        ProgramPtrToOffsetStack();
+        LD_ADDR_HL((uint24_t)tempDataPtr + 3);
         
         // Fetch the tilemap
         if (amountOfArguments > 11) {
+            dbg_Debugger();
+            if ((res = SquishHexadecimals((uint8_t*)outputPrevOperand)) != VALID) {
+                return res;
+            }
+            ProgramPtrToOffsetStack();
+            LD_HL_IMM(outputPrevOperand);
+            ProgramPtrToOffsetStack();
+            LD_ADDR_HL((uint24_t)tempDataPtr + 3);
         }
+        
+        // Build a new tilemap struct in the program data
+        ProgramPtrToOffsetStack();
+        LD_HL_IMM((uint24_t)tempDataPtr);
+        ice.programDataPtr += 18;
     }
     
     // LoadData(
@@ -473,24 +494,79 @@ uint8_t parseFunction(uint24_t index) {
         * Inputs:
         *  arg1: appvar name as string
         *  arg2: offset in appvar
-        *  arg3: amount of sprites (in tilemap)
+        *  arg3: amount of sprites (or tilemap)
         **************************************/
         
         if (amountOfArguments != 3 || outputPrevPrev->type != TYPE_NUMBER || outputPrev->type != TYPE_NUMBER) {
             return E_SYNTAX;
         }
         
-        if (outputPrevPrevPrev->type == TYPE_STRING) {
-            LD_HL_STRING(outputPrevPrevPrev->operand - 1);
-        } else if (outputPrevPrevPrev->type == TYPE_OS_STRING) {
-            LD_HL_IMM(outputPrevPrevPrev->operand - 1);
-        } else {
-            return E_SYNTAX;
+        // Check if it's a sprite or a tilemap
+        if (outputPrev->operand == 3) {
+            // Copy the LoadData( routine to the data section
+            if (!ice.usedAlreadyLoadSprite) {
+                ice.LoadSpriteAddr = (uintptr_t)ice.programDataPtr;
+                memcpy(ice.programDataPtr, LoadSpriteData, 32);
+                ice.programDataPtr += 32;
+                ice.usedAlreadyLoadSprite = true;
+            }
+            
+            // Set which offset
+            LD_HL_IMM(outputPrevPrev->operand + 2);
+            ProgramPtrToOffsetStack();
+            LD_ADDR_HL(ice.LoadSpriteAddr + 27);
+            
+            if (outputPrevPrevPrev->type == TYPE_STRING) {
+                LD_HL_STRING(outputPrevPrevPrev->operand - 1);
+            } else if (outputPrevPrevPrev->type == TYPE_OS_STRING) {
+                LD_HL_IMM(outputPrevPrevPrev->operand - 1);
+            } else {
+                return E_SYNTAX;
+            }
+            
+            // Call the right routine
+            ProgramPtrToOffsetStack();
+            CALL(ice.LoadSpriteAddr);
         }
-        CALL(_Mov9ToOP1);
-        LD_A(0x15);
-        LD_IMM_A(OP1);
-        CALL(_ChkFindSym);
+        
+        // It's a tilemap -.-
+        else {
+            // Copy the LoadData( routine to the data section
+            if (!ice.usedAlreadyLoadTilemap) {
+                ice.LoadTilemapAddr = (uintptr_t)ice.programDataPtr;
+                memcpy(ice.programDataPtr, LoadTilemapData, 59);
+                ice.programDataPtr += 59;
+                ice.usedAlreadyLoadTilemap = true;
+            }
+            
+            // Set which offset
+            LD_HL_IMM(outputPrevPrev->operand);
+            ProgramPtrToOffsetStack();
+            LD_ADDR_HL(ice.LoadTilemapAddr + 27);
+            
+            // Set table base
+            LD_HL_IMM(ice.freeMemoryPtr);
+            ice.freeMemoryPtr += outputPrev->operand;
+            ProgramPtrToOffsetStack();
+            LD_ADDR_HL(ice.LoadTilemapAddr + 40);
+            
+            // Set amount of sprites
+            LD_A(outputPrev->operand / 3);
+            ProgramPtrToOffsetStack();
+            LD_ADDR_A(ice.LoadTilemapAddr + 45);
+            
+            if (outputPrevPrevPrev->type == TYPE_STRING) {
+                LD_HL_STRING(outputPrevPrevPrev->operand - 1);
+            } else if (outputPrevPrevPrev->type == TYPE_OS_STRING) {
+                LD_HL_IMM(outputPrevPrevPrev->operand - 1);
+            } else {
+                return E_SYNTAX;
+            }
+            
+            // Call the right routine
+            ProgramPtrToOffsetStack();
+            CALL(ice.LoadTilemapAddr);
+        }
     }
     
     // Data(
@@ -644,7 +720,10 @@ uint8_t parseFunction(uint24_t index) {
         if (amountOfArguments != 1) {
             return E_ARGUMENTS;
         }
-        if (outputPrevType == TYPE_NUMBER) {
+        if (outputPrevType == TYPE_NUMBER || outputPrevType == TYPE_STRING || outputPrevType == TYPE_OS_STRING) {
+            if (outputPrevType == TYPE_STRING && outputPrevOperand != ice.tempStrings[TempString1] && outputPrevOperand != ice.tempStrings[TempString2]) {
+                ProgramPtrToOffsetStack();
+            }
             if (outputCurr->mask == TYPE_MASK_U8) {
                 LD_A_ADDR(outputPrevOperand);
             } else if (outputCurr->mask == TYPE_MASK_U16) {

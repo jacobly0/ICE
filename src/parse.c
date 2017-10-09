@@ -376,7 +376,7 @@ stackToOutputReturn1:
 foundRight2ByteToken:
                 token = token + (temp2 << 16);
                 
-                if (temp2 == tDefineSprite || temp2 == tDefineTilemap) {
+                if (temp2 == tDefineSprite) {
                     expr.needToSquishHexadecimals = true;
                 }
             }
@@ -1572,6 +1572,7 @@ void insertGotoLabel(void) {
         gotoCurr->name[a++] = token;
     }
     gotoCurr->addr = (uint24_t)ice.programPtr;
+    gotoCurr->offset = _tell(ice.inPrgm);
     gotoCurr->dataOffsetElements = ice.dataOffsetElements;
     gotoCurr->LblGotoElements = ice.amountOfGotos;
 }

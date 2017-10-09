@@ -95,7 +95,7 @@ uint8_t SquishHexadecimals(uint8_t *prevDataPtr) {
     uint8_t *prevDataPtr2 = prevDataPtr;
             
     // Replace the hexadecimal string to hexadecimal bytes
-    while (prevDataPtr != ice.programDataPtr - 1) {
+    while (prevDataPtr != ice.programDataPtr - 1 && *prevDataPtr) {
         uint8_t tok1, tok2;
         
         if ((tok1 = IsHexadecimal(*prevDataPtr++)) == 16 || (tok2 = IsHexadecimal(*prevDataPtr++)) == 16) {
