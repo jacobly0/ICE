@@ -191,7 +191,7 @@ void main(void) {
     // Clear up program before and after running
     if (ice.amountOfGraphxRoutinesUsed || ice.amountOfFileiocRoutinesUsed) {
         CALL(_RunIndicOff);
-        CALL(ice.programPtr - ice.programData + 12 + PRGM_START);
+        CALL(ice.programPtr - ice.programData + (ice.amountOfGraphxRoutinesUsed ? 12 : 9) + PRGM_START);
         LD_IY_IMM(flags);
         if (ice.amountOfGraphxRoutinesUsed) {
             JP(_DrawStatusBar);
