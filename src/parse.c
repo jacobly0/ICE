@@ -444,15 +444,36 @@ foundRight2ByteToken:
         }
         
         // Parse a string of tokens
+        else if (tok == tAPost) {
+            outputCurr->type = TYPE_STRING;
+            outputCurr->operand = (uint24_t)ice.programDataPtr;
+            outputElements++;
+            mask = TYPE_MASK_U24;
+            
+            while ((token = _getc()) != EOF && (uint8_t)token != tEnter && (uint8_t)token != tStore && (uint8_t)token != tAPost) {
+                *ice.programDataPtr++ = token;
+                
+                if (memchr(All2ByteTokens, token, 11)) {
+                    *ice.programDataPtr++ = _getc();
+                }
+            }
+            
+            *ice.programDataPtr++ = 0;
+            if ((uint8_t)token == tStore || (uint8_t)token == tEnter) {
+                continue;
+            }
+        }
+        
+        // Parse a string of characters
         else if (tok == tString) {
             outputCurr->type = TYPE_STRING;
             outputCurr->operand = (uint24_t)ice.programDataPtr;
             outputElements++;
             mask = TYPE_MASK_U24;
             
-            // We need to squish it, since these are the data of DefineSprite or DefineTilemap
-            while ((token = _getc()) != EOF && (uint8_t)token != tEnter && (uint8_t)token != tStore && (uint8_t)token != tString) {
-                if (expr.needToSquishHexadecimals) {
+            if (expr.needToSquishHexadecimals) {
+                // We need to squish it, since these are the data of DefineSprite or DefineTilemap
+                while ((token = _getc()) != EOF && (uint8_t)token != tEnter && (uint8_t)token != tStore && (uint8_t)token != tAPost) {
                     uint8_t tok1, tok2;
                     
                     // Get hexadecimal 1
@@ -466,29 +487,11 @@ foundRight2ByteToken:
                     }
                     
                     *ice.programDataPtr++ = (tok1 << 4) + tok2;
-                } else {
-                    *ice.programDataPtr++ = token;
-                    
-                    if (memchr(All2ByteTokens, token, 11)) {
-                        *ice.programDataPtr++ = _getc();
-                    }
                 }
+            } else {
+                token = grabString(&ice.programDataPtr, true);
             }
-            *ice.programDataPtr++ = 0;
-            if ((uint8_t)token == tStore || (uint8_t)token == tEnter) {
-                continue;
-            }
-        }
-        
-        // Parse a string of characters
-        else if (tok == tAPost) {
-            outputCurr->type = TYPE_STRING;
-            outputCurr->operand = (uint24_t)ice.programDataPtr;
-            outputElements++;
-            mask = TYPE_MASK_U24;
-            
-            token = grabString(&ice.programDataPtr, true);
-            
+
             *ice.programDataPtr++ = 0;
             if ((uint8_t)token == tStore || (uint8_t)token == tEnter) {
                 continue;
@@ -583,7 +586,7 @@ stackToOutputReturn2:
                     if ((uint8_t)(outputCurr->operand >> 16) != tLength) {
                         return E_ICE_ERROR;
                     }
-                    temp = strlen(outputPrevOperand);
+                    temp = strlen((char*)outputPrevOperand);
                     break;
                 case tSin:
                     temp = 255*sin((double)outputPrevOperand * (2 * M_PI / 256));
@@ -691,7 +694,7 @@ uint8_t parsePostFixFromIndexToIndex(uint24_t startIndex, uint24_t endIndex) {
     // It's a single entry
     if (amountOfStackElements == 1) {
         // Expression is only a single number
-        if (outputType == TYPE_NUMBER) {
+        if ((outputType & 0x7F) == TYPE_NUMBER) {
             // This boolean is set, because loops may be optimized when the condition is a number
             expr.outputIsNumber = true;
             expr.outputNumber = outputOperand;
@@ -713,12 +716,6 @@ uint8_t parsePostFixFromIndexToIndex(uint24_t startIndex, uint24_t endIndex) {
         else if (outputType == TYPE_STRING) {
             expr.outputIsString = true;
             LD_HL_STRING(outputOperand);
-        }
-        
-        // It's an OS string
-        else if (outputType == TYPE_OS_STRING) {
-            expr.outputIsString = true;
-            LD_HL_IMM(outputOperand);
         }
         
         // Expression is an empty function or operator, i.e. not(, +

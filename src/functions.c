@@ -601,8 +601,8 @@ uint8_t parseFunction(uint24_t index) {
     
     // Copy(
     else if (function2 == tCopy) {
-        uint8_t outputPrevPrevPrevType = outputPrevPrevPrev->type;
-        uint8_t outputPrevPrevType = outputPrevPrev->type;
+        uint8_t outputPrevPrevPrevType = outputPrevPrevPrev->type & 0x7F;
+        uint8_t outputPrevPrevType = outputPrevPrev->type & 0x7F;
         uint24_t outputPrevPrevPrevOperand = outputPrevPrevPrev->operand;
         uint24_t outputPrevPrevOperand = outputPrevPrev->operand;
         

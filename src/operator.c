@@ -151,29 +151,11 @@ uint8_t parseOperator(element_t *outputPrevPrevPrev, element_t *outputPrevPrev, 
     
     oper = outputCurr->operand;
     
-    // Only call the function if both types are valid
-    if ((type1Masked == type2 &&
-            (type1Masked == TYPE_NUMBER || type1 == TYPE_CHAIN_ANS)
-        ) ||
-        (oper == tStore &&
-            ((type2 != TYPE_VARIABLE && type2 != TYPE_OS_STRING && !(type2 == TYPE_FUNCTION && outputPrev->operand == 0x010108)) ||
-             (type2 == TYPE_OS_STRING && type1 < TYPE_STRING)
-            )
-        ) ||
-        (type2 == TYPE_CHAIN_PUSH) ||
-        ((type1 >= TYPE_STRING || type2 >= TYPE_STRING) && oper != tAdd && oper != tStore) ||
-        ((type1 >= TYPE_STRING ^ type2 >= TYPE_STRING) && (oper == tAdd || oper == tStore))
-    ) {
-        return E_SYNTAX;
-    }
-    
-    expr.outputReturnRegister = OUTPUT_IN_HL;
-    expr.AnsSetZeroFlag = expr.AnsSetZeroFlagReversed = expr.AnsSetCarryFlag = expr.AnsSetCarryFlagReversed = false;
-
     // Store to a pointer
     if (oper == tStore && type2 == TYPE_FUNCTION) {
         type2 = TYPE_CHAIN_ANS;
         type1 = outputPrevPrevPrev->type;
+        type1Masked = type1 & 0x7F;
     }
     
     // Get the right arguments
@@ -182,73 +164,82 @@ uint8_t parseOperator(element_t *outputPrevPrevPrev, element_t *outputPrevPrev, 
     entry2 = outputPrev;
     getEntryOperands();
     
-    if (type1 == TYPE_CHAIN_PUSH) {
-        if (type2 != TYPE_CHAIN_ANS) {
-            return E_ICE_ERROR;
-        }
-        // Call the right CHAIN_PUSH | CHAIN_ANS function
-        (*operatorChainPushChainAnsFunctions[getIndexOfOperator(oper) - 1])();
+    expr.outputReturnRegister = OUTPUT_IN_HL;
+    expr.AnsSetZeroFlag = expr.AnsSetZeroFlagReversed = expr.AnsSetCarryFlag = expr.AnsSetCarryFlagReversed = false;
+    
+    if (type1 >= TYPE_STRING && type2 == TYPE_OS_STRING && oper == tStore) {
+        StoStringString();
+    } else if (type1 >= TYPE_STRING && type2 >= TYPE_STRING && oper == tAdd) {
+        AddStringString();
     } else {
-        // If you have something like "A or 1", the output is always 1, so we can remove the "ld hl, (A)"
-        ice.programPtrBackup = ice.programPtr;
-        ice.dataOffsetElementsBackup = ice.dataOffsetElements;
+        // Only call the function if both types are valid
+        if ((type1Masked == type2 && (type1Masked == TYPE_NUMBER || type1Masked == TYPE_CHAIN_ANS)) ||
+            (oper == tStore && (type2 != TYPE_VARIABLE  && !(type2 == TYPE_FUNCTION && outputPrev->operand == 0x010108))) ||
+            (type2 == TYPE_CHAIN_PUSH)
+        ) {
+            return E_SYNTAX;
+        }
+        
+        if (type1Masked == TYPE_CHAIN_PUSH) {
+            if (type2 != TYPE_CHAIN_ANS) {
+                return E_ICE_ERROR;
+            }
+            // Call the right CHAIN_PUSH | CHAIN_ANS function
+            (*operatorChainPushChainAnsFunctions[getIndexOfOperator(oper) - 1])();
+        } else {
+            // If you have something like "A or 1", the output is always 1, so we can remove the "ld hl, (A)"
+            ice.programPtrBackup = ice.programPtr;
+            ice.dataOffsetElementsBackup = ice.dataOffsetElements;
 
-        // Swap operands for compiler optimizations
-        if (oper == tLE || oper == tLT ||
-             (operatorCanSwap[getIndexOfOperator(oper) - 1] && 
-               (type1 == TYPE_NUMBER || type2 == TYPE_CHAIN_ANS || 
-                 (type1 == TYPE_VARIABLE && type2 == TYPE_FUNCTION_RETURN)
-               )
-             )
-           ) {
-            uint8_t temp = type1;
+            // Swap operands for compiler optimizations
+            if (oper == tLE || oper == tLT ||
+                 (operatorCanSwap[getIndexOfOperator(oper) - 1] && 
+                   (type1Masked == TYPE_NUMBER || type2 == TYPE_CHAIN_ANS || 
+                     (type1Masked == TYPE_VARIABLE && type2 == TYPE_FUNCTION_RETURN)
+                   )
+                 )
+               ) {
+                uint8_t temp = type1Masked;
+                
+                type1Masked = type2;
+                type2 = temp;
+                swapEntries();
+                if (oper == tLE) {
+                    oper = tGE;
+                } else if (oper == tLT) {
+                    oper = tGT;
+                }
+            }
             
-            type1 = type2;
-            type2 = temp;
-            swapEntries();
-            if (oper == tLE) {
-                oper = tGE;
-            } else if (oper == tLT) {
-                oper = tGT;
+            // Call the right function!
+            (*operatorFunctions[((getIndexOfOperator(oper) - 1) * 16) + (type1Masked * 4) + type2])();
+        }
+        
+        // If the operator is /, the routine always ends with call __idvrmu \ expr.outputReturnRegister == OUTPUT_IN_DE
+        if (oper == tDiv && !(expr.outputRegister == OUTPUT_IN_A && entry2_operand == 1)) {
+            CALL(__idvrmu);
+            expr.outputReturnRegister = OUTPUT_IN_DE;
+        }
+        
+        // If the operator is *, and both operands not a number, it always ends with call __imuls
+        if (oper == tMul && type1Masked != TYPE_NUMBER && type2 != TYPE_NUMBER && !(expr.outputRegister == OUTPUT_IN_A && entry2_operand < 256)) {
+            CALL(__imuls);
+        }
+        
+        if (expr.outputRegister != OUTPUT_IN_A && !(type2 == TYPE_NUMBER && entry2_operand < 256)) {
+            if (oper == tDotIcon) {
+                CALL(__iand);
+            } else if (oper == tBoxIcon) {
+                CALL(__ixor);
+            } else if (oper == tCrossIcon) {
+                CALL(__ior);
             }
         }
         
-        if (type1 < TYPE_STRING) {
-            // Call the right function!
-            (*operatorFunctions[((getIndexOfOperator(oper) - 1) * 16) + (type1 * 4) + type2])();
-        } else {
-            if (oper == tAdd) {
-                AddStringString();
-            } else {
-                StoStringString();
-            }
+        // If the operator is -, and the second operand not a number, it always ends with or a, a \ sbc hl, de
+        if (oper == tSub && type2 != TYPE_NUMBER) {
+            OR_A_SBC_HL_DE();
         }
-    }
-    
-    // If the operator is /, the routine always ends with call __idvrmu \ expr.outputReturnRegister == OUTPUT_IN_DE
-    if (oper == tDiv && !(expr.outputRegister == OUTPUT_IN_A && entry2_operand == 1)) {
-        CALL(__idvrmu);
-        expr.outputReturnRegister = OUTPUT_IN_DE;
-    }
-    
-    // If the operator is *, and both operands not a number, it always ends with call __imuls
-    if (oper == tMul && type1 != TYPE_NUMBER && type2 != TYPE_NUMBER && !(expr.outputRegister == OUTPUT_IN_A && entry2_operand < 256)) {
-        CALL(__imuls);
-    }
-    
-    if (expr.outputRegister != OUTPUT_IN_A && !(type2 == TYPE_NUMBER && entry2_operand < 256)) {
-        if (oper == tDotIcon) {
-            CALL(__iand);
-        } else if (oper == tBoxIcon) {
-            CALL(__ixor);
-        } else if (oper == tCrossIcon) {
-            CALL(__ior);
-        }
-    }
-    
-    // If the operator is -, and the second operand not a number, it always ends with or a, a \ sbc hl, de
-    if (oper == tSub && type2 != TYPE_NUMBER) {
-        OR_A_SBC_HL_DE();
     }
     
     expr.outputRegister = expr.outputReturnRegister;
