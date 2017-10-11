@@ -175,7 +175,8 @@ uint8_t parseOperator(element_t *outputPrevPrevPrev, element_t *outputPrevPrev, 
         // Only call the function if both types are valid
         if ((type1Masked == type2 && (type1Masked == TYPE_NUMBER || type1Masked == TYPE_CHAIN_ANS)) ||
             (oper == tStore && (type2 != TYPE_VARIABLE  && !(type2 == TYPE_FUNCTION && outputPrev->operand == 0x010108))) ||
-            (type2 == TYPE_CHAIN_PUSH)
+            (type2 == TYPE_CHAIN_PUSH) ||
+            (type1Masked == TYPE_STRING || type2 == TYPE_STRING)
         ) {
             return E_SYNTAX;
         }
