@@ -177,7 +177,6 @@ uint8_t parseExpression(int token) {
                 outputElements++;
                 _seek(-1, SEEK_CUR, ice.inPrgm);
                 token = tMul;
-                tok = tMul;
                 goto tokenIsOperator;
             }
         }
@@ -379,7 +378,7 @@ stackToOutputReturn1:
 foundRight2ByteToken:
                 token = token + (temp2 << 16);
                 
-                if (temp2 == tDefineSprite) {
+                if (temp2 == tDefineSprite || temp2 == tDefineTilemap) {
                     expr.needToSquishHexadecimals = true;
                 }
             }
@@ -473,7 +472,7 @@ foundRight2ByteToken:
             
             if (expr.needToSquishHexadecimals) {
                 // We need to squish it, since these are the data of DefineSprite or DefineTilemap
-                while ((token = _getc()) != EOF && (uint8_t)token != tEnter && (uint8_t)token != tStore && (uint8_t)token != tAPost) {
+                while ((token = _getc()) != EOF && (uint8_t)token != tEnter && (uint8_t)token != tStore && (uint8_t)token != tString) {
                     uint8_t tok1, tok2;
                     
                     // Get hexadecimal 1
@@ -555,8 +554,6 @@ stackToOutputReturn2:
                     goto DontDeleteFunction;
                 }
             }
-            
-            dbg_Debugger();
             
             // The function has only numbers as argument, so remove them as well :)
             switch ((uint8_t)outputCurr->operand) {
@@ -1240,6 +1237,8 @@ static uint8_t functionDisp(int token) {
         if ((res = parseExpression(token)) != VALID) {
             return res;
         }
+        
+        AnsToHL();
         if (expr.outputIsString) {
             CALL(_PutS);
         } else {
@@ -1411,13 +1410,9 @@ static uint8_t functionFor(int token) {
         endPointNumber = expr.outputNumber;
         ice.programPtr -= 4 - !expr.outputNumber;
     } else {
+        AnsToHL();
         endPointExpressionValue = ice.programPtr;
-        MaybeAToHL();
-        if (expr.outputRegister == OUTPUT_IN_HL) {
-            LD_ADDR_HL(0);
-        } else {
-            LD_ADDR_DE(0);
-        }
+        LD_ADDR_HL(0);
     }
     
     // Check if there was a step
@@ -1437,13 +1432,9 @@ static uint8_t functionFor(int token) {
             stepNumber = expr.outputNumber;
             ice.programPtr -= 4 - !expr.outputNumber;
         } else {
+            AnsToHL();
             stepExpression = ice.programPtr;
-            MaybeAToHL();
-            if (expr.outputRegister == OUTPUT_IN_HL) {
-                LD_ADDR_HL(0);
-            } else {
-                LD_ADDR_DE(0);
-            }
+            LD_ADDR_HL(0);
         }
     } else {
         stepIsNumber = true;
@@ -1622,18 +1613,7 @@ static uint8_t functionPause(int token) {
         }
         AnsToHL();
         
-        // Store the pointer to the call to the stack, to replace later
-        ProgramPtrToOffsetStack();
-        
-        // We need to add the rand routine to the data section
-        if (!ice.usedAlreadyPause) {
-            ice.PauseAddr = (uintptr_t)ice.programDataPtr;
-            memcpy(ice.programDataPtr, PauseData, 20);
-            ice.programDataPtr += 20;
-            ice.usedAlreadyPause = true;
-        }
-        
-        CALL(ice.PauseAddr);
+        CallRoutine(&ice.usedAlreadyPause, &ice.PauseAddr, PauseData, 20);
     }
     return VALID;
 }
@@ -1654,14 +1634,14 @@ static uint8_t functionInput(int token) {
     // Copy the Input routine to the data section
     if (!ice.usedAlreadyInput) {
         ice.InputAddr = (uintptr_t)ice.programDataPtr;
-        memcpy(ice.programDataPtr, InputData, 74);
-        ice.programDataPtr += 74;
+        memcpy(ice.programDataPtr, InputData, SIZEOF_INPUT_DATA);
+        ice.programDataPtr += SIZEOF_INPUT_DATA;
         ice.usedAlreadyInput = true;
     }
     
     // Set which var we need to store to
     ProgramPtrToOffsetStack();
-    LD_ADDR_A(ice.InputAddr + 69);
+    LD_ADDR_A(ice.InputAddr + SIZEOF_INPUT_DATA - 5);
     
     // Call the right routine
     ProgramPtrToOffsetStack();

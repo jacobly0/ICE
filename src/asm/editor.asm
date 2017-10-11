@@ -22,8 +22,13 @@ StartProgramEditor:
 	ld	hl, 0D1A881h		; userMem
 	ld	de, (0D0118Ch)		; asm_prgm_size
 	call	0020590h		; _DelMem
-	ld	a, 046h
-	call	002016Ch		; _NewContext
+	ld	a, 058h			; kExtApps
+	ld	(0D007E0h), a		; cxCurApp
+	ld	a, 046h			; kPrgmEd
+	call	00208BCh		; _PullDownChk
+	call	0020ED4h		; _ClrTR
+	ld	a, 046h			; kPrgmEd
+	call	0020170h		; _NewContext0
 	ld	sp, (0D007FAh)		; onSP
 	call	002103Ch		; _resetStacks
 	ld.sis	bc, (0D008E3h & 0FFFFh)	; errOffset
@@ -36,26 +41,26 @@ FindPreviousEnter:
 	call	0020CF8h		; _BufLeft
 	jr	z, AtTopOfProgram
 	ld	a, e
-	cp	a, 03Fh
+	cp	a, 03Fh			; tEnter
 	jr	z, AtStartOfLine
 	inc	bc
 	jr	FindPreviousEnter
 AtStartOfLine:
-	call	0020CFCh
+	call	0020CFCh		; _BufRight
 AtTopOfProgram:
 	push	bc
-	call	002081Ch
+	call	002081Ch		; _ClrWindow
 	ld	hl, 0000001h
-	ld	(0D00595h), hl
+	ld	(0D00595h), hl		; curRow
 	ld	a, ':'
-	call	00207B8h
-	call	0020D68h
+	call	00207B8h		; _PutC
+	call	0020D68h		; _DispEOW
 	pop	bc
 FindCursor:
 	ld	a, b
 	or	a, c
-	jp	z, 0020154h
-	call	0020D4Ch
+	jp	z, 0020154h		; _Mon
+	call	0020D4Ch		; _CursorRight
 	dec	bc
 	jr	FindCursor
 StopProgramEditor:

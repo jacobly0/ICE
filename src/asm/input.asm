@@ -3,17 +3,24 @@ segment data
 .def _InputData
 
 _InputData:
-	call	0020814h
-	call	0020828h
+	call	0020814h		; _ClrScrn
+	call	0020828h		; _HomeUp
 	xor	a, a
-	ld	(0D00879h), a
-	ld	(0D00599h), a
+	ld	(0D00879h), a		; ioPrompt
+	ld	(0D00599h), a		; curUnder
+	ld	b, (iy+9)
+	ld	c, (iy+28)
 	res	6, (iy+28)
 	set	7, (iy+9)
-	call	0021320h
-	ld	hl, (0D0244Eh)
-	call	0020AE8h
-	call	002050Ch
+	push	bc
+	call	0021320h		; _GetStringInput
+	pop	bc
+	res	4, b
+	ld	(iy+9), b
+	ld	(iy+28), c
+	ld	hl, (0D0244Eh)		; editSym
+	call	0020AE8h		; _VarNameToOP1HL
+	call	002050Ch		; _ChkFindSym
 	ld	a, (de)
 	inc	de
 	inc	de
@@ -35,4 +42,4 @@ _loop:	push	bc
 	pop	bc
 	djnz	_loop
 	ld	(ix+0), hl
-	jp	0021578h
+	jp	0021578h		; _DeleteTempEditEqu

@@ -176,7 +176,7 @@ uint8_t parseOperator(element_t *outputPrevPrevPrev, element_t *outputPrevPrev, 
         if ((type1Masked == type2 && (type1Masked == TYPE_NUMBER || type1Masked == TYPE_CHAIN_ANS)) ||
             (oper == tStore && (type2 != TYPE_VARIABLE  && !(type2 == TYPE_FUNCTION && outputPrev->operand == 0x010108))) ||
             (type2 == TYPE_CHAIN_PUSH) ||
-            (type1Masked == TYPE_STRING || type2 == TYPE_STRING)
+            (type1 == TYPE_STRING || type2 == TYPE_STRING)
         ) {
             return E_SYNTAX;
         }
@@ -185,6 +185,7 @@ uint8_t parseOperator(element_t *outputPrevPrevPrev, element_t *outputPrevPrev, 
             if (type2 != TYPE_CHAIN_ANS) {
                 return E_ICE_ERROR;
             }
+            
             // Call the right CHAIN_PUSH | CHAIN_ANS function
             (*operatorChainPushChainAnsFunctions[getIndexOfOperator(oper) - 1])();
         } else {
@@ -266,18 +267,7 @@ void insertFunctionReturn(uint24_t function, uint8_t outputRegister, bool needPu
             }
         }
         
-        // Store the pointer to the call to the stack, to replace later
-        ProgramPtrToOffsetStack();
-        
-        // We need to add the rand routine to the data section
-        if (!ice.usedAlreadyRand) {
-            ice.randAddr = (uintptr_t)ice.programDataPtr;
-            memcpy(ice.programDataPtr, RandData, SIZEOF_RAND_DATA);
-            ice.programDataPtr += SIZEOF_RAND_DATA;
-            ice.usedAlreadyRand = true;
-        }
-        
-        CALL(ice.randAddr);
+        CallRoutine(&ice.usedAlreadyRand, &ice.randAddr, RandData, SIZEOF_RAND_DATA);
         
         // Store the value to the right register
         if (outputRegister == OUTPUT_IN_DE) {
@@ -325,19 +315,7 @@ void insertFunctionReturn(uint24_t function, uint8_t outputRegister, bool needPu
                 PUSH_HL();
             }
             
-            
-            // Store the pointer to the call to the stack, to replace later
-            ProgramPtrToOffsetStack();
-            
-            // We need to add the getKeyFast routine to the data section
-            if (!ice.usedAlreadyGetKeyFast) {
-                ice.getKeyFastAddr = (uintptr_t)ice.programDataPtr;
-                memcpy(ice.programDataPtr, KeypadData, SIZEOF_KEYPAD_DATA);
-                ice.programDataPtr += SIZEOF_KEYPAD_DATA;
-                ice.usedAlreadyGetKeyFast = true;
-            }
-            
-            CALL(ice.getKeyFastAddr);
+            CallRoutine(&ice.usedAlreadyGetKeyFast, &ice.getKeyFastAddr, KeypadData, SIZEOF_KEYPAD_DATA);
             
             // Store the keypress in the right register
             if (outputRegister == OUTPUT_IN_DE) {
@@ -1458,12 +1436,14 @@ void SubChainAnsNumber(void) {
     MaybeAToHL();
     if (number < 5) {
         uint8_t a;
+        
         for (a = 0; a < (uint8_t)number; a++) {
             if (expr.outputRegister == OUTPUT_IN_HL) {
                 DEC_HL();
             } else {
                 DEC_DE();
             }
+            expr.outputReturnRegister = expr.outputRegister;
         }
     } else {
         if (expr.outputRegister == OUTPUT_IN_HL) {

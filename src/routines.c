@@ -108,6 +108,21 @@ uint8_t SquishHexadecimals(uint8_t *prevDataPtr) {
     return VALID;
 }
 
+void CallRoutine(bool *routineBool, uint24_t *routineAddress, void *routineData, uint8_t routineLength) {
+    // Store the pointer to the call to the stack, to replace later
+    ProgramPtrToOffsetStack();
+    
+    // We need to add the getKeyFast routine to the data section
+    if (!*routineBool) {
+        *routineAddress = (uintptr_t)ice.programDataPtr;
+        memcpy(ice.programDataPtr, routineData, routineLength);
+        ice.programDataPtr += routineLength;
+        *routineBool = true;
+    }
+    
+    CALL(*routineAddress);
+}
+
 uint8_t GetVariableOffset(uint8_t tok) {
     char variableName[10] = {0,0,0,0,0,0,0,0,0,0};
     variable_t *variableNew;
@@ -132,6 +147,7 @@ uint8_t GetVariableOffset(uint8_t tok) {
     // Create new variable
     variableNew = &variableStack[ice.amountOfVariablesUsed];
     memcpy(variableNew->name, variableName, a + 1);
+    
     return variableNew->offset = ice.amountOfVariablesUsed++ * 3 - 128;
 }
 
@@ -150,8 +166,7 @@ void displayLoadingBar(void) {
     gfx_FillRectangle_NoClip(LB_X + 1, LB_Y + 1, ti_Tell(ice.inPrgm) * (LB_W - 2) / ti_GetSize(ice.inPrgm), LB_H - 2);
 }
 
-uint24_t getNextToken(void) {
-    // Display loading bar
+int getNextToken(void) {
     return ti_GetC(ice.inPrgm);
 }
 
@@ -159,7 +174,7 @@ int grabString(uint8_t **outputPtr, bool stopAtStoreAndString) {
     void *dataPtr = ti_GetDataPtr(ice.inPrgm);
     uint24_t token;
     
-    while ((token = _getc()) != EOF && !(stopAtStoreAndString && ((uint8_t)token == tAPost || (uint8_t)token == tStore)) && (uint8_t)token != tEnter) {
+    while ((token = _getc()) != EOF && !(stopAtStoreAndString && ((uint8_t)token == tString || (uint8_t)token == tStore)) && (uint8_t)token != tEnter) {
         uint24_t strLength, a;
         const char *dataString;
         uint8_t tokSize;
@@ -1062,7 +1077,7 @@ int grabString(uint8_t **outputPtr, bool stopAtStoreAndString) {
     }
 }
     
-uint24_t getNextToken(void) {
+int getNextToken(void) {
     if ((uint24_t)_tell(ice.inPrgm) < ice.programLength - 2) {
         return fgetc(ice.inPrgm);
     }

@@ -80,10 +80,10 @@ const uint8_t GraphxArgs[] = {
     RET_NONE | 1, SMALL_1,     // ShiftUp
     RET_NONE | 1, SMALL_1,     // ShiftLeft
     RET_NONE | 1, SMALL_1,     // ShiftRight
-    UN       | 0, ARG_NORM,    // Tilemap
-    UN       | 0, ARG_NORM,    // Tilemap_NoClip
-    UN       | 0, ARG_NORM,    // TransparentTilemap
-    UN       | 0, ARG_NORM,    // TransparentTilemap_NoClip
+    RET_NONE | 3, ARG_NORM,    // Tilemap
+    RET_NONE | 3, ARG_NORM,    // Tilemap_NoClip
+    RET_NONE | 3, ARG_NORM,    // TransparentTilemap
+    RET_NONE | 3, ARG_NORM,    // TransparentTilemap_NoClip
     UN       | 0, ARG_NORM,    // TilePtr
     UN       | 0, ARG_NORM,    // TilePtrMapped
     UN       | 0, ARG_NORM,    // LZDecompress
@@ -203,14 +203,8 @@ uint8_t parseFunction(uint24_t index) {
             return res;
         }
         
-        ProgramPtrToOffsetStack();
-        if (!ice.usedAlreadySqrt) {
-            ice.SqrtAddr = (uintptr_t)ice.programDataPtr;
-            memcpy(ice.programDataPtr, SqrtData, SIZEOF_SQRT_DATA);
-            ice.programDataPtr += SIZEOF_SQRT_DATA;
-            ice.usedAlreadySqrt = true;
-        }
-        CALL(ice.SqrtAddr);
+        CallRoutine(&ice.usedAlreadySqrt, &ice.SqrtAddr, SqrtData, SIZEOF_SQRT_DATA);
+
         expr.outputReturnRegister = OUTPUT_IN_DE;
         ice.modifiedIY = true;
     }
@@ -268,14 +262,9 @@ uint8_t parseFunction(uint24_t index) {
         if ((res = parseFunction2Args(index, OUTPUT_IN_DE, amountOfArguments, false)) != VALID) {
             return res;
         }
-        ProgramPtrToOffsetStack();
-        if (!ice.usedAlreadyMean) {
-            ice.MeanAddr = (uintptr_t)ice.programDataPtr;
-            memcpy(ice.programDataPtr, MeanData, SIZEOF_MEAN_DATA);
-            ice.programDataPtr += SIZEOF_MEAN_DATA;
-            ice.usedAlreadyMean = true;
-        }
-        CALL(ice.MeanAddr);
+        
+        CallRoutine(&ice.usedAlreadyMean, &ice.MeanAddr, MeanData, SIZEOF_MEAN_DATA);
+
         ice.modifiedIY = true;
     }
     
@@ -453,30 +442,21 @@ uint8_t parseFunction(uint24_t index) {
         *(uint24_t*)(tempDataPtr + 15) = outputTemp->operand;
         
         // Fetch the tiles/sprites
-        // Fetch the only uint24_t variable (X_LOC)
         outputTemp = &outputPtr[getIndexOffset(startIndex + 10)];
-        if ((outputTemp->type & 0x7F) == TYPE_NUMBER) {
-            LD_HL_IMM(outputTemp->operand);
-        } else if (outputTemp->type == TYPE_VARIABLE) {
-            LD_HL_IND_IX_OFF(outputTemp->operand);
-        } else if (outputTemp->type == TYPE_CHAIN_ANS) {
-            AnsToHL();
-        } else {
+        if (outputTemp->type != TYPE_VARIABLE) {
             return E_SYNTAX;
         }
+        
+        LD_HL_IND_IX_OFF(outputTemp->operand);
         ProgramPtrToOffsetStack();
         LD_ADDR_HL((uint24_t)tempDataPtr + 3);
         
         // Fetch the tilemap
         if (amountOfArguments > 11) {
-            dbg_Debugger();
-            if ((res = SquishHexadecimals((uint8_t*)outputPrevOperand)) != VALID) {
-                return res;
-            }
             ProgramPtrToOffsetStack();
             LD_HL_IMM(outputPrevOperand);
             ProgramPtrToOffsetStack();
-            LD_ADDR_HL((uint24_t)tempDataPtr + 3);
+            LD_ADDR_HL((uint24_t)tempDataPtr);
         }
         
         // Build a new tilemap struct in the program data
@@ -537,7 +517,7 @@ uint8_t parseFunction(uint24_t index) {
             }
             
             // Set which offset
-            LD_HL_IMM(outputPrevPrev->operand);
+            LD_HL_IMM(outputPrevPrev->operand + 2);
             ProgramPtrToOffsetStack();
             LD_ADDR_HL(ice.LoadTilemapAddr + 27);
             
@@ -869,7 +849,7 @@ uint8_t parseFunction(uint24_t index) {
         
         // Check if unimplemented function
         if (temp & UN) {
-            return E_UNIMPLEMENTED;
+            return E_UNKNOWN_C;
         }
         
         // Check the right amount of arguments
