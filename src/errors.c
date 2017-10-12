@@ -35,6 +35,7 @@ static const char *errors[] = {
     "rand and getKey are disabled in this function",
     "Too much memory allocated",
     "Warning: Unknown char in the string!",
+    "Invalid program name",
 };
 
 void displayLabelError(char *label) {

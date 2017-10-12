@@ -874,6 +874,11 @@ static uint8_t functionI(int token) {
             while ((token = _getc()) != EOF && (uint8_t)token != tEnter && a < 9) {
                 ice.outName[a++] = token;
             }
+            
+            if (!a || a == 9) {
+                return E_INVALID_PROG;
+            }
+            
             ice.gotName = true;
             return VALID;
         }
@@ -1689,6 +1694,11 @@ static uint8_t functionBB(int token) {
         while ((token = _getc()) != EOF && (uint8_t)token != tEnter && a < 9) {
             tempName[a++] = token;
         }
+        
+        if (!a || a == 9) {
+            return E_INVALID_PROG;
+        }
+        
         tempName[a] = 0;
         
         if ((ice.inPrgm = _open(tempName))) {

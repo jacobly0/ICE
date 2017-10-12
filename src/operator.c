@@ -151,13 +151,6 @@ uint8_t parseOperator(element_t *outputPrevPrevPrev, element_t *outputPrevPrev, 
     
     oper = outputCurr->operand;
     
-    // Store to a pointer
-    if (oper == tStore && type2 == TYPE_FUNCTION) {
-        type2 = TYPE_CHAIN_ANS;
-        type1 = outputPrevPrevPrev->type;
-        type1Masked = type1 & 0x7F;
-    }
-    
     // Get the right arguments
     entry0 = outputPrevPrevPrev;
     entry1 = outputPrevPrev;
@@ -179,6 +172,13 @@ uint8_t parseOperator(element_t *outputPrevPrevPrev, element_t *outputPrevPrev, 
             (type1 == TYPE_STRING || type2 == TYPE_STRING)
         ) {
             return E_SYNTAX;
+        }
+        
+        // Store to a pointer
+        if (oper == tStore && type2 == TYPE_FUNCTION) {
+            type2 = TYPE_CHAIN_ANS;
+            type1 = outputPrevPrevPrev->type;
+            type1Masked = type1 & 0x7F;
         }
         
         if (type1Masked == TYPE_CHAIN_PUSH) {

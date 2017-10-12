@@ -529,7 +529,7 @@ Tok3: .db 038h, 5,  "Data("
 Tok4: .db 084h, 5,  "Copy("
 Tok5: .db 087h, 6,  "Alloc("
 Tok6: .db 042h, 14, "DefineTilemap("
-Tok7: .db 043h, 9, "CopyData("
+Tok7: .db 043h, 9,  "CopyData("
 Tok8: .db 0FFh, 9,  "LoadData("
 
 TabData:
