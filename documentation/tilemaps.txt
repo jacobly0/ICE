@@ -1,0 +1,38 @@
+1) Create a tileset and save it as a .png; I recommend using TokenIDE or Paint
+
+2) Download the latest ConvPNG prerelease from here: https://github.com/MateoConLechuga/ConvPNG/releases/latest
+
+3) Create a file called "convpng.ini" (Without the quotes, also mind the extension)
+
+4) Copy and paste these lines into convpng.ini:
+
+#AppvarICE          : TILES
+#PNGImages          :
+
+#GroupICE           : tileset_gfx
+#OutputPaletteArray : false
+#Tilemap            : 16,16,true
+#Palette            : xlibc
+#PNGImages          :
+
+
+5) Now, below the #PNGImages lines you can simply add the name of the png file you wish to convert, as long as the png file is in the same directory as convpng. 
+For example, if my tileset png is saved as tileset.png, this is what my convpng.ini file would look like:
+
+
+#AppvarICE          : TILES
+#PNGImages          :
+ tileset
+
+#GroupICE           : tileset_gfx
+#OutputPaletteArray : false
+#Tilemap            : 16,16,true
+#Palette            : xlibc
+#PNGImages          :
+ tileset
+
+6) To run convpng, simply double click on the convpng.exe file, or run 'convpng' from the command line
+
+7) Transfer TILES.8xp to your calc
+
+8) Copy the code from TILES.txt in your program

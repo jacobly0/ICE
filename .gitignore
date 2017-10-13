@@ -1,7 +1,6 @@
 bin
 obj
 *.a1
-*.txt
 *.bin
 *.o
 *.exe
