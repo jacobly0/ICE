@@ -65,7 +65,7 @@ void main(void) {
         asm("ld de, 483");
         asm("add hl, de");
         asm("call 00213F8h");
-        asm("ld de, 31");
+        asm("ld de, 34");
         asm("add hl, de");
         asm("call 00213C4h");
         ti_Close(ice.inPrgm);
@@ -132,6 +132,7 @@ void main(void) {
     search_pos = NULL;
     while(((var_name = ti_DetectVar(&search_pos, ICEheader, TI_PRGM_TYPE)) != NULL) && --selectedProgram);
     
+    gfx_SetTextXY(1, 12);
     displayMessageLineScroll("Prescanning...");
     displayLoadingBarFrame();
     

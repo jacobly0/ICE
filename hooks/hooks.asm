@@ -199,7 +199,7 @@ _:	push	hl
 	inc	hl
 	jr	InsertCFunctionLoop
 InsertCustomToken:
-	add	a, 9+AMOUNT_OF_CUSTOM_TOKENS
+	add	a, 10 + AMOUNT_OF_CUSTOM_TOKENS
 	ld	e, a
 	ld	d, tVarOut
 	ld	hl, (editCursor)
@@ -266,9 +266,11 @@ TokenHook_start:
 	cp	a, 4
 	ret	nz
 	ld	a, e
-	cp	a, 2 + (AMOUNT_OF_CUSTOM_TOKENS*3)
+	cp	a, 3
+	ret	c
+	cp	a, 5 + (AMOUNT_OF_CUSTOM_TOKENS * 3)
 	ret	nc
-	sub	a, 2
+	sub	a, 5
 	ld	de, (rawKeyHookPtr)
 	ld	hl, TokenHook_data - KeyHook_start
 	add	hl, de

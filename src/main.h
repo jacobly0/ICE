@@ -14,14 +14,14 @@
 #define SIZEOF_XOR_DATA    13
 #define SIZEOF_INPUT_DATA  90
 
-#define tDefineSprite      0x09
-#define tCall              0x0A
-#define tData              0x0B
-#define tCopy              0x0C
-#define tAlloc             0x0D
-#define tDefineTilemap     0x0E
-#define tCopyData          0x0F
-#define tLoadData          0x10
+#define tDefineSprite      0x0A
+#define tCall              0x0B
+#define tData              0x0C
+#define tCopy              0x0D
+#define tAlloc             0x0E
+#define tDefineTilemap     0x0F
+#define tCopyData          0x10
+#define tLoadData          0x11
 
 typedef struct {
     char     outName[9];                                    // Output variable name
