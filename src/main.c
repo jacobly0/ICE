@@ -132,7 +132,7 @@ void main(void) {
     search_pos = NULL;
     while(((var_name = ti_DetectVar(&search_pos, ICEheader, TI_PRGM_TYPE)) != NULL) && --selectedProgram);
     
-    gfx_PrintStringXY("Prescanning...", 1, iceMessageLine);
+    displayMessageLineScroll("Prescanning...");
     displayLoadingBarFrame();
     
     ice.inPrgm = _open(var_name);
@@ -209,7 +209,7 @@ void main(void) {
     // Do the stuff
 #ifndef COMPUTER_ICE
     sprintf(buf, "Compiling program %s...", var_name);
-    gfx_PrintStringXY(buf, 1, iceMessageLine);
+    displayMessageLineScroll(buf);
 #else
     fprintf(stdout, "Compiling program %s...\n", var_name);
 #endif
@@ -218,6 +218,7 @@ void main(void) {
     // Create or empty the output program if parsing succeeded
     if (res == VALID) {
         uint8_t currentGoto, currentLbl;
+        uint24_t previousSize = 0;
         
         // If the last token is not "Return", write a "ret" to the program
         if (!ice.lastTokenIsReturn) {
@@ -259,9 +260,13 @@ findNextLabel:;
         totalSize = ice.programSize + programDataSize + 3;
         
 #ifndef COMPUTER_ICE
+        ice.outPrgm = _open(ice.outName);
+        if (ice.outPrgm) {
+            previousSize = ti_GetSize(ice.outPrgm);
+        }
         ice.outPrgm = _new(ice.outName);
         if (!ice.outPrgm) {
-            gfx_PrintStringXY("Failed to open output file", 1, iceMessageLine);
+            displayMessageLineScroll("Failed to open output file");
             goto stop;
         }
         
@@ -278,15 +283,19 @@ findNextLabel:;
         
         // Yep, we are really done!
         gfx_SetTextFGColor(4);
-        gfx_PrintStringXY("Succesfully compiled!", 1, iceMessageLine);
+        displayMessageLineScroll("Succesfully compiled!");
         
         // Skip line
-        iceMessageNewLine();
+        displayMessageLineScroll(" ");
         
         // Display the size
         gfx_SetTextFGColor(0);
         sprintf(buf, "Output size: %u bytes", totalSize);
-        gfx_PrintStringXY(buf, 1, iceMessageLine);
+        displayMessageLineScroll(buf);
+        if (previousSize) {
+            sprintf(buf, "Previous size: %u bytes", previousSize);
+            displayMessageLineScroll(buf);
+        }
     } else {
         displayError(res);
     }

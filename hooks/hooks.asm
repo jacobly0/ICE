@@ -199,7 +199,7 @@ _:	push	hl
 	inc	hl
 	jr	InsertCFunctionLoop
 InsertCustomToken:
-	add	a, 10+AMOUNT_OF_CUSTOM_TOKENS
+	add	a, 9+AMOUNT_OF_CUSTOM_TOKENS
 	ld	e, a
 	ld	d, tVarOut
 	ld	hl, (editCursor)
@@ -266,9 +266,9 @@ TokenHook_start:
 	cp	a, 4
 	ret	nz
 	ld	a, e
-	cp	a, 5+3+(AMOUNT_OF_CUSTOM_TOKENS*3)
+	cp	a, 2 + (AMOUNT_OF_CUSTOM_TOKENS*3)
 	ret	nc
-	sub	a, 5
+	sub	a, 2
 	ld	de, (rawKeyHookPtr)
 	ld	hl, TokenHook_data - KeyHook_start
 	add	hl, de
@@ -521,7 +521,7 @@ G91:  .db "RotatedScaledTransparentSprite_NoClip(", 0
 G92:  .db "RotatedScaledSprite_NoClip(", 0
       .db 0
       
-; First token is $62 $0A
+; First token is $62 $09
 ; These magic bytes can be found with _GetKeyPress
 Tok1: .db 090h, 13, "DefineSprite("
 Tok2: .db 0EEh, 5,  "Call "

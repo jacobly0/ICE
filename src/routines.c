@@ -54,6 +54,34 @@ void MaybeAToHL(void) {
     }
 }
 
+void displayMessageLineScroll(char *string) {
+#ifndef COMPUTER_ICE
+    char buf[30];
+    char c;
+    
+    gfx_SetTextXY(1, gfx_GetTextY());
+    
+    // Display the string
+    while(c = *string++) {
+        if (gfx_GetTextY() > 190) {
+            gfx_SetClipRegion(0, 11, 320, LB_Y - 1);
+            gfx_ShiftUp(10);
+            gfx_SetColor(255);
+            gfx_SetClipRegion(0, 0, 320, 240);
+            gfx_FillRectangle(0, LB_Y - 11, 320, 10);
+            gfx_SetTextXY(1, gfx_GetTextY() - 10);
+        }
+        gfx_PrintChar(c);
+        if (gfx_GetTextX() > 312) {
+            gfx_SetTextXY(1, gfx_GetTextY() + 10);
+        }
+    }
+    gfx_SetTextXY(1, gfx_GetTextY() + 10);
+#else
+    fprintf(stdout, "%s\n", string);
+#endif
+}
+
 void MaybeLDIYFlags(void) {
     if (ice.modifiedIY) {
         LD_IY_IMM(flags);
@@ -105,6 +133,7 @@ uint8_t SquishHexadecimals(uint8_t *prevDataPtr) {
     }
     
     ice.programDataPtr = prevDataPtr2;
+    
     return VALID;
 }
 

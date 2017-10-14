@@ -1009,22 +1009,17 @@ void GEInsert() {
     expr.ZeroCarryFlagRemoveAmountOfBytes = 3;
 }
 void GEChainAnsNumber(void) {
-    if (entry2_operand > 255) {
-        MaybeAToHL();
-    }
-    if (expr.outputRegister == OUTPUT_IN_HL) {
-        LD_DE_IMM(entry2_operand);
-        GEInsert();
-    } else if (expr.outputRegister == OUTPUT_IN_DE) {
-        LD_HL_IMM(entry2_operand);
-        GEInsert();
-    } else {
+    if (expr.outputRegister == OUTPUT_IN_A && entry2_operand < 256) {
         SUB_A(entry2_operand + (oper == tGT || oper == tLT));
         SBC_A_A();
         INC_A();
         expr.AnsSetCarryFlag = true;
         expr.outputReturnRegister = OUTPUT_IN_A;
         expr.ZeroCarryFlagRemoveAmountOfBytes = 2;
+    } else {
+        AnsToHL();
+        LD_DE_IMM(entry2_operand);
+        GEInsert();
     }
 }
 void GEChainAnsVariable(void) {
@@ -1046,22 +1041,17 @@ void GENumberFunction(void) {
     GEInsert();
 }
 void GENumberChainAns(void) {
-    if (entry1_operand > 255 || !entry1_operand) {
-        MaybeAToHL();
-    }
-    if (expr.outputRegister == OUTPUT_IN_HL) {
-        LD_DE_IMM(entry1_operand);
-        GEInsert();
-    } else if (expr.outputRegister == OUTPUT_IN_DE) {
-        LD_HL_NUMBER(entry1_operand);
-        GEInsert();
-    } else {
+    if (expr.outputRegister == OUTPUT_IN_A && entry1_operand < 256) {
         ADD_A(256 - entry1_operand - (oper == tGE || oper == tLE));
         SBC_A_A();
         INC_A();
         expr.AnsSetCarryFlag = true;
         expr.outputReturnRegister = OUTPUT_IN_A;
         expr.ZeroCarryFlagRemoveAmountOfBytes = 2;
+    } else {
+        AnsToDE();
+        LD_HL_NUMBER(entry1_operand);
+        GEInsert();
     }
 }
 void GEVariableNumber(void) {
@@ -1334,7 +1324,7 @@ void AddChainAnsNumber(void) {
     }
 }
 void AddVariableNumber(void) {
-    if (entry2_operand < 128 && entry2_operand > 3) {
+    if (!ice.inDispExpression && entry2_operand < 128 && entry2_operand > 4) {
         LD_IY_IND_IX_OFF(entry1_operand);
         LEA_HL_IY_OFF(entry2_operand);
         ice.modifiedIY = true;
@@ -1388,20 +1378,20 @@ void AddChainPushChainAns(void) {
     ADD_HL_DE();
 }
 void AddStringString(void) {
-    /*
-        Cases:
-            <string1>+<string2>             --> strcpy(<TempString1>, <string1>) strcat(<TempString1>, <string2>)
-            <string1>+<TempString1>         --> strcpy(<TempString2>, <string1>) strcat(<TempString2>, <TempString1>)
-            <string1>+<TempString2>         --> strcpy(<TempString1>, <string1>) strcat(<TempString1>, <TempString2>)
-            <TempString1>+<string2>         --> strcat(<TempString1>, <string2>)
-            <TempString1>+<TempString2>     --> strcat(<TempString1>, <TempString2>)
-            <TempString2>+<string2>         --> strcat(<TempString2>, <string2>)
-            <TempString2>+<TempString1>     --> strcat(<TempString2>, <TempString1>)
-            
-        Output in TempString2 if:
-            <TempString2>+X
-            X+<TempString1>
-    */
+    /**
+    *    Cases:
+    *        <string1>+<string2>             --> strcpy(<TempString1>, <string1>) strcat(<TempString1>, <string2>)
+    *        <string1>+<TempString1>         --> strcpy(<TempString2>, <string1>) strcat(<TempString2>, <TempString1>)
+    *        <string1>+<TempString2>         --> strcpy(<TempString1>, <string1>) strcat(<TempString1>, <TempString2>)
+    *        <TempString1>+<string2>         --> strcat(<TempString1>, <string2>)
+    *        <TempString1>+<TempString2>     --> strcat(<TempString1>, <TempString2>)
+    *        <TempString2>+<string2>         --> strcat(<TempString2>, <string2>)
+    *        <TempString2>+<TempString1>     --> strcat(<TempString2>, <TempString1>)
+    *        
+    *    Output in TempString2 if:
+    *        <TempString2>+X
+    *        X+<TempString1>
+    **/
     
     if (entry1->type == TYPE_STRING) {
         LD_HL_STRING(entry1_operand);
@@ -1471,7 +1461,7 @@ void SubNumberChainAns(void) {
     LD_HL_NUMBER(entry1_operand);
 }
 void SubVariableNumber(void) {
-    if (entry2_operand < 129 && entry2_operand > 3) {
+    if (!ice.inDispExpression && entry2_operand < 129 && entry2_operand > 4) {
         LD_IY_IND_IX_OFF(entry1_operand);
         LEA_HL_IY_OFF(-entry2_operand);
         ice.modifiedIY = true;

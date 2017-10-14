@@ -44,40 +44,23 @@ void displayLabelError(char *label) {
     sprintf(buf, "Label %s not found", label);
 #ifndef COMPUTER_ICE 
     gfx_SetTextFGColor(224);
-    gfx_PrintStringXY(buf, 1, iceMessageLine);
+    displayMessageLineScroll(buf);
 #else
     fprintf(stdout, "%s\n", buf);
 #endif
 }
 
 void displayError(uint8_t index) {
-    const char *str = errors[index];
 #ifndef COMPUTER_ICE
     char buf[30];
-    char c;
-    
     gfx_SetTextFGColor(224 + 3 * (index == E_WRONG_CHAR));
-    gfx_SetTextXY(1, iceMessageLine);
-    
-    // Display the error
-    while(c = *str++) {
-        PrintChar(c);
-    }
+    displayMessageLineScroll(errors[index]);
     
     gfx_SetTextFGColor(0);
     sprintf(buf, "Error at line %u", ice.currentLine);
-    gfx_PrintStringXY(buf, 1, iceMessageLine);
+    displayMessageLineScroll(buf);
 #else
-    fprintf(stdout, "%s\n", str);
+    fprintf(stdout, "%s\n", errors[index]);
     fprintf(stdout, "Error at line %u\n", ice.currentLine);
 #endif
 }
-
-#ifndef COMPUTER_ICE
-void PrintChar(char c) {
-    gfx_PrintChar(c);
-    if (gfx_GetTextX() > 312) {
-        gfx_SetTextXY(1, iceMessageLine);
-    }
-}
-#endif

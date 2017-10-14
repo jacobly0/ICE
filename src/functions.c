@@ -68,12 +68,12 @@ const uint8_t GraphxArgs[] = {
     RET_NONE | 3, ARG_NORM,    // FillCircle
     RET_NONE | 4, ARG_NORM,    // Rectangle
     RET_NONE | 4, ARG_NORM,    // FillRectangle
-    RET_NONE | 4, SMALL_14,    // Line_NoClip
+    RET_NONE | 4, SMALL_24,    // Line_NoClip
     RET_NONE | 3, SMALL_2,     // HorizLine_NoClip
     RET_NONE | 3, SMALL_2,     // VertLine_NoClip
     RET_NONE | 3, SMALL_2,     // FillCircle_NoClip
-    RET_NONE | 4, SMALL_14,    // Rectangle_NoClip
-    RET_NONE | 4, SMALL_14,    // FillRectangle_NoClip
+    RET_NONE | 4, SMALL_24,    // Rectangle_NoClip
+    RET_NONE | 4, SMALL_24,    // FillRectangle_NoClip
     RET_NONE | 4, ARG_NORM,    // SetClipRegion
     RET_A    | 1, ARG_NORM,    // GetClipRegion
     RET_NONE | 1, SMALL_1,     // ShiftDown
@@ -84,8 +84,8 @@ const uint8_t GraphxArgs[] = {
     RET_NONE | 3, ARG_NORM,    // Tilemap_NoClip
     RET_NONE | 3, ARG_NORM,    // TransparentTilemap
     RET_NONE | 3, ARG_NORM,    // TransparentTilemap_NoClip
-    UN       | 0, ARG_NORM,    // TilePtr
-    UN       | 0, ARG_NORM,    // TilePtrMapped
+    RET_HL   | 3, ARG_NORM,    // TilePtr
+    RET_HL   | 3, SMALL_23,    // TilePtrMapped
     UN       | 0, ARG_NORM,    // LZDecompress
     UN       | 0, ARG_NORM,    // AllocSprite
     RET_NONE | 3, ARG_NORM,    // Sprite
@@ -93,8 +93,8 @@ const uint8_t GraphxArgs[] = {
     RET_NONE | 3, SMALL_3,     // Sprite_NoClip
     RET_NONE | 3, SMALL_3,     // TransparentSprite_NoClip
     RET_HL   | 3, ARG_NORM,    // GetSprite
-    RET_NONE | 5, SMALL_45,    // ScaledSprite_NoClip
-    RET_NONE | 5, SMALL_45,    // ScaledTransparentSprite_NoClip
+    RET_NONE | 5, SMALL_345,   // ScaledSprite_NoClip
+    RET_NONE | 5, SMALL_345,   // ScaledTransparentSprite_NoClip
     RET_HL   | 2, ARG_NORM,    // FlipSpriteY
     RET_HL   | 2, ARG_NORM,    // FlipSpriteX
     RET_HL   | 2, ARG_NORM,    // RotateSpriteC
@@ -114,15 +114,15 @@ const uint8_t GraphxArgs[] = {
     RET_HLs  | 2, SMALL_2,     // Darken
     RET_A    | 1, SMALL_1,     // SetFontHeight
     RET_HL   | 2, ARG_NORM,    // ScaleSprite
-    RET_NONE | 3, SMALL_12,    // FloodFill
+    RET_NONE | 3, SMALL_23,    // FloodFill
     RET_NONE | 3, ARG_NORM,    // RLETSprite
     RET_NONE | 3, SMALL_3,     // RLETSprite_NoClip
     RET_HL   | 2, ARG_NORM,    // ConvertFromRLETSprite
     RET_HL   | 2, ARG_NORM,    // ConvertToRLETSprite
     UN       | 2, ARG_NORM,    // ConvertToNewRLETSprite
     RET_HL   | 4, SMALL_34,    // RotateScaleSprite
-    RET_HL   | 4, SMALL_34,    // RotatedScaledTransparentSprite_NoClip
-    RET_HL   | 4, SMALL_345,   // RotatedScaledSprite_NoClip
+    RET_HL   | 5, SMALL_345,   // RotatedScaledTransparentSprite_NoClip
+    RET_HL   | 5, SMALL_345,   // RotatedScaledSprite_NoClip
 };
 
 const uint8_t FileiocArgs[] = {
@@ -143,10 +143,10 @@ const uint8_t FileiocArgs[] = {
     RET_HL   | 1, SMALL_1,     // Tell
     RET_HL   | 1, SMALL_1,     // Rewind
     RET_HL   | 1, SMALL_1,     // GetSize
-    RET_HL   | 3, SMALL_1,     // GetTokenString
+    RET_HL   | 3, ARG_NORM,    // GetTokenString
     RET_HL   | 1, SMALL_1,     // GetDataPtr
     RET_HL   | 2, ARG_NORM,    // Detect
-    RET_HL   | 3, ARG_NORM,    // DetectVar
+    RET_HL   | 3, SMALL_3,     // DetectVar
 };
 
 extern uint8_t outputStack[4096];
@@ -270,7 +270,7 @@ uint8_t parseFunction(uint24_t index) {
     
     // remainder(
     else if (function2 == tRemainder) {
-        if ((outputPrev->type) & 0x7F == TYPE_NUMBER && outputPrev->operand <= 256 && !((uint8_t)outputPrev->operand & (uint8_t)(outputPrev->operand - 1))) {
+        if ((outputPrev->type & 0x7F) == TYPE_NUMBER && outputPrev->operand <= 256 && !((uint8_t)outputPrev->operand & (uint8_t)(outputPrev->operand - 1))) {
             if (outputPrevPrev->type == TYPE_VARIABLE) {
                 LD_A_IND_IX_OFF(outputPrevPrev->operand);
             } else if (outputPrevPrev->type == TYPE_FUNCTION_RETURN) {
@@ -338,12 +338,13 @@ uint8_t parseFunction(uint24_t index) {
         if (outputPrev->type == TYPE_STRING) {
             LD_HL_STRING(outputPrev->operand);
         } else {
-            if ((res = parseFunction1Arg(index, OUTPUT_IN_HL, amountOfArguments)) != VALID) {
+            if ((res = parseFunction1Arg(index, OUTPUT_IN_HL_DE, amountOfArguments)) != VALID) {
                 return res;
             }
+            MaybeAToHL();
         }
         
-        PUSH_HL();
+        PushHLDE();
         CALL(__strlen);
         POP_BC();
     }
@@ -424,14 +425,6 @@ uint8_t parseFunction(uint24_t index) {
                 return E_SYNTAX;
             }
             *(tempDataPtr + a + 6) = outputTemp->operand;
-            
-            // First 2 arguments are the sprite dimensions
-            if (!a) {
-                tileHeight = outputTemp->operand;
-            }
-            if (a == 1) {
-                tileWidth = outputTemp->operand;
-            }
         }
         
         // Fetch the only uint24_t variable (X_LOC)
@@ -692,7 +685,7 @@ uint8_t parseFunction(uint24_t index) {
         }
     }
     
-    // {
+    // {}
     else if (function == tLBrace) {
         if (amountOfArguments != 1) {
             return E_ARGUMENTS;
@@ -762,6 +755,15 @@ uint8_t parseFunction(uint24_t index) {
     
     // det(, sum(
     else if (function == tDet || function == tSum) {
+        uint8_t smallArguments;
+        uint8_t whichSmallArgument = 1 << (9 - amountOfArguments);
+        
+        if (function == tDet) {
+            smallArguments = GraphxArgs[function2 * 2 + 1];
+        } else {
+            smallArguments = FileiocArgs[function2 * 2 + 1];
+        }
+        
         endIndex = index;
         startIndex = index;
         
@@ -807,6 +809,15 @@ uint8_t parseFunction(uint24_t index) {
                 return temp;
             }
             
+            if (smallArguments & whichSmallArgument) {
+                if (expr.outputIsNumber) {
+                    *(ice.programPtr - 4) = OP_LD_L;
+                    ice.programPtr -= 2;
+                } else if (expr.outputIsVariable) {
+                    *(ice.programPtr - 2) = 0x6E;
+                }
+            }
+            
             ice.stackDepth--;
             
             // And restore the stack
@@ -816,6 +827,7 @@ uint8_t parseFunction(uint24_t index) {
             PushHLDE();
             
             endIndex = startIndex;
+            whichSmallArgument <<= 1;
         }
         
         // Invalid first argument of det(

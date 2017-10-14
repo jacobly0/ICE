@@ -8,6 +8,7 @@ void displayLoadingBar(void);
 int getNextToken(void);
 void AnsToHL(void);
 void AnsToDE(void);
+void displayMessageLineScroll(char*);
 void MaybeAToHL(void);
 void MaybeLDIYFlags(void);
 void CallRoutine(bool*, uint24_t*, void*, uint8_t);

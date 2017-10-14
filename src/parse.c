@@ -49,6 +49,7 @@ uint8_t parseProgram(void) {
         }
         
         ice.lastTokenIsReturn = false;
+        ice.inDispExpression = false;
         ice.currentLine++;
 
         if ((ret = (*functions[token])(token)) != VALID) {
@@ -70,7 +71,7 @@ uint8_t parseExpression(int token) {
     uint24_t loopIndex, temp;
     uint8_t amountOfArgumentsStack[20];
     uint8_t index = 0, a, stackToOutputReturn, mask = TYPE_MASK_U24, tok, storeDepth = 0;
-    uint8_t *amountOfArgumentsStackPtr = amountOfArgumentsStack, canUseMask = 2;
+    uint8_t *amountOfArgumentsStackPtr = amountOfArgumentsStack, canUseMask = 2, prevTokenWasDetOrSum = 0;
 
     // Setup pointers
     element_t *outputPtr = outputStack;
@@ -107,6 +108,11 @@ uint8_t parseExpression(int token) {
             storeDepth--;
         }
         
+        // If the previous token was a det( or a sum(, we need to store the next number in the stack entry too, to catch 'small arguments'
+        if (prevTokenWasDetOrSum) {
+            prevTokenWasDetOrSum--;
+        }
+        
         // Process a number
         if (tok >= t0 && tok <= t9) {
             uint24_t output = token - t0;
@@ -118,6 +124,11 @@ uint8_t parseExpression(int token) {
             outputCurr->operand = output;
             outputElements++;
             mask = TYPE_MASK_U24;
+            
+            if (prevTokenWasDetOrSum) {
+                stackCurr = &stackPtr[stackElements - 1];
+                stackCurr->operand = stackCurr->operand + ((uint8_t)output << 16);
+            }
 
             // Don't grab a new token
             continue;
@@ -395,6 +406,7 @@ foundRight2ByteToken:
             if (tok == tDet || tok == tSum) {
                 outputCurr->type = TYPE_C_START;
                 outputElements++;
+                prevTokenWasDetOrSum = 2;
             }
         }
         
@@ -1223,7 +1235,7 @@ static uint8_t functionReturn(int token) {
 }
 
 static uint8_t functionDisp(int token) {
-    MaybeLDIYFlags();
+    ice.inDispExpression = true;
     do {
         uint8_t res;
 
@@ -1244,6 +1256,7 @@ static uint8_t functionDisp(int token) {
         }
         
         AnsToHL();
+        MaybeLDIYFlags();
         if (expr.outputIsString) {
             CALL(_PutS);
         } else {
@@ -1257,6 +1270,7 @@ checkArgument:
             return E_SYNTAX;
         }
     } while (ice.tempToken != tEnter);
+    
     return VALID;
 }
 
@@ -1706,8 +1720,8 @@ static uint8_t functionBB(int token) {
             
             displayLoadingBarFrame();
             sprintf(buf, "Compiling subprogram %s...", tempName);
+            displayMessageLineScroll(buf);
             strcpy(ice.currProgName[ice.inPrgm], tempName);
-            gfx_PrintStringXY(buf, 1, iceMessageLine);
             
             // Compile it, and close
             ice.currentLine = 0;
@@ -1717,7 +1731,7 @@ static uint8_t functionBB(int token) {
             ti_Close(ice.inPrgm);
             
             displayLoadingBarFrame();
-            gfx_PrintStringXY("Return from subprogram...", 1, iceMessageLine);
+            displayMessageLineScroll("Return from subprogram...");
             ice.currentLine = currentLine;
         } else {
             res = E_PROG_NOT_FOUND;

@@ -17,6 +17,7 @@
 #define SMALL_13      (SMALL_1 | SMALL_3)
 #define SMALL_23      (SMALL_2 | SMALL_3)
 #define SMALL_14      (SMALL_1 | SMALL_4)
+#define SMALL_24      (SMALL_2 | SMALL_4)
 #define SMALL_45      (SMALL_4 | SMALL_5)
 #define SMALL_34      (SMALL_3 | SMALL_4)
 #define SMALL_345     (SMALL_3 | SMALL_45)

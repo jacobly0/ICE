@@ -14,14 +14,14 @@
 #define SIZEOF_XOR_DATA    13
 #define SIZEOF_INPUT_DATA  90
 
-#define tDefineSprite      0x0A
-#define tCall              0x0B
-#define tData              0x0C
-#define tCopy              0x0D
-#define tAlloc             0x0E
-#define tDefineTilemap     0x0F
-#define tCopyData          0x10
-#define tLoadData          0x11
+#define tDefineSprite      0x09
+#define tCall              0x0A
+#define tData              0x0B
+#define tCopy              0x0C
+#define tAlloc             0x0D
+#define tDefineTilemap     0x0E
+#define tCopyData          0x0F
+#define tLoadData          0x10
 
 typedef struct {
     char     outName[9];                                    // Output variable name
@@ -33,7 +33,6 @@ typedef struct {
     uint8_t  *programPtr;                                   // Pointer to the program
     uint8_t  *programPtrBackup;                             // Same as above
     uint8_t  *programDataPtr;                               // Pointer to the program data
-    uint8_t  messageIndex;                                  // Used for displaying messages during compiling
     uint8_t  amountOfGraphxRoutinesUsed;                    // Used for the relocation of C functions at the beginning of the program - GRAPHX
     uint8_t  amountOfFileiocRoutinesUsed;                   // Used for the relocation of C functions at the beginning of the program - FILEIOC
     uint8_t  tempToken;                                     // Used for functions, i.e. For(, where an argument can stop with either a comma or a parentheses
@@ -70,6 +69,7 @@ typedef struct {
     bool     usedCodeAfterHeader;                           // An icon/description can't be placed after some code
     bool     lastTokenIsReturn;                             // Last token is a "Return", so we can omit our "ret" :)
     bool     modifiedIY;                                    // Some routines modify IY, and some routines needs it
+    bool     inDispExpression;                              // Used for optimizing <variable>+<number> that it doesn't overwrite IY
     
     bool     usedAlreadyRand;                               // Only once the "rand" routine in the program data
     uint24_t randAddr;                                      // Address of the "rand" routine in the program data
@@ -130,10 +130,6 @@ typedef struct {
     uint8_t offset;
     char    name[10];
 } variable_t;
-
-#define MESSAGE_HEIGHT       10
-#define iceMessageLine       ((ice.messageIndex += MESSAGE_HEIGHT) + 3)
-#define iceMessageNewLine()  do { (iceMessageLine); } while(0);
 
 extern ice_t ice;
 extern expr_t expr;
