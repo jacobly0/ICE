@@ -23,6 +23,8 @@
 #define tCopyData          0x10
 #define tLoadData          0x11
 
+#define IX_VARIABLES       0xD13F47
+
 typedef struct {
     char     outName[9];                                    // Output variable name
     char     currProgName[5][9];                            // Current program compiling

@@ -54,8 +54,8 @@ const uint8_t GraphxArgs[] = {
     RET_A    | 1, SMALL_1,     // SetTextBGColor
     RET_A    | 1, SMALL_1,     // SetTextFGColor
     RET_A    | 1, SMALL_1,     // SetTextTransparentColor
-    UN       | 0, ARG_NORM,    // SetCustomFontData
-    UN       | 0, ARG_NORM,    // SetCustomFontSpacing
+    RET_NONE | 1, ARG_NORM,    // SetCustomFontData
+    RET_NONE | 1, ARG_NORM,    // SetCustomFontSpacing
     RET_NONE | 1, SMALL_1,     // SetMonoSpaceFont
     RET_HL   | 1, ARG_NORM,    // GetStringWidth
     RET_HL   | 1, SMALL_1,     // GetCharWidth
@@ -334,7 +334,7 @@ uint8_t parseFunction(uint24_t index) {
     }
     
     // length(
-    else if (function2 == tLength) {
+    else if (function == t2ByteTok && function2 == tLength) {
         if (outputPrev->type == TYPE_STRING) {
             LD_HL_STRING(outputPrev->operand);
         } else {
@@ -350,7 +350,7 @@ uint8_t parseFunction(uint24_t index) {
     }
     
     // Alloc(
-    else if (function2 == tAlloc) {
+    else if (function == tVarOut && function2 == tAlloc) {
         if (outputPrev->type != TYPE_NUMBER) {
             return E_SYNTAX;
         }
@@ -371,8 +371,8 @@ uint8_t parseFunction(uint24_t index) {
     // Here are coming the special functions, with abnormal arguments
     
     // DefineTilemap(
-    else if (function2 == tDefineTilemap) {
-        /** 
+    else if (function == tVarOut && function2 == tDefineTilemap) {
+        /**************************************************************** 
         * C arguments:
         *  - uint8_t *mapData (pointer to data)
         *  - uint8_t **tilesData (pointer to table with pointers to data)
@@ -402,12 +402,9 @@ uint8_t parseFunction(uint24_t index) {
         *       create our own table, by getting the size of
         *       each sprite, and thus finding all the sprites
         *  (- uint8_t *mapData (pointer to data))
-        *****************************************************************
-        * Other possibility:
-        *  - uint8_t *mapData (pointer to data)
         *
         * Returns: PTR to tilemap struct
-        **/
+        ****************************************************************/
         
         uint24_t startIndex = -1 - amountOfArguments;
         uint8_t *tempDataPtr = ice.programDataPtr;
@@ -459,13 +456,16 @@ uint8_t parseFunction(uint24_t index) {
     }
     
     // LoadData(
-    else if (function2 == tLoadData) {
-        /**************************************
+    else if (function == tVarOut && function2 == tLoadData) {
+        /*****************************************************
         * Inputs:
         *  arg1: appvar name as string
         *  arg2: offset in appvar
         *  arg3: amount of sprites (or tilemap)
-        **************************************/
+        *
+        * Returns: PTR to table with sprite pointers (tilemap)
+        * Returns: PTR to sprite (sprite)
+        *****************************************************/
         
         if (amountOfArguments != 3 || outputPrevPrev->type != TYPE_NUMBER || outputPrev->type != TYPE_NUMBER) {
             return E_SYNTAX;
@@ -541,6 +541,14 @@ uint8_t parseFunction(uint24_t index) {
     
     // Data(
     else if (function == tVarOut && function2 == tData) {
+        /***********************************
+        * Inputs:
+        *  arg1: size in bytes of each entry
+        *  arg2-argX: entries, constants
+        *
+        * Returns: PTR to data
+        ***********************************/
+        
         uint24_t startIndex = -1 - amountOfArguments;
         
         if ((res = InsertDataElements(amountOfArguments, startIndex, (&outputPtr[getIndexOffset(startIndex)])->operand, 1)) != VALID) {
@@ -549,7 +557,14 @@ uint8_t parseFunction(uint24_t index) {
     }
     
     // CopyData(
-    else if (function2 == tCopyData) {
+    else if (function == tVarOut && function2 == tCopyData) {
+        /*****************************************************
+        * Inputs:
+        *  arg1: PTR to destination
+        *  arg2: size in bytes of each entry
+        *  arg3-argX: entries, constants
+        *****************************************************/
+        
         element_t *outputTemp;
         uint24_t startIndex = -1 - amountOfArguments;
         uint8_t *prevProgDataPtr = ice.programDataPtr;
@@ -573,7 +588,14 @@ uint8_t parseFunction(uint24_t index) {
     }
     
     // Copy(
-    else if (function2 == tCopy) {
+    else if (function == tVarOut && function2 == tCopy) {
+        /*****************************************************
+        * Inputs:
+        *  arg1: PTR to destination
+        *  arg2: PTR to source
+        *  arg3: size in bytes
+        *****************************************************/
+        
         uint8_t outputPrevPrevPrevType = outputPrevPrevPrev->type & 0x7F;
         uint8_t outputPrevPrevType = outputPrevPrev->type & 0x7F;
         uint24_t outputPrevPrevPrevOperand = outputPrevPrevPrev->operand;
@@ -643,7 +665,16 @@ uint8_t parseFunction(uint24_t index) {
     }
     
     // DefineSprite(
-    else if (function2 == tDefineSprite) {
+    else if (function == tVarOut && function2 == tDefineSprite) {
+        /*****************************************************
+        * Inputs:
+        *  arg1: sprite width
+        *  arg2: sprite height
+        *  (arg3: sprite data)
+        *
+        * Returns: PTR to sprite
+        *****************************************************/
+        
         if (amountOfArguments == 2) {
             uint8_t width = outputPrevPrev->operand;
             uint8_t height = outputPrev->operand;
@@ -687,6 +718,13 @@ uint8_t parseFunction(uint24_t index) {
     
     // {}
     else if (function == tLBrace) {
+        /*****************************************************
+        * Inputs:
+        *  arg1: PTR
+        *
+        * Returns: 1-, 2- or 3-byte value at address PTR
+        *****************************************************/
+        
         if (amountOfArguments != 1) {
             return E_ARGUMENTS;
         }
@@ -745,16 +783,20 @@ uint8_t parseFunction(uint24_t index) {
             return E_SYNTAX;
         }
         if (outputCurr->mask == TYPE_MASK_U8) {
-            OR_A_A();
-            SBC_HL_HL();
-            LD_L_A();
-            expr.AnsSetZeroFlag = true;
-            expr.ZeroCarryFlagRemoveAmountOfBytes = 3;
+            expr.outputReturnRegister = OUTPUT_IN_A;
         }
     }
     
     // det(, sum(
     else if (function == tDet || function == tSum) {
+        /*****************************************************
+        * Inputs:
+        *  arg1: which det( or sum( function
+        *  arg2-argX: arguments
+        *
+        * Returns: output of C function
+        *****************************************************/
+        
         uint8_t smallArguments;
         uint8_t whichSmallArgument = 1 << (9 - amountOfArguments);
         
@@ -809,22 +851,26 @@ uint8_t parseFunction(uint24_t index) {
                 return temp;
             }
             
-            if (smallArguments & whichSmallArgument) {
-                if (expr.outputIsNumber) {
-                    *(ice.programPtr - 4) = OP_LD_L;
-                    ice.programPtr -= 2;
-                } else if (expr.outputIsVariable) {
-                    *(ice.programPtr - 2) = 0x6E;
+            if (expr.outputIsNumber && expr.outputNumber >= IX_VARIABLES - 0x80 && expr.outputNumber <= IX_VARIABLES + 0x7F) {
+                ice.programPtr--;
+                *(uint16_t*)(ice.programPtr - 3) = 0x65ED;
+                *(ice.programPtr - 1) = expr.outputNumber - IX_VARIABLES;
+            } else {
+                if (smallArguments & whichSmallArgument) {
+                    if (expr.outputIsNumber) {
+                        *(ice.programPtr - 4) = OP_LD_L;
+                        ice.programPtr -= 2;
+                    } else if (expr.outputIsVariable) {
+                        *(ice.programPtr - 2) = 0x6E;
+                    }
                 }
+                PushHLDE();
             }
             
             ice.stackDepth--;
             
             // And restore the stack
             setStackValues(tempP1, tempP2);
-            
-            // Push the argument
-            PushHLDE();
             
             endIndex = startIndex;
             whichSmallArgument <<= 1;
@@ -843,8 +889,8 @@ uint8_t parseFunction(uint24_t index) {
         // Lel, we need to remove the last argument (ld hl, XXXXXX) + the push
         ice.programPtr -= 5 - !expr.outputNumber;
         
-        // It's it's a SetPalette, the last argument needs to be squished
-        if (function == tDet && expr.outputNumber == 4) {
+        // It's it's a SetPalette or SetCustomFontData, the last argument needs to be squished
+        if (function == tDet && (expr.outputNumber == 4 || expr.outputNumber == 23)) {
             if ((res = SquishHexadecimals((uint8_t*)*(uint24_t*)(ice.programPtr - 4))) != VALID) {
                 return res;
             }

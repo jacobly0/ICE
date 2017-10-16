@@ -893,9 +893,9 @@ void EQInsert() {
         expr.AnsSetZeroFlagReversed = true;
     } else {
         JR_Z(1);
+        expr.AnsSetZeroFlag = true;
     }
     INC_HL();
-    expr.AnsSetZeroFlag = true;
     expr.ZeroCarryFlagRemoveAmountOfBytes = 7;
 }
 void EQChainAnsNumber(void) {
@@ -1023,12 +1023,8 @@ void GEChainAnsNumber(void) {
     }
 }
 void GEChainAnsVariable(void) {
-    MaybeAToHL();
-    if (expr.outputRegister == OUTPUT_IN_HL) {
-        LD_DE_IND_IX_OFF(entry2_operand);
-    } else {
-        LD_HL_IND_IX_OFF(entry2_operand);
-    }
+    AnsToHL();
+    LD_DE_IND_IX_OFF(entry2_operand);
     GEInsert();
 }
 void GENumberVariable(void) {

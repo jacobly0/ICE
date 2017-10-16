@@ -296,7 +296,7 @@ stackToOutputReturn1:
             if (tok >= tA && tok <= tTheta) {
                 char offset = GetVariableOffset(tok);
                 
-                outputCurr->operand = 0xD13F47 + offset;
+                outputCurr->operand = IX_VARIABLES + offset;
             } else if (tok == tVarLst) {
                 outputCurr->operand = ice.OSLists[_getc()];
             } else if (tok == tVarStrng) {
@@ -1169,6 +1169,7 @@ uint8_t functionRepeat(int token) {
     _seek(RepeatCondStart, SEEK_SET, ice.inPrgm);
     tempCurrentLine2 = ice.currentLine;
     ice.currentLine = tempCurrentLine;
+    
     if ((res = parseExpression(_getc())) != VALID) {
         return res;
     }

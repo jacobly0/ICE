@@ -32,7 +32,7 @@ $(TARGET): .FORCE $(OBJECTS)
 	spasm -E $< -D.def=\; -Ddata=\; -Ddb=.db
 
 clean:
-	$(RM) $(call NATIVEPATH,$(TARGET) $(OBJECTS) $(BINOBJECTS))
+	$(RM) $(call NATIVEPATH,$(TARGET).exe $(OBJECTS) $(BINOBJECTS))
 
 .PHONY: clean all
 

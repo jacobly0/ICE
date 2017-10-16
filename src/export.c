@@ -74,7 +74,7 @@ void export_program(const char *name, uint8_t *data, size_t size) {
 
     // calculate checksum
     checksum = 0;
-    for (i=0x37; i<offset; ++i) {
+    for (i = 0x37; i < offset; ++i) {
         checksum = m16(checksum + output[i]);
     }
 

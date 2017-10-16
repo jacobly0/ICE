@@ -21,7 +21,6 @@ extern label_t gotoStack[50];
 #define INCBIN_PREFIX
 #include "incbin.h"
 INCBIN(CHeader, "src/asm/cheader.bin");
-INCBIN(CProgramHeader, "src/asm/cprogramheader.bin");
 INCBIN(FileiocHeader, "src/asm/fileioc.bin");
 
 void w24(void *x, uint32_t val) {
@@ -52,7 +51,7 @@ void main(void) {
 #ifndef COMPUTER_ICE  
     // Install hooks
     ti_CloseAll();
-    ice.inPrgm = ti_OpenVar("ICEAPPV", "r", TI_APPVAR_TYPE);
+    ice.inPrgm = ti_Open("ICEAPPV", "r");
     
     if (ice.inPrgm) {
         ti_SetArchiveStatus(true, ice.inPrgm);
@@ -204,8 +203,7 @@ void main(void) {
     // Sorry :3
     ice.freeMemoryPtr = (ice.tempStrings[1] = (ice.tempStrings[0] = pixelShadow + 2000 * ice.amountOfOSLocationsUsed) + 2000) + 2000;
     
-    memcpy(ice.programPtr, CProgramHeaderData, 5);
-    ice.programPtr += 5;
+    LD_IX_IMM(IX_VARIABLES);
    
     // Do the stuff
 #ifndef COMPUTER_ICE
