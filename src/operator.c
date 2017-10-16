@@ -1433,9 +1433,9 @@ void SubChainAnsNumber(void) {
         }
     } else {
         if (expr.outputRegister == OUTPUT_IN_HL) {
-            LD_DE_IMM(~number);
+            LD_DE_IMM(0 - number);
         } else {
-            LD_HL_NUMBER(~number);
+            LD_HL_NUMBER(0 - number);
         }
         ADD_HL_DE();
     }
