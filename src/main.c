@@ -112,13 +112,21 @@ void main(void) {
             }
 
             // Select the next program
-            if (key == sk_Down && selectedProgram != amountOfPrograms) {
-                selectedProgram++;
+            if (key == sk_Down) {
+                if (selectedProgram != amountOfPrograms) {
+                    selectedProgram++;
+                } else {
+                    selectedProgram = 1;
+                }
             }
             
             // Select the previous program
-            if (key == sk_Up && selectedProgram != 1) {
-                selectedProgram--;
+            if (key == sk_Up) {
+                if (selectedProgram != 1) {
+                    selectedProgram--;
+                } else {
+                    selectedProgram = amountOfPrograms;
+                }
             }
         }
     }

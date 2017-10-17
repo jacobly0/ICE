@@ -4,10 +4,9 @@
 // In case I want to add more types, be sure that TYPE_STRING will be the last one, otherwise operator.c will mess up
 #define TYPE_NUMBER          0
 #define TYPE_VARIABLE        1
-#define TYPE_FUNCTION_RETURN 2
-#define TYPE_CHAIN_ANS       3
-#define TYPE_CHAIN_PUSH      4
-#define TYPE_STRING          5
+#define TYPE_CHAIN_ANS       2
+#define TYPE_CHAIN_PUSH      3
+#define TYPE_STRING          4
 #define TYPE_OS_STRING       TYPE_NUMBER + 128
 
 #define TYPE_C_START         124

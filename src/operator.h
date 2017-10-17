@@ -19,9 +19,6 @@ void LD_HL_NUMBER(uint24_t);
 void LD_HL_STRING(uint24_t);
 uint8_t parseOperator(element_t*, element_t*, element_t*, element_t*);
 
-void insertFunctionReturnNoPush(uint24_t, uint8_t);
-void insertFunctionReturnEntry1HLNoPush(void);
-void insertFunctionReturn(uint24_t, uint8_t, bool);
 void StoToChainAns(void);
 void EQInsert(void);
 void GEInsert(void);

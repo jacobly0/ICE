@@ -410,47 +410,28 @@ foundRight2ByteToken:
             }
         }
         
-        // Process a function that returns something (rand, getKey(X))
-        else if (tok == tRand || tok == tGetKey) {
-            outputCurr->type = TYPE_FUNCTION_RETURN;
-            outputCurr->operand = token;
+        // rand
+        else if (tok == tRand) {
+            outputCurr->type = TYPE_FUNCTION;
+            outputCurr->operand = 0x0000AB;
             outputElements++;
             mask = TYPE_MASK_U24;
-            
-            // Check for fast key input, i.e. getKey(X)
-            if (tok == tGetKey) {
-                // The next token must be a left parenthesis
-                if ((uint8_t)(token = _getc()) != tLParen) {
-                    continue;
-                }
-                
-                // The next token must be a number
-                if ((uint8_t)(token = _getc()) >= t0 && (uint8_t)token <= t9) {
-                    uint24_t temp2 = token - t0;
-                    
-                    // The next token can be a number, but also right parenthesis or EOF
-                    if ((uint8_t)(token = _getc()) >= t0 && (uint8_t)token <= t9) {
-                        // Add the direct key to the operand
-                        outputCurr->operand = tGetKey + ((temp2 * 10 + token - t0) << 8);
-                        if ((uint8_t)(token = _getc()) == tStore || (uint8_t)token == tEnter) {
-                            // Don't grab new token
-                            continue;
-                        } else if (token != EOF && (uint8_t)token != tRParen) {
-                            return E_SYNTAX;
-                        }
-                    } else if ((uint8_t)token == tRParen || token == EOF || (uint8_t)token == tStore || (uint8_t)token == tEnter) {
-                        // Add the direct key to the operand
-                        outputCurr->operand = tGetKey + (temp2 << 8);
-                        if ((uint8_t)token == tStore || (uint8_t)token == tEnter) {
-                            // Don't grab new token
-                            continue;
-                        }
-                    } else {
-                        return E_SYNTAX;
-                    }
-                } else {
-                    return E_SYNTAX;
-                }
+        }
+        
+        // getKey / getKey(
+        else if (tok == tGetKey) {
+            mask = TYPE_MASK_U24;
+            if ((uint8_t)(token = _getc()) == tLParen) {
+                *++amountOfArgumentsStackPtr = 1;
+                stackCurr->type = TYPE_FUNCTION;
+                stackCurr->operand = 0xAD;
+                stackElements++;
+                canUseMask = 2;
+            } else {
+                outputCurr->type = TYPE_FUNCTION;
+                outputCurr->operand = 0x0000AD;
+                outputElements++;
+                continue;
             }
         }
         
@@ -715,11 +696,6 @@ uint8_t parsePostFixFromIndexToIndex(uint24_t startIndex, uint24_t endIndex) {
             expr.outputIsVariable = true;
             LD_HL_IND_IX_OFF(outputOperand);
         } 
-        
-        // Expression is only a function without arguments that returns something (getKey, rand)
-        else if (outputType == TYPE_FUNCTION_RETURN) {
-            insertFunctionReturnNoPush(outputOperand, OUTPUT_IN_HL);
-        }
         
         // It's a string
         else if (outputType == TYPE_STRING) {

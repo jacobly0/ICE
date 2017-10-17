@@ -32,7 +32,6 @@ static const char *errors[] = {
 #endif
     "Subprogram not found",
     "Compiling subprograms not supported",
-    "rand and getKey are disabled in this function",
     "Too much memory allocated",
     "Warning: Unknown char in the string!",
     "Invalid program name",

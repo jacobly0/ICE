@@ -149,6 +149,8 @@ void AndData(void);
 void XorData(void);
 void RandData(void);
 void KeypadData(void);
+void GetKeyFastData(void);
+void GetKeyFastData2(void);
 void StringStoData(void);
 void InputData(void);
 void SinCosData(void);

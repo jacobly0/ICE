@@ -14,7 +14,9 @@
 #include "incbin.h"
 INCBIN(Sqrt, "src/asm/sqrt.bin");
 INCBIN(Mean, "src/asm/mean.bin");
+INCBIN(Rand, "src/asm/rand.bin");
 INCBIN(SinCos, "src/asm/sincos.bin");
+INCBIN(Keypad, "src/asm/keypad.bin");
 INCBIN(LoadSprite, "src/asm/loadsprite.bin");
 INCBIN(LoadTilemap, "src/asm/loadtilemap.bin");
 #endif
@@ -171,8 +173,72 @@ uint8_t parseFunction(uint24_t index) {
     expr.outputReturnRegister = OUTPUT_IN_HL;
     expr.AnsSetZeroFlag = expr.AnsSetZeroFlagReversed = expr.AnsSetCarryFlag = expr.AnsSetCarryFlagReversed = false;
     
+    // rand
+    if (function == tRand) {
+        CallRoutine(&ice.usedAlreadyRand, &ice.randAddr, RandData, SIZEOF_RAND_DATA);
+    }
+    
+    // getKey / getKey(X)
+    else if (function == tGetKey) {
+        if (amountOfArguments) {
+            if (outputPrevType == TYPE_NUMBER) {
+                uint8_t key = outputPrevOperand;
+                uint8_t keyBit = 1;
+                /* This is the same as 
+                    ((key-1)/8 & 7) * 2 = 
+                    (key-1)/4 & (7*2) = 
+                    (key-1) >> 2 & 14 
+                */
+                LD_B(0x1E - (((key - 1) >> 2) & 14));
+                
+                // Get the right bit for the keypress
+                if ((key - 1) & 7) {
+                    uint8_t a;
+                    
+                    for (a = 0; a < ((key - 1) & 7); a++) {
+                        keyBit = keyBit << 1;
+                    }
+                }
+                
+                LD_C(keyBit);
+            } else if (outputPrevType == TYPE_VARIABLE) {
+                LD_A_IND_IX_OFF(outputPrevOperand);
+            } else if (outputPrevType != TYPE_CHAIN_ANS) {
+                return E_SYNTAX;
+            }
+            
+            if (outputPrevType != TYPE_NUMBER) {
+                if (expr.outputRegister == OUTPUT_IN_A) {
+                    DEC_A();
+                    LD_D_A();
+                    loadGetKeyFastData1();
+                    LD_A_D();
+                    loadGetKeyFastData2();
+                } else {
+                    if (expr.outputRegister == OUTPUT_IN_HL) {
+                        LD_A_L();
+                    } else {
+                        LD_A_E();
+                    }
+                    loadGetKeyFastData1();
+                    if (expr.outputRegister == OUTPUT_IN_HL) {
+                        LD_A_L();
+                    } else {
+                        LD_A_E();
+                    }
+                    loadGetKeyFastData2();
+                }
+            }
+            
+            CallRoutine(&ice.usedAlreadyGetKeyFast, &ice.getKeyFastAddr, KeypadData, SIZEOF_KEYPAD_DATA);
+        } else {
+            CALL(_os_GetCSC);
+            ice.modifiedIY = false;
+        }
+    }
+    
     // not(
-    if (function == tNot) {
+    else if (function == tNot) {
         if ((res = parseFunction1Arg(index, OUTPUT_IN_HL_DE, amountOfArguments)) != VALID) {
             return res;
         }
@@ -273,9 +339,6 @@ uint8_t parseFunction(uint24_t index) {
         if ((outputPrev->type & 0x7F) == TYPE_NUMBER && outputPrev->operand <= 256 && !((uint8_t)outputPrev->operand & (uint8_t)(outputPrev->operand - 1))) {
             if (outputPrevPrev->type == TYPE_VARIABLE) {
                 LD_A_IND_IX_OFF(outputPrevPrev->operand);
-            } else if (outputPrevPrev->type == TYPE_FUNCTION_RETURN) {
-                insertFunctionReturnNoPush(outputPrevPrev->operand, OUTPUT_IN_HL);
-                LD_A_L();
             } else if (outputPrevPrev->type == TYPE_CHAIN_ANS) {
                 if (expr.outputRegister == OUTPUT_IN_HL) {
                     LD_A_L();
@@ -283,7 +346,7 @@ uint8_t parseFunction(uint24_t index) {
                     LD_A_E();
                 }
             } else {
-                return E_ICE_ERROR;
+                return E_SYNTAX;
             }
             if (outputPrev->operand == 256) {
                 OR_A_A();
@@ -605,10 +668,6 @@ uint8_t parseFunction(uint24_t index) {
             return E_ARGUMENTS;
         }
         
-        if (outputPrevPrevPrevType == TYPE_FUNCTION_RETURN || outputPrevPrevType == TYPE_FUNCTION_RETURN || outputPrevType == TYPE_FUNCTION_RETURN) {
-            return E_NO_FUNC_ALLOW;
-        }
-        
         if (outputPrevPrevPrevType <= TYPE_VARIABLE) {
             if (outputPrevPrevType == TYPE_CHAIN_PUSH) {
                 if (outputPrevType != TYPE_CHAIN_ANS) {
@@ -743,17 +802,6 @@ uint8_t parseFunction(uint24_t index) {
             }
         } else if (outputPrevType == TYPE_VARIABLE) {
             LD_HL_IND_IX_OFF(outputPrevOperand);
-            if (outputCurr->mask == TYPE_MASK_U8) {
-                LD_A_HL();
-            } else if (outputCurr->mask == TYPE_MASK_U16) {
-                LD_HL_HL();
-                EX_S_DE_HL();
-                expr.outputReturnRegister = OUTPUT_IN_DE;
-            } else {
-                LD_HL_HL();
-            }
-        } else if (outputPrevType == TYPE_FUNCTION_RETURN) {
-            insertFunctionReturnNoPush(outputPrevOperand, OUTPUT_IN_HL);
             if (outputCurr->mask == TYPE_MASK_U8) {
                 LD_A_HL();
             } else if (outputCurr->mask == TYPE_MASK_U16) {
@@ -952,8 +1000,6 @@ uint8_t parseFunction1Arg(uint24_t index, uint8_t outputRegister1, uint8_t amoun
     
     if (outputPrevType == TYPE_VARIABLE) {
         LD_HL_IND_IX_OFF(outputOperand);
-    } else if (outputPrevType == TYPE_FUNCTION_RETURN) {
-        insertFunctionReturnNoPush(outputOperand, OUTPUT_IN_HL);
     } else if (outputPrevType == TYPE_CHAIN_ANS) {
         if (outputRegister1 == OUTPUT_IN_HL) {
             AnsToHL();
@@ -989,14 +1035,6 @@ uint8_t parseFunction2Args(uint24_t index, uint8_t outputReturnRegister, uint8_t
             } else {
                 LD_BC_IND_IX_OFF(outputPrevOperand);
             }
-        } else if (outputPrevType == TYPE_FUNCTION_RETURN) {
-            if (orderDoesMatter) {
-                insertFunctionReturnNoPush(outputPrevOperand, outputReturnRegister);
-                LD_HL_NUMBER(outputPrevPrevOperand);
-            } else {
-                insertFunctionReturnNoPush(outputPrevOperand, OUTPUT_IN_HL);
-                LD_DE_IMM(outputPrevPrevOperand);
-            }
         } else if (outputPrevType == TYPE_CHAIN_ANS) {
             if (orderDoesMatter) {
                 if (outputReturnRegister == OUTPUT_IN_DE) {
@@ -1014,7 +1052,7 @@ uint8_t parseFunction2Args(uint24_t index, uint8_t outputReturnRegister, uint8_t
                 }
             }
         } else {
-            return E_ICE_ERROR;
+            return E_SYNTAX;
         }
     } else if (outputPrevPrevType == TYPE_VARIABLE) {
         if ((outputPrevType & 0x7F) == TYPE_NUMBER) {
@@ -1036,14 +1074,6 @@ uint8_t parseFunction2Args(uint24_t index, uint8_t outputReturnRegister, uint8_t
             } else {
                 LD_BC_IND_IX_OFF(outputPrevOperand);
             }
-        } else if (outputPrevType == TYPE_FUNCTION_RETURN) {
-            if (orderDoesMatter) {
-                insertFunctionReturnNoPush(outputPrevOperand, outputReturnRegister);
-                LD_HL_IND_IX_OFF(outputPrevPrevOperand);
-            } else {
-                insertFunctionReturnNoPush(outputPrevOperand, OUTPUT_IN_HL);
-                LD_DE_IND_IX_OFF(outputPrevPrevOperand);
-            }
         } else if (outputPrevType == TYPE_CHAIN_ANS) {
             if (orderDoesMatter) {
                 if (outputReturnRegister == OUTPUT_IN_DE) {
@@ -1061,47 +1091,7 @@ uint8_t parseFunction2Args(uint24_t index, uint8_t outputReturnRegister, uint8_t
                 }
             }
         } else {
-            return E_ICE_ERROR;
-        }
-    } else if (outputPrevPrevType == TYPE_FUNCTION_RETURN) {
-        if ((outputPrevType & 0x7F) == TYPE_NUMBER) {
-            insertFunctionReturnNoPush(outputPrevPrevOperand, OUTPUT_IN_HL);
-            if (outputReturnRegister == OUTPUT_IN_DE) {
-                LD_DE_IMM(outputPrevOperand);
-            } else {
-                LD_BC_IMM(outputPrevOperand);
-            }
-        } else if (outputPrevType == TYPE_VARIABLE) {
-            insertFunctionReturnNoPush(outputPrevPrevOperand, OUTPUT_IN_HL);
-            if (outputReturnRegister == OUTPUT_IN_DE) {
-                LD_DE_IND_IX_OFF(outputPrevOperand);
-            } else {
-                LD_BC_IND_IX_OFF(outputPrevOperand);
-            }
-        } else if (outputPrevType == TYPE_FUNCTION_RETURN) {
-            insertFunctionReturnNoPush(outputPrevOperand, outputReturnRegister);
-            insertFunctionReturnNoPush(outputPrevPrevOperand, OUTPUT_IN_HL);
-        } else if (outputPrevType == TYPE_CHAIN_ANS) {
-            if (orderDoesMatter) {
-                PushHLDE();
-                insertFunctionReturnNoPush(outputPrevPrevOperand, OUTPUT_IN_HL);
-                if (outputReturnRegister == OUTPUT_IN_DE) {
-                    POP_DE();
-                } else {
-                    POP_BC();
-                }
-            } else {
-                if (expr.outputRegister == OUTPUT_IN_HL) {
-                    PushHLDE();
-                    insertFunctionReturnNoPush(outputPrevPrevOperand, OUTPUT_IN_HL);
-                    POP_DE();
-                } else {
-                    AnsToDE();
-                    insertFunctionReturn(outputPrevPrevOperand, OUTPUT_IN_HL, NEED_PUSH);
-                }
-            }
-        } else {
-            return E_ICE_ERROR;
+            return E_SYNTAX;
         }
     } else if (outputPrevPrevType == TYPE_CHAIN_ANS) {
         if ((outputPrevType & 0x7F) == TYPE_NUMBER) {
@@ -1134,23 +1124,8 @@ uint8_t parseFunction2Args(uint24_t index, uint8_t outputReturnRegister, uint8_t
                     LD_HL_IND_IX_OFF(outputPrevOperand);
                 }
             }
-        } else if (outputPrevType == TYPE_FUNCTION_RETURN) {
-            if (orderDoesMatter) {
-                PushHLDE();
-                insertFunctionReturnNoPush(outputPrevOperand, outputReturnRegister);
-                POP_HL();
-            } else {
-                MaybeAToHL();
-                if (expr.outputRegister == OUTPUT_IN_HL) {
-                    PUSH_HL();
-                    insertFunctionReturnNoPush(outputPrevOperand, OUTPUT_IN_HL);
-                    POP_DE();
-                } else {
-                    insertFunctionReturn(outputPrevOperand, OUTPUT_IN_HL, NEED_PUSH);
-                }
-            }
         } else {
-            return E_ICE_ERROR;
+            return E_SYNTAX;
         }
     } else if (outputPrevPrevType == TYPE_CHAIN_PUSH) {
         if (outputPrevType != TYPE_CHAIN_ANS) {
@@ -1204,4 +1179,24 @@ uint8_t InsertDataElements(uint8_t amountOfArguments, uint24_t startIndex, uint8
     }
     
     return VALID;
+}
+
+void loadGetKeyFastData1(void) {
+    AND_A(7);
+    LD_B_A();
+    LD_A(1);
+    JR_Z(3);
+    ADD_A_A();
+    DJNZ(-3);
+    LD_C_A();
+}
+
+void loadGetKeyFastData2(void) {
+    SRL_A();
+    SRL_A();
+    AND_A(14);
+    LD_D_A();
+    LD_A(30);
+    SUB_A_D();
+    LD_B_A();
 }
