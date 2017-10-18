@@ -175,7 +175,7 @@ uint8_t parseFunction(uint24_t index) {
     
     // rand
     if (function == tRand) {
-        CallRoutine(&ice.usedAlreadyRand, &ice.randAddr, RandData, SIZEOF_RAND_DATA);
+        CallRoutine(&ice.usedAlreadyRand, &ice.randAddr, (uint8_t*)RandData, SIZEOF_RAND_DATA);
     }
     
     // getKey / getKey(X)
@@ -184,7 +184,7 @@ uint8_t parseFunction(uint24_t index) {
             if (outputPrevType == TYPE_NUMBER) {
                 uint8_t key = outputPrevOperand;
                 uint8_t keyBit = 1;
-                /* This is the same as 
+                /* This is the same as
                     ((key-1)/8 & 7) * 2 = 
                     (key-1)/4 & (7*2) = 
                     (key-1) >> 2 & 14 
@@ -230,7 +230,7 @@ uint8_t parseFunction(uint24_t index) {
                 }
             }
             
-            CallRoutine(&ice.usedAlreadyGetKeyFast, &ice.getKeyFastAddr, KeypadData, SIZEOF_KEYPAD_DATA);
+            CallRoutine(&ice.usedAlreadyGetKeyFast, &ice.getKeyFastAddr, (uint8_t*)KeypadData, SIZEOF_KEYPAD_DATA);
         } else {
             CALL(_os_GetCSC);
             ice.modifiedIY = false;
@@ -269,7 +269,7 @@ uint8_t parseFunction(uint24_t index) {
             return res;
         }
         
-        CallRoutine(&ice.usedAlreadySqrt, &ice.SqrtAddr, SqrtData, SIZEOF_SQRT_DATA);
+        CallRoutine(&ice.usedAlreadySqrt, &ice.SqrtAddr, (uint8_t*)SqrtData, SIZEOF_SQRT_DATA);
 
         expr.outputReturnRegister = OUTPUT_IN_DE;
         ice.modifiedIY = true;
@@ -329,7 +329,7 @@ uint8_t parseFunction(uint24_t index) {
             return res;
         }
         
-        CallRoutine(&ice.usedAlreadyMean, &ice.MeanAddr, MeanData, SIZEOF_MEAN_DATA);
+        CallRoutine(&ice.usedAlreadyMean, &ice.MeanAddr, (uint8_t*)MeanData, SIZEOF_MEAN_DATA);
 
         ice.modifiedIY = true;
     }

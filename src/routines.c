@@ -54,6 +54,10 @@ void MaybeAToHL(void) {
     }
 }
 
+void SeekMinus1(void) {
+    _seek(-1, SEEK_CUR, ice.inPrgm);
+}
+
 void displayMessageLineScroll(char *string) {
 #ifndef COMPUTER_ICE
     char buf[30];
@@ -137,7 +141,7 @@ uint8_t SquishHexadecimals(uint8_t *prevDataPtr) {
     return VALID;
 }
 
-void CallRoutine(bool *routineBool, uint24_t *routineAddress, void *routineData, uint8_t routineLength) {
+void CallRoutine(bool *routineBool, uint24_t *routineAddress, const uint8_t *routineData, uint8_t routineLength) {
     // Store the pointer to the call to the stack, to replace later
     ProgramPtrToOffsetStack();
     

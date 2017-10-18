@@ -206,7 +206,7 @@ uint8_t parseOperator(element_t *outputPrevPrevPrev, element_t *outputPrevPrev, 
             }
             
             // Call the right function!
-            (*operatorFunctions[((getIndexOfOperator(oper) - 1) * 16) + (type1Masked * 3) + type2])();
+            (*operatorFunctions[((getIndexOfOperator(oper) - 1) * 9) + (type1Masked * 3) + type2])();
         }
         
         // If the operator is /, the routine always ends with call __idvrmu \ expr.outputReturnRegister == OUTPUT_IN_DE

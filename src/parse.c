@@ -186,7 +186,7 @@ uint8_t parseExpression(int token) {
                 outputCurr->type = TYPE_NUMBER;
                 outputCurr->operand = -1;
                 outputElements++;
-                _seek(-1, SEEK_CUR, ice.inPrgm);
+                SeekMinus1();
                 token = tMul;
                 goto tokenIsOperator;
             }
@@ -539,7 +539,9 @@ stackToOutputReturn2:
                 (uint8_t)outputCurr->operand != tDet &&
                 (uint8_t)outputCurr->operand != tLBrace &&
                 (uint8_t)outputCurr->operand != tSum &&
-                (uint8_t)outputCurr->operand != tVarOut) {
+                (uint8_t)outputCurr->operand != tVarOut &&
+                (uint8_t)outputCurr->operand != tRand &&
+                (uint8_t)outputCurr->operand != tGetKey) {
             uint24_t outputPrevOperand = outputPrev->operand, outputPrevPrevOperand = outputPrevPrev->operand;
             
             for (a = 1; a <= index; a++) {
@@ -913,7 +915,7 @@ static uint8_t functionI(int token) {
                 if ((uint8_t)(token = _getc()) == tii) {
                     grabString(&ice.programPtr, false);
                 } else if (token != EOF) {
-                    _seek(-1, SEEK_CUR, ice.inPrgm);
+                    SeekMinus1();
                 }
             }
 
@@ -1051,6 +1053,7 @@ uint8_t JumpForward(uint8_t *startAddr, uint8_t *endAddr, uint24_t tempDataOffse
     if (endAddr - startAddr <= 0x80) {
         uint8_t *tempPtr = startAddr;
         uint8_t opcode = *startAddr;
+        uint24_t tempForLoopSMCElements = ice.ForLoopSMCElements;
         label_t *labelPtr = labelStack;
         label_t *gotoPtr = gotoStack;
         
@@ -1071,6 +1074,14 @@ uint8_t JumpForward(uint8_t *startAddr, uint8_t *endAddr, uint24_t tempDataOffse
         while (ice.amountOfLbls != tempLblElements) {
             (&labelPtr[tempLblElements])->addr -= 2;
             tempLblElements++;
+        }
+        
+        // Update all the For loop SMC addresses
+        while (tempForLoopSMCElements--) {
+            if ((uint24_t)ice.ForLoopSMCStack[tempForLoopSMCElements] > (uint24_t)startAddr) {
+                *ice.ForLoopSMCStack[tempForLoopSMCElements] -= 2;
+                ice.ForLoopSMCStack[tempForLoopSMCElements] = (uint24_t*)(((uint8_t*)ice.ForLoopSMCStack[tempForLoopSMCElements]) - 2);
+            }
         }
         
         if (ice.programPtr != startAddr) {
@@ -1474,7 +1485,9 @@ static uint8_t functionFor(int token) {
                 ADD_HL_DE();
             }
         } else {
-            w24(stepExpression + 1, ice.programPtr - ice.programData + PRGM_START + 1);
+            w24(stepExpression + 1, ice.programPtr + PRGM_START - ice.programData + 1);
+            ice.ForLoopSMCStack[ice.ForLoopSMCElements++] = (uint24_t*)(endPointExpressionValue + 1);
+            
             LD_DE_IMM(0);
             ADD_HL_DE();
         }
@@ -1487,7 +1500,7 @@ static uint8_t functionFor(int token) {
     if (!(endPointIsNumber && stepIsNumber)) {
         LD_HL_IND_IX_OFF(variable);
     }
-
+    
     if (endPointIsNumber) {
         if (stepNumber < 0x800000) {
             LD_DE_IMM(endPointNumber + 1);
@@ -1498,6 +1511,8 @@ static uint8_t functionFor(int token) {
         OR_A_A();
     } else {
         w24(endPointExpressionValue + 1, ice.programPtr + PRGM_START - ice.programData + 1);
+        ice.ForLoopSMCStack[ice.ForLoopSMCElements++] = (uint24_t*)(endPointExpressionValue + 1);
+        
         LD_DE_IMM(0);
         if (stepNumber < 0x800000) {
             SCF();
@@ -1550,7 +1565,7 @@ static uint8_t functionCustom(int token) {
             CALL(0);
             return VALID;
         } else {
-            _seek(-1, SEEK_CUR, ice.inPrgm);
+            SeekMinus1();
             return parseExpression(token);
         }
     } else {
@@ -1603,13 +1618,13 @@ static uint8_t functionPause(int token) {
     } else {
         uint8_t res;
         
-        _seek(-1, SEEK_CUR, ice.inPrgm);
+        SeekMinus1();
         if ((res = parseExpression(_getc())) != VALID) {
             return res;
         }
         AnsToHL();
         
-        CallRoutine(&ice.usedAlreadyPause, &ice.PauseAddr, PauseData, 20);
+        CallRoutine(&ice.usedAlreadyPause, &ice.PauseAddr, (uint8_t*)PauseData, SIZEOF_PAUSE_DATA);
     }
     return VALID;
 }
@@ -1630,7 +1645,7 @@ static uint8_t functionInput(int token) {
     // Copy the Input routine to the data section
     if (!ice.usedAlreadyInput) {
         ice.InputAddr = (uintptr_t)ice.programDataPtr;
-        memcpy(ice.programDataPtr, InputData, SIZEOF_INPUT_DATA);
+        memcpy(ice.programDataPtr, (uint8_t*)InputData, SIZEOF_INPUT_DATA);
         ice.programDataPtr += SIZEOF_INPUT_DATA;
         ice.usedAlreadyInput = true;
     }
@@ -1718,7 +1733,7 @@ static uint8_t functionBB(int token) {
         return res;
 #endif
     } else {
-        _seek(-1, SEEK_CUR, ice.inPrgm);
+        SeekMinus1();
         return parseExpression(t2ByteTok);
     }
 }

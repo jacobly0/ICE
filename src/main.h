@@ -13,6 +13,7 @@
 #define SIZEOF_AND_DATA    11
 #define SIZEOF_XOR_DATA    13
 #define SIZEOF_INPUT_DATA  90
+#define SIZEOF_PAUSE_DATA  20
 
 #define tDefineSprite      0x0A
 #define tCall              0x0B
@@ -47,6 +48,8 @@ typedef struct {
     uint24_t *dataOffsetStack[500];                         // Stack of the address to point to the data, which needs to be changed after compiling
     uint24_t dataOffsetElements;                            // Amount of stack elements of above
     uint24_t dataOffsetElementsBackup;                      // Same as above
+    uint24_t *ForLoopSMCStack[50];                          // Used for SMC in For loops
+    uint24_t ForLoopSMCElements;                            // Amount of elements in above stack
     uint24_t currentLine;                                   // The amount of parsed lines, useful for displaying it when an error occurs
     uint24_t programSize;                                   // Size of the output program
     uint24_t *stack[STACK_SIZE*5];                          // Stacks for compiling arguments
