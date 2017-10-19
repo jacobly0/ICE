@@ -16,8 +16,9 @@
 #define E_PROG_NOT_FOUND   12
 #define E_NO_SUBPROG       13
 #define E_MEMORY           14
-#define E_WRONG_CHAR       15
-#define E_INVALID_PROG     16
+#define E_INVALID_PROG     15
+#define W_WRONG_CHAR       16
+#define W_SQUISHED         17
 
 #define VALID              255
 

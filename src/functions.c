@@ -335,7 +335,7 @@ uint8_t parseFunction(uint24_t index) {
     }
     
     // remainder(
-    else if (function2 == tRemainder) {
+    else if (function == tExtTok && function2 == tRemainder) {
         if ((outputPrev->type & 0x7F) == TYPE_NUMBER && outputPrev->operand <= 256 && !((uint8_t)outputPrev->operand & (uint8_t)(outputPrev->operand - 1))) {
             if (outputPrevPrev->type == TYPE_VARIABLE) {
                 LD_A_IND_IX_OFF(outputPrevPrev->operand);
@@ -906,8 +906,8 @@ uint8_t parseFunction(uint24_t index) {
             } else {
                 if (smallArguments & whichSmallArgument) {
                     if (expr.outputIsNumber) {
-                        *(ice.programPtr - 4) = OP_LD_L;
-                        ice.programPtr -= 2;
+                        ice.programPtr -= 4 - !expr.outputNumber;
+                        LD_L(expr.outputNumber);
                     } else if (expr.outputIsVariable) {
                         *(ice.programPtr - 2) = 0x6E;
                     }
@@ -936,13 +936,6 @@ uint8_t parseFunction(uint24_t index) {
         
         // Lel, we need to remove the last argument (ld hl, XXXXXX) + the push
         ice.programPtr -= 5 - !expr.outputNumber;
-        
-        // It's it's a SetPalette or SetCustomFontData, the last argument needs to be squished
-        if (function == tDet && (expr.outputNumber == 4 || expr.outputNumber == 23)) {
-            if ((res = SquishHexadecimals((uint8_t*)*(uint24_t*)(ice.programPtr - 4))) != VALID) {
-                return res;
-            }
-        }
         
         // Get the amount of arguments, and call the function
         if (function == tDet) {

@@ -388,10 +388,6 @@ stackToOutputReturn1:
                 return E_UNIMPLEMENTED;
 foundRight2ByteToken:
                 token = token + (temp2 << 16);
-                
-                if (temp2 == tDefineSprite || temp2 == tDefineTilemap) {
-                    expr.needToSquishHexadecimals = true;
-                }
             }
             // We always have at least 1 argument
             *++amountOfArgumentsStackPtr = 1;
@@ -458,32 +454,24 @@ foundRight2ByteToken:
         
         // Parse a string of characters
         else if (tok == tString) {
+            uint8_t *tempDataPtr = ice.programDataPtr, *a;
+            
             outputCurr->type = TYPE_STRING;
             outputCurr->operand = (uint24_t)ice.programDataPtr;
             outputElements++;
             mask = TYPE_MASK_U24;
             
-            if (expr.needToSquishHexadecimals) {
-                // We need to squish it, since these are the data of DefineSprite or DefineTilemap
-                while ((token = _getc()) != EOF && (uint8_t)token != tEnter && (uint8_t)token != tStore && (uint8_t)token != tString) {
-                    uint8_t tok1, tok2;
-                    
-                    // Get hexadecimal 1
-                    if ((tok1 = IsHexadecimal(token)) == 16) {
-                        return E_INVALID_HEX;
-                    }
-                    
-                    // Get hexadecimal 2
-                    if ((tok2 = IsHexadecimal(_getc())) == 16) {
-                        return E_INVALID_HEX;
-                    }
-                    
-                    *ice.programDataPtr++ = (tok1 << 4) + tok2;
+            token = grabString(&ice.programDataPtr, true);
+            
+            for (a = tempDataPtr; a < ice.programDataPtr; a++) {
+                if (IsHexadecimal(*a) == 16) {
+                    goto noSquishing;
                 }
-            } else {
-                token = grabString(&ice.programDataPtr, true);
             }
-
+            SquishHexadecimals(tempDataPtr);
+            displayError(W_SQUISHED);
+            
+noSquishing:
             *ice.programDataPtr++ = 0;
             if ((uint8_t)token == tStore || (uint8_t)token == tEnter) {
                 continue;

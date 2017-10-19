@@ -237,7 +237,7 @@ int grabString(uint8_t **outputPtr, bool stopAtStoreAndString) {
             
             // All the first 32 and last 128 characters are different
             if (char2 < 32 || char2 > 127) {
-                displayError(E_WRONG_CHAR);
+                displayError(W_WRONG_CHAR);
                 char2 = 0;
             }
             
@@ -1101,7 +1101,7 @@ int grabString(uint8_t **outputPtr, bool stopAtStoreAndString) {
             
             // No weird characters
             if (char2 < 32 || char2 > 127) {
-                displayError(E_WRONG_CHAR);
+                displayError(W_WRONG_CHAR);
                 char2 = 0;
             }
             

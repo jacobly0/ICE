@@ -33,8 +33,9 @@ static const char *errors[] = {
     "Subprogram not found",
     "Compiling subprograms not supported",
     "Too much memory allocated",
-    "Warning: Unknown char in the string!",
     "Invalid program name",
+    "Warning: Unknown char in the string!",
+    "Warning: string has been automatically squish-ed!",
 };
 
 void displayLabelError(char *label) {
@@ -52,7 +53,7 @@ void displayLabelError(char *label) {
 void displayError(uint8_t index) {
 #ifndef COMPUTER_ICE
     char buf[30];
-    gfx_SetTextFGColor(224 + 3 * (index == E_WRONG_CHAR));
+    gfx_SetTextFGColor(224 + 3 * (index == W_WRONG_CHAR || index == W_SQUISHED));
     displayMessageLineScroll(errors[index]);
     
     gfx_SetTextFGColor(0);

@@ -114,7 +114,6 @@ typedef struct {
     bool     AnsSetZeroFlagReversed;
     bool     AnsSetCarryFlag;
     bool     AnsSetCarryFlagReversed;
-    bool     needToSquishHexadecimals;
     
     uint8_t  ZeroCarryFlagRemoveAmountOfBytes;
     uint8_t  outputRegister;
