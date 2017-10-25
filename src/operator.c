@@ -162,6 +162,8 @@ uint8_t parseOperator(element_t *outputPrevPrevPrev, element_t *outputPrevPrev, 
         StoStringString();
     } else if (type1 >= TYPE_STRING && type2 >= TYPE_STRING && oper == tAdd) {
         AddStringString();
+    } else if (type1 == TYPE_STRING && type2 == TYPE_VARIABLE && oper == tStore) {
+        StoStringVariable();
     } else {
         // Only call the function if both types are valid
         if ((type1Masked == type2 && (type1Masked == TYPE_NUMBER || type1Masked == TYPE_CHAIN_ANS)) ||
@@ -422,6 +424,11 @@ void StoStringString(void) {
     CALL(__strcpy);
     POP_BC();
     POP_BC();
+}
+void StoStringVariable(void) {
+    ProgramPtrToOffsetStack();
+    LD_HL_IMM(entry1_operand);
+    LD_IX_OFF_IND_HL(entry2_operand);
 }
 void BitAndChainAnsNumber(void) {
     if (expr.outputRegister == OUTPUT_IN_A) {

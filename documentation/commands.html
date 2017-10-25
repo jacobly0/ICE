@@ -907,7 +907,7 @@
                                 <td>Defines a sprite with data <code><span id="grey">DATA</span></code>, width <code><span id="or">WIDTH</span></code> and height <code><span id="or">HEIGHT</span></code>. Returns a pointer to the start of the sprite.</td>
                             </tr>
                             <tr>
-                                <td style="word-wrap:break-word; max-width: 200px;"><code><span id="bl">DefineTilemap(</span><span id="or">TILE_HEIGHT</span>,<span id="or">TILE_WIDTH</span>,<span id="or">DRAW_HEIGHT</span>,<span id="or">DRAW_WIDTH</span>,<span id="or">TYPE_WIDTH</span>,<span id="or">TYPE_HEIGHT</span>,<span id="or">HEIGHT</span>,<span id="or">WIDTH</span>,<span id="or">Y</span>,<span id="or">X</span>,<span id="gr">VAR</span>,<span id="grey">"MAP_DATA"</span><span id="bl">)</span></code></td>
+                                <td style="word-wrap:break-word; max-width: 200px;"><code><span id="bl">DefineTilemap(</span><span id="or">TILE_HEIGHT</span>,<span id="or">TILE_WIDTH</span>,<span id="or">DRAW_HEIGHT</span>,<span id="or">DRAW_WIDTH</span>,<span id="or">TYPE_WIDTH</span>,<span id="or">TYPE_HEIGHT</span>,<span id="or">TILEMAP_HEIGHT</span>,<span id="or">TILEMAP_WIDTH</span>,<span id="or">Y</span>,<span id="or">X</span>,<span id="gr">VAR</span>,<span id="grey">"MAP_DATA"</span><span id="bl">)</span></code></td>
                                 <td>Defines a tilemap. <code><span id="gr">VAR</span></code> should be a variable, which holds a pointer to the table with pointers to the sprites, which returns from <code><span id="bl">LoadData(</span></code>. See <code>tilemaps.docx</code> how to get the map data. Returns a pointer to the tilemap struct, which can be used in <code><span id="bl">det(</span>50</code>. <code><span id="or">TYPE_HEIGHT</span></code>, <code><span id="or">TYPE_WIDTH</span></code> options:<br>
                                     - <code>0</code> - Not a power of 2<br>
                                     - <code>1</code> - Tile width/height of 2<br>
@@ -924,7 +924,7 @@
                                 <td>Places constant data in program memory with each element size of <code><span id="or">SIZE</span></code> bytes. Returns a pointer to the data.</td>
                             </tr>
                             <tr>
-                                <td><code><span id="bl">DataCopy(</span><span id="red">DEST</span>,<span id="or">SIZE</span>,<span id="or">CONST1</span>,<span id="or">CONST2</span>...<span id="bl">)</span></code></td>
+                                <td><code><span id="bl">CopyData(</span><span id="red">DEST</span>,<span id="or">SIZE</span>,<span id="or">CONST1</span>,<span id="or">CONST2</span>...<span id="bl">)</span></code></td>
                                 <td>Places constant data in program memory with each element size of <code><span id="or">SIZE</span></code> bytes and copies it to <code><span id="red">DEST</span></code>. Returns a pointer to the end of the data in the program data.</td>
                             </tr>
                             <tr>
@@ -933,11 +933,11 @@
                             </tr>
                             <tr>
                                 <td><code><span id="bl">Copy(</span><span id="red">DEST</span>,<span id="red">SRC</span>,<span id="red">SIZE</span><span id="bl">)</span></code></td>
-                                <td>Copies <code><span id="red">SIZE</span></code> bytes from <code><span id="red">SRC</span></code> to <code><span id="red">DEST</span></code>. <code><span id="bl">rand</span></code>, <code><span id="bl">getKey</span></code> and <code><span id="bl">getKey(</span><span id="or">KEY</span><span id="bl">)</span></code> are not allowed as a standalone argument.</td>
+                                <td>Copies <code><span id="red">SIZE</span></code> bytes from <code><span id="red">SRC</span></code> to <code><span id="red">DEST</span></code>.</td>
                             </tr>
                             <tr>
                                 <td><code><span id="bl">Copy(</span>...,<span id="red">DEST</span>,<span id="red">SRC</span>,<span id="red">SIZE</span><span id="bl">)</span></code></td>
-                                <td>Copies <code><span id="red">SIZE</span></code> bytes from <code><span id="red">SRC</span></code> to <code><span id="red">DEST</span></code> backwards. The first argument can be anything you like. <code><span id="bl">rand</span></code>, <code><span id="bl">getKey</span></code> and <code><span id="bl">getKey(</span><span id="or">KEY</span><span id="bl">)</span></code> are not allowed as a standalone argument.</td>
+                                <td>Copies <code><span id="red">SIZE</span></code> bytes from <code><span id="red">SRC</span></code> to <code><span id="red">DEST</span></code> backwards. The first argument can be anything you like.</td>
                             </tr>
                             <tr>
                                 <td><code><span id="bl">LoadData(</span><span id="grey">"APPVAR"</span>,<span id="red">OFFSET</span>,<span id="red">SIZE</span><span id="bl">)</span></code></td>

@@ -455,6 +455,7 @@ foundRight2ByteToken:
         // Parse a string of characters
         else if (tok == tString) {
             uint8_t *tempDataPtr = ice.programDataPtr, *a;
+            uint8_t amountOfHexadecimals = 0;
             
             outputCurr->type = TYPE_STRING;
             outputCurr->operand = (uint24_t)ice.programDataPtr;
@@ -467,9 +468,12 @@ foundRight2ByteToken:
                 if (IsHexadecimal(*a) == 16) {
                     goto noSquishing;
                 }
+                amountOfHexadecimals++;
             }
-            SquishHexadecimals(tempDataPtr);
-            displayError(W_SQUISHED);
+            if (!(amountOfHexadecimals & 1)) {
+                SquishHexadecimals(tempDataPtr);
+                displayError(W_SQUISHED);
+            }
             
 noSquishing:
             *ice.programDataPtr++ = 0;
@@ -669,6 +673,11 @@ uint8_t parsePostFixFromIndexToIndex(uint24_t startIndex, uint24_t endIndex) {
             push(loopIndex);
             amountOfStackElements++;
         }
+    }
+    
+    // Empty argument
+    if (!amountOfStackElements) {
+        return E_SYNTAX;
     }
     
     // It's a single entry

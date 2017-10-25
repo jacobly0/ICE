@@ -24,6 +24,7 @@ void EQInsert(void);
 void GEInsert(void);
 void AddStringString(void);
 void StoStringString(void);
+void StoStringVariable(void);
 
 void MultWithNumber(uint24_t, uint8_t*, bool);
 
