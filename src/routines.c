@@ -25,12 +25,9 @@ void ProgramDataPtrToOffsetStack(void) {
 }
 
 void AnsToHL(void) {
+    MaybeAToHL();
     if (expr.outputRegister == OUTPUT_IN_DE) {
         EX_DE_HL();
-    } else if (expr.outputRegister == OUTPUT_IN_A) {
-        OR_A_A();
-        SBC_HL_HL();
-        LD_L_A();
     }
     expr.outputRegister = OUTPUT_IN_HL;
 }
@@ -41,8 +38,170 @@ void AnsToDE(void) {
     } else if (expr.outputRegister == OUTPUT_IN_A) {
         LD_DE_IMM(0);
         LD_E_A();
+        reg.DEIsNumber = reg.AIsNumber;
+        reg.DEIsVariable = false;
+        reg.DEValue = reg.AValue;
     }
     expr.outputRegister = OUTPUT_IN_DE;
+}
+
+void ChangeRegValue(uint24_t inValue, uint24_t outValue, uint8_t opcodes[7]) {
+    uint8_t a = 0;
+    
+    expr.SizeOfOutputNumber = 0;
+    
+    if (outValue - inValue < 5) {
+        for (a = 0; a < (uint8_t)(outValue - inValue); a++) {
+            output(uint8_t, opcodes[0]);
+            expr.SizeOfOutputNumber++;
+        }
+    } else if (inValue - outValue < 5) {
+        for (a = 0; a < (uint8_t)(inValue - outValue); a++) {
+            output(uint8_t, opcodes[1]);
+            expr.SizeOfOutputNumber++;
+        }
+    } else if (inValue < 256 && outValue < 512) {
+        if (outValue > 255) {
+            output(uint8_t, opcodes[2]);
+            expr.SizeOfOutputNumber = 1;
+        }
+        if (inValue != (outValue & 255)) {
+            output(uint8_t, opcodes[4]);
+            output(uint8_t, outValue);
+            expr.SizeOfOutputNumber += 2;
+        }
+    } else if (inValue < 512 && outValue < 256) {
+        output(uint8_t, opcodes[3]);
+        expr.SizeOfOutputNumber = 1;
+        if ((inValue & 255) != outValue) {
+            output(uint8_t, opcodes[4]);
+            output(uint8_t, outValue);
+            expr.SizeOfOutputNumber = 3;
+        }
+    } else if (inValue < 65536 && outValue < 65536 && (inValue & 255) == (outValue & 255)) {
+        output(uint8_t, opcodes[5]);
+        output(uint8_t, outValue >> 8);
+        expr.SizeOfOutputNumber = 2;
+    } else if (outValue >= IX_VARIABLES - 0x80 && outValue <= IX_VARIABLES + 0x7F) {
+        output(uint16_t, 0x22ED);
+        output(uint8_t, outValue - IX_VARIABLES);
+        expr.SizeOfOutputNumber = 3;
+    } else {
+        output(uint8_t, opcodes[6]);
+        output(uint24_t, outValue);
+        expr.SizeOfOutputNumber = 4;
+    }
+}
+
+void LoadRegValue(uint8_t reg2, uint24_t val) {
+    if (reg2 == OUTPUT_IN_HL) {
+        if (reg.HLIsNumber) {
+            uint8_t opcodes[7] = {OP_INC_HL, OP_DEC_HL, OP_INC_H, OP_DEC_H, OP_LD_L, OP_LD_H, OP_LD_HL};
+            
+            ChangeRegValue(reg.HLValue, val, opcodes);
+        } else if (val) {
+            output(uint8_t, OP_LD_HL);
+            output(uint24_t, val);
+            expr.SizeOfOutputNumber = 4;
+        } else {
+            OR_A_A();
+            SBC_HL_HL();
+            expr.SizeOfOutputNumber = 3;
+        }
+        reg.HLIsNumber = true;
+        reg.HLIsVariable = false;
+        reg.HLValue = val;
+    } else if (reg2 == OUTPUT_IN_DE) {
+        if (reg.DEIsNumber) {
+            uint8_t opcodes[7] = {OP_INC_DE, OP_DEC_DE, OP_INC_D, OP_DEC_D, OP_LD_E, OP_LD_D, OP_LD_DE};
+            
+            ChangeRegValue(reg.DEValue, val, opcodes);
+        } else {
+            output(uint8_t, OP_LD_DE);
+            output(uint24_t, val);
+            expr.SizeOfOutputNumber = 4;
+        }
+        reg.DEIsNumber = true;
+        reg.DEIsVariable = false;
+        reg.DEValue = val;
+    } else {
+        reg.BCIsNumber = true;
+        reg.BCIsVariable = false;
+        reg.BCValue = val;
+        output(uint8_t, OP_LD_BC);
+        output(uint24_t, val);
+        expr.SizeOfOutputNumber = 4;
+    }
+}
+
+void LoadRegVariable(uint8_t reg2, uint8_t variable) {
+    if (reg2 == OUTPUT_IN_HL) {
+        if (!(reg.HLIsVariable && reg.HLVariable == variable)) {
+            output(uint16_t, 0x27DD);
+            output(uint8_t, variable);
+            reg.HLIsNumber = false;
+            reg.HLIsVariable = true;
+            reg.HLVariable = variable;
+        }
+    } else if (reg2 == OUTPUT_IN_DE) {
+        if (!(reg.DEIsVariable && reg.DEVariable == variable)) {
+            output(uint16_t, 0x17DD);
+            output(uint8_t, variable);
+            reg.DEIsNumber = false;
+            reg.DEIsVariable = true;
+            reg.DEVariable = variable;
+        }
+    } else if (reg2 == OUTPUT_IN_BC) {
+        reg.BCIsNumber = false;
+        reg.BCIsVariable = true;
+        reg.BCVariable = variable;
+        output(uint16_t, 0x07DD);
+        output(uint8_t, variable);
+    } else {
+        reg.AIsNumber = false;
+        reg.AIsVariable = true;
+        reg.AVariable = variable;
+        output(uint16_t, 0x7EDD);
+        output(uint8_t, variable);
+    }
+}
+
+void ResetAllRegs(void) {
+    ResetReg(OUTPUT_IN_HL);
+    ResetReg(OUTPUT_IN_DE);
+    ResetReg(OUTPUT_IN_BC);
+    ResetReg(OUTPUT_IN_A);
+}
+
+void ResetReg(uint8_t reg2) {
+    if (reg2 == OUTPUT_IN_HL) {
+        reg.HLIsNumber = reg.HLIsVariable = false;
+    } else if (reg2 == OUTPUT_IN_DE) {
+        reg.DEIsNumber = reg.DEIsVariable = false;
+    } else if (reg2 == OUTPUT_IN_BC) {
+        reg.BCIsNumber = reg.BCIsVariable = false;
+    } else {
+        reg.AIsNumber = reg.AIsVariable = false;
+    }
+}
+
+void RegChangeHLDE(void) {
+    uint8_t  temp8;
+    uint24_t temp24;
+    
+    temp8 = reg.HLIsNumber;
+    reg.HLIsNumber = reg.DEIsNumber;
+    reg.DEIsNumber = temp8;
+    temp24 = reg.HLValue;
+    reg.HLValue = reg.DEValue;
+    reg.DEValue = temp24;
+    
+    temp8 = reg.HLIsVariable;
+    reg.HLIsVariable = reg.DEIsVariable;
+    reg.DEIsVariable = temp8;
+    temp8 = reg.HLVariable;
+    reg.HLVariable = reg.DEVariable;
+    reg.DEVariable = temp8;
 }
 
 void MaybeAToHL(void) {
@@ -50,6 +209,9 @@ void MaybeAToHL(void) {
         OR_A_A();
         SBC_HL_HL();
         LD_L_A();
+        reg.HLIsNumber = reg.AIsNumber;
+        reg.HLIsVariable = false;
+        reg.HLValue = reg.AValue;
         expr.outputRegister = OUTPUT_IN_HL;
     }
 }

@@ -15,10 +15,12 @@
 #define E_UNKNOWN_C        11
 #define E_PROG_NOT_FOUND   12
 #define E_NO_SUBPROG       13
-#define E_MEMORY           14
-#define E_INVALID_PROG     15
-#define W_WRONG_CHAR       16
-#define W_SQUISHED         17
+#define E_INVALID_PROG     14
+#define W_WRONG_CHAR       15
+#define W_SQUISHED         16
+#define W_START_GRAPHX     17
+#define W_START_FILEIOC    18
+#define W_CLOSE_GRAPHX     19
 
 #define VALID              255
 

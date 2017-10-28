@@ -402,7 +402,12 @@ foundRight2ByteToken:
             if (tok == tDet || tok == tSum) {
                 outputCurr->type = TYPE_C_START;
                 outputElements++;
+                
+                if ((tok = (uint8_t)(token = _getc())) < t0 || tok > t9) {
+                    return E_SYNTAX;
+                }
                 prevTokenWasDetOrSum = 2;
+                continue;
             }
         }
         
@@ -526,7 +531,7 @@ stackToOutputReturn2:
             continue;
         }
         
-        // Check if the types are number | number | ... | function (no det or pointer)
+        // Check if the types are number | number | ... | function (specific function or pointer)
         if (loopIndex >= index && outputCurr->type == TYPE_FUNCTION && 
                 (uint8_t)outputCurr->operand != tDet &&
                 (uint8_t)outputCurr->operand != tLBrace &&
@@ -554,7 +559,7 @@ stackToOutputReturn2:
                     temp = (outputPrevOperand > outputPrevPrevOperand) ? outputPrevOperand : outputPrevPrevOperand;
                     break;
                 case tMean:
-                    // I can't simply add, and divide by 2, because then it *might* overflow in case that A+B > 0xFFFFFF
+                    // I can't simply add, and divide by 2, because then it *might* overflow in case that A + B > 0xFFFFFF
                     temp = ((long)outputPrevOperand + (long)outputPrevPrevOperand) / 2;
                     break;
                 case tSqrt:
@@ -639,7 +644,7 @@ stackToOutput:
 uint8_t parsePostFixFromIndexToIndex(uint24_t startIndex, uint24_t endIndex) {
     element_t *outputCurr;
     element_t *outputPtr = (element_t*)outputStack;
-    uint8_t outputType, temp, operandDepth = 0, AnsDepth = 0;
+    uint8_t outputType, temp, AnsDepth = 0;
     uint24_t outputOperand, loopIndex, tempIndex = 0, amountOfStackElements;
     
     // Set some variables
@@ -683,11 +688,11 @@ uint8_t parsePostFixFromIndexToIndex(uint24_t startIndex, uint24_t endIndex) {
     // It's a single entry
     if (amountOfStackElements == 1) {
         // Expression is only a single number
-        if ((outputType & 0x7F) == TYPE_NUMBER) {
+        if (outputType == TYPE_NUMBER) {
             // This boolean is set, because loops may be optimized when the condition is a number
             expr.outputIsNumber = true;
             expr.outputNumber = outputOperand;
-            LD_HL_NUMBER(outputOperand);
+            LD_HL_IMM(outputOperand);
         } 
         
         // Expression is only a variable
@@ -700,6 +705,12 @@ uint8_t parsePostFixFromIndexToIndex(uint24_t startIndex, uint24_t endIndex) {
         else if (outputType == TYPE_STRING) {
             expr.outputIsString = true;
             LD_HL_STRING(outputOperand);
+        }
+        
+        // It's an OS string
+        else if (outputType == TYPE_OS_STRING) {
+            LD_HL_IMM(outputOperand);
+            expr.outputIsString = true;
         }
         
         // Expression is an empty function or operator, i.e. not(, +
@@ -829,19 +840,6 @@ uint8_t parsePostFixFromIndexToIndex(uint24_t startIndex, uint24_t endIndex) {
         if (AnsDepth) {
             AnsDepth++;
         }
-        
-        // Check if the next or next next operand is either a function operator
-        if (operandDepth == 3) {
-            outputCurr->type = TYPE_CHAIN_ANS;
-        } else if (operandDepth == 1) {
-            // We need to push HL since it isn't used in the next operator/function
-            (&outputPtr[tempIndex])->type = TYPE_CHAIN_PUSH;
-            PushHLDE();
-        }
-        
-        if (operandDepth) {
-            operandDepth--;
-        }
     } while (loopIndex != endIndex);
     
     return VALID;
@@ -867,6 +865,7 @@ static uint8_t functionI(int token) {
             }
             
             ice.gotName = true;
+            
             return VALID;
         }
 
@@ -992,11 +991,6 @@ static uint8_t functionIf(int token) {
         }
         res = parseProgram();
         
-        // Needs to be the end of a line
-        if (!CheckEOL()) {
-            return E_SYNTAX;
-        }
-        
         // Check if we quit the program with an 'Else'
         if (res == E_ELSE) {
             bool shortElseCode;
@@ -1005,17 +999,13 @@ static uint8_t functionIf(int token) {
             uint24_t tempDataOffsetElements2;;
             
             // Backup stuff
+            ResetAllRegs();
             IfElseAddr = ice.programPtr;
             tempDataOffsetElements2 = ice.dataOffsetElements;
             
             JP(0);
             if ((res = parseProgram()) != E_END && res != VALID) {
                 return res;
-            }
-            
-            // Needs to be the end of a line
-            if (!CheckEOL()) {
-                return E_SYNTAX;
             }
             
             shortElseCode = JumpForward(IfElseAddr, ice.programPtr, tempDataOffsetElements2, tempGotoElements2, tempLblElements2);
@@ -1028,6 +1018,9 @@ static uint8_t functionIf(int token) {
         } else {
             return res;
         }
+        
+        ResetAllRegs();
+        
         return VALID;
     } else {
         return E_NO_CONDITION;
@@ -1035,10 +1028,16 @@ static uint8_t functionIf(int token) {
 }
 
 static uint8_t functionElse(int token) {
+    if (!CheckEOL()) {
+        return E_SYNTAX;
+    }
     return E_ELSE;
 }
 
 static uint8_t functionEnd(int token) {
+    if (!CheckEOL()) {
+        return E_SYNTAX;
+    }
     return E_END;
 }
 
@@ -1135,16 +1134,13 @@ uint8_t functionRepeat(int token) {
     // Skip the condition for now
     skipLine();
     
-    // Parse the code
+    // Parse the code inside the loop
     if ((res = parseProgram()) != E_END && res != VALID) {
         return res;
     }
     
-    // Needs to be the end of a line
-    if (!CheckEOL()) {
-        return E_SYNTAX;
-    }
-
+    ResetAllRegs();
+    
     // Remind where the "End" is
     RepeatProgEnd = _tell(ice.inPrgm);
     WhileRepeatCondStart = ice.programPtr;
@@ -1163,7 +1159,7 @@ uint8_t functionRepeat(int token) {
     _seek(RepeatProgEnd, SEEK_SET, ice.inPrgm);
     
     if (expr.outputIsNumber) {
-        ice.programPtr -= 4 - !expr.outputNumber;
+        ice.programPtr -= expr.SizeOfOutputNumber;
         if ((expr.outputNumber && (uint8_t)token == tWhile) || (!expr.outputNumber && (uint8_t)token == tRepeat)) {
             JumpBackwards(RepeatCodeStart, OP_JR);
         }
@@ -1250,6 +1246,8 @@ static uint8_t functionDisp(int token) {
         }
         
 checkArgument:
+        ResetAllRegs();
+        
         // Oops, there was a ")" after the expression
         if (ice.tempToken == tRParen) {
             return E_SYNTAX;
@@ -1276,7 +1274,7 @@ static uint8_t functionOutput(int token) {
     if (expr.outputIsNumber) {
         uint8_t outputNumber = expr.outputNumber;
         
-        ice.programPtr -= 4 - !outputNumber;
+        ice.programPtr -= expr.SizeOfOutputNumber;
         LD_A(outputNumber);
         LD_IMM_A(curRow);
         
@@ -1291,8 +1289,8 @@ static uint8_t functionOutput(int token) {
         
         // Yay, we can optimize things!
         if (expr.outputIsNumber) {
-            // Output coordinates in H and L
-            ice.programPtr -= 10 - !expr.outputNumber;
+            // Output coordinates in H and L, 6 = sizeof(ld a, X \ ld (curRow), a)
+            ice.programPtr -= 6 + expr.SizeOfOutputNumber;
             LD_SIS_HL((expr.outputNumber << 8) + outputNumber);
             LD_SIS_IMM_HL(curRow & 0xFFFF);
         } else {
@@ -1351,6 +1349,7 @@ static uint8_t functionOutput(int token) {
             AnsToHL();
             CALL(_DispHL);
         }
+        ResetAllRegs();
     } else if (ice.tempToken != tEnter) {
         return E_SYNTAX;
     }
@@ -1365,6 +1364,7 @@ static uint8_t functionClrHome(int token) {
     MaybeLDIYFlags();
     CALL(_HomeUp);
     CALL(_ClrLCDFull);
+    ResetAllRegs();
     
     return VALID;
 }
@@ -1412,7 +1412,7 @@ static uint8_t functionFor(int token) {
     if (expr.outputIsNumber) {
         endPointIsNumber = true;
         endPointNumber = expr.outputNumber;
-        ice.programPtr -= 4 - !expr.outputNumber;
+        ice.programPtr -= expr.SizeOfOutputNumber;
     } else {
         AnsToHL();
         endPointExpressionValue = ice.programPtr;
@@ -1434,7 +1434,7 @@ static uint8_t functionFor(int token) {
         if (expr.outputIsNumber) {
             stepIsNumber = true;
             stepNumber = expr.outputNumber;
-            ice.programPtr -= 4 - !expr.outputNumber;
+            ice.programPtr -= expr.SizeOfOutputNumber;
         } else {
             AnsToHL();
             stepExpression = ice.programPtr;
@@ -1449,15 +1449,11 @@ static uint8_t functionFor(int token) {
     JP(0);
     tempDataOffsetElements = ice.dataOffsetElements;
     loopStart = ice.programPtr;
+    ResetAllRegs();
     
     // Parse the inner loop
     if ((res = parseProgram()) != E_END && res != VALID) {
         return res;
-    }
-    
-    // Needs to be the end of a line
-    if (!CheckEOL()) {
-        return E_SYNTAX;
     }
     
     // First add the step to the variable, if the step is 0 we don't need this
@@ -1492,6 +1488,7 @@ static uint8_t functionFor(int token) {
     }
     
     smallCode = JumpForward(jumpToCond, ice.programPtr, tempDataOffsetElements, tempGotoElements, tempLblElements);
+    ResetAllRegs();
     
     // If both the step and the end point are a number, the variable is already in HL
     if (!(endPointIsNumber && stepIsNumber)) {
@@ -1548,6 +1545,7 @@ static uint8_t functionPrgm(int token) {
     LD_HL_IMM(tempProgramPtr - ice.programData + PRGM_START + 28);
     memcpy(ice.programPtr, PrgmData, 20);
     ice.programPtr += 20;
+    ResetAllRegs();
     
     return VALID;
 }
@@ -1560,9 +1558,12 @@ static uint8_t functionCustom(int token) {
         if (tok == tCall) {
             insertGotoLabel();
             CALL(0);
+            ResetAllRegs();
+            
             return VALID;
         } else {
             SeekMinus1();
+            
             return parseExpression(token);
         }
     } else {
@@ -1582,12 +1583,16 @@ static uint8_t functionLbl(int token) {
     }
     labelCurr->addr = (uint24_t)ice.programPtr;
     labelCurr->LblGotoElements = ice.amountOfLbls;
+    
+    ResetAllRegs();
+    
     return VALID;
 }
 
 static uint8_t functionGoto(int token) {
     insertGotoLabel();
     JP(0);
+    
     return VALID;
 }
 
@@ -1612,6 +1617,10 @@ static uint8_t functionPause(int token) {
         CALL(_GetCSC);
         CP_A(9);
         JR_NZ(-8);
+        ResetReg(OUTPUT_IN_HL);
+        reg.AIsNumber = true;
+        reg.AIsVariable = false;
+        reg.AValue = 9;
     } else {
         uint8_t res;
         
@@ -1622,7 +1631,12 @@ static uint8_t functionPause(int token) {
         AnsToHL();
         
         CallRoutine(&ice.usedAlreadyPause, &ice.PauseAddr, (uint8_t*)PauseData, SIZEOF_PAUSE_DATA);
+        reg.HLIsNumber = reg.DEIsNumber = true;
+        reg.HLIsVariable = reg.DEIsVariable = false;
+        reg.HLValue = reg.DEValue = -1;
+        ResetReg(OUTPUT_IN_BC);
     }
+    
     return VALID;
 }
 
@@ -1654,6 +1668,7 @@ static uint8_t functionInput(int token) {
     // Call the right routine
     ProgramPtrToOffsetStack();
     CALL(ice.InputAddr);
+    ResetAllRegs();
     
     return VALID;
 }
@@ -1681,6 +1696,9 @@ static uint8_t functionBB(int token) {
                 return E_SYNTAX;
             }
         }
+        
+        ResetAllRegs();
+        
         return VALID;
     }
     

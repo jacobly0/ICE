@@ -11,6 +11,7 @@
 
 ice_t ice;
 expr_t expr;
+reg_t reg;
 
 const char *infoStr = "ICE Compiler v2.0 - By Peter \"PT_\" Tillema";
 extern label_t labelStack[100];
@@ -265,6 +266,10 @@ findNextLabel:;
             *tempDataOffsetStackPtr += offset;
         }
         totalSize = ice.programSize + programDataSize + 3;
+        
+        if (ice.startedGRAPHX && !ice.endedGRAPHX) {
+            displayError(W_CLOSE_GRAPHX);
+        }
         
 #ifndef COMPUTER_ICE
         ice.outPrgm = _open(ice.outName);

@@ -14,6 +14,7 @@
 #define SIZEOF_XOR_DATA    13
 #define SIZEOF_INPUT_DATA  90
 #define SIZEOF_PAUSE_DATA  20
+#define SIZEOF_MALLOC_DATA 21
 
 #define tDefineSprite      0x0A
 #define tCall              0x0B
@@ -75,6 +76,9 @@ typedef struct {
     bool     lastTokenIsReturn;                             // Last token is a "Return", so we can omit our "ret" :)
     bool     modifiedIY;                                    // Some routines modify IY, and some routines needs it
     bool     inDispExpression;                              // Used for optimizing <variable>+<number> that it doesn't overwrite IY
+    bool     startedGRAPHX;
+    bool     startedFILEIOC;
+    bool     endedGRAPHX;
     
     bool     usedAlreadyRand;                               // Only once the "rand" routine in the program data
     uint24_t randAddr;                                      // Address of the "rand" routine in the program data
@@ -102,6 +106,9 @@ typedef struct {
     
     bool     usedAlreadyLoadTilemap;                        // Only once the "LoadData(" routine in the program data
     uint24_t LoadTilemapAddr;                               // Address of the "LoadData(" routine in the program data
+    
+    bool     usedAlreadyMalloc;                             // Only once the "Alloc(" routine in the program data
+    uint24_t MallocAddr;                                    // Address of the "Alloc(" routine in the program data
 } ice_t;
 
 typedef struct {
@@ -118,9 +125,34 @@ typedef struct {
     uint8_t  ZeroCarryFlagRemoveAmountOfBytes;
     uint8_t  outputRegister;
     uint8_t  outputReturnRegister;
+    uint8_t  SizeOfOutputNumber;
     
     uint24_t outputNumber;
 } expr_t;
+
+typedef struct {
+    bool     HLIsNumber;
+    bool     HLIsVariable;
+    bool     DEIsNumber;
+    bool     DEIsVariable;
+    bool     BCIsNumber;
+    bool     BCIsVariable;
+    bool     AIsNumber;
+    bool     AIsVariable;
+    bool     tempBool;
+    
+    uint8_t  HLVariable;
+    uint8_t  DEVariable;
+    uint8_t  BCVariable;
+    uint8_t  AValue;
+    uint8_t  AVariable;
+    uint8_t  tempVariable;
+    
+    uint24_t HLValue;
+    uint24_t DEValue;
+    uint24_t BCValue;
+    uint24_t tempValue;
+} reg_t;
 
 typedef struct {
     char     name[10];
@@ -137,6 +169,7 @@ typedef struct {
 
 extern ice_t ice;
 extern expr_t expr;
+extern reg_t reg;
 extern variable_t variable;
 
 void preScanProgram(uint24_t a[], uint8_t*, bool);
@@ -155,6 +188,7 @@ void GetKeyFastData(void);
 void GetKeyFastData2(void);
 void StringStoData(void);
 void InputData(void);
+void MallocData(void);
 void SinCosData(void);
 void PrgmData(void);
 void StringConcatenateData(void);

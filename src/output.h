@@ -30,6 +30,7 @@
 #define __idvrmu          0x000144
 #define __imul_b          0x000150
 #define __imuls           0x000154
+#define __ineg            0x000160
 #define __ior             0x000168
 #define __ixor            0x000198
 
@@ -39,13 +40,19 @@
 #define OP_DJNZ       0x10
 #define OP_LD_DE      0x11
 #define OP_INC_DE     0x13
+#define OP_INC_D      0x14
+#define OP_DEC_D      0x15
+#define OP_LD_D       0x16
 #define OP_JR         0x18
 #define OP_ADD_HL_DE  0x19
 #define OP_LD_A_DE    0x1A
 #define OP_DEC_DE     0x1B
+#define OP_LD_E       0x1E
 #define OP_JR_NZ      0x20
 #define OP_LD_HL      0x21
 #define OP_INC_HL     0x23
+#define OP_INC_H      0x24
+#define OP_DEC_H      0x25
 #define OP_LD_H       0x26
 #define OP_JR_Z       0x28
 #define OP_ADD_HL_HL  0x29
@@ -72,6 +79,7 @@
 #define OP_LD_A_E     0x7B
 #define OP_LD_A_L     0x7D
 #define OP_LD_A_HL    0x7E
+#define OP_ADD_A_L    0x85
 #define OP_ADD_A_A    0x87
 #define OP_SUB_A_D    0x92
 #define OP_SBC_A_A    0x9F
@@ -126,77 +134,79 @@
     } while (0)
 #endif
 
-#define LD_A_IND_IX_OFF(off)  do { output(uint16_t, 0x7EDD); output(uint8_t, off); } while (0)
-#define LD_BC_IND_IX_OFF(off) do { output(uint16_t, 0x07DD); output(uint8_t, off); } while (0)
-#define LD_DE_IND_IX_OFF(off) do { output(uint16_t, 0x17DD); output(uint8_t, off); } while (0)
-#define LD_HL_IND_IX_OFF(off) do { output(uint16_t, 0x27DD); output(uint8_t, off); } while (0)
+#define LD_A_IND_IX_OFF(off)  do { LoadRegVariable(OUTPUT_IN_A, off); } while (0)
+#define LD_BC_IND_IX_OFF(off) do { LoadRegVariable(OUTPUT_IN_BC, off); } while (0)
+#define LD_DE_IND_IX_OFF(off) do { LoadRegVariable(OUTPUT_IN_DE, off); } while (0)
+#define LD_HL_IND_IX_OFF(off) do { LoadRegVariable(OUTPUT_IN_HL, off); } while (0)
 #define LD_IY_IND_IX_OFF(off) do { output(uint16_t, 0x31DD); output(uint8_t, off); } while (0)
-#define LD_IX_OFF_IND_DE(off) do { output(uint16_t, 0x1FDD); output(uint8_t, off); } while (0)
-#define LD_IX_OFF_IND_HL(off) do { output(uint16_t, 0x2FDD); output(uint8_t, off); } while (0)
+#define LD_IX_OFF_IND_DE(off) do { output(uint16_t, 0x1FDD); output(uint8_t, off); reg.DEIsVariable = true; reg.DEVariable = off; } while (0)
+#define LD_IX_OFF_IND_HL(off) do { output(uint16_t, 0x2FDD); output(uint8_t, off); reg.HLIsVariable = true; reg.HLVariable = off; } while (0)
 #define LD_IX_IMM(val)        do { output(uint16_t, 0x21DD); output(uint24_t, val); } while (0)
 #define LD_IY_IMM(val)        do { output(uint16_t, 0x21FD); output(uint24_t, val); } while (0)
-#define LEA_HL_IY_OFF(off)    do { output(uint16_t, 0x23ED); output(uint8_t, off); } while (0)
+#define LEA_HL_IY_OFF(off)    do { output(uint16_t, 0x23ED); output(uint8_t, off); ResetReg(OUTPUT_IN_HL); } while (0)
 
-#define LD_BC_IMM(val)        do { output(uint8_t, OP_LD_BC); output(uint24_t, val); } while (0)
-#define LD_DE_IMM(val)        do { output(uint8_t, OP_LD_DE); output(uint24_t, val); } while (0)
-#define LD_HL_IMM(val)        do { output(uint8_t, OP_LD_HL); output(uint24_t, val); } while (0)
+#define LD_BC_IMM(val)        do { LoadRegValue(OUTPUT_IN_BC, val); } while (0)
+#define LD_DE_IMM(val)        do { LoadRegValue(OUTPUT_IN_DE, val); } while (0)
+#define LD_HL_IMM(val)        do { LoadRegValue(OUTPUT_IN_HL, val); } while (0)
 #define LD_IMM_A(val)         do { output(uint8_t, OP_LD_IMM_A); output(uint24_t, val); } while (0)
 #define LD_SIS_IMM_HL(val)    do { output(uint16_t, 0x2240); output(uint16_t, val); } while (0)
 #define LD_SIS_HL(val)        do { output(uint16_t, 0x2140); output(uint16_t, val); } while (0)
-#define LD_HL_ADDR(val)       do { output(uint8_t, 0x2A); output(uint24_t, val); } while (0)
+#define LD_HL_ADDR(val)       do { output(uint8_t, 0x2A); output(uint24_t, val); ResetReg(OUTPUT_IN_HL); } while (0)
 #define LD_ADDR_HL(val)       do { output(uint8_t, 0x22); output(uint24_t, val); } while (0)
 #define LD_ADDR_DE(val)       do { output(uint16_t, 0x53ED); output(uint24_t, val); } while (0)
-#define LD_A_ADDR(val)        do { output(uint8_t, 0x3A); output(uint24_t, val); } while (0)
+#define LD_A_ADDR(val)        do { output(uint8_t, 0x3A); output(uint24_t, val); ResetReg(OUTPUT_IN_A); } while (0)
 #define LD_ADDR_A(val)        do { output(uint8_t, 0x32); output(uint24_t, val); } while (0)
-#define LD_HL_HL()            do { output(uint16_t, 0x27ED); } while (0)
-#define LD_HL_DE()            do { output(uint16_t, 0x1FED); } while (0)
+#define LD_HL_HL()            do { output(uint16_t, 0x27ED); ResetReg(OUTPUT_IN_HL); } while (0)
+#define LD_HL_DE()            do { output(uint16_t, 0x1FED); ResetReg(OUTPUT_IN_HL); } while (0)
 #define LD_HL_VAL(val)        do { output(uint16_t, 0x36 + val * 256); } while (0)
 
-#define LD_A(val)             do { output(uint16_t, val * 256 + OP_LD_A); } while (0)
-#define LD_B(val)             do { output(uint8_t, OP_LD_B); output(uint8_t, val); } while (0)
-#define LD_C(val)             do { output(uint8_t, OP_LD_C); output(uint8_t, val); } while (0)
-#define LD_H(val)             do { output(uint8_t, OP_LD_H); output(uint8_t, val); } while (0)
-#define LD_L(val)             do { output(uint8_t, OP_LD_L); output(uint8_t, val); } while (0)
+#define LD_A(val)             do { output(uint16_t, val * 256 + OP_LD_A); reg.AIsNumber = true; reg.AIsVariable = false; reg.AValue = val; } while (0)
+#define LD_B(val)             do { output(uint8_t, OP_LD_B); output(uint8_t, val); ResetReg(OUTPUT_IN_BC); } while (0)
+#define LD_C(val)             do { output(uint8_t, OP_LD_C); output(uint8_t, val); ResetReg(OUTPUT_IN_BC); } while (0)
+#define LD_H(val)             do { output(uint8_t, OP_LD_H); output(uint8_t, val); ResetReg(OUTPUT_IN_HL); } while (0)
+#define LD_L(val)             do { output(uint8_t, OP_LD_L); output(uint8_t, val); ResetReg(OUTPUT_IN_HL); } while (0)
 #define LD_HL_A()             do { output(uint8_t, OP_LD_HL_A); } while (0)
 #define LD_HL_D()             do { output(uint8_t, OP_LD_HL_D); } while (0)
 #define LD_HL_E()             do { output(uint8_t, OP_LD_HL_E); } while (0)
-#define LD_A_DE()             do { output(uint8_t, OP_LD_A_DE);} while (0)
-#define LD_A_HL()             do { output(uint8_t, OP_LD_A_HL); } while (0)
-#define LD_B_A()              do { output(uint8_t, OP_LD_B_A); } while (0)
-#define LD_C_A()              do { output(uint8_t, OP_LD_C_A); } while (0)
-#define LD_D_A()              do { output(uint8_t, OP_LD_D_A); } while (0)
-#define LD_E_A()              do { output(uint8_t, OP_LD_E_A); } while (0)
-#define LD_L_A()              do { output(uint8_t, OP_LD_L_A); } while (0)
-#define LD_A_B()              do { output(uint8_t, OP_LD_A_B); } while (0)
-#define LD_A_D()              do { output(uint8_t, OP_LD_A_D); } while (0)
-#define LD_A_E()              do { output(uint8_t, OP_LD_A_E); } while (0)
-#define LD_A_L()              do { output(uint8_t, OP_LD_A_L); } while (0)
+#define LD_A_DE()             do { output(uint8_t, OP_LD_A_DE); ResetReg(OUTPUT_IN_A); } while (0)
+#define LD_A_HL()             do { output(uint8_t, OP_LD_A_HL); ResetReg(OUTPUT_IN_A); } while (0)
+#define LD_B_A()              do { output(uint8_t, OP_LD_B_A); ResetReg(OUTPUT_IN_BC); } while (0)
+#define LD_C_A()              do { output(uint8_t, OP_LD_C_A); ResetReg(OUTPUT_IN_BC); } while (0)
+#define LD_D_A()              do { output(uint8_t, OP_LD_D_A); ResetReg(OUTPUT_IN_DE); } while (0)
+#define LD_E_A()              do { output(uint8_t, OP_LD_E_A); ResetReg(OUTPUT_IN_DE); } while (0)
+#define LD_L_A()              do { output(uint8_t, OP_LD_L_A); ResetReg(OUTPUT_IN_HL); } while (0)
+#define LD_A_B()              do { output(uint8_t, OP_LD_A_B); ResetReg(OUTPUT_IN_A); } while (0)
+#define LD_A_D()              do { output(uint8_t, OP_LD_A_D); ResetReg(OUTPUT_IN_A); } while (0)
+#define LD_A_E()              do { output(uint8_t, OP_LD_A_E); ResetReg(OUTPUT_IN_A); } while (0)
+#define LD_A_L()              do { output(uint8_t, OP_LD_A_L); ResetReg(OUTPUT_IN_A); } while (0)
+#define INC_H()               do { output(uint8_t, OP_INC_H); ResetReg(OUTPUT_IN_HL); } while (0)
+#define DEC_H()               do { output(uint8_t, OP_DEC_H); ResetReg(OUTPUT_IN_HL); } while (0)
+#define INC_D()               do { output(uint8_t, OP_INC_D); ResetReg(OUTPUT_IN_HL); } while (0)
+#define DEC_D()               do { output(uint8_t, OP_DEC_D); ResetReg(OUTPUT_IN_HL); } while (0)
 
-#define INC_DE()              do { output(uint8_t, OP_INC_DE); } while (0)
-#define INC_HL()              do { output(uint8_t, OP_INC_HL); } while (0)
-#define DEC_DE()              do { output(uint8_t, OP_DEC_DE); } while (0)
-#define DEC_HL()              do { output(uint8_t, OP_DEC_HL); } while (0)
-#define ADD_HL_DE()           do { output(uint8_t, OP_ADD_HL_DE); } while (0)
-#define ADD_HL_HL()           do { output(uint8_t, OP_ADD_HL_HL); } while (0)
-#define SBC_HL_DE()           do { output(uint16_t, 0x52ED); } while (0)
-#define SBC_HL_HL()           do { output(uint16_t, 0x62ED); } while (0)
-#define MLT_HL()              do { output(uint16_t, 0x6CED); } while (0)
+#define INC_DE()              do { output(uint8_t, OP_INC_DE); ResetReg(OUTPUT_IN_DE); } while (0)
+#define INC_HL()              do { output(uint8_t, OP_INC_HL); ResetReg(OUTPUT_IN_HL); } while (0)
+#define DEC_DE()              do { output(uint8_t, OP_DEC_DE); ResetReg(OUTPUT_IN_DE); } while (0)
+#define DEC_HL()              do { output(uint8_t, OP_DEC_HL); ResetReg(OUTPUT_IN_HL); } while (0)
+#define ADD_HL_DE()           do { output(uint8_t, OP_ADD_HL_DE); ResetReg(OUTPUT_IN_HL); } while (0)
+#define ADD_HL_HL()           do { output(uint8_t, OP_ADD_HL_HL); ResetReg(OUTPUT_IN_HL); } while (0)
+#define SBC_HL_DE()           do { output(uint16_t, 0x52ED); ResetReg(OUTPUT_IN_HL); } while (0)
+#define SBC_HL_HL()           do { output(uint16_t, 0x62ED); ResetReg(OUTPUT_IN_HL); } while (0)
+#define MLT_HL()              do { output(uint16_t, 0x6CED); ResetReg(OUTPUT_IN_HL); } while (0)
     
-#define OR_A_SBC_HL_DE()      do { output(uint24_t, 0x52EDB7); } while (0)
-#define SBC_HL_HL_INC_HL()    do { output(uint24_t, 0x2362ED); } while (0)
+#define OR_A_SBC_HL_DE()      do { output(uint24_t, 0x52EDB7); ResetReg(OUTPUT_IN_HL); } while (0)
+#define SBC_HL_HL_INC_HL()    do { output(uint24_t, 0x2362ED); ResetReg(OUTPUT_IN_HL); } while (0)
     
 #define PUSH_BC()             do { output(uint8_t, OP_PUSH_BC); } while (0)
 #define PUSH_DE()             do { output(uint8_t, OP_PUSH_DE); } while (0)
 #define PUSH_HL()             do { output(uint8_t, OP_PUSH_HL); } while (0)
-#define POP_BC()              do { output(uint8_t, OP_POP_BC); } while (0)
-#define POP_DE()              do { output(uint8_t, OP_POP_DE); } while (0)
-#define POP_HL()              do { output(uint8_t, OP_POP_HL); } while (0)
+#define POP_BC()              do { output(uint8_t, OP_POP_BC); ResetReg(OUTPUT_IN_BC); } while (0)
+#define POP_DE()              do { output(uint8_t, OP_POP_DE); ResetReg(OUTPUT_IN_DE); } while (0)
+#define POP_HL()              do { output(uint8_t, OP_POP_HL); ResetReg(OUTPUT_IN_HL); } while (0)
 
-#define PUSH_REG(a)           do { output(uint8_t, OP_PUSH_HL); } while (0)
-
-#define EX_DE_HL()            do { output(uint8_t, OP_EX_DE_HL); } while (0)
-#define EX_S_DE_HL()          do { output(uint16_t, 0xEB52); } while (0)
-#define EX_SP_HL()            do { output(uint8_t, OP_EX_SP_HL); } while (0)
+#define EX_DE_HL()            do { output(uint8_t, OP_EX_DE_HL); RegChangeHLDE(); } while (0)
+#define EX_S_DE_HL()          do { output(uint16_t, 0xEB52); RegChangeHLDE(); } while (0)
+#define EX_SP_HL()            do { output(uint8_t, OP_EX_SP_HL); ResetReg(OUTPUT_IN_HL); } while (0)
 
 #define RET()                 do { output(uint8_t, OP_RET); } while (0)
 #define RET_Z()               do { output(uint8_t, OP_RET_Z); } while (0)
@@ -213,27 +223,28 @@
 #define JR_Z(off)             do { output(uint8_t, OP_JR_Z); output(uint8_t, off); } while (0)
 #define JR_NC(off)            do { output(uint8_t, OP_JR_NC); output(uint8_t, off); } while (0)
 #define JR_C(off)             do { output(uint8_t, OP_JR_C); output(uint8_t, off); } while (0)
-#define DJNZ(off)             do { output(uint8_t, OP_DJNZ); output(uint8_t, off); } while (0)
+#define DJNZ(off)             do { output(uint8_t, OP_DJNZ); output(uint8_t, off); ResetReg(OUTPUT_IN_BC); } while (0)
     
-#define LDIR()                do { output(uint16_t, 0xB0ED); } while (0)
-#define LDDR()                do { output(uint16_t, 0xB8ED); } while (0)
+#define LDIR()                do { output(uint16_t, 0xB0ED); LoadRegVariable(OUTPUT_IN_BC, 0); ResetReg(OUTPUT_IN_HL); ResetReg(OUTPUT_IN_DE); } while (0)
+#define LDDR()                do { output(uint16_t, 0xB8ED); LoadRegVariable(OUTPUT_IN_BC, 0); ResetReg(OUTPUT_IN_HL); ResetReg(OUTPUT_IN_DE); } while (0)
 
 #define OR_A_A()              do { output(uint8_t, OP_OR_A_A); } while (0)
-#define OR_A_C()              do { output(uint8_t, OP_OR_A_C); } while (0)
-#define XOR_A_A()             do { output(uint8_t, OP_XOR_A_A); } while (0)
-#define AND_A(val)            do { output(uint8_t, OP_AND_A); output(uint8_t, val); } while (0)
+#define OR_A_C()              do { output(uint8_t, OP_OR_A_C); ResetReg(OUTPUT_IN_A); } while (0)
+#define XOR_A_A()             do { output(uint8_t, OP_XOR_A_A); reg.AIsNumber = true; reg.AIsVariable = false; reg.AValue = 0; } while (0)
+#define AND_A(val)            do { output(uint8_t, OP_AND_A); output(uint8_t, val); ResetReg(OUTPUT_IN_A); } while (0)
 #define CP_A(val)             do { output(uint8_t, OP_CP_A); output(uint8_t, val); } while (0)
 #define CCF()                 do { output(uint8_t, OP_CCF); } while (0)
 #define SCF()                 do { output(uint8_t, OP_SCF); } while (0)
-#define SRL_A()               do { output(uint16_t, 0x3FCB); } while (0)
-#define SUB_A(val)            do { output(uint8_t, OP_SUB_A); output(uint8_t, val); } while (0)
-#define SUB_A_D()             do { output(uint8_t, OP_SUB_A_D); } while (0)
-#define ADD_A_A()             do { output(uint8_t, OP_ADD_A_A); } while (0)
-#define ADD_A(val)            do { output(uint8_t, OP_ADD_A); output(uint8_t, val); } while (0)
-#define SBC_A_A()             do { output(uint8_t, OP_SBC_A_A); } while (0)
-#define INC_A()               do { output(uint8_t, OP_INC_A); } while (0)
-#define DEC_A()               do { output(uint8_t, OP_DEC_A); } while (0)
-#define XOR_A(val)            do { output(uint8_t, OP_XOR_A); output(uint8_t, val); } while (0)
-#define OR_A(val)             do { output(uint8_t, OP_OR_A); output(uint8_t, val); } while (0)
+#define SRL_A()               do { output(uint16_t, 0x3FCB); ResetReg(OUTPUT_IN_A); } while (0)
+#define SUB_A(val)            do { output(uint8_t, OP_SUB_A); output(uint8_t, val); ResetReg(OUTPUT_IN_A); } while (0)
+#define SUB_A_D()             do { output(uint8_t, OP_SUB_A_D); ResetReg(OUTPUT_IN_A); } while (0)
+#define ADD_A_A()             do { output(uint8_t, OP_ADD_A_A); ResetReg(OUTPUT_IN_A); } while (0)
+#define ADD_A_L()             do { output(uint8_t, OP_ADD_A_L); ResetReg(OUTPUT_IN_A); } while (0)
+#define ADD_A(val)            do { output(uint8_t, OP_ADD_A); output(uint8_t, val); ResetReg(OUTPUT_IN_A); } while (0)
+#define SBC_A_A()             do { output(uint8_t, OP_SBC_A_A); ResetReg(OUTPUT_IN_A); } while (0)
+#define INC_A()               do { output(uint8_t, OP_INC_A); ResetReg(OUTPUT_IN_A); } while (0)
+#define DEC_A()               do { output(uint8_t, OP_DEC_A); ResetReg(OUTPUT_IN_A); } while (0)
+#define XOR_A(val)            do { output(uint8_t, OP_XOR_A); output(uint8_t, val); ResetReg(OUTPUT_IN_A); } while (0)
+#define OR_A(val)             do { output(uint8_t, OP_OR_A); output(uint8_t, val); ResetReg(OUTPUT_IN_A); } while (0)
 
 #endif

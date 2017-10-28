@@ -15,7 +15,6 @@
 
 uint8_t getIndexOfOperator(uint8_t);
 uint24_t executeOperator(uint24_t, uint24_t, uint8_t);
-void LD_HL_NUMBER(uint24_t);
 void LD_HL_STRING(uint24_t);
 uint8_t parseOperator(element_t*, element_t*, element_t*, element_t*);
 
@@ -25,6 +24,7 @@ void GEInsert(void);
 void AddStringString(void);
 void StoStringString(void);
 void StoStringVariable(void);
+void StoStringChainAns(void);
 
 void MultWithNumber(uint24_t, uint8_t*, bool);
 

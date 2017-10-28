@@ -28,5 +28,6 @@ uint8_t parseFunction2Args(uint24_t, uint8_t, uint8_t, bool);
 uint8_t InsertDataElements(uint8_t, uint24_t, uint8_t, uint8_t);
 void loadGetKeyFastData1(void);
 void loadGetKeyFastData2(void);
+void InsertMallocRoutine(void);
 
 #endif
