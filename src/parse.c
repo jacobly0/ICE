@@ -758,7 +758,7 @@ uint8_t parsePostFixFromIndexToIndex(uint24_t startIndex, uint24_t endIndex) {
                 // We need to push HL since it isn't used in the next operator/function
                 (&outputPtr[tempIndex])->type = TYPE_CHAIN_PUSH;
                 PushHLDE();
-                expr.outputRegister = OUTPUT_IN_HL;
+                expr.outputRegister = REGISTER_HL;
             }
             
             // Get the previous entries, -2 is the previous one, -3 is the one before etc
@@ -802,7 +802,7 @@ uint8_t parsePostFixFromIndexToIndex(uint24_t startIndex, uint24_t endIndex) {
                     // We need to push HL since it isn't used in the next operator/function
                     (&outputPtr[tempIndex])->type = TYPE_CHAIN_PUSH;
                     PushHLDE();
-                    expr.outputRegister = OUTPUT_IN_HL;
+                    expr.outputRegister = REGISTER_HL;
                 }
                 
                 if ((temp = parseFunction(loopIndex)) != VALID) {
@@ -1296,9 +1296,9 @@ static uint8_t functionOutput(int token) {
         } else {
             if (expr.outputIsVariable) {
                 *(ice.programPtr - 2) = OP_LD_A_HL;
-            } else if (expr.outputRegister == OUTPUT_IN_HL) {
+            } else if (expr.outputRegister == REGISTER_HL) {
                 LD_A_L();
-            } else if (expr.outputRegister == OUTPUT_IN_DE) {
+            } else if (expr.outputRegister == REGISTER_DE) {
                 LD_A_E();
             }
             LD_IMM_A(curCol);
@@ -1306,9 +1306,9 @@ static uint8_t functionOutput(int token) {
     } else {
         if (expr.outputIsVariable) {
             *(ice.programPtr - 2) = OP_LD_A_HL;
-        } else if (expr.outputRegister == OUTPUT_IN_HL) {
+        } else if (expr.outputRegister == REGISTER_HL) {
             LD_A_L();
-        } else if (expr.outputRegister == OUTPUT_IN_DE) {
+        } else if (expr.outputRegister == REGISTER_DE) {
             LD_A_E();
         }
         LD_IMM_A(curRow);
@@ -1327,9 +1327,9 @@ static uint8_t functionOutput(int token) {
             ice.programPtr -= 2;
         } else if (expr.outputIsVariable) {
             *(ice.programPtr - 2) = OP_LD_A_HL;
-        } else if (expr.outputRegister == OUTPUT_IN_HL) {
+        } else if (expr.outputRegister == REGISTER_HL) {
             LD_A_L();
-        } else if (expr.outputRegister == OUTPUT_IN_DE) {
+        } else if (expr.outputRegister == REGISTER_DE) {
             LD_A_E();
         }
         LD_IMM_A(curCol);
@@ -1396,7 +1396,7 @@ static uint8_t functionFor(int token) {
     
     // Load the value in the variable
     MaybeAToHL();
-    if (expr.outputRegister == OUTPUT_IN_HL) {
+    if (expr.outputRegister == REGISTER_HL) {
         LD_IX_OFF_IND_HL(variable);
     } else {
         LD_IX_OFF_IND_DE(variable);
@@ -1540,6 +1540,11 @@ static uint8_t functionPrgm(int token) {
     }
     *ice.programDataPtr++ = 0;
     
+    // Check if valid program name
+    if (!a || a == 9) {
+        return E_INVALID_PROG;
+    }
+    
     // Insert the routine to run it
     CALL(_Mov9ToOP1);
     LD_HL_IMM(tempProgramPtr - ice.programData + PRGM_START + 28);
@@ -1617,7 +1622,7 @@ static uint8_t functionPause(int token) {
         CALL(_GetCSC);
         CP_A(9);
         JR_NZ(-8);
-        ResetReg(OUTPUT_IN_HL);
+        ResetReg(REGISTER_HL);
         reg.AIsNumber = true;
         reg.AIsVariable = false;
         reg.AValue = 9;
@@ -1634,7 +1639,7 @@ static uint8_t functionPause(int token) {
         reg.HLIsNumber = reg.DEIsNumber = true;
         reg.HLIsVariable = reg.DEIsVariable = false;
         reg.HLValue = reg.DEValue = -1;
-        ResetReg(OUTPUT_IN_BC);
+        ResetReg(REGISTER_BC);
     }
     
     return VALID;
@@ -1763,11 +1768,11 @@ static uint8_t tokenUnimplemented(int token) {
 
 void optimizeZeroCarryFlagOutput(void) {
     if (!expr.AnsSetZeroFlag && !expr.AnsSetCarryFlag && !expr.AnsSetZeroFlagReversed && !expr.AnsSetCarryFlagReversed) {
-        if (expr.outputRegister == OUTPUT_IN_HL) {
+        if (expr.outputRegister == REGISTER_HL) {
             ADD_HL_DE();
             OR_A_SBC_HL_DE();
             expr.AnsSetZeroFlag = true;
-        } else if (expr.outputRegister == OUTPUT_IN_DE) {
+        } else if (expr.outputRegister == REGISTER_DE) {
             SCF();
             SBC_HL_HL();
             ADD_HL_DE();

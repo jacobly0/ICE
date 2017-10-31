@@ -1,11 +1,11 @@
 #ifndef OPERATOR_H
 #define OPERATOR_H
 
-#define OUTPUT_IN_HL    0
-#define OUTPUT_IN_DE    1
-#define OUTPUT_IN_BC    2
-#define OUTPUT_IN_HL_DE 3
-#define OUTPUT_IN_A     4
+#define REGISTER_HL    0
+#define REGISTER_DE    1
+#define REGISTER_BC    2
+#define REGISTER_HL_DE 3
+#define REGISTER_A     4
 
 #define NO_PUSH   false
 #define NEED_PUSH true

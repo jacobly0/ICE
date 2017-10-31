@@ -26,23 +26,23 @@ void ProgramDataPtrToOffsetStack(void) {
 
 void AnsToHL(void) {
     MaybeAToHL();
-    if (expr.outputRegister == OUTPUT_IN_DE) {
+    if (expr.outputRegister == REGISTER_DE) {
         EX_DE_HL();
     }
-    expr.outputRegister = OUTPUT_IN_HL;
+    expr.outputRegister = REGISTER_HL;
 }
 
 void AnsToDE(void) {
-    if (expr.outputRegister == OUTPUT_IN_HL) {
+    if (expr.outputRegister == REGISTER_HL) {
         EX_DE_HL();
-    } else if (expr.outputRegister == OUTPUT_IN_A) {
+    } else if (expr.outputRegister == REGISTER_A) {
         LD_DE_IMM(0);
         LD_E_A();
         reg.DEIsNumber = reg.AIsNumber;
         reg.DEIsVariable = false;
         reg.DEValue = reg.AValue;
     }
-    expr.outputRegister = OUTPUT_IN_DE;
+    expr.outputRegister = REGISTER_DE;
 }
 
 void ChangeRegValue(uint24_t inValue, uint24_t outValue, uint8_t opcodes[7]) {
@@ -94,7 +94,7 @@ void ChangeRegValue(uint24_t inValue, uint24_t outValue, uint8_t opcodes[7]) {
 }
 
 void LoadRegValue(uint8_t reg2, uint24_t val) {
-    if (reg2 == OUTPUT_IN_HL) {
+    if (reg2 == REGISTER_HL) {
         if (reg.HLIsNumber) {
             uint8_t opcodes[7] = {OP_INC_HL, OP_DEC_HL, OP_INC_H, OP_DEC_H, OP_LD_L, OP_LD_H, OP_LD_HL};
             
@@ -111,7 +111,7 @@ void LoadRegValue(uint8_t reg2, uint24_t val) {
         reg.HLIsNumber = true;
         reg.HLIsVariable = false;
         reg.HLValue = val;
-    } else if (reg2 == OUTPUT_IN_DE) {
+    } else if (reg2 == REGISTER_DE) {
         if (reg.DEIsNumber) {
             uint8_t opcodes[7] = {OP_INC_DE, OP_DEC_DE, OP_INC_D, OP_DEC_D, OP_LD_E, OP_LD_D, OP_LD_DE};
             
@@ -135,7 +135,7 @@ void LoadRegValue(uint8_t reg2, uint24_t val) {
 }
 
 void LoadRegVariable(uint8_t reg2, uint8_t variable) {
-    if (reg2 == OUTPUT_IN_HL) {
+    if (reg2 == REGISTER_HL) {
         if (!(reg.HLIsVariable && reg.HLVariable == variable)) {
             output(uint16_t, 0x27DD);
             output(uint8_t, variable);
@@ -143,7 +143,7 @@ void LoadRegVariable(uint8_t reg2, uint8_t variable) {
             reg.HLIsVariable = true;
             reg.HLVariable = variable;
         }
-    } else if (reg2 == OUTPUT_IN_DE) {
+    } else if (reg2 == REGISTER_DE) {
         if (!(reg.DEIsVariable && reg.DEVariable == variable)) {
             output(uint16_t, 0x17DD);
             output(uint8_t, variable);
@@ -151,7 +151,7 @@ void LoadRegVariable(uint8_t reg2, uint8_t variable) {
             reg.DEIsVariable = true;
             reg.DEVariable = variable;
         }
-    } else if (reg2 == OUTPUT_IN_BC) {
+    } else if (reg2 == REGISTER_BC) {
         reg.BCIsNumber = false;
         reg.BCIsVariable = true;
         reg.BCVariable = variable;
@@ -167,18 +167,18 @@ void LoadRegVariable(uint8_t reg2, uint8_t variable) {
 }
 
 void ResetAllRegs(void) {
-    ResetReg(OUTPUT_IN_HL);
-    ResetReg(OUTPUT_IN_DE);
-    ResetReg(OUTPUT_IN_BC);
-    ResetReg(OUTPUT_IN_A);
+    ResetReg(REGISTER_HL);
+    ResetReg(REGISTER_DE);
+    ResetReg(REGISTER_BC);
+    ResetReg(REGISTER_A);
 }
 
 void ResetReg(uint8_t reg2) {
-    if (reg2 == OUTPUT_IN_HL) {
+    if (reg2 == REGISTER_HL) {
         reg.HLIsNumber = reg.HLIsVariable = false;
-    } else if (reg2 == OUTPUT_IN_DE) {
+    } else if (reg2 == REGISTER_DE) {
         reg.DEIsNumber = reg.DEIsVariable = false;
-    } else if (reg2 == OUTPUT_IN_BC) {
+    } else if (reg2 == REGISTER_BC) {
         reg.BCIsNumber = reg.BCIsVariable = false;
     } else {
         reg.AIsNumber = reg.AIsVariable = false;
@@ -205,14 +205,14 @@ void RegChangeHLDE(void) {
 }
 
 void MaybeAToHL(void) {
-    if (expr.outputRegister == OUTPUT_IN_A) {
+    if (expr.outputRegister == REGISTER_A) {
         OR_A_A();
         SBC_HL_HL();
         LD_L_A();
         reg.HLIsNumber = reg.AIsNumber;
         reg.HLIsVariable = false;
         reg.HLValue = reg.AValue;
-        expr.outputRegister = OUTPUT_IN_HL;
+        expr.outputRegister = REGISTER_HL;
     }
 }
 
@@ -257,7 +257,7 @@ void MaybeLDIYFlags(void) {
 
 void PushHLDE(void) {
     MaybeAToHL();
-    if (expr.outputRegister == OUTPUT_IN_HL) {
+    if (expr.outputRegister == REGISTER_HL) {
         PUSH_HL();
     } else {
         PUSH_DE();
