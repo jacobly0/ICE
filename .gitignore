@@ -4,3 +4,5 @@ obj
 *.bin
 *.o
 *.exe
+*.lib
+*.8xv
