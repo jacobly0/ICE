@@ -538,7 +538,8 @@ stackToOutputReturn2:
                 (uint8_t)outputCurr->operand != tSum &&
                 (uint8_t)outputCurr->operand != tVarOut &&
                 (uint8_t)outputCurr->operand != tRand &&
-                (uint8_t)outputCurr->operand != tGetKey) {
+                (uint8_t)outputCurr->operand != tGetKey &&
+                (uint8_t)outputCurr->operand != t2ByteTok) {
             uint24_t outputPrevOperand = outputPrev->operand, outputPrevPrevOperand = outputPrevPrev->operand;
             
             for (a = 1; a <= index; a++) {
@@ -570,12 +571,6 @@ stackToOutputReturn2:
                         return E_ICE_ERROR;
                     }
                     temp = outputPrevOperand % outputPrevPrevOperand;
-                    break;
-                case t2ByteTok:
-                    if ((uint8_t)(outputCurr->operand >> 16) != tLength) {
-                        return E_ICE_ERROR;
-                    }
-                    temp = strlen((char*)outputPrevOperand);
                     break;
                 case tSin:
                     temp = 255*sin((double)outputPrevOperand * (2 * M_PI / 256));

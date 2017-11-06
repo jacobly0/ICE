@@ -49,7 +49,7 @@ void main(void) {
     char buf[30], *var_name;
     void *search_pos = NULL;
     
-#ifndef COMPUTER_ICE  
+#ifndef COMPUTER_ICE
     // Install hooks
     ti_CloseAll();
     ice.inPrgm = ti_Open("ICEAPPV", "r");

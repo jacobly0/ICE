@@ -1054,7 +1054,7 @@ uint8_t parseFunction1Arg(uint24_t index, uint8_t outputRegister1, uint8_t amoun
         return E_ARGUMENTS;
     }
     
-    if (outputPrevType == TYPE_NUMBER) {
+    if ((outputPrevType & 0x7F) == TYPE_NUMBER) {
         LD_HL_IMM(outputOperand);
     } else if (outputPrevType == TYPE_VARIABLE) {
         LD_HL_IND_IX_OFF(outputOperand);
