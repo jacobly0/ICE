@@ -979,10 +979,10 @@ uint8_t parseFunction(uint24_t index) {
         // Get the amount of arguments, and call the function
         if (function == tDet) {
             temp = GraphxArgs[function2 * 2];
-            CALL(ice.GraphxRoutinesStack[function2]);
+            CALL((uint24_t)ice.CBaseAddress + ice.GraphxRoutinesStack[function2]);
         } else {
             temp = FileiocArgs[function2 * 2];
-            CALL(ice.FileiocRoutinesStack[function2]);
+            CALL((uint24_t)ice.CBaseAddress + ice.FileiocRoutinesStack[function2]);
         }
         
         // Check if unimplemented function

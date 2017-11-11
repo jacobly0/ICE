@@ -868,6 +868,8 @@ static uint8_t functionI(int token) {
         else if (!ice.gotIconDescription) {
             uint8_t b = 0;
             
+            ice.programSize = ice.programPtr - ice.programData;
+            
             // Move header to take place for the icon and description, setup pointer
             memcpy(ice.programData + 600, ice.programData, ice.programSize);
             ice.programPtr = ice.programData;
@@ -923,14 +925,20 @@ static uint8_t functionI(int token) {
             memcpy(ice.programPtr + 1, ice.programData + 600, ice.programSize);
             
             // If C functions were detected, update the pointers
+            // Magic numbers everywhere! :D
             if (ice.programSize > 10) {
                 w24(ice.programPtr + 2, r24(ice.programPtr + 2) + offset);
                 w24(ice.programPtr + 53, r24(ice.programPtr + 53) + offset);
                 w24(ice.programPtr + 66, r24(ice.programPtr + 66) + offset);
+                if (ice.amountOfGraphxRoutinesUsed || ice.amountOfFileiocRoutinesUsed) {
+                    uint8_t *writeAddr = ice.programPtr + ice.programSize - 16;
+                    w24(writeAddr, r24(writeAddr) + offset);
+                }
             }
             ice.programPtr += ice.programSize + 1;
-            
+            ice.CBaseAddress += offset;
             ice.gotIconDescription = true;
+            
             return VALID;
         }
         

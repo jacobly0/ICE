@@ -15,6 +15,7 @@
 #define SIZEOF_INPUT_DATA  90
 #define SIZEOF_PAUSE_DATA  20
 #define SIZEOF_MALLOC_DATA 21
+#define SIZEOF_CHEADER     116
 
 #define tDefineSprite      0x0A
 #define tCall              0x0B
@@ -37,6 +38,7 @@ typedef struct {
     uint8_t  *programPtr;                                   // Pointer to the program
     uint8_t  *programPtrBackup;                             // Same as above
     uint8_t  *programDataPtr;                               // Pointer to the program data
+    uint8_t  *CBaseAddress;                                 // Base of the C JP's
     uint8_t  amountOfGraphxRoutinesUsed;                    // Used for the relocation of C functions at the beginning of the program - GRAPHX
     uint8_t  amountOfFileiocRoutinesUsed;                   // Used for the relocation of C functions at the beginning of the program - FILEIOC
     uint8_t  tempToken;                                     // Used for functions, i.e. For(, where an argument can stop with either a comma or a parentheses

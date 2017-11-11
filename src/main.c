@@ -167,19 +167,20 @@ void main(void) {
     ice.programData   = malloc(50000);
 #endif
 
-    ice.programPtr     = ice.programData;
+    ice.programPtr     = ice.programData + SIZEOF_CHEADER;
     ice.programDataPtr = ice.programDataData;
     ice.LblPtr         = ice.LblStack;
     ice.GotoPtr        = ice.GotoStack;
+    ice.CBaseAddress   = ice.programPtr;
     
     // Pre-scan program (and subprograms) and find all the GRAPHX routines
-    memcpy(ice.programPtr, CHeaderData, 116);
-    ice.programPtr += 116;
+    memcpy(ice.programData, CHeaderData, SIZEOF_CHEADER);
     preScanProgram(ice.GraphxRoutinesStack, &ice.amountOfGraphxRoutinesUsed, true);
     
     // If there are no GRAPHX functions, remove the GRAPHX header
     if (!ice.amountOfGraphxRoutinesUsed) {
         ice.programPtr -= 9;
+        ice.CBaseAddress -= 9;
     }
     
     // Prescan the program again to detect all the FILEIOC routines
@@ -196,6 +197,8 @@ void main(void) {
             ice.programPtr = ice.programData;
         }
     }
+    
+    ice.CBaseAddress -= ice.programData - (uint8_t*)PRGM_START;
     
     // Clear up program before and after running
     if (ice.amountOfGraphxRoutinesUsed || ice.amountOfFileiocRoutinesUsed) {
@@ -420,7 +423,7 @@ void preScanProgram(uint24_t CFunctionsStack[], uint8_t *CFunctionsCounter, bool
             
             // Insert the C routine
             if (!CFunctionsStack[tok]) {
-                CFunctionsStack[tok] = ice.programPtr - ice.programData + PRGM_START;
+                CFunctionsStack[tok] = ice.programPtr - ice.CBaseAddress;
                 JP(tok * 3);
                 (*CFunctionsCounter)++;
             }
