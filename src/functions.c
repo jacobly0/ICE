@@ -706,10 +706,7 @@ uint8_t parseFunction(uint24_t index) {
                 POP_BC();
                 POP_HL();
             }
-            if (outputPrevType == TYPE_CHAIN_ANS) {
-                PushHLDE();
-                POP_BC();
-            } else if (outputPrevPrevType == TYPE_CHAIN_ANS) {
+            if (outputPrevPrevType == TYPE_CHAIN_ANS) {
                 AnsToHL();
             }
         } else if (outputPrevPrevPrevType == TYPE_CHAIN_ANS) {
@@ -740,7 +737,7 @@ uint8_t parseFunction(uint24_t index) {
         }
         if (outputPrevType == TYPE_NUMBER) {
             LD_BC_IMM(outputPrevOperand);
-        } else if (outputPrevPrevPrevType == TYPE_VARIABLE) {
+        } else if (outputPrevType == TYPE_VARIABLE) {
             LD_BC_IND_IX_OFF(outputPrevOperand);
         }
         if (amountOfArguments == 4) {

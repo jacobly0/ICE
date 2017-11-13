@@ -793,7 +793,7 @@ uint8_t parsePostFixFromIndexToIndex(uint24_t startIndex, uint24_t endIndex) {
             // Only execute when it's not a pointer directly after a ->
             if (outputCurr->operand != 0x010108) {
                 // Check if we need to push Ans
-                if (AnsDepth > 1 + amountOfArguments) {
+                if (AnsDepth > 1 + amountOfArguments || (uint8_t)outputCurr->operand == tDet || (uint8_t)outputCurr->operand == tSum) {
                     // We need to push HL since it isn't used in the next operator/function
                     (&outputPtr[tempIndex])->type = TYPE_CHAIN_PUSH;
                     PushHLDE();

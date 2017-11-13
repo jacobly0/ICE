@@ -319,7 +319,7 @@ void CallRoutine(bool *routineBool, uint24_t *routineAddress, const uint8_t *rou
 }
 
 uint8_t GetVariableOffset(uint8_t tok) {
-    char variableName[10] = {0,0,0,0,0,0,0,0,0,0};
+    char variableName[11] = {0};
     variable_t *variableNew;
     uint24_t a = 1, b;
     

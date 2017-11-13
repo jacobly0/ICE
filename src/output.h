@@ -225,8 +225,8 @@
 #define JR_C(off)             do { output(uint8_t, OP_JR_C); output(uint8_t, off); } while (0)
 #define DJNZ(off)             do { output(uint8_t, OP_DJNZ); output(uint8_t, off); ResetReg(REGISTER_BC); } while (0)
     
-#define LDIR()                do { output(uint16_t, 0xB0ED); LoadRegVariable(REGISTER_BC, 0); ResetReg(REGISTER_HL); ResetReg(REGISTER_DE); } while (0)
-#define LDDR()                do { output(uint16_t, 0xB8ED); LoadRegVariable(REGISTER_BC, 0); ResetReg(REGISTER_HL); ResetReg(REGISTER_DE); } while (0)
+#define LDIR()                do { output(uint16_t, 0xB0ED); reg.BCIsNumber = true; reg.BCIsVariable = false; reg.BCValue = 0; ResetReg(REGISTER_HL); ResetReg(REGISTER_DE); } while (0)
+#define LDDR()                do { output(uint16_t, 0xB8ED); reg.BCIsNumber = true; reg.BCIsVariable = false; reg.BCValue = 0; ResetReg(REGISTER_HL); ResetReg(REGISTER_DE); } while (0)
 
 #define OR_A_A()              do { output(uint8_t, OP_OR_A_A); } while (0)
 #define OR_A_C()              do { output(uint8_t, OP_OR_A_C); ResetReg(REGISTER_A); } while (0)
