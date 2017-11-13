@@ -1089,7 +1089,7 @@ uint8_t JumpForward(uint8_t *startAddr, uint8_t *endAddr, uint24_t tempDataOffse
         ice.programPtr -= 2;
         return true;
     } else {
-        w24(startAddr + 1, ice.programPtr - ice.programData + PRGM_START);
+        w24(startAddr + 1, endAddr - ice.programData + PRGM_START);
         return false;
     }
 }
@@ -1115,12 +1115,14 @@ static uint8_t functionWhile(int token) {
     uint24_t tempDataOffsetElements = ice.dataOffsetElements;
     uint8_t tempGotoElements = ice.amountOfGotos;
     uint8_t tempLblElements = ice.amountOfLbls, *programPtrBackup = ice.programPtr;
-    uint8_t *WhileStartAddr = ice.programPtr, *TempStartAddr = WhileStartAddr, res;
+    uint8_t *WhileStartAddr = ice.programPtr, res;
+    uint8_t *WhileRepeatCondStartTemp = WhileRepeatCondStart;
     
     // Basically the same as "Repeat", but jump to condition checking first
     JP(0);
     res = functionRepeat(token);
     JumpForward(WhileStartAddr, WhileRepeatCondStart, tempDataOffsetElements, tempGotoElements, tempLblElements);
+    WhileRepeatCondStart = WhileRepeatCondStartTemp;
     
     return res;
 }
@@ -1146,7 +1148,9 @@ uint8_t functionRepeat(int token) {
     
     // Remind where the "End" is
     RepeatProgEnd = _tell(ice.inPrgm);
-    WhileRepeatCondStart = ice.programPtr;
+    if (token == tWhile) {
+        WhileRepeatCondStart = ice.programPtr;
+    }
     
     // Parse the condition
     _seek(RepeatCondStart, SEEK_SET, ice.inPrgm);
@@ -1720,7 +1724,7 @@ static uint8_t functionBB(int token) {
 #ifdef COMPUTER_ICE
         return E_NO_SUBPROG;
 #else
-        while ((token = _getc()) != EOF && (uint8_t)token != tEnter && a < 9) {
+        while ((token = _getc()) != EOF && (uint8_t)token != tEnter && (uint8_t)token != tRParen && a < 9) {
             tempName[a++] = token;
         }
         
