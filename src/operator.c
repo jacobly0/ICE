@@ -168,7 +168,7 @@ uint8_t parseOperator(element_t *outputPrevPrevPrev, element_t *outputPrevPrev, 
     getEntryOperands();
     
     expr.outputReturnRegister = REGISTER_HL;
-    expr.AnsSetZeroFlag = expr.AnsSetZeroFlagReversed = expr.AnsSetCarryFlag = expr.AnsSetCarryFlagReversed = false;
+    ClearAnsFlags();
     
     if (type1 >= TYPE_STRING && type2 == TYPE_OS_STRING && oper == tStore) {
         StoStringString();
@@ -668,16 +668,17 @@ void EQChainAnsNumber(void) {
         if (oper == tNE) {
             ADD_A(255 - entry2_operand);
             ADD_A(1);
+            expr.AnsSetCarryFlag = true;
+            expr.ZeroCarryFlagRemoveAmountOfBytes = 2;
         } else {
             SUB_A(entry2_operand);
             ADD_A(255);
-            
+            expr.AnsSetZeroFlag = true;
+            expr.ZeroCarryFlagRemoveAmountOfBytes = 4;
         }
         SBC_A_A();
         INC_A();
-        expr.AnsSetCarryFlag = true;
         expr.outputReturnRegister = REGISTER_A;
-        expr.ZeroCarryFlagRemoveAmountOfBytes = 2;
     } else {
         MaybeAToHL();
         if (number && number < 6) {

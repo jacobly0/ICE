@@ -44,6 +44,9 @@ void AnsToDE(void) {
     }
     expr.outputRegister = REGISTER_DE;
 }
+void ClearAnsFlags(void) {
+    expr.AnsSetZeroFlag = expr.AnsSetZeroFlagReversed = expr.AnsSetCarryFlag = expr.AnsSetCarryFlagReversed = false;
+}
 
 void ChangeRegValue(uint24_t inValue, uint24_t outValue, uint8_t opcodes[7]) {
     uint8_t a = 0;

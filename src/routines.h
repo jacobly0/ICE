@@ -6,6 +6,7 @@ void ProgramDataPtrToOffsetStack(void);
 void displayLoadingBarFrame(void);
 void SeekMinus1(void);
 void displayLoadingBar(void);
+void ClearAnsFlags(void);
 void LoadRegValue(uint8_t, uint24_t);
 void LoadRegVariable(uint8_t, uint8_t);
 void ChangeRegValue(uint24_t, uint24_t, uint8_t opcodes[7]);

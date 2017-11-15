@@ -172,7 +172,9 @@ uint8_t parseFunction(uint24_t index) {
     outputPrevType        = outputPrev->type;
     
     expr.outputReturnRegister = REGISTER_HL;
-    expr.AnsSetZeroFlag = expr.AnsSetZeroFlagReversed = expr.AnsSetCarryFlag = expr.AnsSetCarryFlagReversed = false;
+    if (function != tNot) {
+        ClearAnsFlags();
+    }
     
     // rand
     if (function == tRand) {
@@ -254,7 +256,19 @@ uint8_t parseFunction(uint24_t index) {
             SBC_A_A();
             INC_A();
             expr.outputReturnRegister = REGISTER_A;
-            expr.ZeroCarryFlagRemoveAmountOfBytes = 2;
+            if (expr.ZeroCarryFlagRemoveAmountOfBytes) {
+                bool temp = expr.AnsSetZeroFlag;
+                
+                expr.ZeroCarryFlagRemoveAmountOfBytes += 4;
+                expr.AnsSetZeroFlag = expr.AnsSetZeroFlagReversed;
+                expr.AnsSetZeroFlagReversed = temp;
+                temp = expr.AnsSetCarryFlag;
+                expr.AnsSetCarryFlag = expr.AnsSetCarryFlagReversed;
+                expr.AnsSetCarryFlagReversed = temp;
+            } else {
+                expr.ZeroCarryFlagRemoveAmountOfBytes = 2;
+                expr.AnsSetCarryFlag = true;
+            }
         } else {
             if (expr.outputRegister == REGISTER_HL) {
                 LD_DE_IMM(-1);
@@ -264,10 +278,21 @@ uint8_t parseFunction(uint24_t index) {
             }
             ADD_HL_DE();
             SBC_HL_HL_INC_HL();
-            expr.ZeroCarryFlagRemoveAmountOfBytes = 3;
+            if (expr.ZeroCarryFlagRemoveAmountOfBytes) {
+                bool temp = expr.AnsSetZeroFlag;
+                
+                expr.ZeroCarryFlagRemoveAmountOfBytes += 8 - (expr.outputRegister != REGISTER_HL);
+                expr.AnsSetZeroFlag = expr.AnsSetZeroFlagReversed;
+                expr.AnsSetZeroFlagReversed = temp;
+                temp = expr.AnsSetCarryFlag;
+                expr.AnsSetCarryFlag = expr.AnsSetCarryFlagReversed;
+                expr.AnsSetCarryFlagReversed = temp;
+            } else {
+                expr.AnsSetZeroFlag = expr.AnsSetZeroFlagReversed = expr.AnsSetCarryFlagReversed = false;
+                expr.ZeroCarryFlagRemoveAmountOfBytes = 3;
+                expr.AnsSetCarryFlag = true;
+            }
         }
-        
-        expr.AnsSetCarryFlag = true;
     }
     
     // sqrt(
