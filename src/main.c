@@ -23,6 +23,7 @@ extern label_t gotoStack[50];
 #include "incbin.h"
 INCBIN(Cheader, "src/asm/cheader.bin");
 INCBIN(Fileiocheader, "src/asm/fileiocheader.bin");
+extern char *str_dupcat(const char *s, const char *c);
 #else
 extern const char *CheaderData;
 extern const char *FileiocheaderData;
@@ -171,7 +172,7 @@ int main(int argc, char **argv) {
     fprintf(stdout, "%s\nPrescanning...\n", infoStr);
     _seek(0, SEEK_END, ice.inPrgm);
     ice.programLength = _tell(ice.inPrgm);
-    ice.programData   = malloc(50000);
+    ice.programData   = malloc(0xFFFF);
 #endif
 
     ice.programPtr     = ice.programData + SIZEOF_CHEADER;
@@ -404,12 +405,21 @@ void preScanProgram(uint24_t CFunctionsStack[], uint8_t *CFunctionsCounter, bool
                 }
                 tempName[a] = 0;
                 
+#ifdef COMPUTER_ICE
+                if ((ice.inPrgm = _open(str_dupcat(tempName, ".8xp")))) {
+                    preScanProgram(CFunctionsStack, CFunctionsCounter, detectOSVars);
+                    fclose(ice.inPrgm);
+                }
+#else
+#ifdef SC
+#else
                 if ((ice.inPrgm = _open(tempName))) {
-#if !defined(COMPUTER_ICE) && !defined(SC)
                     preScanProgram(CFunctionsStack, CFunctionsCounter, detectOSVars);
                     ti_Close(ice.inPrgm);
-#endif
                 }
+#endif
+#endif
+
                 ice.inPrgm = tempProg;
             }
         } else if (((tok == tDet && detectOSVars) || (tok == tSum && !detectOSVars)) && !expr.inString) {

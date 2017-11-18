@@ -15,7 +15,7 @@ static char *str_dup(const char *s) {
     return d;                            // return new memory
 }
 
-static char *str_dupcat(const char *s, const char *c) {
+char *str_dupcat(const char *s, const char *c) {
     if (!s) {
         return str_dup(c);
     } else

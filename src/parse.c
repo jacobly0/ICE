@@ -15,6 +15,8 @@
 INCBIN(Pause, "src/asm/pause.bin");
 INCBIN(Input, "src/asm/input.bin");
 INCBIN(Prgm, "src/asm/prgm.bin");
+
+extern char *str_dupcat(const char *s, const char *c);
 #endif
 
 #ifdef SC
@@ -1727,9 +1729,6 @@ static uint8_t functionBB(int token) {
         uint24_t currentLine = ice.currentLine;
         ti_var_t tempProg = ice.inPrgm;
         
-#if defined(COMPUTER_ICE) || defined(SC)
-        return E_NO_SUBPROG;
-#else
         while ((token = _getc()) != EOF && (uint8_t)token != tEnter && (uint8_t)token != tRParen && a < 9) {
             tempName[a++] = token;
         }
@@ -1740,6 +1739,29 @@ static uint8_t functionBB(int token) {
         
         tempName[a] = 0;
         
+#ifdef COMPUTER_ICE
+        if ((ice.inPrgm = _open(str_dupcat(tempName, ".8xp")))) {
+            int tempProgSize = ice.programLength;
+            
+            fseek(ice.inPrgm, 0, SEEK_END);
+            ice.programLength = ftell(ice.inPrgm);
+            _rewind(ice.inPrgm);
+            fprintf(stdout, "Compiling subprogram %s\n", str_dupcat(tempName, ".8xp"));
+            
+            // Compile it, and close
+            ice.currentLine = 0;
+            if ((res = parseProgram()) != VALID) {
+                return res;
+            }
+            fclose(ice.inPrgm);
+            ice.currentLine = currentLine;
+            ice.programLength = tempProgSize;
+        } else {
+            res = E_PROG_NOT_FOUND;
+        }
+#else
+#ifdef SC
+#else
         if ((ice.inPrgm = _open(tempName))) {
             char buf[30];
             
@@ -1761,10 +1783,11 @@ static uint8_t functionBB(int token) {
         } else {
             res = E_PROG_NOT_FOUND;
         }
+#endif
+#endif
         ice.inPrgm = tempProg;
         
         return res;
-#endif
     } else {
         SeekMinus1();
         return parseExpression(t2ByteTok);
