@@ -171,7 +171,6 @@ uint8_t parseFunction(uint24_t index) {
     outputPrevOperand     = outputPrev->operand;
     outputPrevType        = outputPrev->type;
     
-    expr.outputReturnRegister = REGISTER_HL;
     if (function != tNot) {
         ClearAnsFlags();
     }

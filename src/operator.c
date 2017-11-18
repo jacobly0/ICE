@@ -167,7 +167,6 @@ uint8_t parseOperator(element_t *outputPrevPrevPrev, element_t *outputPrevPrev, 
     entry2 = outputPrev;
     getEntryOperands();
     
-    expr.outputReturnRegister = REGISTER_HL;
     ClearAnsFlags();
     
     if (type1 >= TYPE_STRING && type2 == TYPE_OS_STRING && oper == tStore) {

@@ -737,7 +737,8 @@ uint8_t parsePostFixFromIndexToIndex(uint24_t startIndex, uint24_t endIndex) {
         outputPrevPrevPrev = &outputPtr[getIndexOffset(-4)];
         outputType = outputCurr->type;
         
-        // Clear this flag
+        // Set some vars
+        expr.outputReturnRegister = REGISTER_HL;
         expr.outputIsString = false;
         
         if (outputType == TYPE_OPERATOR) {
