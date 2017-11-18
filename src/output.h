@@ -115,7 +115,7 @@
 #define OP_OR_A       0xF6
 #define OP_CP_A       0xFE
 
-#ifndef COMPUTER_ICE
+#if !defined(COMPUTER_ICE) && !defined(SC)
 #define output(type, value) \
     do { \
         *(type*)ice.programPtr = (value); \

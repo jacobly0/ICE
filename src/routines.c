@@ -224,7 +224,7 @@ void SeekMinus1(void) {
 }
 
 void displayMessageLineScroll(char *string) {
-#ifndef COMPUTER_ICE
+#if !defined(COMPUTER_ICE) && !defined(SC)
     char buf[30];
     char c;
     
@@ -349,7 +349,7 @@ uint8_t GetVariableOffset(uint8_t tok) {
     return variableNew->offset = ice.amountOfVariablesUsed++ * 3 - 128;
 }
 
-#ifndef COMPUTER_ICE
+#if !defined(COMPUTER_ICE) && !defined(SC)
 
 void displayLoadingBarFrame(void) {
     // Display a fancy loading bar during compiling ;)

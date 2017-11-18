@@ -17,6 +17,12 @@ INCBIN(Or, "src/asm/or.bin");
 INCBIN(Xor, "src/asm/xor.bin");
 #endif
 
+#ifdef SC
+extern const char *AndData;
+extern const char *OrData;
+extern const char *XorData;
+#endif
+
 extern void (*operatorFunctions[272])(void);
 extern void (*operatorChainPushChainAnsFunctions[17])(void);
 const char operators[]              = {tStore, tDotIcon, tCrossIcon, tBoxIcon, tAnd, tXor, tOr, tEQ, tLT, tGT, tLE, tGE, tNE, tMul, tDiv, tAdd, tSub};
@@ -32,7 +38,7 @@ static uint24_t entry1_operand;
 static uint24_t entry2_operand;
 static uint8_t oper;
 
-#ifdef COMPUTER_ICE
+#if defined(COMPUTER_ICE) || defined(SC)
 static uint8_t clz(uint24_t x) {
     uint8_t n = 0;
     if (!x) {

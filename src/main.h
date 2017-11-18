@@ -176,10 +176,10 @@ extern variable_t variable;
 
 void preScanProgram(uint24_t a[], uint8_t*, bool);
 
-#ifndef COMPUTER_ICE
-void CHeaderData(void);
+#if !defined(COMPUTER_ICE) && !defined(SC)
+void CheaderData(void);
 void GraphxHeader(void);
-void FileiocHeaderData(void);
+void FileiocheaderData(void);
 void CProgramHeaderData(void);
 void OrData(void);
 void AndData(void);
@@ -191,11 +191,11 @@ void GetKeyFastData2(void);
 void StringStoData(void);
 void InputData(void);
 void MallocData(void);
-void SinCosData(void);
+void SincosData(void);
 void PrgmData(void);
 void StringConcatenateData(void);
-void LoadSpriteData(void);
-void LoadTilemapData(void);
+void LoadspriteData(void);
+void LoadtilemapData(void);
 void MeanData(void);
 void SqrtData(void);
 void PauseData(void);

@@ -12,7 +12,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#ifndef COMPUTER_ICE
+#if !defined(COMPUTER_ICE) && !defined(SC)
 
 #include <fileioc.h>
 #include <graphx.h>

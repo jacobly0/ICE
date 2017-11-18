@@ -1,6 +1,6 @@
 .assume adl = 1
 segment data
-.def _FileiocHeaderData
+.def _FileiocheaderData
 
-_FileiocHeaderData:
+_FileiocheaderData:
 	db	0C0h, "FILEIOC", 0, 3

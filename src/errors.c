@@ -11,7 +11,7 @@
 
 static const char *errors[] = {
     "This token/function is not implemented (yet)",
-#ifndef COMPUTER_ICE
+#if !defined(COMPUTER_ICE) && !defined(SC)
     "This token cannot be used at the start of the   line",
 #else
     "This token cannot be used at the start of the line",
@@ -25,7 +25,7 @@ static const char *errors[] = {
     "Invalid hexadecimal",
     "ICE ERROR: please report it!",
     "You have the wrong number or arguments",
-#ifndef COMPUTER_ICE
+#if !defined(COMPUTER_ICE) && !defined(SC)
     "Unknown C function. If you are sure this              function exists, please contact me!",
 #else
     "Unknown C function",
@@ -35,16 +35,22 @@ static const char *errors[] = {
     "Invalid program name",
     "Warning: Unknown char in the string!",
     "Warning: string has been automatically squish-ed!",
+#if !defined(COMPUTER_ICE) && !defined(SC)
     "Warning: you need det(0) before using any           other graphics function!",
     "Warning: you need sum(0) before using any           other file i/o function!",
     "Warning: you need det(1) before returning to    the OS!",
+#else
+    "Warning: you need det(0) before using any other graphics function!",
+    "Warning: you need sum(0) before using any other file i/o function!",
+    "Warning: you need det(1) before returning to the OS!",
+#endif
 };
 
 void displayLabelError(char *label) {
     char buf[30];
     
     sprintf(buf, "Label %s not found", label);
-#ifndef COMPUTER_ICE 
+#if !defined(COMPUTER_ICE) && !defined(SC)
     gfx_SetTextFGColor(224);
     displayMessageLineScroll(buf);
 #else
@@ -53,7 +59,7 @@ void displayLabelError(char *label) {
 }
 
 void displayError(uint8_t index) {
-#ifndef COMPUTER_ICE
+#if !defined(COMPUTER_ICE) && !defined(SC)
     char buf[30];
     
     gfx_SetTextFGColor(index < W_WRONG_CHAR ? 224 : 227);

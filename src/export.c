@@ -3,7 +3,7 @@
 #include <string.h>
 #include <stdlib.h>
 
-#ifdef COMPUTER_ICE
+#if defined(COMPUTER_ICE) || defined(SC)
 
 #define m8(x)  ((x)&255)
 #define mr8(x) (((x)>>8)&255)
@@ -28,7 +28,7 @@ static char *str_dupcat(const char *s, const char *c) {
 }
 
 void export_program(const char *name, uint8_t *data, size_t size) {
-    const uint8_t header[] = { 0x2A,0x2A,0x54,0x49,0x38,0x33,0x46,0x2A,0x1A,0x0A };
+    const uint8_t header[] = {0x2A, 0x2A, 0x54, 0x49, 0x38, 0x33, 0x46, 0x2A, 0x1A, 0x0A};
     uint8_t len_high;
     uint8_t len_low;
     unsigned int data_size;

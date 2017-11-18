@@ -1,8 +1,8 @@
 .assume adl = 1
 segment data
-.def _SinCosData
+.def _SincosData
 
-_SinCosData:
+_SincosData:
 _FP_Cos:
 	ld	a, l
 	add	a, 64

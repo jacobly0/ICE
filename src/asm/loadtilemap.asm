@@ -1,8 +1,8 @@
 .assume adl = 1
 segment data
-.def _LoadTilemapData
+.def _LoadtilemapData
 
-_LoadTilemapData:
+_LoadtilemapData:
 	call	0020320h
 	ld	a, 015h
 	ld	(0D005F8h), a

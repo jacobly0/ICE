@@ -16,10 +16,21 @@ INCBIN(Sqrt, "src/asm/sqrt.bin");
 INCBIN(Mean, "src/asm/mean.bin");
 INCBIN(Rand, "src/asm/rand.bin");
 INCBIN(Malloc, "src/asm/malloc.bin");
-INCBIN(SinCos, "src/asm/sincos.bin");
+INCBIN(Sincos, "src/asm/sincos.bin");
 INCBIN(Keypad, "src/asm/keypad.bin");
-INCBIN(LoadSprite, "src/asm/loadsprite.bin");
-INCBIN(LoadTilemap, "src/asm/loadtilemap.bin");
+INCBIN(Loadsprite, "src/asm/loadsprite.bin");
+INCBIN(Loadtilemap, "src/asm/loadtilemap.bin");
+#endif
+
+#ifdef SC
+extern const char *SqrtData;
+extern const char *MeanData;
+extern const char *RandData;
+extern const char *MallocData;
+extern const char *SincosData;
+extern const char *KeypadData;
+extern const char *LoadspriteData;
+extern const char *LoadtilemapData;
 #endif
 
 /* First byte:  bit 7  : returns something in A
@@ -315,7 +326,7 @@ uint8_t parseFunction(uint24_t index) {
         
         if (!ice.usedAlreadySinCos) {
             ice.SinCosAddr = (uintptr_t)ice.programDataPtr;
-            memcpy(ice.programDataPtr, SinCosData, SIZEOF_SINCOS_DATA);
+            memcpy(ice.programDataPtr, SincosData, SIZEOF_SINCOS_DATA);
             
             // 16 = distance from start of routine to "ld de, SinTable"
             ice.programDataPtr += 16;
@@ -586,7 +597,7 @@ uint8_t parseFunction(uint24_t index) {
             // Copy the LoadData( routine to the data section
             if (!ice.usedAlreadyLoadSprite) {
                 ice.LoadSpriteAddr = (uintptr_t)ice.programDataPtr;
-                memcpy(ice.programDataPtr, LoadSpriteData, 32);
+                memcpy(ice.programDataPtr, LoadspriteData, 32);
                 ice.programDataPtr += 32;
                 ice.usedAlreadyLoadSprite = true;
             }
@@ -616,7 +627,7 @@ uint8_t parseFunction(uint24_t index) {
             // Copy the LoadData( routine to the data section
             if (!ice.usedAlreadyLoadTilemap) {
                 ice.LoadTilemapAddr = (uintptr_t)ice.programDataPtr;
-                memcpy(ice.programDataPtr, LoadTilemapData, 59);
+                memcpy(ice.programDataPtr, LoadtilemapData, 59);
                 ice.programDataPtr += 59;
                 ice.usedAlreadyLoadTilemap = true;
             }

@@ -17,12 +17,16 @@ const char *infoStr = "ICE Compiler v2.0 - By Peter \"PT_\" Tillema";
 extern label_t labelStack[100];
 extern label_t gotoStack[50];
 
+#if defined(COMPUTER_ICE) || defined(SC)
 #ifdef COMPUTER_ICE
-
 #define INCBIN_PREFIX
 #include "incbin.h"
-INCBIN(CHeader, "src/asm/cheader.bin");
-INCBIN(FileiocHeader, "src/asm/fileioc.bin");
+INCBIN(Cheader, "src/asm/cheader.bin");
+INCBIN(Fileiocheader, "src/asm/fileiocheader.bin");
+#else
+extern const char *CheaderData;
+extern const char *FileiocheaderData;
+#endif
 
 void w24(void *x, uint32_t val) {
     uint8_t *ptr = (uint8_t*)(x);
@@ -34,12 +38,15 @@ uint32_t r24(void *x) {
     uint8_t *ptr = (uint8_t*)(x);
     return (ptr[2] << 16) | (ptr[1] << 8) | (ptr[0]);
 }
+#endif
+
+#if !defined(COMPUTER_ICE) && !defined(SC)
+
+    void main(void) {
+        
+#else
 
 int main(int argc, char **argv) {
-    
-#else
-    
-void main(void) {
     
 #endif
 
@@ -49,7 +56,7 @@ void main(void) {
     char buf[30], *var_name;
     void *search_pos = NULL;
     
-#ifndef COMPUTER_ICE
+#if !defined(COMPUTER_ICE) && !defined(SC)
     // Install hooks
     ti_CloseAll();
     ice.inPrgm = ti_Open("ICEAPPV", "r");
@@ -174,7 +181,7 @@ void main(void) {
     ice.CBaseAddress   = ice.programPtr;
     
     // Pre-scan program (and subprograms) and find all the GRAPHX routines
-    memcpy(ice.programData, CHeaderData, SIZEOF_CHEADER);
+    memcpy(ice.programData, CheaderData, SIZEOF_CHEADER);
     preScanProgram(ice.GraphxRoutinesStack, &ice.amountOfGraphxRoutinesUsed, true);
     
     // If there are no GRAPHX functions, remove the GRAPHX header
@@ -184,7 +191,7 @@ void main(void) {
     }
     
     // Prescan the program again to detect all the FILEIOC routines
-    memcpy(ice.programPtr, FileiocHeaderData, 10);
+    memcpy(ice.programPtr, FileiocheaderData, 10);
     ice.programPtr += 10;
     preScanProgram(ice.FileiocRoutinesStack, &ice.amountOfFileiocRoutinesUsed, false);
     
@@ -218,7 +225,7 @@ void main(void) {
     LD_IX_IMM(IX_VARIABLES);
    
     // Do the stuff
-#ifndef COMPUTER_ICE
+#if !defined(COMPUTER_ICE) && !defined(SC)
     sprintf(buf, "Compiling program %s...", var_name);
     displayMessageLineScroll(buf);
 #else
@@ -274,7 +281,7 @@ findNextLabel:;
             displayError(W_CLOSE_GRAPHX);
         }
         
-#ifndef COMPUTER_ICE
+#if !defined(COMPUTER_ICE) && !defined(SC)
         ice.outPrgm = _open(ice.outName);
         if (ice.outPrgm) {
             previousSize = ti_GetSize(ice.outPrgm);
@@ -341,7 +348,7 @@ err:
         
         // Write the header, main program, and data to output :D
         memcpy(&export[3], ice.programData, ice.programSize);
-        memcpy(&export[3+ice.programSize], ice.programDataData, programDataSize);
+        memcpy(&export[3 + ice.programSize], ice.programDataData, programDataSize);
         
         // Write the actual program file
         export_program(ice.outName, export, totalSize);
@@ -398,7 +405,7 @@ void preScanProgram(uint24_t CFunctionsStack[], uint8_t *CFunctionsCounter, bool
                 tempName[a] = 0;
                 
                 if ((ice.inPrgm = _open(tempName))) {
-#ifndef COMPUTER_ICE
+#if !defined(COMPUTER_ICE) && !defined(SC)
                     preScanProgram(CFunctionsStack, CFunctionsCounter, detectOSVars);
                     ti_Close(ice.inPrgm);
 #endif

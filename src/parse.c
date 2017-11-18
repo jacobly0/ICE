@@ -17,6 +17,12 @@ INCBIN(Input, "src/asm/input.bin");
 INCBIN(Prgm, "src/asm/prgm.bin");
 #endif
 
+#ifdef SC
+extern const char *PauseData;
+extern const char *InputData;
+extern const char *PrgmData;
+#endif
+
 extern uint8_t (*functions[256])(int token);
 const char implementedFunctions[] = {tNot, tMin, tMax, tMean, tSqrt, tDet, tSum, tSin, tCos, 0};
 const uint8_t All2ByteTokens[] = {0x5C, 0x5D, 0x5E, 0x60, 0x61, 0x62, 0x63, 0x7E, 0xAA, 0xBB, 0xEF};
@@ -56,7 +62,7 @@ uint8_t parseProgram(void) {
             break;
         }
         
-#ifndef COMPUTER_ICE
+#if !defined(COMPUTER_ICE) && !defined(SC)
         displayLoadingBar();
 #endif
     }
@@ -1721,7 +1727,7 @@ static uint8_t functionBB(int token) {
         uint24_t currentLine = ice.currentLine;
         ti_var_t tempProg = ice.inPrgm;
         
-#ifdef COMPUTER_ICE
+#if defined(COMPUTER_ICE) || defined(SC)
         return E_NO_SUBPROG;
 #else
         while ((token = _getc()) != EOF && (uint8_t)token != tEnter && (uint8_t)token != tRParen && a < 9) {
