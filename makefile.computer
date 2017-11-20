@@ -6,7 +6,6 @@ SOURCES := $(wildcard src/*.c)
 ASMSOURCES := $(wildcard src/asm/*.asm)
 
 ifeq ($(OS),Windows_NT)
-SHELL = cmd.exe
 NATIVEPATH = $(subst /,\,$(1))
 RM = del /f
 SOURCES := $(call NATIVEPATH,$(SOURCES))

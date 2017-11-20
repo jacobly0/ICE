@@ -332,7 +332,7 @@ uint8_t GetVariableOffset(uint8_t tok) {
     }
     variableName[a] = 0;
     if (tok != 0xFF) {
-        _seek(-1, SEEK_CUR, ice.inPrgm);
+        SeekMinus1();
     }
     
     // This variable already exists
@@ -1274,6 +1274,9 @@ int grabString(uint8_t **outputPtr, bool stopAtStoreAndString) {
         }
     }
 }
+
+    
+#ifdef COMPUTER_ICE
     
 int getNextToken(void) {
     if ((uint24_t)_tell(ice.inPrgm) < ice.programLength - 2) {
@@ -1281,5 +1284,16 @@ int getNextToken(void) {
     }
     return EOF;
 }
+
+#else
+    
+int getNextToken(void) {
+    if (_tell(ice.inPrgm) < ice.programLength) {
+        return ice.progInputData[ice.progInputPtr++];
+    }
+    return EOF;
+}
+    
+#endif
 
 #endif

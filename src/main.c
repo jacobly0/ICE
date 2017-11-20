@@ -158,6 +158,7 @@ int main(int argc, char **argv) {
     ice.programData    = (uint8_t*)0xD52C00;
     strcpy(ice.currProgName[ice.inPrgm], var_name);
 #else
+#ifdef COMPUTER_ICE
     var_name = argv[1];
     if (argc != 2) {
         fprintf(stderr, "Error: Missing program as input\n");
@@ -172,6 +173,7 @@ int main(int argc, char **argv) {
     fprintf(stdout, "%s\nPrescanning...\n", infoStr);
     _seek(0, SEEK_END, ice.inPrgm);
     ice.programLength = _tell(ice.inPrgm);
+#endif
     ice.programData   = malloc(0xFFFF);
 #endif
 
@@ -226,12 +228,15 @@ int main(int argc, char **argv) {
     LD_IX_IMM(IX_VARIABLES);
    
     // Do the stuff
-#if !defined(COMPUTER_ICE) && !defined(SC)
+#ifndef SC
+#ifdef COMPUTER_ICE
+    fprintf(stdout, "Compiling program %s...\n", var_name);
+#else
     sprintf(buf, "Compiling program %s...", var_name);
     displayMessageLineScroll(buf);
-#else
-    fprintf(stdout, "Compiling program %s...\n", var_name);
 #endif
+#endif
+
     res = parseProgram();
     
     // Create or empty the output program if parsing succeeded
@@ -337,7 +342,7 @@ err:
     ti_CloseAll();
     
 #else
-    
+#ifdef COMPUTER_ICE
         uint8_t *export = malloc(0x10000);
         
         // Write ASM header
@@ -358,6 +363,7 @@ err:
         // Display the size
         fprintf(stdout, "Succesfully compiled to %s.8xp!\n", ice.outName);
         fprintf(stdout, "Output size: %u bytes\n", totalSize);
+#endif
     } else {
         displayError(res);
     }
@@ -396,7 +402,7 @@ void preScanProgram(uint24_t CFunctionsStack[], uint8_t *CFunctionsCounter, bool
         } else if (tok == t2ByteTok && !expr.inString) {
             // AsmComp(
             if ((uint8_t)_getc() == tAsmComp) {
-                char tempName[9];
+                char tempName[9] = {0};
                 uint8_t a = 0;
                 ti_var_t tempProg = ice.inPrgm;
 
@@ -411,13 +417,10 @@ void preScanProgram(uint24_t CFunctionsStack[], uint8_t *CFunctionsCounter, bool
                     fclose(ice.inPrgm);
                 }
 #else
-#ifdef SC
-#else
                 if ((ice.inPrgm = _open(tempName))) {
                     preScanProgram(CFunctionsStack, CFunctionsCounter, detectOSVars);
-                    ti_Close(ice.inPrgm);
                 }
-#endif
+                _close(ice.inPrgm);
 #endif
 
                 ice.inPrgm = tempProg;

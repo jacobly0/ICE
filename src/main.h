@@ -111,6 +111,12 @@ typedef struct {
     
     bool     usedAlreadyMalloc;                             // Only once the "Alloc(" routine in the program data
     uint24_t MallocAddr;                                    // Address of the "Alloc(" routine in the program data
+    
+#ifdef SC
+    uint24_t progInputPtr;
+    uint8_t  progInputData[0xFFFF];
+    uint8_t  errorCode;
+#endif
 } ice_t;
 
 typedef struct {
