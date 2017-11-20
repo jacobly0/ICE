@@ -1,6 +1,8 @@
 #include "defines.h"
 #include "main.h"
 
+#if !defined(COMPUTER_ICE) && !defined(SC)
+
 #include "functions.h"
 #include "errors.h"
 #include "stack.h"
@@ -17,47 +19,13 @@ const char *infoStr = "ICE Compiler v2.0 - By Peter \"PT_\" Tillema";
 extern label_t labelStack[100];
 extern label_t gotoStack[50];
 
-#if defined(COMPUTER_ICE) || defined(SC)
-#ifdef COMPUTER_ICE
-#define INCBIN_PREFIX
-#include "incbin.h"
-INCBIN(Cheader, "src/asm/cheader.bin");
-INCBIN(Fileiocheader, "src/asm/fileiocheader.bin");
-extern char *str_dupcat(const char *s, const char *c);
-#else
-extern const char *CheaderData;
-extern const char *FileiocheaderData;
-#endif
-
-void w24(void *x, uint32_t val) {
-    uint8_t *ptr = (uint8_t*)(x);
-    ptr[0] = val & 0xFF;
-    ptr[1] = val >> 8 & 0xFF;
-    ptr[2] = val >> 16 & 0xFF;
-}
-uint32_t r24(void *x) {
-    uint8_t *ptr = (uint8_t*)(x);
-    return (ptr[2] << 16) | (ptr[1] << 8) | (ptr[0]);
-}
-#endif
-
-#if !defined(COMPUTER_ICE) && !defined(SC)
-
-    void main(void) {
-        
-#else
-
-int main(int argc, char **argv) {
-    
-#endif
-
+void main(void) {
     uint8_t selectedProgram = 0, key, amountOfPrograms, res = VALID;
     uint24_t programDataSize, offset, totalSize;
     const char ICEheader[] = {tii, 0};
     char buf[30], *var_name;
     void *search_pos = NULL;
     
-#if !defined(COMPUTER_ICE) && !defined(SC)
     // Install hooks
     ti_CloseAll();
     ice.inPrgm = ti_Open("ICEAPPV", "r");
@@ -157,25 +125,6 @@ int main(int argc, char **argv) {
     ice.programLength = _tell(ice.inPrgm);
     ice.programData    = (uint8_t*)0xD52C00;
     strcpy(ice.currProgName[ice.inPrgm], var_name);
-#else
-#ifdef COMPUTER_ICE
-    var_name = argv[1];
-    if (argc != 2) {
-        fprintf(stderr, "Error: Missing program as input\n");
-        exit(1);
-    }
-    
-    ice.inPrgm = _open(var_name);
-    if (!ice.inPrgm) {
-        fprintf(stdout, "Can't find input program\n");
-        goto stop;
-    }
-    fprintf(stdout, "%s\nPrescanning...\n", infoStr);
-    _seek(0, SEEK_END, ice.inPrgm);
-    ice.programLength = _tell(ice.inPrgm);
-#endif
-    ice.programData   = malloc(0xFFFF);
-#endif
 
     ice.programPtr     = ice.programData + SIZEOF_CHEADER;
     ice.programDataPtr = ice.programDataData;
@@ -228,15 +177,8 @@ int main(int argc, char **argv) {
     LD_IX_IMM(IX_VARIABLES);
    
     // Do the stuff
-#ifndef SC
-#ifdef COMPUTER_ICE
-    fprintf(stdout, "Compiling program %s...\n", var_name);
-#else
     sprintf(buf, "Compiling program %s...", var_name);
     displayMessageLineScroll(buf);
-#endif
-#endif
-
     res = parseProgram();
     
     // Create or empty the output program if parsing succeeded
@@ -287,7 +229,7 @@ findNextLabel:;
             displayError(W_CLOSE_GRAPHX);
         }
         
-#if !defined(COMPUTER_ICE) && !defined(SC)
+        // Export the program
         ice.outPrgm = _open(ice.outName);
         if (ice.outPrgm) {
             previousSize = ti_GetSize(ice.outPrgm);
@@ -340,38 +282,6 @@ err:
         GotoEditor(ice.currProgName[ice.inPrgm], ti_Tell(ice.inPrgm) - 1);
     }
     ti_CloseAll();
-    
-#else
-#ifdef COMPUTER_ICE
-        uint8_t *export = malloc(0x10000);
-        
-        // Write ASM header
-        export[0] = tExtTok;
-        export[1] = tAsm84CeCmp;
-        
-        // Write ICE header to be recognized by Cesium
-        export[2] = 0x7F;
-        
-        // Write the header, main program, and data to output :D
-        memcpy(&export[3], ice.programData, ice.programSize);
-        memcpy(&export[3 + ice.programSize], ice.programDataData, programDataSize);
-        
-        // Write the actual program file
-        export_program(ice.outName, export, totalSize);
-        free(export);
-        
-        // Display the size
-        fprintf(stdout, "Succesfully compiled to %s.8xp!\n", ice.outName);
-        fprintf(stdout, "Output size: %u bytes\n", totalSize);
-#endif
-    } else {
-        displayError(res);
-    }
-    return 0;
-stop:
-    return 1;
-#endif
-
 }
 
 void preScanProgram(uint24_t CFunctionsStack[], uint8_t *CFunctionsCounter, bool detectOSVars) {
@@ -411,18 +321,10 @@ void preScanProgram(uint24_t CFunctionsStack[], uint8_t *CFunctionsCounter, bool
                 }
                 tempName[a] = 0;
                 
-#ifdef COMPUTER_ICE
-                if ((ice.inPrgm = _open(str_dupcat(tempName, ".8xp")))) {
-                    preScanProgram(CFunctionsStack, CFunctionsCounter, detectOSVars);
-                    fclose(ice.inPrgm);
-                }
-#else
                 if ((ice.inPrgm = _open(tempName))) {
                     preScanProgram(CFunctionsStack, CFunctionsCounter, detectOSVars);
                 }
                 _close(ice.inPrgm);
-#endif
-
                 ice.inPrgm = tempProg;
             }
         } else if (((tok == tDet && detectOSVars) || (tok == tSum && !detectOSVars)) && !expr.inString) {
@@ -452,3 +354,5 @@ void preScanProgram(uint24_t CFunctionsStack[], uint8_t *CFunctionsCounter, bool
     
     _rewind(ice.inPrgm);
 }
+
+#endif

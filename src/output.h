@@ -1,6 +1,7 @@
 #ifndef OUTPUT_H
 #define OUTPUT_H
 
+#include "defines.h"
 #include "main.h"
 
 #define PRGM_START        0xD1A882

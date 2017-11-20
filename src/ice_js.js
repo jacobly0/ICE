@@ -46,12 +46,28 @@ function ice_close_js(dataPtr, lengthPtr) {
 	}
 }
 
+function ice_display_error(string, whichLine) {
+	var error = c_prog_name_to_js_string(string);
+	
+	setEdMsgBad("Error at line " + whichLine + ": " + error);
+}
+
+function ice_export_program(varName, data, length) {
+	var outputName = c_prog_name_to_js_string(varName);
+	var programData = "";
+	
+	for (var i = 0; i < length; i++) {
+		programData += String.fromCharCode(Module.getValue(data + i, 'i8'));
+	}
+	sc3_pushDownload(programData, "application/x-ti84ce", proj.projectName + ".8xp");
+}
+
 function c_prog_name_to_js_string(ptr) {
 	var string = "";
 	var inByte;
 	
 	while ((inByte = Module.getValue(ptr++, 'i8'))) {
-		string += inByte;
+		string += String.fromCharCode(inByte);
 	}
 	
 	return string;

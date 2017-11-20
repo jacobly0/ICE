@@ -54,14 +54,18 @@ void displayLabelError(char *label) {
     gfx_SetTextFGColor(224);
     displayMessageLineScroll(buf);
 #else
+#ifdef COMPUTER_ICE
     fprintf(stdout, "%s\n", buf);
+#else
+    ice_error(buf, 0);
+#endif
 #endif
 }
 
 void displayError(uint8_t index) {
-#if !defined(COMPUTER_ICE) && !defined(SC)
     char buf[30];
     
+#if !defined(COMPUTER_ICE) && !defined(SC)
     gfx_SetTextFGColor(index < W_WRONG_CHAR ? 224 : 227);
     displayMessageLineScroll(errors[index]);
     
@@ -69,7 +73,12 @@ void displayError(uint8_t index) {
     sprintf(buf, "Error at line %u", ice.currentLine);
     displayMessageLineScroll(buf);
 #else
+#ifdef COMPUTER_ICE
     fprintf(stdout, "%s\n", errors[index]);
     fprintf(stdout, "Error at line %u\n", ice.currentLine);
+#else
+    strcpy(buf, errors[index]);
+    ice_error(buf, ice.currentLine);
+#endif
 #endif
 }
