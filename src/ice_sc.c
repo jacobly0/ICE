@@ -12,6 +12,7 @@
 
 uint24_t tempProgInputPtr;
 ice_t ice;
+reg_t reg;
 
 bool ice_open(char tempName[9]) {
     // Load the data and reset the pointer
@@ -30,6 +31,7 @@ void ice_open_first_prog(void) {
     char *fake_argv[0];
     
     memset(&ice, 0, sizeof(ice_t));
+    memset(&reg, 0, sizeof(reg_t));
     EM_ASM_({
         ice_open_first_prog_js($0, $1);
     }, ice.progInputData, &ice.programLength);

@@ -32,10 +32,18 @@ void w24(void *x, uint32_t val) {
     ptr[1] = val >> 8 & 0xFF;
     ptr[2] = val >> 16 & 0xFF;
 }
+
+void w16(void *x, uint32_t val) {
+    uint8_t *ptr = (uint8_t*)(x);
+    ptr[0] = val & 0xFF;
+    ptr[1] = val >> 8 & 0xFF;
+}
+
 uint32_t r24(void *x) {
     uint8_t *ptr = (uint8_t*)(x);
     return (ptr[2] << 16) | (ptr[1] << 8) | (ptr[0]);
 }
+
 int main(int argc, char **argv) {
     uint8_t amountOfPrograms, res = VALID;
     uint24_t programDataSize, offset, totalSize;

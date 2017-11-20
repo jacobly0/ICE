@@ -35,6 +35,7 @@
 #define M_PI         3.14159265358979323846
 
 void w24(void *x, uint32_t val);
+void w16(void *x, uint32_t val);
 uint32_t r24(void *x);
 void export_program(const char *name, uint8_t *data, size_t size);
 

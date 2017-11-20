@@ -128,6 +128,9 @@
         if (sizeof(type) == sizeof(uint24_t)) { \
             w24(ice.programPtr, (value)); \
             ice.programPtr += 3; \
+        } else if (sizeof(type) == sizeof(uint16_t)) { \
+            w16(ice.programPtr, (value)); \
+            ice.programPtr += 2; \
         } else { \
             *(type*)ice.programPtr = (value); \
             ice.programPtr += sizeof(type); \

@@ -34,8 +34,8 @@ static element_t *entry0;
 static element_t *entry1;
 static element_t *entry2;
 static uint24_t entry0_operand;
-static uint24_t entry1_operand;
-static uint24_t entry2_operand;
+uint24_t entry1_operand;
+uint24_t entry2_operand;
 static uint8_t oper;
 
 #if defined(COMPUTER_ICE) || defined(SC)
