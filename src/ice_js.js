@@ -15,13 +15,13 @@
 
 var parsedPrograms = [];
 
-function ice_open_js(name, dataPtr, lengthPtr) {
+function ice_open_js(name, dataPtr, lengthPtr, offset) {
 	var js_name = c_prog_name_to_js_string(name);
 	
 	for (var i = 0; i < programs.length; i++) {
 		if (programs[i][0] == js_name) {
 			js_data_to_c_mem(i, dataPtr, lengthPtr);
-			parsedPrograms.push(js_name);
+			parsedPrograms.push([js_name, offset]);
 			return 1;
 		}
 	}
@@ -32,15 +32,17 @@ function ice_open_js(name, dataPtr, lengthPtr) {
 
 function ice_open_first_prog_js(dataPtr, lengthPtr) {
 	js_data_to_c_mem(0, dataPtr, lengthPtr);
-	parsedPrograms.push(programs[0][0]);
+	parsedPrograms.push([programs[0][0], 0]);
 }
 
-function ice_close_js(dataPtr, lengthPtr) {
-	parsedPrograms.pop();
+function ice_close_js(dataPtr, lengthPtr, offsetPtr) {
+	var prevProg = parsedPrograms.pop();
 	var js_name = parsedPrograms[parsedPrograms.length - 1][0];
+	
 	for (var i = 0; i < programs.length; i++) {
 		if (programs[i][0] == js_name) {
 			js_data_to_c_mem(i, dataPtr, lengthPtr);
+			Module.setValue(offsetPtr, prevProg[1], 'i32');
 			return;
 		}
 	}
@@ -49,7 +51,7 @@ function ice_close_js(dataPtr, lengthPtr) {
 function ice_display_error(string, whichLine) {
 	var error = c_prog_name_to_js_string(string);
 	
-	setEdMsgBad("Error at line " + whichLine + ": " + error);
+	setEdMsgBad("Error at line " + whichLine + " of program " + parsedPrograms[parsedPrograms.length - 1][0] + ": " + error);
 }
 
 function ice_export_program(varName, data, length) {

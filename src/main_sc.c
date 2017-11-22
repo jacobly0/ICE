@@ -207,8 +207,8 @@ void preScanProgram(uint24_t CFunctionsStack[], uint8_t *CFunctionsCounter, bool
 
                 if ((ice.inPrgm = _open(tempName))) {
                     preScanProgram(CFunctionsStack, CFunctionsCounter, detectOSVars);
+                    _close(ice.inPrgm);
                 }
-                _close(ice.inPrgm);
                 ice.inPrgm = tempProg;
             }
         } else if (((tok == tDet && detectOSVars) || (tok == tSum && !detectOSVars)) && !expr.inString) {

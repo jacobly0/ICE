@@ -1761,6 +1761,16 @@ static uint8_t functionBB(int token) {
         }
 #else
 #ifdef SC
+        if ((ice.inPrgm = _open(tempName))) {
+            ice.currentLine = 0;
+            if ((res = parseProgram()) != VALID) {
+                return res;
+            }
+            _close(ice.inPrgm);
+            ice.currentLine = currentLine;
+        } else {
+            res = E_PROG_NOT_FOUND;
+        }
 #else
         if ((ice.inPrgm = _open(tempName))) {
             char buf[30];

@@ -17,11 +17,12 @@ reg_t reg;
 bool ice_open(char tempName[9]) {
     // Load the data and reset the pointer
     bool ret = EM_ASM_({
-        return ice_open_js($0, $1, $2);
-    }, tempName, ice.progInputData, &ice.programLength);
+        return ice_open_js($0, $1, $2, $3);
+    }, tempName, ice.progInputData, &ice.programLength, ice.progInputPtr);
     
-    tempProgInputPtr = ice.progInputPtr;
-    ice.progInputPtr = 0;
+    if (ret) {
+        ice.progInputPtr = 0;
+    }
     
     return ret;
 }
@@ -44,8 +45,8 @@ void ice_open_first_prog(void) {
 
 void ice_close(void) {
     EM_ASM_({
-        ice_close_js($0, $1);
-    }, ice.progInputData, &ice.programLength);
+        ice_close_js($0, $1, $2);
+    }, ice.progInputData, &ice.programLength, &ice.progInputPtr);
 }
 
 void ice_error(char *error, uint24_t currentLine) {
