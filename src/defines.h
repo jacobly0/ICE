@@ -57,7 +57,7 @@ typedef bool ti_var_t;
 typedef uint32_t uint24_t;
     
 #define _rewind(x)   ice.progInputPtr = 0
-#define _open(x)     ice_open()
+#define _open(x)     ice_open(x)
 #define _tell(x)     ice.progInputPtr
 #define _close(x)    ice_close()
 #define _seek(x,y,z) \

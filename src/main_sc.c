@@ -17,8 +17,8 @@ reg_t reg;
 
 extern label_t labelStack[100];
 extern label_t gotoStack[50];
-extern const char *CheaderData;
-extern const char *FileiocheaderData;
+extern const uint8_t CheaderData[];
+extern const uint8_t FileiocheaderData[];
 
 void w24(void *x, uint32_t val) {
     uint8_t *ptr = (uint8_t*)(x);

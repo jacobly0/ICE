@@ -18,9 +18,9 @@ INCBIN(Xor, "src/asm/xor.bin");
 #endif
 
 #ifdef SC
-extern const char *AndData;
-extern const char *OrData;
-extern const char *XorData;
+extern const uint8_t AndData[];
+extern const uint8_t OrData[];
+extern const uint8_t XorData[];
 #endif
 
 extern void (*operatorFunctions[272])(void);

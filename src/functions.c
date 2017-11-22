@@ -23,14 +23,14 @@ INCBIN(Loadtilemap, "src/asm/loadtilemap.bin");
 #endif
 
 #ifdef SC
-extern const char *SqrtData;
-extern const char *MeanData;
-extern const char *RandData;
-extern const char *MallocData;
-extern const char *SincosData;
-extern const char *KeypadData;
-extern const char *LoadspriteData;
-extern const char *LoadtilemapData;
+extern const uint8_t SqrtData[];
+extern const uint8_t MeanData[];
+extern const uint8_t RandData[];
+extern const uint8_t MallocData[];
+extern const uint8_t SincosData[];
+extern const uint8_t KeypadData[];
+extern const uint8_t LoadspriteData[];
+extern const uint8_t LoadtilemapData[];
 #endif
 
 /* First byte:  bit 7  : returns something in A

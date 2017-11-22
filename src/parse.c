@@ -20,9 +20,9 @@ extern char *str_dupcat(const char *s, const char *c);
 #endif
 
 #ifdef SC
-extern const char *PauseData;
-extern const char *InputData;
-extern const char *PrgmData;
+extern const char PauseData[];
+extern const char InputData[];
+extern const char PrgmData[];
 #endif
 
 extern uint8_t (*functions[256])(int token);
