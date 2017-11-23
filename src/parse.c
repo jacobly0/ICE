@@ -1118,21 +1118,30 @@ uint8_t JumpBackwards(uint8_t *startAddr, uint8_t whichOpcode) {
 }
 
 uint8_t *WhileRepeatCondStart = NULL;
+bool WhileJumpBackwardsLarge;
 
 static uint8_t functionWhile(int token) {
     uint24_t tempDataOffsetElements = ice.dataOffsetElements;
     uint8_t tempGotoElements = ice.amountOfGotos;
-    uint8_t tempLblElements = ice.amountOfLbls, *programPtrBackup = ice.programPtr;
+    uint8_t tempLblElements = ice.amountOfLbls;
     uint8_t *WhileStartAddr = ice.programPtr, res;
     uint8_t *WhileRepeatCondStartTemp = WhileRepeatCondStart;
+    bool WhileJumpForwardSmall;
     
     // Basically the same as "Repeat", but jump to condition checking first
     JP(0);
-    res = functionRepeat(token);
-    JumpForward(WhileStartAddr, WhileRepeatCondStart, tempDataOffsetElements, tempGotoElements, tempLblElements);
+    if ((res = functionRepeat(token)) != VALID) {
+        return res;
+    }
+    WhileJumpForwardSmall = JumpForward(WhileStartAddr, WhileRepeatCondStart, tempDataOffsetElements, tempGotoElements, tempLblElements);
     WhileRepeatCondStart = WhileRepeatCondStartTemp;
     
-    return res;
+    if (WhileJumpForwardSmall && WhileJumpBackwardsLarge) {
+        // Now the JP at the condition points to the 2nd byte after the JR to the condition, so update that too
+        w24(ice.programPtr - 3, r24(ice.programPtr - 3) - 2);
+    }
+    
+    return VALID;
 }
 
 uint8_t functionRepeat(int token) {
@@ -1176,7 +1185,7 @@ uint8_t functionRepeat(int token) {
     if (expr.outputIsNumber) {
         ice.programPtr -= expr.SizeOfOutputNumber;
         if ((expr.outputNumber && (uint8_t)token == tWhile) || (!expr.outputNumber && (uint8_t)token == tRepeat)) {
-            JumpBackwards(RepeatCodeStart, OP_JR);
+            WhileJumpBackwardsLarge = !JumpBackwards(RepeatCodeStart, OP_JR);
         }
         return VALID;
     }
@@ -1198,7 +1207,7 @@ uint8_t functionRepeat(int token) {
         expr.AnsSetCarryFlagReversed = a;
     }
     
-    JumpBackwards(RepeatCodeStart, expr.AnsSetCarryFlag || expr.AnsSetCarryFlagReversed ?
+    WhileJumpBackwardsLarge = !JumpBackwards(RepeatCodeStart, expr.AnsSetCarryFlag || expr.AnsSetCarryFlagReversed ?
         (expr.AnsSetCarryFlagReversed ? OP_JR_NC : OP_JR_C) :
         (expr.AnsSetZeroFlagReversed  ? OP_JR_NZ : OP_JR_Z));
     return VALID;
