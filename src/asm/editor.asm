@@ -34,6 +34,9 @@ StartProgramEditor:
 	ld.sis	bc, (0D008E3h & 0FFFFh)	; errOffset
 	ld	hl, (0D0243Dh)		; editTail
 	ld	de, (0D0243Ah)		; editCursor
+	ld	a, b
+	or	a, c
+	jr	z, FindPreviousEnter
 	ldir
 	ld	(0D0243Dh), hl		; editTail
 	ld	(0D0243Ah), de		; editCursor

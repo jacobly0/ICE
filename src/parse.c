@@ -20,9 +20,9 @@ extern char *str_dupcat(const char *s, const char *c);
 #endif
 
 #ifdef SC
-extern const char PauseData[];
-extern const char InputData[];
-extern const char PrgmData[];
+extern const uint8_t PauseData[];
+extern const uint8_t InputData[];
+extern const uint8_t PrgmData[];
 #endif
 
 extern uint8_t (*functions[256])(int token);
@@ -1587,7 +1587,6 @@ static uint8_t functionCustom(int token) {
         if (tok == tCall) {
             insertGotoLabel();
             CALL(0);
-            ResetAllRegs();
             
             return VALID;
         } else {
@@ -1613,7 +1612,6 @@ static uint8_t functionLbl(int token) {
     labelCurr->name[a] = 0;
     labelCurr->addr = (uint24_t)ice.programPtr;
     labelCurr->LblGotoElements = ice.amountOfLbls;
-    
     ResetAllRegs();
     
     return VALID;
@@ -1641,6 +1639,7 @@ void insertGotoLabel(void) {
     gotoCurr->offset = _tell(ice.inPrgm);
     gotoCurr->dataOffsetElements = ice.dataOffsetElements;
     gotoCurr->LblGotoElements = ice.amountOfGotos;
+    ResetAllRegs();
 }
 
 static uint8_t functionPause(int token) {
@@ -1710,13 +1709,8 @@ static uint8_t functionBB(int token) {
         while ((token = _getc()) != EOF && (uint8_t)token != tEnter && (uint8_t)token != tRParen) {
             uint8_t tok1, tok2;
             
-            // Get hexadecimal 1
-            if ((tok1 = IsHexadecimal(token)) == 16) {
-                return E_INVALID_HEX;
-            }
-            
-            // Get hexadecimal 2
-            if ((tok2 = IsHexadecimal(_getc())) == 16) {
+            // Get hexadecimals
+            if ((tok1 = IsHexadecimal(token)) == 16 || (tok2 = IsHexadecimal(_getc())) == 16) {
                 return E_INVALID_HEX;
             }
             
@@ -1770,8 +1764,7 @@ static uint8_t functionBB(int token) {
         } else {
             res = E_PROG_NOT_FOUND;
         }
-#else
-#ifdef SC
+#elif defined(SC)
         if ((ice.inPrgm = _open(tempName))) {
             ice.currentLine = 0;
             if ((res = parseProgram()) != VALID) {
@@ -1804,7 +1797,6 @@ static uint8_t functionBB(int token) {
         } else {
             res = E_PROG_NOT_FOUND;
         }
-#endif
 #endif
         ice.inPrgm = tempProg;
         
