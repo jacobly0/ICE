@@ -1777,7 +1777,7 @@ static uint8_t functionBB(int token) {
         }
 #else
         if ((ice.inPrgm = _open(tempName))) {
-            char buf[30];
+            char buf[35];
             
             displayLoadingBarFrame();
             sprintf(buf, "Compiling subprogram %s...", tempName);
