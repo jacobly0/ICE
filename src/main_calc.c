@@ -16,8 +16,8 @@ expr_t expr;
 reg_t reg;
 
 const char *infoStr = "ICE Compiler v2.0 - By Peter \"PT_\" Tillema";
-extern label_t labelStack[100];
-extern label_t gotoStack[50];
+extern label_t labelStack[150];
+extern label_t gotoStack[150];
 
 void main(void) {
     uint8_t selectedProgram = 0, key, amountOfPrograms, res = VALID;
@@ -233,6 +233,7 @@ findNextLabel:;
         ice.outPrgm = _open(ice.outName);
         if (ice.outPrgm) {
             previousSize = ti_GetSize(ice.outPrgm);
+            ti_Close(ice.outPrgm);
         }
         ice.outPrgm = _new(ice.outName);
         if (!ice.outPrgm) {

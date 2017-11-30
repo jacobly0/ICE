@@ -16,8 +16,8 @@ expr_t expr;
 reg_t reg;
 
 const char *infoStr = "ICE Compiler v2.0 - By Peter \"PT_\" Tillema";
-extern label_t labelStack[100];
-extern label_t gotoStack[50];
+extern label_t labelStack[150];
+extern label_t gotoStack[150];
 
 #define INCBIN_PREFIX
 #include "incbin.h"

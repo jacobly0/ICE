@@ -41,8 +41,8 @@ const uint8_t implementedFunctions2[22] = {tExtTok, tRemainder,
                                           };
 element_t outputStack[400];
 element_t stack[200];
-label_t labelStack[100];
-label_t gotoStack[50];
+label_t labelStack[150];
+label_t gotoStack[150];
 variable_t variableStack[85];
 
 
@@ -469,13 +469,18 @@ foundRight2ByteToken:
         else if (tok == tString) {
             uint8_t *tempDataPtr = ice.programDataPtr, *a;
             uint8_t amountOfHexadecimals = 0;
+            bool needWarning = true;
             
             outputCurr->type = TYPE_STRING;
             outputCurr->operand = (uint24_t)ice.programDataPtr;
             outputElements++;
             mask = TYPE_MASK_U24;
+            stackPrev = &stackPtr[stackElements-1];
             
             token = grabString(&ice.programDataPtr, true);
+            if ((uint8_t)stackPrev->operand == tVarOut && (uint8_t)(stackPrev->operand >> 16) == tDefineSprite) {
+                needWarning = false;
+            }
             
             for (a = tempDataPtr; a < ice.programDataPtr; a++) {
                 if (IsHexadecimal(*a) == 16) {
@@ -485,7 +490,9 @@ foundRight2ByteToken:
             }
             if (!(amountOfHexadecimals & 1)) {
                 SquishHexadecimals(tempDataPtr);
-                displayError(W_SQUISHED);
+                if (needWarning) {
+                    displayError(W_SQUISHED);
+                }
             }
             
 noSquishing:

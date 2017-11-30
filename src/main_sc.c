@@ -15,8 +15,8 @@ ice_t ice;
 expr_t expr;
 reg_t reg;
 
-extern label_t labelStack[100];
-extern label_t gotoStack[50];
+extern label_t labelStack[150];
+extern label_t gotoStack[150];
 extern const uint8_t CheaderData[];
 extern const uint8_t FileiocheaderData[];
 
