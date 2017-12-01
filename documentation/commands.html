@@ -1,3 +1,4 @@
+<!DOCTYPE html>
 <html>
     <head>
         <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
@@ -8,7 +9,7 @@
             	$("body").animate({ scrollTop: $('#' + target).offset().top }, 1500);
             }
         </script>
-        <style type="text/css">
+        <style>
             body{
                 margin:0;
                 padding:0;
@@ -22,9 +23,15 @@
             }
             table {
                 border-collapse: collapse;
+                border-spacing: 0px;
+                border: 1px solid black;
                 width: 100%;
             }
-            table#special td:nth-child(3) {
+            td {
+                border: 1px solid black;
+                padding: 3px;
+            }
+            table.special td:nth-child(3) {
                 width: 100%;
                 text-align: left;
             }
@@ -67,23 +74,23 @@
                 color: darkgreen;
                 text-decoration: none;
             }
-            #bl {
+            .bl {
                 color: #00C;
                 font-weight: bold;
             }
-            #red {
+            .red {
                 color: #F00;
             }
-            #grey {
+            .grey {
                 color: #999;
             }
-            #gr {
+            .gr {
                 color: #0F0;
             }
-            #or {
+            .or {
                 color: #FFA500;
             }
-            #pu {
+            .pu {
                 color: #551A8B;
             }
         </style>
@@ -96,212 +103,212 @@
                         <h1>ICE Compiler Commands List v2.0</h1>
                         All the custom tokens and C functions are available by pressing [TRACE] in the program editor. Press the arrow keys to select one or switch menu's.
                         <h3 id="system">System</h3>
-                        <table cellspacing="0" border="1" cellpadding="3" border-collapse="collapse">
+                        <table>
                             <tr>
                                 <th>Command</th>
                                 <th>Description</th>
                             </tr>
                             <tr>
-                                <td><code><span id="bl">getKey</span></code></td>
-                                <td>Returns the key being pressed. See <i>keycodes.png</i> for the keycodes.</i></td>
+                                <td><code><span class="bl">getKey</span></code></td>
+                                <td>Returns the key being pressed. See <i>keycodes.png</i> for the keycodes.</td>
                             </tr>
                             <tr>
-                                <td><code><span id="bl">getKey(</span><span id="or">KEY</span><span id="bl">)</span></code></td>
-                                <td>Returns 1 if the key <code><span id="or">KEY</span></code> is pressed, 0 otherwise. This routine is much faster than <code><span id="bl">getKey</span></code>, and handles repeated keypresses as well. See <i>keycodes.png</i> for the keycodes.</td>
+                                <td><code><span class="bl">getKey(</span><span class="or">KEY</span><span class="bl">)</span></code></td>
+                                <td>Returns 1 if the key <code><span class="or">KEY</span></code> is pressed, 0 otherwise. This routine is much faster than <code><span class="bl">getKey</span></code>, and handles repeated keypresses as well. See <i>keycodes.png</i> for the keycodes.</td>
                             </tr>
                             <tr>
-                                <td><code><span id="bl">rand</span></code></td>
+                                <td><code><span class="bl">rand</span></code></td>
                                 <td>Returns a random number between 0 and 16777215.</td>
                             </tr>
                             <tr>
-                                <td><code><span id="bl">Asm(</span><span id="grey">HEX</span><span id="bl">)</span></code></td>
+                                <td><code><span class="bl">Asm(</span><span class="grey">HEX</span><span class="bl">)</span></code></td>
                                 <td>Assembly code written in hexadecimal is inserted into the program.</td>
                             </tr>
                             <tr>
-                                <td><code><span id="bl">AsmComp(</span><span id="grey">PROGRAM</span><span id="bl">)</span></code></td>
-                                <td>Compiles the BASIC program <code><span id="grey">PROGRAM</span></code>. When it's done, ICE continues with compiling the previous program.</td>
+                                <td><code><span class="bl">AsmComp(</span><span class="grey">PROGRAM</span><span class="bl">)</span></code></td>
+                                <td>Compiles the BASIC program <code><span class="grey">PROGRAM</span></code>. When it's done, ICE continues with compiling the previous program.</td>
                             </tr>
                             <tr>
-                                <td><code><span id="bl">Pause</span></code></td>
-                                <td>Pauses the program until the user presses <code><span id="or">ENTER</span></code>.</td>
+                                <td><code><span class="bl">Pause</span></code></td>
+                                <td>Pauses the program until the user presses <code><span class="or">ENTER</span></code>.</td>
                             </tr>
                             <tr>
-                                <td><code><span id="bl">Pause</span></code> <code><span id="red">EXP</span></code></td>
-                                <td>Pauses the program for <code><span id="red">EXP</span></code> milliseconds.</td>
+                                <td><code><span class="bl">Pause</span></code> <code><span class="red">EXP</span></code></td>
+                                <td>Pauses the program for <code><span class="red">EXP</span></code> milliseconds.</td>
                             </tr>
                             <tr>
-                                <td><code><span id="bl">prgm</span><span id="grey">PROGRAM</span></code></td>
-                                <td>Executes the BASIC program <code><span id="grey">PROGRAM</span></code>. Any error will be ignored and it will return normally.</td>
+                                <td><code><span class="bl">prgm</span><span class="grey">PROGRAM</span></code></td>
+                                <td>Executes the BASIC program <code><span class="grey">PROGRAM</span></code>. Any error will be ignored and it will return normally.</td>
                             </tr>
                             <tr>
-                                <td><code><span id="bl"><i>i</i></span></code></td>
+                                <td><code><span class="bl"><i>i</i></span></code></td>
                                 <td>If the imaginary <code><i>i</i></code> (not the lowercase i) is the first token of a line, this line will be ignored during compiling.</td>
                             </tr>
                         </table>
                         <h3 id="math">Math</h3>
-                        <table cellspacing="0" border="1" cellpadding="3" border-collapse="collapse">
+                        <table>
                             <tr>
                                 <th>Command</th>
                                 <th>Description</th>
                             </tr>
                             <tr>
-                                <td><code><span id="gr">VAR</span></code></td>
-                                <td>Returns the value of <code><span id="gr">VAR</span></code>. Multiple-letter variables are allowed up to 10 letters. Valid letters are <code>A-θ</code>.</td>
+                                <td><code><span class="gr">VAR</span></code></td>
+                                <td>Returns the value of <code><span class="gr">VAR</span></code>. Multiple-letter variables are allowed up to 10 letters. Valid letters are <code>A-θ</code>.</td>
                             </tr>
                             <tr>
-                                <td><code>°<span id="gr">VAR</span></code></td>
-                                <td>Returns the address of <code><span id="gr">VAR</span></code>.</td>
+                                <td><code>°<span class="gr">VAR</span></code></td>
+                                <td>Returns the address of <code><span class="gr">VAR</span></code>.</td>
                             </tr>
                             <tr>
-                                <td><code><span id="or">CONST</span></code></td>
-                                <td>Returns <code><span id="or">CONST</span></code>.</td>
+                                <td><code><span class="or">CONST</span></code></td>
+                                <td>Returns <code><span class="or">CONST</span></code>.</td>
                             </tr>
                             <tr>
-                                <td><code><small>E</small><span id="grey">HEX</span></code></td>
-                                <td>Returns the hexadecimal number <code><span id="grey">HEX</span></code> as an integer. The prefix is the scientific E.</td>
+                                <td><code><small>E</small><span class="grey">HEX</span></code></td>
+                                <td>Returns the hexadecimal number <code><span class="grey">HEX</span></code> as an integer. The prefix is the scientific E.</td>
                             </tr>
                             <tr>
-                                <td><code><small>π</small><span id="grey">BIN</span></code></td>
-                                <td>Returns the binary number <code><span id="grey">BIN</span></code> as an integer.</td>
+                                <td><code><small>π</small><span class="grey">BIN</span></code></td>
+                                <td>Returns the binary number <code><span class="grey">BIN</span></code> as an integer.</td>
                             </tr>
                             <tr>
-                                <td><code>-<span id="red">EXP</span></code></td>
-                                <td>Returns the negative of <code><span id="red">EXP</span></code>. This is the negative sign, not the minus sign!</td>
+                                <td><code>-<span class="red">EXP</span></code></td>
+                                <td>Returns the negative of <code><span class="red">EXP</span></code>. This is the negative sign, not the minus sign!</td>
                             </tr>
                             <tr>
-                                <td><code><span id="red">EXP1</span>+<span id="red">EXP2</span></code></td>
-                                <td>Adds <code><span id="red">EXP2</span></code> to <code><span id="red">EXP1</span></code>.</td>
+                                <td><code><span class="red">EXP1</span>+<span class="red">EXP2</span></code></td>
+                                <td>Adds <code><span class="red">EXP2</span></code> to <code><span class="red">EXP1</span></code>.</td>
                             </tr>
                             <tr>
-                                <td><code><span id="red">EXP1</span>-<span id="red">EXP2</span></code></td>
-                                <td>Substracts <code><span id="red">EXP2</span></code> from <code><span id="red">EXP1</span></code>.</td>
+                                <td><code><span class="red">EXP1</span>-<span class="red">EXP2</span></code></td>
+                                <td>Substracts <code><span class="red">EXP2</span></code> from <code><span class="red">EXP1</span></code>.</td>
                             </tr>
                             <tr>
-                                <td><code><span id="red">EXP1</span>*<span id="red">EXP2</span></code></td>
-                                <td>Multiplies <code><span id="red">EXP1</span></code> with <code><span id="red">EXP2</span></code>.</td>
+                                <td><code><span class="red">EXP1</span>*<span class="red">EXP2</span></code></td>
+                                <td>Multiplies <code><span class="red">EXP1</span></code> with <code><span class="red">EXP2</span></code>.</td>
                             </tr>
                             <tr>
-                                <td><code><span id="red">EXP1</span>/<span id="red">EXP2</span></code></td>
-                                <td>Divides <code><span id="red">EXP1</span></code> by <code><span id="red">EXP2</span></code>.</td>
+                                <td><code><span class="red">EXP1</span>/<span class="red">EXP2</span></code></td>
+                                <td>Divides <code><span class="red">EXP1</span></code> by <code><span class="red">EXP2</span></code>.</td>
                             </tr>
                             <tr>
-                                <td><code><span id="red">EXP1</span>=<span id="red">EXP2</span></code></td>
-                                <td>Returns 1 if <code><span id="red">EXP1</span>=<span id="red">EXP2</span></code>, 0 otherwise.</td>
+                                <td><code><span class="red">EXP1</span>=<span class="red">EXP2</span></code></td>
+                                <td>Returns 1 if <code><span class="red">EXP1</span>=<span class="red">EXP2</span></code>, 0 otherwise.</td>
                             </tr>
                             <tr>
-                                <td><code><span id="red">EXP1</span>≠<span id="red">EXP2</span></code></td>
-                                <td>Returns 1 if <code><span id="red">EXP1</span>≠<span id="red">EXP2</span></code>, 0 otherwise.</td>
+                                <td><code><span class="red">EXP1</span>≠<span class="red">EXP2</span></code></td>
+                                <td>Returns 1 if <code><span class="red">EXP1</span>≠<span class="red">EXP2</span></code>, 0 otherwise.</td>
                             </tr>
                             <tr>
-                                <td><code><span id="red">EXP1</span>><span id="red">EXP2</span></code></td>
-                                <td>Returns 1 if <code><span id="red">EXP1</span>><span id="red">EXP2</span></code>, 0 otherwise.</td>
+                                <td><code><span class="red">EXP1</span>><span class="red">EXP2</span></code></td>
+                                <td>Returns 1 if <code><span class="red">EXP1</span>><span class="red">EXP2</span></code>, 0 otherwise.</td>
                             </tr>
                             <tr>
-                                <td><code><span id="red">EXP1</span>≥<span id="red">EXP2</span></code></td>
-                                <td>Returns 1 if <code><span id="red">EXP1</span>≥<span id="red">EXP2</span></code>, 0 otherwise.</td>
+                                <td><code><span class="red">EXP1</span>≥<span class="red">EXP2</span></code></td>
+                                <td>Returns 1 if <code><span class="red">EXP1</span>≥<span class="red">EXP2</span></code>, 0 otherwise.</td>
                             </tr>
                             <tr>
-                                <td><code><span id="red">EXP1</span>≤<span id="red">EXP2</span></code></td>
-                                <td>Returns 1 if <code><span id="red">EXP1</span>≤<span id="red">EXP2</span></code>, 0 otherwise.</td>
+                                <td><code><span class="red">EXP1</span>≤<span class="red">EXP2</span></code></td>
+                                <td>Returns 1 if <code><span class="red">EXP1</span>≤<span class="red">EXP2</span></code>, 0 otherwise.</td>
                             </tr>
                             <tr>
-                                <td><code><span id="red">EXP1</span><<span id="red">EXP2</span></code></td>
-                                <td>Returns 1 if <code><span id="red">EXP1</span><<span id="red">EXP2</span></code>, 0 otherwise.</td>
+                                <td><code><span class="red">EXP1</span>&lt;<span class="red">EXP2</span></code></td>
+                                <td>Returns 1 if <code><span class="red">EXP1</span>&lt;<span class="red">EXP2</span></code>, 0 otherwise.</td>
                             </tr>
                             <tr>
-                                <td><code><span id="red">EXP1</span></code> <code><span id="bl">and</span></code> <code><span id="red">EXP2</span></code></td>
-                                <td>Returns 1 if <code><span id="red">EXP1</span></code> and <code><span id="red">EXP2</span></code> are both not equal to 0, 0 otherwise.</td>
+                                <td><code><span class="red">EXP1</span></code> <code><span class="bl">and</span></code> <code><span class="red">EXP2</span></code></td>
+                                <td>Returns 1 if <code><span class="red">EXP1</span></code> and <code><span class="red">EXP2</span></code> are both not equal to 0, 0 otherwise.</td>
                             </tr>
                             <tr>
-                                <td><code><span id="red">EXP1</span></code> <code><span id="bl">or</span></code> <code><span id="red">EXP2</span></code></td>
-                                <td>Returns 1 if <code><span id="red">EXP1</span></code> or <code><span id="red">EXP2</span></code> is not equal to 0, 0 otherwise.</td>
+                                <td><code><span class="red">EXP1</span></code> <code><span class="bl">or</span></code> <code><span class="red">EXP2</span></code></td>
+                                <td>Returns 1 if <code><span class="red">EXP1</span></code> or <code><span class="red">EXP2</span></code> is not equal to 0, 0 otherwise.</td>
                             </tr>
                             <tr>
-                                <td><code><span id="red">EXP1</span></code> <code><span id="bl">xor</span></code> <code><span id="red">EXP2</span></code></td>
-                                <td>Returns 1 if one of <code><span id="red">EXP1</span></code> and <code><span id="red">EXP2</span></code> is not equal to 0, 0 otherwise.</td>
+                                <td><code><span class="red">EXP1</span></code> <code><span class="bl">xor</span></code> <code><span class="red">EXP2</span></code></td>
+                                <td>Returns 1 if one of <code><span class="red">EXP1</span></code> and <code><span class="red">EXP2</span></code> is not equal to 0, 0 otherwise.</td>
                             </tr>
                             <tr>
-                                <td><code><span id="red">EXP1</span>·<span id="red">EXP2</span></code></td>
-                                <td>Returns the bitwise and of <code><span id="red">EXP1</span></code> and <code><span id="red">EXP2</span></code>. This is a plot style token.</td>
+                                <td><code><span class="red">EXP1</span>·<span class="red">EXP2</span></code></td>
+                                <td>Returns the bitwise and of <code><span class="red">EXP1</span></code> and <code><span class="red">EXP2</span></code>. This is a plot style token.</td>
                             </tr>
                             <tr>
-                                <td><code><span id="red">EXP1</span>ᕀ<span id="red">EXP2</span></code></td>
-                                <td>Returns the bitwise or of <code><span id="red">EXP1</span></code> and <code><span id="red">EXP2</span></code>. This is a plot style token.</td>
+                                <td><code><span class="red">EXP1</span>ᕀ<span class="red">EXP2</span></code></td>
+                                <td>Returns the bitwise or of <code><span class="red">EXP1</span></code> and <code><span class="red">EXP2</span></code>. This is a plot style token.</td>
                             </tr>
                             <tr>
-                                <td><code><span id="red">EXP1</span>▫<span id="red">EXP2</span></code></td>
-                                <td>Returns the bitwise xor of <code><span id="red">EXP1</span></code> and <code><span id="red">EXP2</span></code>. This is a plot style token.</td>
+                                <td><code><span class="red">EXP1</span>▫<span class="red">EXP2</span></code></td>
+                                <td>Returns the bitwise xor of <code><span class="red">EXP1</span></code> and <code><span class="red">EXP2</span></code>. This is a plot style token.</td>
                             </tr>
                             <tr>
-                                <td><code><span id="red">EXP</span>→<span id="gr">VAR</span></code></td>
-                                <td>Stores <code><span id="red">EXP</span></code> into <code><span id="gr">VAR</span></code>.</td>
+                                <td><code><span class="red">EXP</span>→<span class="gr">VAR</span></code></td>
+                                <td>Stores <code><span class="red">EXP</span></code> into <code><span class="gr">VAR</span></code>.</td>
                             </tr>
                             <tr>
-                                <td><code><span id="bl">not(</span><span id="red">EXP</span><span id="bl">)</span></code></td>
-                                <td>Returns the negation of <code><span id="red">EXP</span></code>, so if <code><span id="red">EXP</span></code> is nonzero, it returns 0, and 1 otherwise.</td>
+                                <td><code><span class="bl">not(</span><span class="red">EXP</span><span class="bl">)</span></code></td>
+                                <td>Returns the negation of <code><span class="red">EXP</span></code>, so if <code><span class="red">EXP</span></code> is nonzero, it returns 0, and 1 otherwise.</td>
                             </tr>
                             <tr>
-                                <td><code><span id="bl">remainder(</span><span id="red">EXP1</span>,<span id="red">EXP2</span><span id="bl">)</span></code></td>
-                                <td>Returns the remainder of <code><span id="red">EXP1</span>/<span id="red">EXP2</span></code>.</td>
+                                <td><code><span class="bl">remainder(</span><span class="red">EXP1</span>,<span class="red">EXP2</span><span class="bl">)</span></code></td>
+                                <td>Returns the remainder of <code><span class="red">EXP1</span>/<span class="red">EXP2</span></code>.</td>
                             </tr>
                             <tr>
-                                <td><code><span id="bl">min(</span><span id="red">EXP1</span>,<span id="red">EXP2</span><span id="bl">)</span></code></td>
-                                <td>Returns the minimum of <code><span id="red">EXP1</span></code> and <code><span id="red">EXP2</span></code>.</td>
+                                <td><code><span class="bl">min(</span><span class="red">EXP1</span>,<span class="red">EXP2</span><span class="bl">)</span></code></td>
+                                <td>Returns the minimum of <code><span class="red">EXP1</span></code> and <code><span class="red">EXP2</span></code>.</td>
                             </tr>
                             <tr>
-                                <td><code><span id="bl">max(</span><span id="red">EXP1</span>,<span id="red">EXP2</span><span id="bl">)</span></code></td>
-                                <td>Returns the maximum of <code><span id="red">EXP1</span></code> and <code><span id="red">EXP2</span></code>.</td>
+                                <td><code><span class="bl">max(</span><span class="red">EXP1</span>,<span class="red">EXP2</span><span class="bl">)</span></code></td>
+                                <td>Returns the maximum of <code><span class="red">EXP1</span></code> and <code><span class="red">EXP2</span></code>.</td>
                             </tr>
                             <tr>
-                                <td><code><span id="bl">mean(</span><span id="red">EXP1</span>,<span id="red">EXP2</span><span id="bl">)</span></code></td>
-                                <td>Returns the mean of <code><span id="red">EXP1</span></code> and <code><span id="red">EXP2</span></code>.</td>
+                                <td><code><span class="bl">mean(</span><span class="red">EXP1</span>,<span class="red">EXP2</span><span class="bl">)</span></code></td>
+                                <td>Returns the mean of <code><span class="red">EXP1</span></code> and <code><span class="red">EXP2</span></code>.</td>
                             </tr>
                             <tr>
-                                <td><code><span id="bl">sqrt(</span><span id="red">EXP</span><span id="bl">)</span></code></td>
-                                <td>Returns the square root of <code><span id="red">EXP</span></code>.</td>
+                                <td><code><span class="bl">sqrt(</span><span class="red">EXP</span><span class="bl">)</span></code></td>
+                                <td>Returns the square root of <code><span class="red">EXP</span></code>.</td>
                             </tr>
                             <tr>
-                                <td><code><span id="bl">sin(</span><span id="red">EXP</span><span id="bl">)</span></code></td>
-                                <td>Returns the sine root of <code><span id="red">EXP</span></code>. One period is <code>[0,255]</code> and it returns a value in <code>[-255,255]</code>.</td>
+                                <td><code><span class="bl">sin(</span><span class="red">EXP</span><span class="bl">)</span></code></td>
+                                <td>Returns the sine root of <code><span class="red">EXP</span></code>. One period is <code>[0,255]</code> and it returns a value in <code>[-255,255]</code>.</td>
                             </tr>
                             <tr>
-                                <td><code><span id="bl">cos(</span><span id="red">EXP</span><span id="bl">)</span></code></td>
-                                <td>Returns the cosine root of <code><span id="red">EXP</span></code>. One period is <code>[0,255]</code> and it returns a value in <code>[-255,255]</code>.</td>
+                                <td><code><span class="bl">cos(</span><span class="red">EXP</span><span class="bl">)</span></code></td>
+                                <td>Returns the cosine root of <code><span class="red">EXP</span></code>. One period is <code>[0,255]</code> and it returns a value in <code>[-255,255]</code>.</td>
                             </tr>
                         </table>
                         <h3 id="controls">Controls</h3>
-                        <table cellspacing="0" border="1" cellpadding="3" border-collapse="collapse">
+                        <table>
                             <tr>
                                 <th>Command</th>
                                 <th>Description</th>
                             </tr>
                             <tr>
-                                <td><code><span id="bl">If</span></code> <code><span id="red">EXP</span>:<span id="pu">code</span>:<span id="bl">End</span></code></td>
-                                <td>If <code><span id="red">EXP</span></code> is true, <code><span id="pu">code</span></code> will be executed.</td>
+                                <td><code><span class="bl">If</span></code> <code><span class="red">EXP</span>:<span class="pu">code</span>:<span class="bl">End</span></code></td>
+                                <td>If <code><span class="red">EXP</span></code> is true, <code><span class="pu">code</span></code> will be executed.</td>
                             </tr>
                             <tr>
-                                <td><code><span id="bl">If</span></code> <code><span id="red">EXP</span>:<span id="pu">code1</span>:<span id="bl">Else</span>:<span id="pu">code2</span>:<span id="bl">End</span></code></td>
-                                <td>If <code><span id="red">EXP</span></code> is true, <code><span id="pu">code1</span></code> will be executed, <code><span id="pu">code2</span></code> otherwise</td>
+                                <td><code><span class="bl">If</span></code> <code><span class="red">EXP</span>:<span class="pu">code1</span>:<span class="bl">Else</span>:<span class="pu">code2</span>:<span class="bl">End</span></code></td>
+                                <td>If <code><span class="red">EXP</span></code> is true, <code><span class="pu">code1</span></code> will be executed, <code><span class="pu">code2</span></code> otherwise</td>
                             </tr>
                             <tr>
-                                <td><code><span id="bl">Repeat</span></code> <code><span id="red">EXP</span>:<span id="pu">code</span>:<span id="bl">End</span></code></td>
-                                <td>Repeats executing <code><span id="pu">code</span></code> until <code><span id="red">EXP</span></code> is true. <code><span id="pu">code</span></code> always executes at least once.</td>
+                                <td><code><span class="bl">Repeat</span></code> <code><span class="red">EXP</span>:<span class="pu">code</span>:<span class="bl">End</span></code></td>
+                                <td>Repeats executing <code><span class="pu">code</span></code> until <code><span class="red">EXP</span></code> is true. <code><span class="pu">code</span></code> always executes at least once.</td>
                             </tr>
                             <tr>
-                                <td><code><span id="bl">While</span></code> <code><span id="red">EXP</span>:<span id="pu">code</span>:<span id="bl">End</span></code></td>
-                                <td>Executes <code><span id="pu">code</span></code> until <code><span id="red">EXP</span></code> is false. <code><span id="red">EXP</span></code> is checked first.</td>
+                                <td><code><span class="bl">While</span></code> <code><span class="red">EXP</span>:<span class="pu">code</span>:<span class="bl">End</span></code></td>
+                                <td>Executes <code><span class="pu">code</span></code> until <code><span class="red">EXP</span></code> is false. <code><span class="red">EXP</span></code> is checked first.</td>
                             </tr>
                             <tr>
-                                <td><code><span id="bl">For(</span><span id="gr">VAR</span>,<span id="red">EXP1</span>,<span id="red">EXP2</span><span id="bl">)</span>:<span id="pu">code</span>:<span id="bl">End</span></code></td>
-                                <td><code><span id="gr">VAR</span></code> is initialized with <code><span id="red">EXP1</span></code>. If <code><span id="gr">VAR</span></code> is greater than <code><span id="red">EXP2</span></code>, the loop ends. Otherwise, <code><span id="pu">code</span></code> is executed and <code><span id="gr">VAR</span></code> is incremented.</td>
+                                <td><code><span class="bl">For(</span><span class="gr">VAR</span>,<span class="red">EXP1</span>,<span class="red">EXP2</span><span class="bl">)</span>:<span class="pu">code</span>:<span class="bl">End</span></code></td>
+                                <td><code><span class="gr">VAR</span></code> is initialized with <code><span class="red">EXP1</span></code>. If <code><span class="gr">VAR</span></code> is greater than <code><span class="red">EXP2</span></code>, the loop ends. Otherwise, <code><span class="pu">code</span></code> is executed and <code><span class="gr">VAR</span></code> is incremented.</td>
                             </tr>
                             <tr>
-                                <td><code><span id="bl">For(</span><span id="gr">VAR</span>,<span id="red">EXP1</span>,<span id="red">EXP2</span>,<span id="red">EXP3</span><span id="bl">)</span>:<span id="pu">code</span>:<span id="bl">End</span></code></td>
-                                <td><code><span id="gr">VAR</span></code> is initialized with <code><span id="red">EXP1</span></code>. If <code><span id="gr">VAR</span></code> is greater than <code><span id="red">EXP2</span></code>, the loop ends. Otherwise, <code><span id="pu">code</span></code> is executed and <code><span id="red">EXP3</span></code> is added to <code><span id="gr">VAR</span></code>. If <code><span id="red">EXP3</span></code> is a negative constant, it will loop until <code><span id="gr">VAR</span></code> is smaller than <code><span id="RED">EXP1</span></code>.</td>
+                                <td><code><span class="bl">For(</span><span class="gr">VAR</span>,<span class="red">EXP1</span>,<span class="red">EXP2</span>,<span class="red">EXP3</span><span class="bl">)</span>:<span class="pu">code</span>:<span class="bl">End</span></code></td>
+                                <td><code><span class="gr">VAR</span></code> is initialized with <code><span class="red">EXP1</span></code>. If <code><span class="gr">VAR</span></code> is greater than <code><span class="red">EXP2</span></code>, the loop ends. Otherwise, <code><span class="pu">code</span></code> is executed and <code><span class="red">EXP3</span></code> is added to <code><span class="gr">VAR</span></code>. If <code><span class="red">EXP3</span></code> is a negative constant, it will loop until <code><span class="gr">VAR</span></code> is smaller than <code><span class="RED">EXP1</span></code>.</td>
                             </tr>
                         </table>
                         <h3 id="labels">Labels</h3>
-                        <table cellspacing="0" border="1" cellpadding="3" border-collapse="collapse">
+                        <table>
                             <tr>
                                 <th>Command</th>
                                 <th>Description</th>
@@ -311,476 +318,506 @@
                                 <td><i>Labels are limited to 10 characters.</i></td>
                             </tr>
                             <tr>
-                                <td><code><span id="bl">Lbl</span></code> <code><span id="grey">LABEL</span></code></td>
+                                <td><code><span class="bl">Lbl</span></code> <code><span class="grey">LABEL</span></code></td>
                                 <td>Creates a label at the current position.</td>
                             </tr>
                             <tr>
-                                <td><code><span id="bl">Goto</span></code> <code><span id="grey">LABEL</span></code></td>
+                                <td><code><span class="bl">Goto</span></code> <code><span class="grey">LABEL</span></code></td>
                                 <td>Jumps to a label.</td>
                             </tr>
                             <tr>
-                                <td><code><span id="bl">Call</span></code> <code><span id="grey">LABEL</span></code></td>
-                                <td>Calls a label. This label should have a <code><span id="bl">Return</span></code>, otherwise the program will very likely crash.</td>
+                                <td><code><span class="bl">Call</span></code> <code><span class="grey">LABEL</span></code></td>
+                                <td>Calls a label. This label should have a <code><span class="bl">Return</span></code>, otherwise the program will very likely crash.</td>
                             </tr>
                             <tr>
-                                <td><code><span id="bl">Return</span></code></td>
-                                <td>Returns. If you called a label before, and <code><span id="bl">Return</span></code> is in that label, the program will jump back to the main program. Otherwise, you program will end.</td>
+                                <td><code><span class="bl">Return</span></code></td>
+                                <td>Returns. If you called a label before, and <code><span class="bl">Return</span></code> is in that label, the program will jump back to the main program. Otherwise, you program will end.</td>
                             </tr>
                             <tr>
-                                <td><code><span id="bl">ReturnIf</span></code> <code><span id="red">EXP</span></code></td>
-                                <td>Returns if <code><span id="red">EXP</span></code> is true. If you called a label before, and <code><span id="bl">ReturnIf</span></code> is in that label, the program will jump back to the main program. Otherwise, you program will end.</td>
+                                <td><code><span class="bl">ReturnIf</span></code> <code><span class="red">EXP</span></code></td>
+                                <td>Returns if <code><span class="red">EXP</span></code> is true. If you called a label before, and <code><span class="bl">ReturnIf</span></code> is in that label, the program will jump back to the main program. Otherwise, you program will end.</td>
                             </tr>
                         </table>
                         <h3 id="graphics">Graphics</h3>
-                        <table cellspacing="0" border="1" cellpadding="3" border-collapse="collapse" id="special">
+                        <table class="special">
                             <tr>
                                 <th>Command</th>
                                 <th>Name</th>
                                 <th>Description</th>
                             </tr>
                             <tr>
-                                <td><code><span id="bl">det(</span>0<span id="bl">)</span></code></td>
+                                <td><code><span class="bl">det(</span>0<span class="bl">)</span></code></td>
                                 <td>Begin</td>
                                 <td>Sets up the graphics canvas (8bpp, default palette).</td>
                             </tr>
                             <tr>
-                                <td><code><span id="bl">det(</span>1<span id="bl">)</span></code></td>
+                                <td><code><span class="bl">det(</span>1<span class="bl">)</span></code></td>
                                 <td>End</td>
                                 <td>Closes the graphics library and sets up for the TI-OS.</td>
                             </tr>
                             <tr>
-                                <td><code><span id="bl">det(</span>2,<span id="red">COLOR</span><span id="bl">)</span></code></td>
+                                <td><code><span class="bl">det(</span>2,<span class="red">COLOR</span><span class="bl">)</span></code></td>
                                 <td>SetColor</td>
                                 <td>Sets the global color index for all routines.</td>
                             </tr>
                             <tr>
-                                <td><code><span id="bl">det(</span>3<span id="bl">)</span></code></td>
+                                <td><code><span class="bl">det(</span>3<span class="bl">)</span></code></td>
                                 <td>SetDefaultPalette</td>
                                 <td>Sets up the default palette where H=L (xLIBC palette).</td>
                             </tr>
                             <tr>
-                                <td><code><span id="bl">det(</span>4,<span id="grey">"DATA"</span>,<span id="red">SIZE</span>,<span id="red">OFFSET</span><span id="bl">)</span></code></td>
+                                <td><code><span class="bl">det(</span>4,<span class="grey">"DATA"</span>,<span class="red">SIZE</span>,<span class="red">OFFSET</span><span class="bl">)</span></code></td>
                                 <td>SetPalette</td>
-                                <td>Sets entries in the palette. Each entry is 2 bytes, so <code><span id="red">SIZE</span></code> should be the amount of entries you want to set times 2.</td>
+                                <td>Sets entries in the palette. Each entry is 2 bytes, so <code><span class="red">SIZE</span></code> should be the amount of entries you want to set times 2.</td>
                             </tr>
                             <tr>
-                                <td><code><span id="bl">det(</span>5,<span id="red">COLOR</span><span id="bl">)</span></code></td>
+                                <td><code><span class="bl">det(</span>5,<span class="red">COLOR</span><span class="bl">)</span></code></td>
                                 <td>FillScreen</td>
                                 <td>Fills the screen with the specified color index.</td>
                             </tr>
                             <tr>
-                                <td><code><span id="bl">det(</span>6,<span id="red">X</span>,<span id="red">Y</span><span id="bl">)</span></code></td>
+                                <td><code><span class="bl">det(</span>6,<span class="red">X</span>,<span class="red">Y</span><span class="bl">)</span></code></td>
                                 <td>SetPixel</td>
                                 <td>Sets the color pixel to the global color index.</td>
                             </tr>
                             <tr>
-                                <td><code><span id="bl">det(</span>7,<span id="red">X</span>,<span id="red">Y</span><span id="bl">)</span></code></td>
+                                <td><code><span class="bl">det(</span>7,<span class="red">X</span>,<span class="red">Y</span><span class="bl">)</span></code></td>
                                 <td>GetPixel</td>
                                 <td>Gets a pixel's color index.</td>
                             </tr>
                             <tr>
-                                <td><code><span id="bl">det(</span>8<span id="bl">)</span></code></td>
+                                <td><code><span class="bl">det(</span>8<span class="bl">)</span></code></td>
                                 <td>GetDraw</td>
                                 <td>Gets the current draw location. 0 = screen, 1 = buffer.</td>
                             </tr>
                             <tr>
-                                <td><code><span id="bl">det(</span>9,<span id="red">BUFFER</span><span id="bl">)</span></code></td>
+                                <td><code><span class="bl">det(</span>9,<span class="red">BUFFER</span><span class="bl">)</span></code></td>
                                 <td>SetDraw</td>
                                 <td>Forces drawing routines to operate on the offscreen buffer or to operate on the visible screen. 0 = draw at screen, 1 = draw at buffer.</td>
                             </tr>
                             <tr>
-                                <td><code><span id="bl">det(</span>10<span id="bl">)</span></code></td>
+                                <td><code><span class="bl">det(</span>10<span class="bl">)</span></code></td>
                                 <td>SwapDraw</td>
                                 <td>Safely swap the vram buffer pointers for double buffered output.</td>
                             </tr>
                             <tr>
-                                <td><code><span id="bl">det(</span>11,<span id="red">BUFFER</span><span id="bl">)</span></code></td>
+                                <td><code><span class="bl">det(</span>11,<span class="red">BUFFER</span><span class="bl">)</span></code></td>
                                 <td>Blit</td>
                                 <td>Copies the buffer image to the screen and vice versa. 0 = copy screen to buffer, 1 = copy buffer to screen.</td>
                             </tr>
                             <tr>
-                                <td><code><span id="bl">det(</span>12,<span id="red">BUFFER</span>,<span id="red">Y</span>,<span id="red">LINES</span><span id="bl">)</span></code></td>
+                                <td><code><span class="bl">det(</span>12,<span class="red">BUFFER</span>,<span class="red">Y</span>,<span class="red">LINES</span><span class="bl">)</span></code></td>
                                 <td>BlitLines</td>
-                                <td>Copies <code><span id="red">LINES</span></code> lines starting at position <code><span id="red">Y</span></code> from the buffer to the screen or vice versa. 0 = copy screen to buffer, 1 = copy buffer to screen.</td>
+                                <td>Copies <code><span class="red">LINES</span></code> lines starting at position <code><span class="red">Y</span></code> from the buffer to the screen or vice versa. 0 = copy screen to buffer, 1 = copy buffer to screen.</td>
                             </tr>
                             <tr>
-                                <td><code><span id="bl">det(</span>13,<span id="red">BUFFER</span>,<span id="red">X</span>,<span id="red">Y</span>,<span id="red">WIDTH</span>,<span id="red">HEIGHT</span><span id="bl">)</span></code></td>
+                                <td><code><span class="bl">det(</span>13,<span class="red">BUFFER</span>,<span class="red">X</span>,<span class="red">Y</span>,<span class="red">WIDTH</span>,<span class="red">HEIGHT</span><span class="bl">)</span></code></td>
                                 <td>BlitArea</td>
-                                <td>Copies a specific rectangle starting at (<code><span id="red">X</span>,<span id="red">Y</span></code>) and dimensions (<code><span id="red">WIDTH</span>,<span id="red">HEIGHT</span></code>) from the buffer to the screen or vice versa. 0 = copy screen to buffer, 1 = copy buffer to screen.</td>
+                                <td>Copies a specific rectangle starting at (<code><span class="red">X</span>,<span class="red">Y</span></code>) and dimensions (<code><span class="red">WIDTH</span>,<span class="red">HEIGHT</span></code>) from the buffer to the screen or vice versa. 0 = copy screen to buffer, 1 = copy buffer to screen.</td>
                             </tr>
                             <tr>
-                                <td><code><span id="bl">det(</span>14,<span id="red">CHAR</span><span id="bl">)</span></code></td>
+                                <td><code><span class="bl">det(</span>14,<span class="red">CHAR</span><span class="bl">)</span></code></td>
                                 <td>PrintChar</td>
                                 <td>Places a character at the current cursor position. (Should be a number, you can find them <a href="http://tibasicdev.wikidot.com/83lgfont">here</a>). Default coordinates are (0,0).</td>
                             </tr>
                             <tr>
-                                <td><code><span id="bl">det(</span>15,<span id="red">EXP</span>,<span id="red">CHARS</span><span id="bl">)</span></code></td>
+                                <td><code><span class="bl">det(</span>15,<span class="red">EXP</span>,<span class="red">CHARS</span><span class="bl">)</span></code></td>
                                 <td>PrintInt</td>
-                                <td>Places signed <code><span id="red">EXP</span></code> at the current cursor position with <code><span id="red">CHARS</span></code> characters. Default coordinates are (0,0).</td>
+                                <td>Places signed <code><span class="red">EXP</span></code> at the current cursor position with <code><span class="red">CHARS</span></code> characters. Default coordinates are (0,0).</td>
                             </tr>
                             <tr>
-                                <td><code><span id="bl">det(</span>16,<span id="red">EXP</span>,<span id="red">CHARS</span><span id="bl">)</span></code></td>
+                                <td><code><span class="bl">det(</span>16,<span class="red">EXP</span>,<span class="red">CHARS</span><span class="bl">)</span></code></td>
                                 <td>PrintUInt</td>
-                                <td>Places unsigned <code><span id="red">EXP</span></code> at the current cursor position with <code><span id="red">CHARS</span></code> characters. Default coordinates are (0,0).</td>
+                                <td>Places unsigned <code><span class="red">EXP</span></code> at the current cursor position with <code><span class="red">CHARS</span></code> characters. Default coordinates are (0,0).</td>
                             </tr>
                             <tr>
-                                <td><code><span id="bl">det(</span>17,<span id="grey">"STRING"</span><span id="bl">)</span></code></td>
+                                <td><code><span class="bl">det(</span>17,<span class="grey">"STRING"</span><span class="bl">)</span></code></td>
                                 <td>PrintString</td>
                                 <td>Places a string at the current cursor position. Default coordinates are (0,0).</td>
                             </tr>
                             <tr>
-                                <td><code><span id="bl">det(</span>18,<span id="grey">"STRING"</span>,<span id="red">X</span>,<span id="red">Y</span><span id="bl">)</span></code></td>
+                                <td><code><span class="bl">det(</span>18,<span class="grey">"STRING"</span>,<span class="red">X</span>,<span class="red">Y</span><span class="bl">)</span></code></td>
                                 <td>PrintStringXY</td>
                                 <td>Places a string at the given coordinates.</td>
                             </tr>
                             <tr>
-                                <td><code><span id="bl">det(</span>19,<span id="red">X</span>,<span id="red">Y</span><span id="bl">)</span></code></td>
+                                <td><code><span class="bl">det(</span>19,<span class="red">X</span>,<span class="red">Y</span><span class="bl">)</span></code></td>
                                 <td>SetTextXY</td>
                                 <td>Sets the coordinates for text routines.</td>
                             </tr>
                             <tr>
-                                <td><code><span id="bl">det(</span>20,<span id="red">COLOR</span><span id="bl">)</span></code></td>
+                                <td><code><span class="bl">det(</span>20,<span class="red">COLOR</span><span class="bl">)</span></code></td>
                                 <td>SetTextBGColor</td>
                                 <td>Sets the background text color for text routines. Default color is 255.</td>
                             </tr>
                             <tr>
-                                <td><code><span id="bl">det(</span>21,<span id="red">COLOR</span><span id="bl">)</span></code></td>
+                                <td><code><span class="bl">det(</span>21,<span class="red">COLOR</span><span class="bl">)</span></code></td>
                                 <td>SetTextFGColor</td>
                                 <td>Sets the foreground text color for text routines. Default color is 0.</td>
                             </tr>
                             <tr>
-                                <td><code><span id="bl">det(</span>22,<span id="red">COLOR</span><span id="bl">)</span></code></td>
+                                <td><code><span class="bl">det(</span>22,<span class="red">COLOR</span><span class="bl">)</span></code></td>
                                 <td>SetTextTransparentColor</td>
                                 <td>Sets the transparency text color for text routines. Default color is 255.</td>
                             </tr>
                             <tr>
-                                <td><code><span id="bl">det(</span>25,<span id="red">SPACE</span><span id="bl">)</span></code></td>
+                                <td><code><span class="bl">det(</span>23,<span class="grey">"DATA"</span><span class="bl">)</span></code></td>
+                                <td>SetCustomFontData</td>
+                                <td>Sets the font for all text commands. <code><span class="grey">"DATA"</span></code> should either be a string with the data, or a pointer to the data of the formated 8x8 pixel font.</td>
+                            </tr>
+                            <tr>
+                                <td><code><span class="bl">det(</span>24,<span class="grey">"DATA"</span><span class="bl">)</span></code></td>
+                                <td>SetCustomFontSpacing</td>
+                                <td>Sets the custom font spacing for all text commands. <code><span class="grey">"DATA"</span></code> can also be a pointer to the data.</td>
+                            </tr>
+                            <tr>
+                                <td><code><span class="bl">det(</span>25,<span class="red">SPACE</span><span class="bl">)</span></code></td>
                                 <td>SetMonoSpaceFont</td>
                                 <td>Sets the font to be monospace.</td>
                             </tr>
                             <tr>
-                                <td><code><span id="bl">det(</span>26,<span id="grey">"STRING"</span><span id="bl">)</span></code></td>
+                                <td><code><span class="bl">det(</span>26,<span class="grey">"STRING"</span><span class="bl">)</span></code></td>
                                 <td>GetStringWidth</td>
-                                <td>Gets the pixel width of <code><span id="grey">"STRING"</span></code>.</td>
+                                <td>Gets the pixel width of <code><span class="grey">"STRING"</span></code>.</td>
                             </tr>
                             <tr>
-                                <td><code><span id="bl">det(</span>27,<span id="red">CHAR</span><span id="bl">)</span></code></td>
+                                <td><code><span class="bl">det(</span>27,<span class="red">CHAR</span><span class="bl">)</span></code></td>
                                 <td>GetCharWidth</td>
-                                <td>Gets the pixel width of the char <code><span id="red">CHAR</span></code>.</td>
+                                <td>Gets the pixel width of the char <code><span class="red">CHAR</span></code>.</td>
                             </tr>
                             <tr>
-                                <td><code><span id="bl">det(</span>28<span id="bl">)</span></code></td>
+                                <td><code><span class="bl">det(</span>28<span class="bl">)</span></code></td>
                                 <td>GetTextX</td>
                                 <td>Returns the current text cursor X position.</td>
                             </tr>
                             <tr>
-                                <td><code><span id="bl">det(</span>29<span id="bl">)</span></code></td>
+                                <td><code><span class="bl">det(</span>29<span class="bl">)</span></code></td>
                                 <td>GetTextY</td>
                                 <td>Returns the current text cursor Y position.</td>
                             </tr>
                             <tr>
-                                <td><code><span id="bl">det(</span>30,<span id="red">X1</span>,<span id="red">Y1</span>,<span id="red">X2</span>,<span id="red">Y2</span><span id="bl">)</span></code></td>
+                                <td><code><span class="bl">det(</span>30,<span class="red">X1</span>,<span class="red">Y1</span>,<span class="red">X2</span>,<span class="red">Y2</span><span class="bl">)</span></code></td>
                                 <td>Line</td>
                                 <td>Draws an arbitrarily clipped line.</td>
                             </tr>
                             <tr>
-                                <td><code><span id="bl">det(</span>31,<span id="red">X</span>,<span id="red">Y</span>,<span id="red">LENGTH</span><span id="bl">)</span></code></td>
+                                <td><code><span class="bl">det(</span>31,<span class="red">X</span>,<span class="red">Y</span>,<span class="red">LENGTH</span><span class="bl">)</span></code></td>
                                 <td>HorizLine</td>
                                 <td>Draws an clipped horizontal line with the global color index.</td>
                             </tr>
                             <tr>
-                                <td><code><span id="bl">det(</span>32,<span id="red">X</span>,<span id="red">Y</span>,<span id="red">LENGTH</span><span id="bl">)</span></code></td>
+                                <td><code><span class="bl">det(</span>32,<span class="red">X</span>,<span class="red">Y</span>,<span class="red">LENGTH</span><span class="bl">)</span></code></td>
                                 <td>VertLine</td>
                                 <td>Draws an clipped vertical line with the global color index.</td>
                             </tr>
                             <tr>
-                                <td><code><span id="bl">det(</span>33,<span id="red">X</span>,<span id="red">Y</span>,<span id="red">RADIUS</span><span id="bl">)</span></code></td>
+                                <td><code><span class="bl">det(</span>33,<span class="red">X</span>,<span class="red">Y</span>,<span class="red">RADIUS</span><span class="bl">)</span></code></td>
                                 <td>Circle</td>
                                 <td>Draws a clipped circle outline.</td>
                             </tr>
                             <tr>
-                                <td><code><span id="bl">det(</span>34,<span id="red">X</span>,<span id="red">Y</span>,<span id="red">RADIUS</span><span id="bl">)</span></code></td>
+                                <td><code><span class="bl">det(</span>34,<span class="red">X</span>,<span class="red">Y</span>,<span class="red">RADIUS</span><span class="bl">)</span></code></td>
                                 <td>FillCircle</td>
                                 <td>Draws an clipped filled circle.</td>
                             </tr>
                             <tr>
-                                <td><code><span id="bl">det(</span>35,<span id="red">X</span>,<span id="red">Y</span>,<span id="red">WIDTH</span>,<span id="red">HEIGHT</span><span id="bl">)</span></code></td>
+                                <td><code><span class="bl">det(</span>35,<span class="red">X</span>,<span class="red">Y</span>,<span class="red">WIDTH</span>,<span class="red">HEIGHT</span><span class="bl">)</span></code></td>
                                 <td>Rectangle</td>
                                 <td>Draws an clipped rectangle outline with the global color index.</td>
                             </tr>
                             <tr>
-                                <td><code><span id="bl">det(</span>36,<span id="red">X</span>,<span id="red">Y</span>,<span id="red">WIDTH</span>,<span id="red">HEIGHT</span><span id="bl">)</span></code></td>
+                                <td><code><span class="bl">det(</span>36,<span class="red">X</span>,<span class="red">Y</span>,<span class="red">WIDTH</span>,<span class="red">HEIGHT</span><span class="bl">)</span></code></td>
                                 <td>FillRectangle</td>
                                 <td>Draws an clipped rectangle with the global color index.</td>
                             </tr>
                             <tr>
-                                <td><code><span id="bl">det(</span>37,<span id="red">X1</span>,<span id="red">Y1</span>,<span id="red">X2</span>,<span id="red">Y2</span><span id="bl">)</span></code></td>
+                                <td><code><span class="bl">det(</span>37,<span class="red">X1</span>,<span class="red">Y1</span>,<span class="red">X2</span>,<span class="red">Y2</span><span class="bl">)</span></code></td>
                                 <td>Line_NoClip</td>
                                 <td>Draws an arbitrarily unclipped line.</td>
                             </tr>
                             <tr>
-                                <td><code><span id="bl">det(</span>38,<span id="red">X</span>,<span id="red">Y</span>,<span id="red">LENGTH</span><span id="bl">)</span></code></td>
+                                <td><code><span class="bl">det(</span>38,<span class="red">X</span>,<span class="red">Y</span>,<span class="red">LENGTH</span><span class="bl">)</span></code></td>
                                 <td>HorizLine_NoClip</td>
                                 <td>Draws an unclipped horizontal line with the global color index.</td>
                             </tr>
                             <tr>
-                                <td><code><span id="bl">det(</span>39,<span id="red">X</span>,<span id="red">Y</span>,<span id="red">LENGTH</span><span id="bl">)</span></code></td>
+                                <td><code><span class="bl">det(</span>39,<span class="red">X</span>,<span class="red">Y</span>,<span class="red">LENGTH</span><span class="bl">)</span></code></td>
                                 <td>VertLine_NoClip</td>
                                 <td>Draws an unclipped vertical line with the global color index.</td>
                             </tr>
                             <tr>
-                                <td><code><span id="bl">det(</span>40,<span id="red">X</span>,<span id="red">Y</span>,<span id="red">RADIUS</span><span id="bl">)</span></code></td>
+                                <td><code><span class="bl">det(</span>40,<span class="red">X</span>,<span class="red">Y</span>,<span class="red">RADIUS</span><span class="bl">)</span></code></td>
                                 <td>FillCircle_NoClip</td>
                                 <td>Draws an unclipped filled circle.</td>
                             </tr>
                             <tr>
-                                <td><code><span id="bl">det(</span>41,<span id="red">X</span>,<span id="red">Y</span>,<span id="red">WIDTH</span>,<span id="red">HEIGHT</span><span id="bl">)</span></code></td>
+                                <td><code><span class="bl">det(</span>41,<span class="red">X</span>,<span class="red">Y</span>,<span class="red">WIDTH</span>,<span class="red">HEIGHT</span><span class="bl">)</span></code></td>
                                 <td>Rectangle_NoClip</td>
                                 <td>Draws an unclipped rectangle outline with the global color index.</td>
                             </tr>
                             <tr>
-                                <td><code><span id="bl">det(</span>42,<span id="red">X</span>,<span id="red">Y</span>,<span id="red">WIDTH</span>,<span id="red">HEIGHT</span><span id="bl">)</span></code></td>
+                                <td><code><span class="bl">det(</span>42,<span class="red">X</span>,<span class="red">Y</span>,<span class="red">WIDTH</span>,<span class="red">HEIGHT</span><span class="bl">)</span></code></td>
                                 <td>FillRectangle_NoClip</td>
                                 <td>Draws an unclipped rectangle with the global color index.</td>
                             </tr>
                             <tr>
-                                <td><code><span id="bl">det(</span>43,<span id="red">XMIN</span>,<span id="red">YMIN</span>,<span id="red">XMAX</span>,<span id="red">YMAX</span><span id="bl">)</span></code></td>
+                                <td><code><span class="bl">det(</span>43,<span class="red">XMIN</span>,<span class="red">YMIN</span>,<span class="red">XMAX</span>,<span class="red">YMAX</span><span class="bl">)</span></code></td>
                                 <td>SetClipRegion</td>
                                 <td>Sets the clipping  for clipped routines.</td>
                             </tr>
                             <tr>
-                                <td><code><span id="bl">det(</span>44,<span id="red">CLIP_REGION</span><span id="bl">)</span></code></td>
+                                <td><code><span class="bl">det(</span>44,<span class="red">CLIP_REGION</span><span class="bl">)</span></code></td>
                                 <td>GetClipRegion</td>
-                                <td><code><span id="red">CLIP_REGION</span></code> is a pointer to the region bounds. Returns 0 if offscreen, 1 if onscreen.</td>
+                                <td><code><span class="red">CLIP_REGION</span></code> is a pointer to the region bounds. Returns 0 if offscreen, 1 if onscreen.</td>
                             </tr>
                             <tr>
-                                <td><code><span id="bl">det(</span>45,<span id="red">PIXELS</span><span id="bl">)</span></code></td>
+                                <td><code><span class="bl">det(</span>45,<span class="red">PIXELS</span><span class="bl">)</span></code></td>
                                 <td>ShiftDown</td>
                                 <td>Shifts whatever is in the clip down by some pixels.</td>
                             </tr>
                             <tr>
-                                <td><code><span id="bl">det(</span>46,<span id="red">PIXELS</span><span id="bl">)</span></code></td>
+                                <td><code><span class="bl">det(</span>46,<span class="red">PIXELS</span><span class="bl">)</span></code></td>
                                 <td>ShiftUp</td>
                                 <td>Shifts whatever is in the clip up by some pixels.</td>
                             </tr>
                             <tr>
-                                <td><code><span id="bl">det(</span>47,<span id="red">PIXELS</span><span id="bl">)</span></code></td>
+                                <td><code><span class="bl">det(</span>47,<span class="red">PIXELS</span><span class="bl">)</span></code></td>
                                 <td>ShiftLeft</td>
                                 <td>Shifts whatever is in the clip left by some pixels.</td>
                             </tr>
                             <tr>
-                                <td><code><span id="bl">det(</span>48,<span id="red">PIXELS</span><span id="bl">)</span></code></td>
+                                <td><code><span class="bl">det(</span>48,<span class="red">PIXELS</span><span class="bl">)</span></code></td>
                                 <td>ShiftRight</td>
                                 <td>Shifts whatever is in the clip right by some pixels.</td>
                             </tr>
                             <tr>
-                                <td><code><span id="bl">det(</span>49,<span id="gr">VAR</span>,<span id="red">X_OFFSET</span>,<span id="red">Y_OFFSET</span><span id="bl">)</span></code></td>
+                                <td><code><span class="bl">det(</span>49,<span class="gr">VAR</span>,<span class="red">X_OFFSET</span>,<span class="red">Y_OFFSET</span><span class="bl">)</span></code></td>
                                 <td>Tilemap</td>
-                                <td>Displays a clipped tilemap. <code><span id="gr">VAR</span></code> should point to the tilemap structure, which you can get with <code><span id="bl">DefineTilemap(</span></code>.</td>
+                                <td>Displays a clipped tilemap. <code><span class="gr">VAR</span></code> should point to the tilemap structure, which you can get with <code><span class="bl">DefineTilemap(</span></code>.</td>
                             </tr>
                             <tr>
-                                <td><code><span id="bl">det(</span>50,<span id="gr">VAR</span>,<span id="red">X_OFFSET</span>,<span id="red">Y_OFFSET</span><span id="bl">)</span></code></td>
+                                <td><code><span class="bl">det(</span>50,<span class="gr">VAR</span>,<span class="red">X_OFFSET</span>,<span class="red">Y_OFFSET</span><span class="bl">)</span></code></td>
                                 <td>Tilemap_NoClip</td>
-                                <td>Displays a tilemap. <code><span id="gr">VAR</span></code> should point to the tilemap structure, which you can get with <code><span id="bl">DefineTilemap(</span></code>.</td>
+                                <td>Displays a tilemap. <code><span class="gr">VAR</span></code> should point to the tilemap structure, which you can get with <code><span class="bl">DefineTilemap(</span></code>.</td>
+                            </tr>
+                            <tr>
+                                <td><code><span class="bl">det(</span>51,<span class="gr">VAR</span>,<span class="red">X_OFFSET</span>,<span class="red">Y_OFFSET</span><span class="bl">)</span></code></td>
+                                <td>TransparentTilemap</td>
+                                <td>Displays a transparent, clipped tilemap. <code><span class="gr">VAR</span></code> should point to the tilemap structure, which you can get with <code><span class="bl">DefineTilemap(</span></code>.</td>
+                            </tr>
+                            <tr>
+                                <td><code><span class="bl">det(</span>52,<span class="gr">VAR</span>,<span class="red">X_OFFSET</span>,<span class="red">Y_OFFSET</span><span class="bl">)</span></code></td>
+                                <td>TransparentTilemap_NoClip</td>
+                                <td>Displays a transparent tilemap. <code><span class="gr">VAR</span></code> should point to the tilemap structure, which you can get with <code><span class="bl">DefineTilemap(</span></code>.</td>
+                            </tr>
+                            <tr>
+                                <td><code><span class="bl">det(</span>53,<span class="gr">VAR</span>,<span class="red">X_OFFSET</span>,<span class="red">Y_OFFSET</span><span class="bl">)</span></code></td>
+                                <td>TilePtr</td>
+                                <td>Gets a pointer to a particular tile given a tilemap and pixel offsets. <code><span class="gr">VAR</span></code> should point to the tilemap structure, which you can get with <code><span class="bl">DefineTilemap(</span></code>.</td>
+                            </tr>
+                            <tr>
+                                <td><code><span class="bl">det(</span>54,<span class="gr">VAR</span>,<span class="red">ROW</span>,<span class="red">COL</span><span class="bl">)</span></code></td>
+                                <td>TilePtrMapped</td>
+                                <td>Gets a pointer to a particular tile given a tilemap and offsets. <code><span class="gr">VAR</span></code> should point to the tilemap structure, which you can get with <code><span class="bl">DefineTilemap(</span></code>.</td>
                             </tr>
                             <tr>
                                 <td></td>
-                                <td colspan="2"><i>For all sprite commands: <code><span id="red">PTR</span></code> should be a pointer to the sprite data done with <code><span id="bl">DefineSprite(</span></code>. Check sprites.txt how to define sprites.</i></td>
+                                <td colspan="2"><i>For all sprite commands: <code><span class="red">PTR</span></code> should be a pointer to the sprite data done with <code><span class="bl">DefineSprite(</span></code>. Check sprites.txt how to define sprites.</i></td>
                             </tr>
                             <tr>
-                                <td><code><span id="bl">det(</span>57,<span id="red">PTR</span>,<span id="red">X</span>,<span id="red">Y</span><span id="bl">)</span></code></td>
+                                <td><code><span class="bl">det(</span>57,<span class="red">PTR</span>,<span class="red">X</span>,<span class="red">Y</span><span class="bl">)</span></code></td>
                                 <td>Sprite</td>
                                 <td>Draws a clipped sprite.</td>
                             </tr>
                             <tr>
-                                <td><code><span id="bl">det(</span>58,<span id="red">PTR</span>,<span id="red">X</span>,<span id="red">Y</span><span id="bl">)</span></code></td>
+                                <td><code><span class="bl">det(</span>58,<span class="red">PTR</span>,<span class="red">X</span>,<span class="red">Y</span><span class="bl">)</span></code></td>
                                 <td>TransparentSprite</td>
                                 <td>Draws a clipped transparent sprite to the current buffer. The transparent color is 0.</td>
                             </tr>
                             <tr>
-                                <td><code><span id="bl">det(</span>59,<span id="red">PTR</span>,<span id="red">X</span>,<span id="red">Y</span><span id="bl">)</span></code></td>
+                                <td><code><span class="bl">det(</span>59,<span class="red">PTR</span>,<span class="red">X</span>,<span class="red">Y</span><span class="bl">)</span></code></td>
                                 <td>Sprite_NoClip</td>
                                 <td>Places an sprite on the screen as fast as possible.</td>
                             </tr>
                             <tr>
-                                <td><code><span id="bl">det(</span>60,<span id="red">PTR</span>,<span id="red">X</span>,<span id="red">Y</span><span id="bl">)</span></code></td>
+                                <td><code><span class="bl">det(</span>60,<span class="red">PTR</span>,<span class="red">X</span>,<span class="red">Y</span><span class="bl">)</span></code></td>
                                 <td>TransparentSprite_NoClip</td>
                                 <td>Draws a transparent sprite to the current buffer. Default transparent color is 0.</td>
                             </tr>
                             <tr>
-                                <td><code><span id="bl">det(</span>61,<span id="red">PTR</span>,<span id="red">X</span>,<span id="red">Y</span>,<span id="red">WSCALE</span>,<span id="red">HSCALE</span><span id="bl">)</span></code></td>
+                                <td><code><span class="bl">det(</span>61,<span class="red">PTR</span>,<span class="red">X</span>,<span class="red">Y</span>,<span class="red">WSCALE</span>,<span class="red">HSCALE</span><span class="bl">)</span></code></td>
                                 <td>GetSprite</td>
-                                <td>Gets a sprite off the buffer, and stores it to the memory pointed to by <code><span id="red">PTR</span></code>. Note: you need to store the width and the height (both 1-byte values) to the memory first.</td>
+                                <td>Gets a sprite off the buffer, and stores it to the memory pointed to by <code><span class="red">PTR</span></code>. Note: you need to store the width and the height (both 1-byte values) to the memory first.</td>
                             </tr>
                             <tr>
-                                <td><code><span id="bl">det(</span>62,<span id="red">PTR</span>,<span id="red">X</span>,<span id="red">Y</span>,<span id="red">WSCALE</span>,<span id="red">HSCALE</span><span id="bl">)</span></code></td>
+                                <td><code><span class="bl">det(</span>62,<span class="red">PTR</span>,<span class="red">X</span>,<span class="red">Y</span>,<span class="red">WSCALE</span>,<span class="red">HSCALE</span><span class="bl">)</span></code></td>
                                 <td>ScaledSprite_NoClip</td>
                                 <td>Draws a scaled sprite to the screen.</td>
                             </tr>
                             <tr>
-                                <td><code><span id="bl">det(</span>63,<span id="red">PTR</span>,<span id="red">X</span>,<span id="red">Y</span>,<span id="red">WSCALE</span>,<span id="red">HSCALE</span><span id="bl">)</span></code></td>
+                                <td><code><span class="bl">det(</span>63,<span class="red">PTR</span>,<span class="red">X</span>,<span class="red">Y</span>,<span class="red">WSCALE</span>,<span class="red">HSCALE</span><span class="bl">)</span></code></td>
                                 <td>ScaledTransparentSprite_NoClip</td>
                                 <td>Draws a scaled sprite to the screen with transparency. Default transparent color is 0.</td>
                             </tr>
                             <tr>
-                                <td><code><span id="bl">det(</span>64,<span id="red">PTR_IN</span>,<span id="red">PTR_OUT</span><span id="bl">)</span></code></td>
+                                <td><code><span class="bl">det(</span>64,<span class="red">PTR_IN</span>,<span class="red">PTR_OUT</span><span class="bl">)</span></code></td>
                                 <td>FlipSpriteY</td>
                                 <td>Flips a sprite along the Y-axis.</td>
                             </tr>
                             <tr>
-                                <td><code><span id="bl">det(</span>65,<span id="red">PTR_IN</span>,<span id="red">PTR_OUT</span><span id="bl">)</span></code></td>
+                                <td><code><span class="bl">det(</span>65,<span class="red">PTR_IN</span>,<span class="red">PTR_OUT</span><span class="bl">)</span></code></td>
                                 <td>FlipSpriteX</td>
                                 <td>Flips a sprite along the X-axis.</td>
                             </tr>
                             <tr>
-                                <td><code><span id="bl">det(</span>66,<span id="red">PTR_IN</span>,<span id="red">PTR_OUT</span><span id="bl">)</span></code></td>
+                                <td><code><span class="bl">det(</span>66,<span class="red">PTR_IN</span>,<span class="red">PTR_OUT</span><span class="bl">)</span></code></td>
                                 <td>RotateSpriteC</td>
                                 <td>Rotates a sprite 90 degrees clockwise.</td>
                             </tr>
                             <tr>
-                                <td><code><span id="bl">det(</span>67,<span id="red">PTR_IN</span>,<span id="red">PTR_OUT</span><span id="bl">)</span></code></td>
+                                <td><code><span class="bl">det(</span>67,<span class="red">PTR_IN</span>,<span class="red">PTR_OUT</span><span class="bl">)</span></code></td>
                                 <td>RotateSpriteCC</td>
                                 <td>Rotates a sprite 90 degrees counter clockwise.</td>
                             </tr>
                             <tr>
-                                <td><code><span id="bl">det(</span>68,<span id="red">PTR_IN</span>,<span id="red">PTR_OUT</span><span id="bl">)</span></code></td>
+                                <td><code><span class="bl">det(</span>68,<span class="red">PTR_IN</span>,<span class="red">PTR_OUT</span><span class="bl">)</span></code></td>
                                 <td>RotateSpriteHalf</td>
                                 <td>Rotates a sprite 180 degrees.</td>
                             </tr>
                             <tr>
-                                <td><code><span id="bl">det(</span>69,<span id="red">PTS</span>,<span id="red">NUM_PTS</span><span id="bl">)</span></code></td>
+                                <td><code><span class="bl">det(</span>69,<span class="red">PTS</span>,<span class="red">NUM_PTS</span><span class="bl">)</span></code></td>
                                 <td>Polygon</td>
-                                <td>Draws a clipped polygon outline with <code><span id="red">NUM_PTS</span></code> points. <code><span id="red">PTS</span></code> should point to a 3-byte list, with all the X- and Y-coordinates of the points, so <code>{<span id="red">X1</span>,<span id="red">Y1</span>,<span id="red">X2</span>,<span id="red">Y2</span>,...}</code></td>
+                                <td>Draws a clipped polygon outline with <code><span class="red">NUM_PTS</span></code> points. <code><span class="red">PTS</span></code> should point to a 3-byte list, with all the X- and Y-coordinates of the points, so <code>{<span class="red">X1</span>,<span class="red">Y1</span>,<span class="red">X2</span>,<span class="red">Y2</span>,...}</code></td>
                             </tr>
                             <tr>
-                                <td><code><span id="bl">det(</span>70,<span id="red">PTS</span>,<span id="red">NUM_PTS</span><span id="bl">)</span></code></td>
+                                <td><code><span class="bl">det(</span>70,<span class="red">PTS</span>,<span class="red">NUM_PTS</span><span class="bl">)</span></code></td>
                                 <td>Polygon_NoClip</td>
-                                <td>Draws a polygon outline with <code><span id="red">NUM_PTS</span></code> points. <code><span id="red">PTS</span></code> should point to a 3-byte list, with all the X- and Y-coordinates of the points, so <code>{<span id="red">X1</span>,<span id="red">Y1</span>,<span id="red">X2</span>,<span id="red">Y2</span>,...}</code></td>
+                                <td>Draws a polygon outline with <code><span class="red">NUM_PTS</span></code> points. <code><span class="red">PTS</span></code> should point to a 3-byte list, with all the X- and Y-coordinates of the points, so <code>{<span class="red">X1</span>,<span class="red">Y1</span>,<span class="red">X2</span>,<span class="red">Y2</span>,...}</code></td>
                             </tr>
                             <tr>
-                                <td><code><span id="bl">det(</span>71,<span id="red">X1</span>,<span id="red">Y1</span>,<span id="red">X2</span>,<span id="red">Y2</span>,<span id="red">X3</span>,<span id="red">Y3</span><span id="bl">)</span></code></td>
+                                <td><code><span class="bl">det(</span>71,<span class="red">X1</span>,<span class="red">Y1</span>,<span class="red">X2</span>,<span class="red">Y2</span>,<span class="red">X3</span>,<span class="red">Y3</span><span class="bl">)</span></code></td>
                                 <td>FillTriangle</td>
                                 <td>Draws a filled triangle with clipping.</td>
                             </tr>
                             <tr>
-                                <td><code><span id="bl">det(</span>72,<span id="red">X1</span>,<span id="red">Y1</span>,<span id="red">X2</span>,<span id="red">Y2</span>,<span id="red">X3</span>,<span id="red">Y3</span><span id="bl">)</span></code></td>
+                                <td><code><span class="bl">det(</span>72,<span class="red">X1</span>,<span class="red">Y1</span>,<span class="red">X2</span>,<span class="red">Y2</span>,<span class="red">X3</span>,<span class="red">Y3</span><span class="bl">)</span></code></td>
                                 <td>FillTriangle_NoClip</td>
                                 <td>Draws a filled triangle without clipping.</td>
                             </tr>
                             <tr>
-                                <td><code><span id="bl">det(</span>74,<span id="red">XSCALE</span>,<span id="red">YSCALE</span><span id="bl">)</span></code></td>
+                                <td><code><span class="bl">det(</span>74,<span class="red">XSCALE</span>,<span class="red">YSCALE</span><span class="bl">)</span></code></td>
                                 <td>SetTextScale</td>
                                 <td>Changes the amount of text scaling (note that height and width are independent).</td>
                             </tr>
                             <tr>
-                                <td><code><span id="bl">det(</span>75,<span id="red">COLOR</span><span id="bl">)</span></code></td>
+                                <td><code><span class="bl">det(</span>75,<span class="red">COLOR</span><span class="bl">)</span></code></td>
                                 <td>SetTransparentColor</td>
                                 <td>Sets the global transparent color index for all routines.</td>
                             </tr>
                             <tr>
-                                <td><code><span id="bl">det(</span>76<span id="bl">)</span></code></td>
+                                <td><code><span class="bl">det(</span>76<span class="bl">)</span></code></td>
                                 <td>ZeroScreen</td>
                                 <td>Fills the current screen with a bunch of zeros. Same as <code>det(5,0)</code> but faster.</td>
                             </tr>
                             <tr>
-                                <td><code><span id="bl">det(</span>77,<span id="red">CONFIG</span><span id="bl">)</span></code></td>
+                                <td><code><span class="bl">det(</span>77,<span class="red">CONFIG</span><span class="bl">)</span></code></td>
                                 <td>SetTextConfig</td>
                                 <td>Configures text depending on the arguments. 1 = clipping, 2 = no clipping.</td>
                             </tr>
                             <tr>
-                                <td><code><span id="bl">det(</span>78,<span id="red">CHAR</span><span id="bl">)</span></code></td>
+                                <td><code><span class="bl">det(</span>78,<span class="red">CHAR</span><span class="bl">)</span></code></td>
                                 <td>GetSpriteChar</td>
-                                <td>Creates a temporary sprite of char <code><span id="red">CHAR</span></code>. Returns a pointer to the sprite data. <i>Note: you need to set the right colors first with SetTextBGColor, SetTextFGColor, SetTextTransparentColor and SetTransparentColor!</i></td>
+                                <td>Creates a temporary sprite of char <code><span class="red">CHAR</span></code>. Returns a pointer to the sprite data. <i>Note: you need to set the right colors first with SetTextBGColor, SetTextFGColor, SetTextTransparentColor and SetTransparentColor!</i></td>
                             </tr>
                             <tr>
-                                <td><code><span id="bl">det(</span>79,<span id="red">COLOR</span>,<span id="red">AMOUNT</span><span id="bl">)</span></code></td>
+                                <td><code><span class="bl">det(</span>79,<span class="red">COLOR</span>,<span class="red">AMOUNT</span><span class="bl">)</span></code></td>
                                 <td>Lighten</td>
-                                <td>Lightens a given 1555 color; useful for palette color conversions. <code><span id="red">AMOUNT</span></code> is the amount to lighten by.</td>
+                                <td>Lightens a given 1555 color; useful for palette color conversions. <code><span class="red">AMOUNT</span></code> is the amount to lighten by.</td>
                             </tr>
                             <tr>
-                                <td><code><span id="bl">det(</span>80,<span id="red">COLOR</span>,<span id="red">AMOUNT</span><span id="bl">)</span></code></td>
+                                <td><code><span class="bl">det(</span>80,<span class="red">COLOR</span>,<span class="red">AMOUNT</span><span class="bl">)</span></code></td>
                                 <td>Darken</td>
-                                <td>Darkens a given 1555 color; useful for palette color conversions. <code><span id="red">AMOUNT</span></code> is the amount to darken by.</td>
+                                <td>Darkens a given 1555 color; useful for palette color conversions. <code><span class="red">AMOUNT</span></code> is the amount to darken by.</td>
                             </tr>
                             <tr>
-                                <td><code><span id="bl">det(</span>81,<span id="red">HEIGHT</span><span id="bl">)</span></code></td>
+                                <td><code><span class="bl">det(</span>81,<span class="red">HEIGHT</span><span class="bl">)</span></code></td>
                                 <td>SetFontHeight</td>
                                 <td>Sets the height of the font in pixels.</td>
                             </tr>
                             <tr>
-                                <td><code><span id="bl">det(</span>82,<span id="red">PTR_IN</span>,<span id="red">PTR_OUT</span><span id="bl">)</span></code></td>
+                                <td><code><span class="bl">det(</span>82,<span class="red">PTR_IN</span>,<span class="red">PTR_OUT</span><span class="bl">)</span></code></td>
                                 <td>ScaleSprite</td>
                                 <td>Resizes a sprite to new dimensions.</td>
                             </tr>
                             <tr>
-                                <td><code><span id="bl">det(</span>83,<span id="red">X</span>,<span id="red">Y</span>,<span id="red">COLOR</span><span id="bl">)</span></code></td>
+                                <td><code><span class="bl">det(</span>83,<span class="red">X</span>,<span class="red">Y</span>,<span class="red">COLOR</span><span class="bl">)</span></code></td>
                                 <td>FloodFill</td>
                                 <td>Fills an area with a color.</td>
                             </tr>
                             <tr>
-                                <td><code><span id="bl">det(</span>84,<span id="red">PTR</span>,<span id="red">X</span>,<span id="red">Y</span><span id="bl">)</span></code></td>
+                                <td><code><span class="bl">det(</span>84,<span class="red">PTR</span>,<span class="red">X</span>,<span class="red">Y</span><span class="bl">)</span></code></td>
                                 <td>RLETSprite</td>
                                 <td>Draws a sprite with RLE transparency.</td>
                             </tr>
                             <tr>
-                                <td><code><span id="bl">det(</span>85,<span id="red">PTR</span>,<span id="red">X</span>,<span id="red">Y</span><span id="bl">)</span></code></td>
+                                <td><code><span class="bl">det(</span>85,<span class="red">PTR</span>,<span class="red">X</span>,<span class="red">Y</span><span class="bl">)</span></code></td>
                                 <td>RLETSprite_NoClip</td>
                                 <td>Draws an unclipped sprite with RLE transparency.</td>
                             </tr>
                             <tr>
-                                <td><code><span id="bl">det(</span>86,<span id="red">PTR_IN</span>,<span id="red">PTR_OUT</span><span id="bl">)</span></code></td>
+                                <td><code><span class="bl">det(</span>86,<span class="red">PTR_IN</span>,<span class="red">PTR_OUT</span><span class="bl">)</span></code></td>
                                 <td>ConvertFromRLETSprite</td>
                                 <td>Converts a sprite with RLE transpareny to a sprite with normal transparency.</td>
                             </tr>
                             <tr>
-                                <td><code><span id="bl">det(</span>87,<span id="red">PTR_IN</span>,<span id="red">PTR_OUT</span><span id="bl">)</span></code></td>
+                                <td><code><span class="bl">det(</span>87,<span class="red">PTR_IN</span>,<span class="red">PTR_OUT</span><span class="bl">)</span></code></td>
                                 <td>ConvertToRLETSprite</td>
                                 <td>Converts a sprite with normal transpareny to a sprite with RLE transparency.</td>
                             </tr>
                             <tr>
-                                <td><code><span id="bl">det(</span>89,<span id="red">PTR_IN</span>,<span id="red">PTR_OUT</span>,<span id="red">ANGLE</span>,<span id="red">SCALE</span><span id="bl">)</span></code></td>
+                                <td><code><span class="bl">det(</span>89,<span class="red">PTR_IN</span>,<span class="red">PTR_OUT</span>,<span class="red">ANGLE</span>,<span class="red">SCALE</span><span class="bl">)</span></code></td>
                                 <td>RotateScaleSprite</td>
-                                <td>Fixed rotation with scaling factor for sprites. <i>A scale factor of 64 represents 100% scaling. This routine only accepts square input sprites.</i> <code><span id="red">ANGLE</span></code> should be in <code>[0,255]</code>.</td>
+                                <td>Fixed rotation with scaling factor for sprites. <i>A scale factor of 64 represents 100% scaling. This routine only accepts square input sprites.</i> <code><span class="red">ANGLE</span></code> should be in <code>[0,255]</code>.</td>
                             </tr>
                             <tr>
-                                <td><code><span id="bl">det(</span>90,<span id="red">PTR</span>,<span id="red">X</span>,<span id="red">Y</span>,<span id="red">ANGLE</span>,<span id="red">SCALE</span><span id="bl">)</span></code></td>
+                                <td><code><span class="bl">det(</span>90,<span class="red">PTR</span>,<span class="red">X</span>,<span class="red">Y</span>,<span class="red">ANGLE</span>,<span class="red">SCALE</span><span class="bl">)</span></code></td>
                                 <td>RotatedScaledTransparentSprite_NoClip</td>
-                                <td>Fixed rotation with scaling factor for sprites with transparency. <i>A scale factor of 64 represents 100% scaling. This routine only accepts square input sprites.</i> <code><span id="red">ANGLE</span></code> should be in <code>[0,255]</code>.</td>
+                                <td>Fixed rotation with scaling factor for sprites with transparency. <i>A scale factor of 64 represents 100% scaling. This routine only accepts square input sprites.</i> <code><span class="red">ANGLE</span></code> should be in <code>[0,255]</code>.</td>
                             </tr>
                             <tr>
-                                <td><code><span id="bl">det(</span>91,<span id="red">PTR</span>,<span id="red">X</span>,<span id="red">Y</span>,<span id="red">ANGLE</span>,<span id="red">SCALE</span><span id="bl">)</span></code></td>
+                                <td><code><span class="bl">det(</span>91,<span class="red">PTR</span>,<span class="red">X</span>,<span class="red">Y</span>,<span class="red">ANGLE</span>,<span class="red">SCALE</span><span class="bl">)</span></code></td>
                                 <td>RotatedScaledSprite_NoClip</td>
-                                <td>Fixed rotation with scaling factor for sprites without transparency. <i>A scale factor of 64 represents 100% scaling. This routine only accepts square input sprites.</i> <code><span id="red">ANGLE</span></code> should be in <code>[0,255]</code>.</td>
+                                <td>Fixed rotation with scaling factor for sprites without transparency. <i>A scale factor of 64 represents 100% scaling. This routine only accepts square input sprites.</i> <code><span class="red">ANGLE</span></code> should be in <code>[0,255]</code>.</td>
                             </tr>
                         </table>
                         <h3 id="fileioc">File I/O</h3>
-                        <table cellspacing="0" border="1" cellpadding="3" border-collapse="collapse" id="special">
+                        <table class="special">
                             <tr>
                                 <th>Command</th>
                                 <th>Name</th>
                                 <th>Description</th>
                             </tr>
                             <tr>
-                                <td><code><span id="bl">sum(</span>0<span id="bl">)</span></code></td>
+                                <td><code><span class="bl">sum(</span>0<span class="bl">)</span></code></td>
                                 <td>CloseAll</td>
                                 <td>Closes all open slots. <i>Call this before you use any variable functions!</i></td>
                             </tr>
                             <tr>
-                                <td><code><span id="bl">sum(</span>1,<span id="grey">"NAME"</span>,<span id="grey">"MODE"</span><span id="bl">)</span></code></td>
+                                <td><code><span class="bl">sum(</span>1,<span class="grey">"NAME"</span>,<span class="grey">"MODE"</span><span class="bl">)</span></code></td>
                                 <td>Open</td>
-                                <td>Opens an appvar with name <code><span id="grey">"NAME"</span></code>. Returns the slot number or 0 if failure. <code><span id="grey">"MODE"</span></code> options:<br>
-                                    - <code><span id="grey">"r"</span></code> - Opens a file for reading. The file must exist. Keeps file in archive if in archive.<br>
-                                    - <code><span id="grey">"w"</span></code> - Creates an empty file for writing. Overwrites file if already exists.<br>
-                                    - <code><span id="grey">"a"</span></code> - Appends to a file. Writing operations, append data at the end of the file. The file is created if it does not exist.<br>
-                                    - <code><span id="grey">"r+"</span></code> - Opens a file to update both reading and writing. The file must exist. Moves file from archive to RAM if in archive.<br>
-                                    - <code><span id="grey">"w+"</span></code> - Creates an empty file for both reading and writing. Overwrites file if already exists.<br>
-                                    - <code><span id="grey">"a+"</span></code> - Opens a file for reading and appending. Moves file from archive to RAM if in archive. Created if it does not exist.<br>
+                                <td>Opens an appvar with name <code><span class="grey">"NAME"</span></code>. Returns the slot number or 0 if failure. <code><span class="grey">"MODE"</span></code> options:<br>
+                                    - <code><span class="grey">"r"</span></code> - Opens a file for reading. The file must exist. Keeps file in archive if in archive.<br>
+                                    - <code><span class="grey">"w"</span></code> - Creates an empty file for writing. Overwrites file if already exists.<br>
+                                    - <code><span class="grey">"a"</span></code> - Appends to a file. Writing operations, append data at the end of the file. The file is created if it does not exist.<br>
+                                    - <code><span class="grey">"r+"</span></code> - Opens a file to update both reading and writing. The file must exist. Moves file from archive to RAM if in archive.<br>
+                                    - <code><span class="grey">"w+"</span></code> - Creates an empty file for both reading and writing. Overwrites file if already exists.<br>
+                                    - <code><span class="grey">"a+"</span></code> - Opens a file for reading and appending. Moves file from archive to RAM if in archive. Created if it does not exist.<br>
                                 </td>
                             </tr>
                             <tr>
-                                <td><code><span id="bl">sum(</span>2,<span id="grey">"NAME"</span>,<span id="grey">"MODE"</span>,<span id="red">TYPE</span><span id="bl">)</span></code></td>
+                                <td><code><span class="bl">sum(</span>2,<span class="grey">"NAME"</span>,<span class="grey">"MODE"</span>,<span class="red">TYPE</span><span class="bl">)</span></code></td>
                                 <td>OpenVar</td>
-                                <td>Opens a variable with name <code><span id="grey">"NAME"</span></code> and type <code><span id="red">TYPE</span></code>. See <code><span id="bl">sum(</span>1</code> for the <code><span id="grey">"MODE"</span></code> options. Returns the slot number or 0 if failure. <code><span id="red">TYPE</span></code> options:<br>
+                                <td>Opens a variable with name <code><span class="grey">"NAME"</span></code> and type <code><span class="red">TYPE</span></code>. See <code><span class="bl">sum(</span>1</code> for the <code><span class="grey">"MODE"</span></code> options. Returns the slot number or 0 if failure. <code><span class="red">TYPE</span></code> options:<br>
                                     - <code>0</code> - Real<br>
                                     - <code>1</code> - Real list<br>
                                     - <code>2</code> - Matrix<br>
@@ -795,120 +832,120 @@
                                 </td>
                             </tr>
                             <tr>
-                                <td><code><span id="bl">sum(</span>3,<span id="red">SLOT</span><span id="bl">)</span></code></td>
+                                <td><code><span class="bl">sum(</span>3,<span class="red">SLOT</span><span class="bl">)</span></code></td>
                                 <td>Close</td>
                                 <td>Frees an open slot.</td>
                             </tr>
                             <tr>
-                                <td><code><span id="bl">sum(</span>4,<span id="grey">"DATA"</span>,<span id="red">SIZE</span>,<span id="red">COUNT</span>,<span id="red">SLOT</span><span id="bl">)</span></code></td>
+                                <td><code><span class="bl">sum(</span>4,<span class="grey">"DATA"</span>,<span class="red">SIZE</span>,<span class="red">COUNT</span>,<span class="red">SLOT</span><span class="bl">)</span></code></td>
                                 <td>Write</td>
-                                <td>Writes <code><span id="red">COUNT</span></code> times <code><span id="red">SIZE</span></code> bytes from <code><span id="grey">"DATA"</span></code> to the variable in slot <code><span id="red">SLOT</span></code>.</td>
+                                <td>Writes <code><span class="red">COUNT</span></code> times <code><span class="red">SIZE</span></code> bytes from <code><span class="grey">"DATA"</span></code> to the variable in slot <code><span class="red">SLOT</span></code>.</td>
                             </tr>
                             <tr>
-                                <td><code><span id="bl">sum(</span>5,<span id="red">PTR</span>,<span id="red">SIZE</span>,<span id="red">COUNT</span>,<span id="red">SLOT</span><span id="bl">)</span></code></td>
+                                <td><code><span class="bl">sum(</span>5,<span class="red">PTR</span>,<span class="red">SIZE</span>,<span class="red">COUNT</span>,<span class="red">SLOT</span><span class="bl">)</span></code></td>
                                 <td>Read</td>
-                                <td>Reads <code><span id="red">COUNT</span></code> times <code><span id="red">SIZE</span></code> bytes from the variable in slot <code><span id="red">SLOT</span></code> to <code><span id="red">PTR</span></code>.</td>
+                                <td>Reads <code><span class="red">COUNT</span></code> times <code><span class="red">SIZE</span></code> bytes from the variable in slot <code><span class="red">SLOT</span></code> to <code><span class="red">PTR</span></code>.</td>
                             </tr>
                             <tr>
-                                <td><code><span id="bl">sum(</span>6,<span id="red">SLOT</span><span id="bl">)</span></code></td>
+                                <td><code><span class="bl">sum(</span>6,<span class="red">SLOT</span><span class="bl">)</span></code></td>
                                 <td>GetChar</td>
-                                <td>Gets a char from the variable in slot <code><span id="red">SLOT</span></code> and increments the offset.</td>
+                                <td>Gets a char from the variable in slot <code><span class="red">SLOT</span></code> and increments the offset.</td>
                             </tr>
                             <tr>
-                                <td><code><span id="bl">sum(</span>7,<span id="red">CHAR</span>,<span id="red">SLOT</span><span id="bl">)</span></code></td>
+                                <td><code><span class="bl">sum(</span>7,<span class="red">CHAR</span>,<span class="red">SLOT</span><span class="bl">)</span></code></td>
                                 <td>PutChar</td>
-                                <td>Writes a char to the variable in slot <code><span id="red">SLOT</span></code> and increments the offset.</td>
+                                <td>Writes a char to the variable in slot <code><span class="red">SLOT</span></code> and increments the offset.</td>
                             </tr>
                             <tr>
-                                <td><code><span id="bl">sum(</span>8,<span id="grey">"NAME"</span><span id="bl">)</span></code></td>
+                                <td><code><span class="bl">sum(</span>8,<span class="grey">"NAME"</span><span class="bl">)</span></code></td>
                                 <td>Delete</td>
                                 <td>Delets an appvar.</td>
                             </tr>
                             <tr>
-                                <td><code><span id="bl">sum(</span>9,<span id="grey">"NAME"</span>,<span id="red">TYPE</span><span id="bl">)</span></code></td>
+                                <td><code><span class="bl">sum(</span>9,<span class="grey">"NAME"</span>,<span class="red">TYPE</span><span class="bl">)</span></code></td>
                                 <td>DeleteVar</td>
-                                <td>Delets a variable with type <code><span id="red">TYPE</span></code>. See <code><span id="bl">sum(</span>2</code> for the types.</td>
+                                <td>Delets a variable with type <code><span class="red">TYPE</span></code>. See <code><span class="bl">sum(</span>2</code> for the types.</td>
                             </tr>
                             <tr>
-                                <td><code><span id="bl">sum(</span>10,<span id="red">OFFSET</span>,<span id="red">ORIGIN</span>,<span id="red">SLOT</span><span id="bl">)</span></code></td>
+                                <td><code><span class="bl">sum(</span>10,<span class="red">OFFSET</span>,<span class="red">ORIGIN</span>,<span class="red">SLOT</span><span class="bl">)</span></code></td>
                                 <td>Seek</td>
-                                <td>Seeks the variable in slot <code><span id="red">SLOT</span></code> to an offset. <code><span id="red">ORIGIN</span></code> options:<br>
+                                <td>Seeks the variable in slot <code><span class="red">SLOT</span></code> to an offset. <code><span class="red">ORIGIN</span></code> options:<br>
                                     - <code>0</code> - SEEK_SET - seek from beginning of file<br>
                                     - <code>1</code> - SEEK_CUR - seek from current offset in file<br>
                                     - <code>2</code> - SEEK_END - seek from end of file<br>
                                 </td>
                             </tr>
                             <tr>
-                                <td><code><span id="bl">sum(</span>11,<span id="red">SIZE</span>,<span id="red">SLOT</span><span id="bl">)</span></code></td>
+                                <td><code><span class="bl">sum(</span>11,<span class="red">SIZE</span>,<span class="red">SLOT</span><span class="bl">)</span></code></td>
                                 <td>Resize</td>
-                                <td>Resizes the variable in slot <code><span id="red">SLOT</span></code>.</td>
+                                <td>Resizes the variable in slot <code><span class="red">SLOT</span></code>.</td>
                             </tr>
                             <tr>
-                                <td><code><span id="bl">sum(</span>12,<span id="red">SLOT</span><span id="bl">)</span></code></td>
+                                <td><code><span class="bl">sum(</span>12,<span class="red">SLOT</span><span class="bl">)</span></code></td>
                                 <td>IsArchived</td>
-                                <td>Returns 0 if the variable in slot <code><span id="red">SLOT</span></code> is in RAM, and 1 if in archive.</td>
+                                <td>Returns 0 if the variable in slot <code><span class="red">SLOT</span></code> is in RAM, and 1 if in archive.</td>
                             </tr>
                             <tr>
-                                <td><code><span id="bl">sum(</span>13,<span id="red">ARCHIVED</span>,<span id="red">SLOT</span><span id="bl">)</span></code></td>
+                                <td><code><span class="bl">sum(</span>13,<span class="red">ARCHIVED</span>,<span class="red">SLOT</span><span class="bl">)</span></code></td>
                                 <td>SetArchiveStatus</td>
-                                <td>Sends the variable into either the archive or RAM if needed. <code><span id="red">ARCHIVED</span></code> options:<br>
+                                <td>Sends the variable into either the archive or RAM if needed. <code><span class="red">ARCHIVED</span></code> options:<br>
                                     - <code>0</code> - Send to RAM<br>
                                     - <code>1</code> - Send to archive<br>
                                 </td>
                             </tr>
                             <tr>
-                                <td><code><span id="bl">sum(</span>14,<span id="red">SLOT</span><span id="bl">)</span></code></td>
+                                <td><code><span class="bl">sum(</span>14,<span class="red">SLOT</span><span class="bl">)</span></code></td>
                                 <td>Tell</td>
                                 <td>Returns the offset in a slot.</td>
                             </tr>
                             <tr>
-                                <td><code><span id="bl">sum(</span>15,<span id="red">SLOT</span><span id="bl">)</span></code></td>
+                                <td><code><span class="bl">sum(</span>15,<span class="red">SLOT</span><span class="bl">)</span></code></td>
                                 <td>Rewind</td>
-                                <td>Seeks to the start of the variable in slot <code><span id="red">SLOT</span></code>.</td>
+                                <td>Seeks to the start of the variable in slot <code><span class="red">SLOT</span></code>.</td>
                             </tr>
                             <tr>
-                                <td><code><span id="bl">sum(</span>16,<span id="red">SLOT</span><span id="bl">)</span></code></td>
+                                <td><code><span class="bl">sum(</span>16,<span class="red">SLOT</span><span class="bl">)</span></code></td>
                                 <td>GetSize</td>
-                                <td>Gets the size of the variable in slot <code><span id="red">SLOT</span></code>.</td>
+                                <td>Gets the size of the variable in slot <code><span class="red">SLOT</span></code>.</td>
                             </tr>
                             <tr>
-                                <td><code><span id="bl">sum(</span>17,°<span id="red">READ_PTR</span>,°<span id="gr">LEN_TOK</span>,°<span id="gr">LEN_STR</span><span id="bl">)</span></code></td>
+                                <td><code><span class="bl">sum(</span>17,°<span class="red">READ_PTR</span>,°<span class="gr">LEN_TOK</span>,°<span class="gr">LEN_STR</span><span class="bl">)</span></code></td>
                                 <td>GetTokenString</td>
-                                <td>Reads the token at <code><span id="red">READ_PTR</span></code> and returns a pointer to the characters. Both variables <code><span id="gr">LEN_TOK</span></code> and <code><span id="gr">LEN_STR</span></code> gets overwritten with respectively the length of the token (1- or 2-byte token) and the length of the string (the amount of characters).</td>
+                                <td>Reads the token at <code><span class="red">READ_PTR</span></code> and returns a pointer to the characters. Both variables <code><span class="gr">LEN_TOK</span></code> and <code><span class="gr">LEN_STR</span></code> gets overwritten with respectively the length of the token (1- or 2-byte token) and the length of the string (the amount of characters).</td>
                             </tr>
                             <tr>
-                                <td><code><span id="bl">sum(</span>18,<span id="red">SLOT</span><span id="bl">)</span></code></td>
+                                <td><code><span class="bl">sum(</span>18,<span class="red">SLOT</span><span class="bl">)</span></code></td>
                                 <td>GetDataPtr</td>
-                                <td>Gets a pointer to the data located at the current position of the variable in slot <code><span id="red">SLOT</span></code>.</td>
+                                <td>Gets a pointer to the data located at the current position of the variable in slot <code><span class="red">SLOT</span></code>.</td>
                             </tr>
                             <tr>
-                                <td><code><span id="bl">sum(</span>19,°<span id="gr">POS</span>,<span id="grey">"DATA"</span><span id="bl">)</span></code></td>
+                                <td><code><span class="bl">sum(</span>19,°<span class="gr">POS</span>,<span class="grey">"DATA"</span><span class="bl">)</span></code></td>
                                 <td>Detect</td>
-                                <td>Finds the first appvar starting at <code><span id="gr">POS</span></code> which starts with the data <code><span id="grey">"DATA"</span></code>. If you want to search for all appvars, you can replace <code><span id="grey">"DATA"</span></code> with <code>0</code>. Returns the pointer to the filename. <code><span id="gr">POS</span></code> is updated each call, and should be <code>0</code> to start the search. Returns 0 if no more appvars found.</td>
+                                <td>Finds the first appvar starting at <code><span class="gr">POS</span></code> which starts with the data <code><span class="grey">"DATA"</span></code>. If you want to search for all appvars, you can replace <code><span class="grey">"DATA"</span></code> with <code>0</code>. Returns the pointer to the filename. <code><span class="gr">POS</span></code> is updated each call, and should be <code>0</code> to start the search. Returns 0 if no more appvars found.</td>
                             </tr>
                             <tr>
-                                <td><code><span id="bl">sum(</span>20,°<span id="gr">POS</span>,<span id="grey">"DATA"</span>,<span id="red">TYPE</span><span id="bl">)</span></code></td>
+                                <td><code><span class="bl">sum(</span>20,°<span class="gr">POS</span>,<span class="grey">"DATA"</span>,<span class="red">TYPE</span><span class="bl">)</span></code></td>
                                 <td>DetectVar</td>
-                                <td>Finds the first variable with type <code><span id="red">TYPE</span></code> starting at <code><span id="gr">POS</span></code> which starts with the data <code><span id="grey">"DATA"</span></code>. If you want to search for all variables with type <code><span id="red">TYPE</span></code>, you can replace <code><span id="grey">"DATA"</span></code> with <code>0</code>. Returns the pointer to the filename. <code><span id="gr">POS</span></code> is updated each call, and should be <code>0</code> to start the search. Returns <code>0</code> if no more variables found. See <code><span id="bl">sum(</span>2</code> for the types.</td>
+                                <td>Finds the first variable with type <code><span class="red">TYPE</span></code> starting at <code><span class="gr">POS</span></code> which starts with the data <code><span class="grey">"DATA"</span></code>. If you want to search for all variables with type <code><span class="red">TYPE</span></code>, you can replace <code><span class="grey">"DATA"</span></code> with <code>0</code>. Returns the pointer to the filename. <code><span class="gr">POS</span></code> is updated each call, and should be <code>0</code> to start the search. Returns <code>0</code> if no more variables found. See <code><span class="bl">sum(</span>2</code> for the types.</td>
                             </tr>
                         </table>
                         <h3 id="memory">Memory</h3>
-                        <table cellspacing="0" border="1" cellpadding="3" border-collapse="collapse">
+                        <table>
                             <tr>
                                 <th>Command</th>
                                 <th>Description</th>
                             </tr>
                             <tr>
-                                <td><code><span id="bl">DefineSprite(</span><span id="or">WIDTH</span>,<span id="or">HEIGHT</span><span id="bl">)</span></code></td>
-                                <td>Allocates <code><span id="or">WIDTH</span>*<span id="or">HEIGHT</span>+2</code> bytes for an empty sprite. This is recommend for duplicating, rotating or enlarging sprites. Returns a pointer to the allocated memory.</td>
+                                <td><code><span class="bl">DefineSprite(</span><span class="or">WIDTH</span>,<span class="or">HEIGHT</span><span class="bl">)</span></code></td>
+                                <td>Allocates <code><span class="or">WIDTH</span>*<span class="or">HEIGHT</span>+2</code> bytes for an empty sprite. This is recommend for duplicating, rotating or enlarging sprites. Returns a pointer to the allocated memory.</td>
                             </tr>
                             <tr>
-                                <td><code><span id="bl">DefineSprite(</span><span id="or">WIDTH</span>,<span id="or">HEIGHT</span>,<span id="grey">"DATA"</span><span id="bl">)</span></code></td>
-                                <td>Defines a sprite with data <code><span id="grey">DATA</span></code>, width <code><span id="or">WIDTH</span></code> and height <code><span id="or">HEIGHT</span></code>. Returns a pointer to the start of the sprite.</td>
+                                <td><code><span class="bl">DefineSprite(</span><span class="or">WIDTH</span>,<span class="or">HEIGHT</span>,<span class="grey">"DATA"</span><span class="bl">)</span></code></td>
+                                <td>Defines a sprite with data <code><span class="grey">DATA</span></code>, width <code><span class="or">WIDTH</span></code> and height <code><span class="or">HEIGHT</span></code>. Returns a pointer to the start of the sprite.</td>
                             </tr>
                             <tr>
-                                <td style="word-wrap:break-word; max-width: 200px;"><code><span id="bl">DefineTilemap(</span><span id="or">TILE_HEIGHT</span>,<span id="or">TILE_WIDTH</span>,<span id="or">DRAW_HEIGHT</span>,<span id="or">DRAW_WIDTH</span>,<span id="or">TYPE_WIDTH</span>,<span id="or">TYPE_HEIGHT</span>,<span id="or">TILEMAP_HEIGHT</span>,<span id="or">TILEMAP_WIDTH</span>,<span id="or">Y</span>,<span id="or">X</span>,<span id="gr">VAR</span>,<span id="grey">"MAP_DATA"</span><span id="bl">)</span></code></td>
-                                <td>Defines a tilemap. <code><span id="gr">VAR</span></code> should be a variable, which holds a pointer to the table with pointers to the sprites, which returns from <code><span id="bl">LoadData(</span></code>. See <code>tilemaps.docx</code> how to get the map data. Returns a pointer to the tilemap struct, which can be used in <code><span id="bl">det(</span>50</code>. <code><span id="or">TYPE_HEIGHT</span></code>, <code><span id="or">TYPE_WIDTH</span></code> options:<br>
+                                <td style="word-wrap:break-word; max-width: 200px;"><code><span class="bl">DefineTilemap(</span><span class="or">TILE_HEIGHT</span>,<span class="or">TILE_WIDTH</span>,<span class="or">DRAW_HEIGHT</span>,<span class="or">DRAW_WIDTH</span>,<span class="or">TYPE_WIDTH</span>,<span class="or">TYPE_HEIGHT</span>,<span class="or">TILEMAP_HEIGHT</span>,<span class="or">TILEMAP_WIDTH</span>,<span class="or">Y</span>,<span class="or">X</span>,<span class="gr">VAR</span>,<span class="grey">"MAP_DATA"</span><span class="bl">)</span></code></td>
+                                <td>Defines a tilemap. <code><span class="gr">VAR</span></code> should be a variable, which holds a pointer to the table with pointers to the sprites, which returns from <code><span class="bl">LoadData(</span></code>. See <code>tilemaps.docx</code> how to get the map data. Returns a pointer to the tilemap struct, which can be used in <code><span class="bl">det(</span>50</code>. <code><span class="or">TYPE_HEIGHT</span></code>, <code><span class="or">TYPE_WIDTH</span></code> options:<br>
                                     - <code>0</code> - Not a power of 2<br>
                                     - <code>1</code> - Tile width/height of 2<br>
                                     - <code>2</code> - Tile width/height of 4<br>
@@ -920,118 +957,118 @@
                                 </td>
                             </tr>
                             <tr>
-                                <td><code><span id="bl">Data(</span><span id="or">SIZE</span>,<span id="or">CONST1</span>,<span id="or">CONST2</span>...<span id="bl">)</span></code></td>
-                                <td>Places constant data in program memory with each element size of <code><span id="or">SIZE</span></code> bytes. Returns a pointer to the data.</td>
+                                <td><code><span class="bl">Data(</span><span class="or">SIZE</span>,<span class="or">CONST1</span>,<span class="or">CONST2</span>...<span class="bl">)</span></code></td>
+                                <td>Places constant data in program memory with each element size of <code><span class="or">SIZE</span></code> bytes. Returns a pointer to the data.</td>
                             </tr>
                             <tr>
-                                <td><code><span id="bl">CopyData(</span><span id="red">DEST</span>,<span id="or">SIZE</span>,<span id="or">CONST1</span>,<span id="or">CONST2</span>...<span id="bl">)</span></code></td>
-                                <td>Places constant data in program memory with each element size of <code><span id="or">SIZE</span></code> bytes and copies it to <code><span id="red">DEST</span></code>. Returns a pointer to the end of the data in the program data.</td>
+                                <td><code><span class="bl">CopyData(</span><span class="red">DEST</span>,<span class="or">SIZE</span>,<span class="or">CONST1</span>,<span class="or">CONST2</span>...<span class="bl">)</span></code></td>
+                                <td>Places constant data in program memory with each element size of <code><span class="or">SIZE</span></code> bytes and copies it to <code><span class="red">DEST</span></code>. Returns a pointer to the end of the data in the program data.</td>
                             </tr>
                             <tr>
-                                <td><code><span id="bl">Alloc(</span><span id="or">SIZE</span><span id="bl">)</span></code></td>
-                                <td>Allocates <code><span id="or">SIZE</span></code> bytes in safe RAM. An error will be displayed if you allocated too much memory. Returns a pointer to the memory.</td>
+                                <td><code><span class="bl">Alloc(</span><span class="or">SIZE</span><span class="bl">)</span></code></td>
+                                <td>Allocates <code><span class="or">SIZE</span></code> bytes in safe RAM. An error will be displayed if you allocated too much memory. Returns a pointer to the memory.</td>
                             </tr>
                             <tr>
-                                <td><code><span id="bl">Copy(</span><span id="red">DEST</span>,<span id="red">SRC</span>,<span id="red">SIZE</span><span id="bl">)</span></code></td>
-                                <td>Copies <code><span id="red">SIZE</span></code> bytes from <code><span id="red">SRC</span></code> to <code><span id="red">DEST</span></code>.</td>
+                                <td><code><span class="bl">Copy(</span><span class="red">DEST</span>,<span class="red">SRC</span>,<span class="red">SIZE</span><span class="bl">)</span></code></td>
+                                <td>Copies <code><span class="red">SIZE</span></code> bytes from <code><span class="red">SRC</span></code> to <code><span class="red">DEST</span></code>.</td>
                             </tr>
                             <tr>
-                                <td><code><span id="bl">Copy(</span>...,<span id="red">DEST</span>,<span id="red">SRC</span>,<span id="red">SIZE</span><span id="bl">)</span></code></td>
-                                <td>Copies <code><span id="red">SIZE</span></code> bytes from <code><span id="red">SRC</span></code> to <code><span id="red">DEST</span></code> backwards. The first argument can be anything you like.</td>
+                                <td><code><span class="bl">Copy(</span>...,<span class="red">DEST</span>,<span class="red">SRC</span>,<span class="red">SIZE</span><span class="bl">)</span></code></td>
+                                <td>Copies <code><span class="red">SIZE</span></code> bytes from <code><span class="red">SRC</span></code> to <code><span class="red">DEST</span></code> backwards. The first argument can be anything you like.</td>
                             </tr>
                             <tr>
-                                <td><code><span id="bl">LoadData(</span><span id="grey">"APPVAR"</span>,<span id="red">OFFSET</span>,<span id="red">SIZE</span><span id="bl">)</span></code></td>
-                                <td>Returns a pointer to the table with pointers to the tiles from the tilemap in appvar <code><span id="grey">"APPVAR"</span></code>. This pointer should be used in <code><span id="bl">DefineTilemap(</span></code>. You can get these values from <code>ConvPNG</code>. <i>See tilemaps.txt for more information</i>.</td>
+                                <td><code><span class="bl">LoadData(</span><span class="grey">"APPVAR"</span>,<span class="red">OFFSET</span>,<span class="red">SIZE</span><span class="bl">)</span></code></td>
+                                <td>Returns a pointer to the table with pointers to the tiles from the tilemap in appvar <code><span class="grey">"APPVAR"</span></code>. This pointer should be used in <code><span class="bl">DefineTilemap(</span></code>. You can get these values from <code>ConvPNG</code>. <i>See tilemaps.txt for more information</i>.</td>
                             </tr>
                             <tr>
-                                <td><code><span id="grey">L₁</span>...<span id="grey">L₆</span></code></td>
+                                <td><code><span class="grey">L₁</span>...<span class="grey">L₆</span></code></td>
                                 <td>Returns the pointer to one of the OS lists as an integer.</td>
                             </tr>
                             <tr>
-                                <td><code><span id="grey">LIST</span>(<span id="red">EXP</span>)</code></td>
-                                <td>Same as <code>{<span id="grey">LIST</span>+<span id="red">EXP</span>}</code> but easier to remember.</td>
+                                <td><code><span class="grey">LIST</span>(<span class="red">EXP</span>)</code></td>
+                                <td>Same as <code>{<span class="grey">LIST</span>+<span class="red">EXP</span>}</code> but easier to remember.</td>
                             </tr>
                             <tr>
-                                <td><code>*{<span id="red">EXP</span>}</code></td>
-                                <td>Returns the single byte <code><span id="red">EXP</span></code> points to.</td>
+                                <td><code>*{<span class="red">EXP</span>}</code></td>
+                                <td>Returns the single byte <code><span class="red">EXP</span></code> points to.</td>
                             </tr>
                             <tr>
-                                <td><code>**{<span id="red">EXP</span>}</code></td>
-                                <td>Returns the 2-byte value <code><span id="red">EXP</span></code> points to.</td>
+                                <td><code>**{<span class="red">EXP</span>}</code></td>
+                                <td>Returns the 2-byte value <code><span class="red">EXP</span></code> points to.</td>
                             </tr>
                             <tr>
-                                <td><code>{<span id="red">EXP</span>}</code></td>
-                                <td>Returns the word <code><span id="red">EXP</span></code> points to. <code>***{<span id="red">EXP</span>}</code> is valid syntax as well.</td>
+                                <td><code>{<span class="red">EXP</span>}</code></td>
+                                <td>Returns the word <code><span class="red">EXP</span></code> points to. <code>***{<span class="red">EXP</span>}</code> is valid syntax as well.</td>
                             </tr>
                             <tr>
-                                <td><code><span id="red">EXP1</span>→*{<span id="red">EXP2</span>}</code></td>
-                                <td>The single byte of <code><span id="red">EXP1</span></code> is stored where <code><span id="red">EXP2</span></code> points to.</td>
+                                <td><code><span class="red">EXP1</span>→*{<span class="red">EXP2</span>}</code></td>
+                                <td>The single byte of <code><span class="red">EXP1</span></code> is stored where <code><span class="red">EXP2</span></code> points to.</td>
                             </tr>
                             <tr>
-                                <td><code><span id="red">EXP1</span>→**{<span id="red">EXP2</span>}</code></td>
-                                <td>The 2-byte value <code><span id="red">EXP1</span></code> is stored where <code><span id="red">EXP2</span></code> points to.</td>
+                                <td><code><span class="red">EXP1</span>→**{<span class="red">EXP2</span>}</code></td>
+                                <td>The 2-byte value <code><span class="red">EXP1</span></code> is stored where <code><span class="red">EXP2</span></code> points to.</td>
                             </tr>
                             <tr>
-                                <td><code><span id="red">EXP1</span>→{<span id="red">EXP2</span>}</code></td>
-                                <td>The word <code><span id="red">EXP1</span></code> is stored where <code><span id="red">EXP2</span></code> points to. <code><span id="red">EXP1</span>→***{<span id="red">EXP2</span>}</code> is valid syntax as well.</td>
+                                <td><code><span class="red">EXP1</span>→{<span class="red">EXP2</span>}</code></td>
+                                <td>The word <code><span class="red">EXP1</span></code> is stored where <code><span class="red">EXP2</span></code> points to. <code><span class="red">EXP1</span>→***{<span class="red">EXP2</span>}</code> is valid syntax as well.</td>
                             </tr>
                         </table>
                         <h3 id="strings">Strings</h3>
-                        <table cellspacing="0" border="1" cellpadding="3" border-collapse="collapse">
+                        <table>
                             <tr>
                                 <th>Command</th>
                                 <th>Description</th>
                             </tr>
                             <tr>
-                                <td><code><span id="grey">"STRING"</span></code></td>
+                                <td><code><span class="grey">"STRING"</span></code></td>
                                 <td>Adds a string to the program data and returns a pointer to it.</td>
                             </tr>
                             <tr>
-                                <td><code><span id="or">OS_STRING</span></code></td>
-                                <td>Returns a pointer to <code><span id="or">OS_STRING</span></code>.</td>
+                                <td><code><span class="or">OS_STRING</span></code></td>
+                                <td>Returns a pointer to <code><span class="or">OS_STRING</span></code>.</td>
                             </tr>
                             <tr>
-                                <td><code><span id="grey">"STRING1"</span>+<span id="grey">"STRING2"</span></code></td>
+                                <td><code><span class="grey">"STRING1"</span>+<span class="grey">"STRING2"</span></code></td>
                                 <td>Concatenates two strings. OS strings are valid as well. Returns a pointer to the data.</td>
                             </tr>
                             <tr>
-                                <td><code><span id="grey">"STRING1"</span>→<span id="or">OS_STRING</span></code></td>
-                                <td>Stores <code><span id="grey">"STRING1"</span></code> into one of the 10 available OS strings, <code>Str0-Str9</code>. Storing one OS string into another one is valid as well.</td>
+                                <td><code><span class="grey">"STRING1"</span>→<span class="or">OS_STRING</span></code></td>
+                                <td>Stores <code><span class="grey">"STRING1"</span></code> into one of the 10 available OS strings, <code>Str0-Str9</code>. Storing one OS string into another one is valid as well.</td>
                             </tr>
                             <tr>
-                                <td><code><span id="bl">sub(</span><span id="grey">"STRING"</span>,<span id="red">OFFSET</span>,<span id="red">SIZE</span><span id="bl">)</span></code></td>
-                                <td>Copies <code><span id="red">SIZE</span></code> bytes starting at offset <code><span id="red">OFFSET</span></code> from <code><span id="grey">STRING</span></code> to a temporary location and returns a pointer to it. OS strings are valid as well.</td>
+                                <td><code><span class="bl">sub(</span><span class="grey">"STRING"</span>,<span class="red">OFFSET</span>,<span class="red">SIZE</span><span class="bl">)</span></code></td>
+                                <td>Copies <code><span class="red">SIZE</span></code> bytes starting at offset <code><span class="red">OFFSET</span></code> from <code><span class="grey">STRING</span></code> to a temporary location and returns a pointer to it. OS strings are valid as well.</td>
                             </tr>
                             <tr>
-                                <td><code><span id="bl">length(</span><span id="grey">"STRING"</span><span id="bl">)</span></code></td>
-                                <td>Returns the length of <code><span id="grey">STRING</span></code>. OS strings are valid as well.</td>
+                                <td><code><span class="bl">length(</span><span class="grey">"STRING"</span><span class="bl">)</span></code></td>
+                                <td>Returns the length of <code><span class="grey">STRING</span></code>. OS strings are valid as well.</td>
                             </tr>
                         </table>
                         <h3 id="text">Text</h3>
-                        <table cellspacing="0" border="1" cellpadding="3" border-collapse="collapse">
+                        <table>
                             <tr>
                                 <th>Command</th>
                                 <th>Description</th>
                             </tr>
                             <tr>
-                                <td><code><span id="bl">Disp</span> <span id="red">EXP1</span>,<span id="red">EXP2</span>,...</code></td>
+                                <td><code><span class="bl">Disp</span> <span class="red">EXP1</span>,<span class="red">EXP2</span>,...</code></td>
                                 <td>Displays either an expression or a string at the cursor position. <code><i>i</i></code> puts the cursor at the start of a new line.</td>
                             </tr>
                             <tr>
-                                <td><code><span id="bl">Output(</span><span id="red">ROW</span>,<span id="red">COLUMN</span><span id="bl">)</span></code></td>
-                                <td>Puts the cursor at coordinates <code>(<span id="red">ROW</span>,<span id="red">COLUMN</span>)</code>.</td>
+                                <td><code><span class="bl">Output(</span><span class="red">ROW</span>,<span class="red">COLUMN</span><span class="bl">)</span></code></td>
+                                <td>Puts the cursor at coordinates <code>(<span class="red">ROW</span>,<span class="red">COLUMN</span>)</code>.</td>
                             </tr>
                             <tr>
-                                <td><code><span id="bl">Output(</span><span id="red">ROW</span>,<span id="red">COLUMN</span>,<span id="red">EXP1</span><span id="bl">)</span></code></td>
-                                <td>Displays either the outcome of an expression or a string at coordinates <code>(<span id="red">ROW</span>,<span id="red">COLUMN</span>)</code>.</td>
+                                <td><code><span class="bl">Output(</span><span class="red">ROW</span>,<span class="red">COLUMN</span>,<span class="red">EXP1</span><span class="bl">)</span></code></td>
+                                <td>Displays either the outcome of an expression or a string at coordinates <code>(<span class="red">ROW</span>,<span class="red">COLUMN</span>)</code>.</td>
                             </tr>
                             <tr>
-                                <td><code><span id="bl">ClrHome</span></code></td>
-                                <td>Clears the homescreen full. It is recommend to call this function before using <code><span id="bl">Disp</span></code>. The cursor moves to the upper-left corner.</td>
+                                <td><code><span class="bl">ClrHome</span></code></td>
+                                <td>Clears the homescreen full. It is recommend to call this function before using <code><span class="bl">Disp</span></code>. The cursor moves to the upper-left corner.</td>
                             </tr>
                             <tr>
-                                <td><code><span id="bl">Input</span></code> <code><span id="gr">VAR</span></code></td>
-                                <td>Asks for a user input, and stores the value in <code><span id="gr">VAR</span></code>.</td>
+                                <td><code><span class="bl">Input</span></code> <code><span class="gr">VAR</span></code></td>
+                                <td>Asks for a user input, and stores the value in <code><span class="gr">VAR</span></code>.</td>
                             </tr>
                         </table>
                     </div>
