@@ -1299,5 +1299,7 @@ void InsertMallocRoutine(void) {
     
     ResetReg(REGISTER_HL);
     ResetReg(REGISTER_DE);
-    LoadRegValue(REGISTER_BC, 0xD13EC5);
+    reg.BCIsVariable = false;
+    reg.BCIsNumber = true;
+    reg.BCValue = 0xD13EC5;
 }
