@@ -810,8 +810,6 @@ uint8_t parseFunction(uint24_t index) {
             INC_HL();
             LD_HL_VAL(height);
             DEC_HL();
-            reg.HLIsNumber = true;
-            reg.HLValue = width * height + 2;
         } else if (amountOfArguments == 3) {
             uint8_t *a;
             
@@ -1292,10 +1290,15 @@ void loadGetKeyFastData2(void) {
 }
 
 void InsertMallocRoutine(void) {
+    bool boolUsed = ice.usedAlreadyMalloc;
+    
     CallRoutine(&ice.usedAlreadyMalloc, &ice.MallocAddr, (uint8_t*)MallocData, SIZEOF_MALLOC_DATA);
     *(uint24_t*)(ice.MallocAddr + 1) = ice.freeMemoryPtr;
-    ice.dataOffsetStack[ice.dataOffsetElements++] = (uint24_t*)(ice.MallocAddr + 6);
-    *(uint24_t*)(ice.MallocAddr + 6) = ice.MallocAddr + 1;
+    
+    if (!boolUsed) {
+        ice.dataOffsetStack[ice.dataOffsetElements++] = (uint24_t*)(ice.MallocAddr + 6);
+        *(uint24_t*)(ice.MallocAddr + 6) = ice.MallocAddr + 1;
+    }
     
     ResetReg(REGISTER_HL);
     ResetReg(REGISTER_DE);
