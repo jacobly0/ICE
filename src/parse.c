@@ -1651,6 +1651,7 @@ void insertGotoLabel(void) {
 
 static uint8_t functionPause(int token) {
     if (CheckEOL()) {
+        MaybeLDIYFlags();
         CALL(_GetCSC);
         CP_A(9);
         JR_NZ(-8);
