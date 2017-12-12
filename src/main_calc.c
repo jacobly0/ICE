@@ -77,7 +77,7 @@ void main(void) {
     
     // Select a program
     selectedProgram = 1;
-    while ((key = os_GetCSC()) != sk_Enter) {
+    while ((key = os_GetCSC()) != sk_Enter & key != sk_2nd) {
         uint8_t selectionOffset = selectedProgram*10 + 3;
 
         gfx_PrintStringXY(">", 1, selectionOffset);
