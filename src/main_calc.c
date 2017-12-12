@@ -180,6 +180,9 @@ void main(void) {
     LD_IX_IMM(IX_VARIABLES);
    
     // Do the stuff
+    if (*var_name < 64) {
+        *var_name += 64;
+    }
     sprintf(buf, "Compiling program %s...", var_name);
     displayMessageLineScroll(buf);
     res = parseProgram();
