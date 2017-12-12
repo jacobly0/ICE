@@ -260,7 +260,7 @@ findNextLabel:;
         
         // Yep, we are really done!
         gfx_SetTextFGColor(4);
-        displayMessageLineScroll("Succesfully compiled!");
+        displayMessageLineScroll("Successfully compiled!");
         
         // Skip line
         displayMessageLineScroll(" ");
