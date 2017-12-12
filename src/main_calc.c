@@ -62,6 +62,9 @@ void main(void) {
     
     // Get all the programs that start with the [i] token
     while((var_name = ti_DetectVar(&search_pos, ICEheader, TI_PRGM_TYPE)) && ++selectedProgram <= 22) {
+        if (*var_name < 64) {
+            *var_name += 64;
+        }
         gfx_PrintStringXY(var_name, 10, selectedProgram*10 + 3);
     }
     amountOfPrograms = selectedProgram;
