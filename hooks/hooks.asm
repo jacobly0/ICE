@@ -457,7 +457,7 @@ G22:  .db "SetTextFGColor(COLOR)", 0
 G23:  .db "SetTextTransparentColor(COLOR)", 0
 G24:  .db "SetCustomFontData(DATA)", 0
 G25:  .db "SetCustomFontSpacing(DATA)", 0
-G26:  .db "SetMonospaceFont(DATA)", 0
+G26:  .db "SetMonospaceFont(SPACE)", 0
 G27:  .db "GetStringWidth(STRING)", 0
 G28:  .db "GetCharWidth(CHAR)", 0
 G29:  .db "GetTextX()", 0
@@ -517,7 +517,7 @@ G79:  .db "GetSpriteChar(CHAR)", 0
 G80:  .db "Lighten(COLOR,AMOUNT)", 0
 G81:  .db "Darken(COLOR,AMOUNT)", 0
 G82:  .db "SetFontHeight(HEIGHT)", 0
-G83:  .db "ScaledSprite(PTR,X,Y,W_SCALE,H_SCALE)", 0
+G83:  .db "ScaledSprite(PTR_IN,PTR_OUT)", 0
 Tab8:
 G84:  .db "FloodFill(X,Y,COLOR)", 0
 G85:  .db "RLETSprite(PTR,X,Y)", 0
