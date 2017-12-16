@@ -28,10 +28,10 @@ extern const uint8_t PrgmData[];
 extern uint8_t (*functions[256])(int token);
 const char implementedFunctions[] = {tNot, tMin, tMax, tMean, tSqrt, tDet, tSum, tSin, tCos, 0};
 const uint8_t All2ByteTokens[] = {0x5C, 0x5D, 0x5E, 0x60, 0x61, 0x62, 0x63, 0x7E, 0xAA, 0xBB, 0xEF};
-const uint8_t implementedFunctions2[24] = {tExtTok, tRemainder,
+const uint8_t implementedFunctions2[22] = {tExtTok, tRemainder,
                                            t2ByteTok, tSubStrng,
                                            t2ByteTok, tLength,
-                                           t2ByteTok, tRandInt,
+                                           //t2ByteTok, tRandInt,
                                            tVarOut, tDefineSprite,
                                            tVarOut, tData,
                                            tVarOut, tCopy,
@@ -1106,10 +1106,10 @@ uint8_t JumpForward(uint8_t *startAddr, uint8_t *endAddr, uint24_t tempDataOffse
         while (ice.dataOffsetElements != tempDataOffsetElements) {
             uint8_t *tempDataOffsetStackAddr = (uint8_t*)ice.dataOffsetStack[tempDataOffsetElements];
             
+            // Check if the pointer is in the program, not in the program data
             if (tempDataOffsetStackAddr >= ice.programData && tempDataOffsetStackAddr <= ice.programPtr) {
                 ice.dataOffsetStack[tempDataOffsetElements] = (uint24_t*)(tempDataOffsetStackAddr - 2);
             }
-            //ice.dataOffsetStack[tempDataOffsetElements] = (uint24_t*)(((uint8_t*)ice.dataOffsetStack[tempDataOffsetElements]) - 2);
             tempDataOffsetElements++;
         }
         
