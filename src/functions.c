@@ -189,6 +189,9 @@ uint8_t parseFunction(uint24_t index) {
     // rand
     if (function == tRand) {
         CallRoutine(&ice.usedAlreadyRand, &ice.randAddr, (uint8_t*)RandData, SIZEOF_RAND_DATA);
+        ice.dataOffsetStack[ice.dataOffsetElements++] = (uint24_t*)(ice.randAddr + 2);
+        w24(ice.randAddr + 2, ice.randAddr + 85);
+        ice.modifiedIY = true;
         ResetAllRegs();
     }
     
@@ -350,6 +353,7 @@ uint8_t parseFunction(uint24_t index) {
         if ((res = parseFunction2Args(index, REGISTER_DE, amountOfArguments, false)) != VALID) {
             return res;
         }
+        
         OR_A_SBC_HL_DE();
         ADD_HL_DE();
         JR_C(1);
@@ -362,6 +366,7 @@ uint8_t parseFunction(uint24_t index) {
         if ((res = parseFunction2Args(index, REGISTER_DE, amountOfArguments, false)) != VALID) {
             return res;
         }
+        
         OR_A_SBC_HL_DE();
         ADD_HL_DE();
         JR_NC(1);
@@ -416,6 +421,39 @@ uint8_t parseFunction(uint24_t index) {
             reg.AIsNumber = true;
             reg.AIsVariable = false;
             reg.AValue = 0;
+        }
+    }
+    
+    // randInt(
+    else if (function == t2ByteTok && function2 == tRandInt) {
+        if (outputPrevPrev->type == TYPE_CHAIN_PUSH) {
+            if (outputPrev->type != TYPE_CHAIN_ANS) {
+                return E_ICE_ERROR;
+            }
+            PushHLDE();
+            CallRoutine(&ice.usedAlreadyRand, &ice.randAddr, (uint8_t*)RandData, SIZEOF_RAND_DATA);
+            ice.dataOffsetStack[ice.dataOffsetElements++] = (uint24_t*)(ice.randAddr + 2);
+            w24(ice.randAddr + 2, ice.randAddr + 85);
+            ice.modifiedIY = true;
+            EX_DE_HL();
+            POP_HL();
+            POP_BC();
+            OR_A_A();
+            SBC_HL_BC();
+            INC_HL();
+            PUSH_BC();
+            PUSH_HL();
+            POP_BC();
+            EX_DE_HL();
+            CALL(__idvrmu);
+            POP_DE();
+            ADD_HL_DE();
+            ResetReg(REGISTER_HL);
+            ResetReg(REGISTER_DE);
+            reg.AIsNumber = true;
+            reg.AIsVariable = false;
+            reg.AValue = 0;
+        } else if (outputPrevPrev->type == TYPE_CHAIN_ANS) {
         }
     }
     

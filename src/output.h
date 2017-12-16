@@ -194,6 +194,7 @@
 #define DEC_HL()              do { output(uint8_t, OP_DEC_HL); ResetReg(REGISTER_HL); } while (0)
 #define ADD_HL_DE()           do { output(uint8_t, OP_ADD_HL_DE); ResetReg(REGISTER_HL); } while (0)
 #define ADD_HL_HL()           do { output(uint8_t, OP_ADD_HL_HL); ResetReg(REGISTER_HL); } while (0)
+#define SBC_HL_BC()           do { output(uint16_t, 0x42ED); ResetReg(REGISTER_HL); } while (0)
 #define SBC_HL_DE()           do { output(uint16_t, 0x52ED); ResetReg(REGISTER_HL); } while (0)
 #define SBC_HL_HL()           do { output(uint16_t, 0x62ED); ResetReg(REGISTER_HL); } while (0)
 #define MLT_HL()              do { output(uint16_t, 0x6CED); ResetReg(REGISTER_HL); } while (0)

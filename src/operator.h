@@ -13,6 +13,7 @@
 #define TempString1 0
 #define TempString2 1
 
+bool comparePtrToTempStrings(uint24_t);
 uint8_t getIndexOfOperator(uint8_t);
 uint24_t executeOperator(uint24_t, uint24_t, uint8_t);
 void LD_HL_STRING(uint24_t);

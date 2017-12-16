@@ -192,6 +192,10 @@ void main(void) {
         uint8_t currentGoto, currentLbl;
         uint24_t previousSize = 0;
         
+        if (!ice.amountOfGraphxRoutinesUsed && !ice.amountOfFileiocRoutinesUsed) {
+            MaybeLDIYFlags();
+        }
+        
         // If the last token is not "Return", write a "ret" to the program
         if (!ice.lastTokenIsReturn) {
             RET();

@@ -446,8 +446,8 @@ G12:  .db "Blit(LOC)", 0
 G13:  .db "BlitLines(LOC,Y,NUM)", 0
 G14:  .db "BlitArea(LOC,X,Y,W,H)", 0
 G15:  .db "PrintChar(CHAR)", 0
-G16:  .db "PrintInt(n,CHARS)", 0
-G17:  .db "PrintUInt(n,CHARS)", 0
+G16:  .db "PrintInt(N,CHARS)", 0
+G17:  .db "PrintUInt(N,CHARS)", 0
 G18:  .db "PrintString(STRING)", 0
 G19:  .db "PrintStringXY(STRING,X,Y)", 0
 Tab4:

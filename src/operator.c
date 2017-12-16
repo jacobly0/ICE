@@ -98,6 +98,10 @@ void MultWithNumber(uint24_t num, uint8_t *programPtr, bool ChangeRegisters) {
 }
 #endif
 
+bool comparePtrToTempStrings(uint24_t addr) {
+    return (addr == ice.tempStrings[TempString1] || addr == ice.tempStrings[TempString2]);
+}
+
 uint8_t getIndexOfOperator(uint8_t operator) {
     char *index;
     if ((index = strchr(operators, operator))) {
@@ -1033,8 +1037,22 @@ void AddStringString(void) {
     *        X+<TempString1>
     **/
     
-    if (entry1->type == TYPE_STRING) {
-        LD_HL_STRING(entry1_operand);
+    if (comparePtrToTempStrings(entry1_operand)) {
+        if (entry2->type == TYPE_STRING && !comparePtrToTempStrings(entry2_operand)) {
+            ProgramPtrToOffsetStack();
+        }
+        LD_HL_IMM(entry2_operand);
+        PUSH_HL();
+        LD_HL_IMM(entry1_operand);
+        PUSH_HL();
+        CALL(__strcat);
+        POP_BC();
+        POP_BC();
+    } else {
+        if (entry1->type == TYPE_STRING && !comparePtrToTempStrings(entry1_operand)) {
+            ProgramPtrToOffsetStack();
+        }
+        LD_HL_IMM(entry1_operand);
         PUSH_HL();
         if (entry2_operand == ice.tempStrings[TempString1]) {
             LD_HL_IMM(ice.tempStrings[TempString2]);
@@ -1044,17 +1062,12 @@ void AddStringString(void) {
         PUSH_HL();
         CALL(__strcpy);
         POP_DE();
-        LD_HL_STRING(entry2_operand);
+        if (entry2->type == TYPE_STRING && !comparePtrToTempStrings(entry2_operand)) {
+            ProgramPtrToOffsetStack();
+        }
+        LD_HL_IMM(entry2_operand);
         EX_SP_HL();
         PUSH_DE();
-        CALL(__strcat);
-        POP_BC();
-        POP_BC();
-    } else {
-        LD_HL_STRING(entry2_operand);
-        PUSH_HL();
-        LD_HL_IMM(entry1_operand);
-        PUSH_HL();
         CALL(__strcat);
         POP_BC();
         POP_BC();
