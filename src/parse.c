@@ -758,7 +758,8 @@ uint8_t parsePostFixFromIndexToIndex(uint24_t startIndex, uint24_t endIndex) {
         expr.outputIsString = false;
         
         if (outputType == TYPE_OPERATOR) {
-            element_t *outputPrev, *outputPrevPrev;
+            element_t *outputPrev, *outputPrevPrev, *outputNext, *outputNextNext;
+            bool canOptimizeConcatenateStrings;
             
             // Wait, invalid operator?!
             if (loopIndex < startIndex + 2) {
@@ -773,32 +774,57 @@ uint8_t parsePostFixFromIndexToIndex(uint24_t startIndex, uint24_t endIndex) {
             }
             
             // Get the previous entries, -2 is the previous one, -3 is the one before etc
-            outputPrev = &outputPtr[getIndexOffset(-2)];
+            outputPrev     = &outputPtr[getIndexOffset(-2)];
             outputPrevPrev = &outputPtr[getIndexOffset(-3)];
+            outputNext     = &outputPtr[getIndexOffset(0)];
+            outputNextNext = &outputPtr[getIndexOffset(1)];
+            
+            // Check if we can optimize StrX + "..." -> StrX
+            canOptimizeConcatenateStrings = (
+                (uint8_t)(outputCurr->operand) == tAdd && 
+                outputPrevPrev->type == TYPE_OS_STRING && 
+                outputNext->type == TYPE_OS_STRING && 
+                outputNext->operand == outputPrevPrev->operand && 
+                outputNextNext->type == TYPE_OPERATOR && 
+                (uint8_t)(outputNextNext->operand) == tStore
+                
+            );
             
             // Parse the operator with the 2 latest operands of the stack!
-            if ((temp = parseOperator(outputPrevPrevPrev, outputPrevPrev, outputPrev, outputCurr)) != VALID) {
+            if ((temp = parseOperator(outputPrevPrevPrev, outputPrevPrev, outputPrev, outputCurr, canOptimizeConcatenateStrings)) != VALID) {
                 return temp;
             }
             
             // Remove the index of the first and the second argument, the index of the operator will be the chain
             removeIndexFromStack(getCurrentIndex() - 2);
             removeIndexFromStack(getCurrentIndex() - 2);
+            AnsDepth = 0;
             
-            // Check if it was a command with 2 strings, then the output is a string, not Ans
-            if ((uint8_t)outputCurr->operand == tAdd && outputPrevPrev->type >= TYPE_STRING && outputPrev->type >= TYPE_STRING) {
-                outputCurr->type = TYPE_STRING;
-                if (outputPrevPrev->operand == ice.tempStrings[TempString2] || outputPrev->operand == ice.tempStrings[TempString1]) {
-                    outputCurr->operand = ice.tempStrings[TempString2];
-                } else {
-                    outputCurr->operand = ice.tempStrings[TempString1];
-                }
+            // Eventually remove the ->StrX too
+            if (canOptimizeConcatenateStrings) {
+                loopIndex = getIndexOffset(1);
+                removeIndexFromStack(getCurrentIndex());
+                removeIndexFromStack(getCurrentIndex() + 1);
+                
+                outputCurr->type = TYPE_OS_STRING;
+                outputCurr->operand = outputPrevPrev->operand;
                 expr.outputIsString = true;
             } else {
-                AnsDepth = 1;
-                outputCurr->type = TYPE_CHAIN_ANS;
+                // Check if it was a command with 2 strings, then the output is a string, not Ans
+                if ((uint8_t)outputCurr->operand == tAdd && outputPrevPrev->type >= TYPE_STRING && outputPrev->type >= TYPE_STRING) {
+                    outputCurr->type = TYPE_STRING;
+                    if (outputPrevPrev->operand == ice.tempStrings[TempString2] || outputPrev->operand == ice.tempStrings[TempString1]) {
+                        outputCurr->operand = ice.tempStrings[TempString2];
+                    } else {
+                        outputCurr->operand = ice.tempStrings[TempString1];
+                    }
+                    expr.outputIsString = true;
+                } else {
+                    AnsDepth = 1;
+                    outputCurr->type = TYPE_CHAIN_ANS;
+                }
+                tempIndex = loopIndex;
             }
-            tempIndex = loopIndex;
         }
         
         else if (outputType == TYPE_FUNCTION) {

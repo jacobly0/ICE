@@ -17,7 +17,7 @@ bool comparePtrToTempStrings(uint24_t);
 uint8_t getIndexOfOperator(uint8_t);
 uint24_t executeOperator(uint24_t, uint24_t, uint8_t);
 void LD_HL_STRING(uint24_t);
-uint8_t parseOperator(element_t*, element_t*, element_t*, element_t*);
+uint8_t parseOperator(element_t*, element_t*, element_t*, element_t*, bool);
 
 void StoToChainAns(void);
 void EQInsert(void);

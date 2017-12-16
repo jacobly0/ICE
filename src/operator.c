@@ -37,6 +37,7 @@ static uint24_t entry0_operand;
 static uint24_t entry1_operand;
 static uint24_t entry2_operand;
 static uint8_t oper;
+static bool canOptimizeConcatenateStrings;
 
 #if defined(COMPUTER_ICE) || defined(SC)
 static uint8_t clz(uint24_t x) {
@@ -162,12 +163,13 @@ static void swapEntries() {
     getEntryOperands();
 }
 
-uint8_t parseOperator(element_t *outputPrevPrevPrev, element_t *outputPrevPrev, element_t *outputPrev, element_t *outputCurr) {
+uint8_t parseOperator(element_t *outputPrevPrevPrev, element_t *outputPrevPrev, element_t *outputPrev, element_t *outputCurr, bool canOptimizeStrings) {
     uint8_t type1Masked, type1, type2;
     
     type1 = outputPrevPrev->type;
     type1Masked = type1 & 0x7F;
     type2 = outputPrev->type;
+    canOptimizeConcatenateStrings = canOptimizeStrings;
     
     oper = outputCurr->operand;
     
@@ -1049,25 +1051,36 @@ void AddStringString(void) {
         POP_BC();
         POP_BC();
     } else {
-        if (entry1->type == TYPE_STRING && !comparePtrToTempStrings(entry1_operand)) {
-            ProgramPtrToOffsetStack();
-        }
-        LD_HL_IMM(entry1_operand);
-        PUSH_HL();
-        if (entry2_operand == ice.tempStrings[TempString1]) {
-            LD_HL_IMM(ice.tempStrings[TempString2]);
+        // Optimize StrX + "..." -> StrX
+        if (canOptimizeConcatenateStrings) {
+            if (entry2->type == TYPE_STRING && !comparePtrToTempStrings(entry2_operand)) {
+                ProgramPtrToOffsetStack();
+            }
+            LD_HL_IMM(entry2_operand);
+            PUSH_HL();
+            LD_HL_IMM(entry1_operand);
+            PUSH_HL();
         } else {
-            LD_HL_IMM(ice.tempStrings[TempString1]);
+            if (entry1->type == TYPE_STRING && !comparePtrToTempStrings(entry1_operand)) {
+                ProgramPtrToOffsetStack();
+            }
+            LD_HL_IMM(entry1_operand);
+            PUSH_HL();
+            if (entry2_operand == ice.tempStrings[TempString1]) {
+                LD_HL_IMM(ice.tempStrings[TempString2]);
+            } else {
+                LD_HL_IMM(ice.tempStrings[TempString1]);
+            }
+            PUSH_HL();
+            CALL(__strcpy);
+            POP_DE();
+            if (entry2->type == TYPE_STRING && !comparePtrToTempStrings(entry2_operand)) {
+                ProgramPtrToOffsetStack();
+            }
+            LD_HL_IMM(entry2_operand);
+            EX_SP_HL();
+            PUSH_DE();
         }
-        PUSH_HL();
-        CALL(__strcpy);
-        POP_DE();
-        if (entry2->type == TYPE_STRING && !comparePtrToTempStrings(entry2_operand)) {
-            ProgramPtrToOffsetStack();
-        }
-        LD_HL_IMM(entry2_operand);
-        EX_SP_HL();
-        PUSH_DE();
         CALL(__strcat);
         POP_BC();
         POP_BC();
