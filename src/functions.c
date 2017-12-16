@@ -188,9 +188,14 @@ uint8_t parseFunction(uint24_t index) {
     
     // rand
     if (function == tRand) {
+        bool usedAlreadyRand = ice.usedAlreadyRand;
+        
         CallRoutine(&ice.usedAlreadyRand, &ice.randAddr, (uint8_t*)RandData, SIZEOF_RAND_DATA);
-        ice.dataOffsetStack[ice.dataOffsetElements++] = (uint24_t*)(ice.randAddr + 2);
-        w24(ice.randAddr + 2, ice.randAddr + 85);
+        
+        if (!usedAlreadyRand) {
+            ice.dataOffsetStack[ice.dataOffsetElements++] = (uint24_t*)(ice.randAddr + 2);
+            w24(ice.randAddr + 2, ice.randAddr + 85);
+        }
         ice.modifiedIY = true;
         ResetAllRegs();
     }

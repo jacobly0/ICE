@@ -81,6 +81,7 @@ typedef struct {
     bool     startedGRAPHX;
     bool     startedFILEIOC;
     bool     endedGRAPHX;
+    bool     usesRandRoutine;                               // Used to seed the rand routine when it's used
     
     bool     usedAlreadyRand;                               // Only once the "rand" routine in the program data
     uint24_t randAddr;                                      // Address of the "rand" routine in the program data

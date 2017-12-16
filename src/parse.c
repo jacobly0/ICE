@@ -1102,9 +1102,14 @@ uint8_t JumpForward(uint8_t *startAddr, uint8_t *endAddr, uint24_t tempDataOffse
         *startAddr++ = opcode - 0xA2 - (opcode == 0xC3 ? 9 : 0);
         *startAddr++ = endAddr - tempPtr - 4;
         
-        // Update pointers to data, decrease them all with 2
+        // Update pointers to data, decrease them all with 2, except pointers from data to data!
         while (ice.dataOffsetElements != tempDataOffsetElements) {
-            ice.dataOffsetStack[tempDataOffsetElements] = (uint24_t*)(((uint8_t*)ice.dataOffsetStack[tempDataOffsetElements]) - 2);
+            uint8_t *tempDataOffsetStackAddr = (uint8_t*)ice.dataOffsetStack[tempDataOffsetElements];
+            
+            if (tempDataOffsetStackAddr >= ice.programData && tempDataOffsetStackAddr <= ice.programPtr) {
+                ice.dataOffsetStack[tempDataOffsetElements] = (uint24_t*)(tempDataOffsetStackAddr - 2);
+            }
+            //ice.dataOffsetStack[tempDataOffsetElements] = (uint24_t*)(((uint8_t*)ice.dataOffsetStack[tempDataOffsetElements]) - 2);
             tempDataOffsetElements++;
         }
         
