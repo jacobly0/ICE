@@ -193,7 +193,6 @@ _:	add	a, t0
 	inc	hl
 	ld	(hl), 0
 	ld	hl, saveSScreen + 9
-	jr	InsertCFunctionLoop
 InsertCFunctionLoop:
 	ld	a, (hl)
 	or	a, a
