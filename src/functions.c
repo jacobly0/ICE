@@ -1096,6 +1096,7 @@ uint8_t parseFunction(uint24_t index) {
             if (!ice.startedGRAPHX) {
                 displayError(W_START_GRAPHX);
             }
+            ice.startedGRAPHX = true;
         }
         
         // Warn if C function used BEFORE starting FILEIOC
@@ -1106,6 +1107,7 @@ uint8_t parseFunction(uint24_t index) {
             if (!ice.startedFILEIOC) {
                 displayError(W_START_FILEIOC);
             }
+            ice.startedFILEIOC = true;
         }
         
         ResetAllRegs();
