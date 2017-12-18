@@ -1068,12 +1068,12 @@ uint8_t parseFunction(uint24_t index) {
         }
         
         // Check the right amount of arguments
-        if ((temp & 7) != amountOfArguments-- - 1) {
+        if ((temp & 7) != amountOfArguments - 1) {
             return E_ARGUMENTS;
         }
         
         // And pop the arguments
-        while (--amountOfArguments) {
+        for (a = 1; a < amountOfArguments; a++) {
             POP_BC();
         }
         
