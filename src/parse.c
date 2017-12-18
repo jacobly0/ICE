@@ -787,7 +787,6 @@ uint8_t parsePostFixFromIndexToIndex(uint24_t startIndex, uint24_t endIndex) {
                 outputNext->operand == outputPrevPrev->operand && 
                 outputNextNext->type == TYPE_OPERATOR && 
                 (uint8_t)(outputNextNext->operand) == tStore
-                
             );
             
             // Parse the operator with the 2 latest operands of the stack!

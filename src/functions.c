@@ -180,8 +180,8 @@ uint8_t parseFunction(uint24_t index) {
     amountOfArguments  = output >> 8;
     
     outputPrevOperand  = outputPrev->operand;
-    outputPrevType     = outputPrev->type;
-    outputPrevPrevType = outputPrevPrev->type;
+    outputPrevType     = outputPrev->type & 0x7F;
+    outputPrevPrevType = outputPrevPrev->type & 0x7F;
     
     if (function != tNot) {
         ClearAnsFlags();
@@ -394,7 +394,7 @@ uint8_t parseFunction(uint24_t index) {
     
     // remainder(
     else if (function == tExtTok && function2 == tRemainder) {
-        if ((outputPrevType & 0x7F) == TYPE_NUMBER && outputPrevOperand <= 256 && !((uint8_t)outputPrevOperand & (uint8_t)(outputPrevOperand - 1))) {
+        if (outputPrevType == TYPE_NUMBER && outputPrevOperand <= 256 && !((uint8_t)outputPrevOperand & (uint8_t)(outputPrevOperand - 1))) {
             if (outputPrevPrevType == TYPE_VARIABLE) {
                 LD_A_IND_IX_OFF(outputPrevPrev->operand);
             } else if (outputPrevPrevType == TYPE_CHAIN_ANS) {
@@ -784,7 +784,7 @@ uint8_t parseFunction(uint24_t index) {
         uint8_t *prevProgDataPtr = ice.programDataPtr;
         
         outputTemp = &outputPtr[getIndexOffset(startIndex)];
-        if ((outputTemp->type & 0x7F) == TYPE_NUMBER) {
+        if (outputTemp->type == TYPE_NUMBER) {
             LD_DE_IMM(outputTemp->operand);
         } else if (outputTemp->type == TYPE_VARIABLE) {
             LD_DE_IND_IX_OFF(outputTemp->operand);
@@ -813,8 +813,6 @@ uint8_t parseFunction(uint24_t index) {
         uint8_t outputPrevPrevPrevType = outputPrevPrevPrev->type & 0x7F;
         uint24_t outputPrevPrevPrevOperand = outputPrevPrevPrev->operand;
         uint24_t outputPrevPrevOperand = outputPrevPrev->operand;
-        
-        outputPrevPrevType = outputPrevPrevType & 0x7F;
         
         if (amountOfArguments < 3 || amountOfArguments > 4) {
             return E_ARGUMENTS;
@@ -936,7 +934,7 @@ uint8_t parseFunction(uint24_t index) {
         if (amountOfArguments != 1) {
             return E_ARGUMENTS;
         }
-        if (outputPrevType == TYPE_NUMBER || outputPrevType == TYPE_STRING || outputPrevType == TYPE_OS_STRING) {
+        if (outputPrevType == TYPE_NUMBER || outputPrevType == TYPE_STRING || outputPrev->type == TYPE_OS_STRING) {
             if (outputPrevType == TYPE_STRING && outputPrevOperand != ice.tempStrings[TempString1] && outputPrevOperand != ice.tempStrings[TempString2]) {
                 ProgramPtrToOffsetStack();
             }
@@ -1015,7 +1013,7 @@ uint8_t parseFunction(uint24_t index) {
             temp = 0;
             while (1) {
                 outputPrev = &outputPtr[--startIndex];
-                outputPrevType = outputPrevType;
+                outputPrevType = outputPrev->type;
                 outputPrevOperand = outputPrev->operand;
                 
                 if (outputPrevType == TYPE_C_START) {
