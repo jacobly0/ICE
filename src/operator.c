@@ -684,7 +684,7 @@ void EQChainAnsNumber(void) {
         } else {
             SUB_A(entry2_operand);
             ADD_A(255);
-            expr.AnsSetZeroFlag = true;
+            expr.AnsSetZeroFlagReversed = true;
             expr.ZeroCarryFlagRemoveAmountOfBytes = 4;
         }
         SBC_A_A();
