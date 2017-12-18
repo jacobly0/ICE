@@ -167,7 +167,7 @@ extern uint8_t outputStack[4096];
 
 uint8_t parseFunction(uint24_t index) {
     element_t *outputPtr = (element_t*)outputStack, *outputPrev, *outputCurr, *outputPrevPrev, *outputPrevPrevPrev;
-    uint8_t function, function2, amountOfArguments, temp, a, outputPrevType, res;
+    uint8_t function, function2, amountOfArguments, temp, a, outputPrevType, outputPrevPrevType, res;
     uint24_t output, endIndex, startIndex, outputPrevOperand;
     
     outputPrevPrevPrev = &outputPtr[getIndexOffset(-4)];
@@ -179,8 +179,9 @@ uint8_t parseFunction(uint24_t index) {
     function2          = output >> 16;
     amountOfArguments  = output >> 8;
     
-    outputPrevOperand     = outputPrev->operand;
-    outputPrevType        = outputPrev->type;
+    outputPrevOperand  = outputPrev->operand;
+    outputPrevType     = outputPrev->type;
+    outputPrevPrevType = outputPrevPrev->type;
     
     if (function != tNot) {
         ClearAnsFlags();
@@ -393,10 +394,10 @@ uint8_t parseFunction(uint24_t index) {
     
     // remainder(
     else if (function == tExtTok && function2 == tRemainder) {
-        if ((outputPrevType & 0x7F) == TYPE_NUMBER && outputPrev->operand <= 256 && !((uint8_t)outputPrev->operand & (uint8_t)(outputPrev->operand - 1))) {
-            if (outputPrevPrev->type == TYPE_VARIABLE) {
+        if ((outputPrevType & 0x7F) == TYPE_NUMBER && outputPrevOperand <= 256 && !((uint8_t)outputPrevOperand & (uint8_t)(outputPrevOperand - 1))) {
+            if (outputPrevPrevType == TYPE_VARIABLE) {
                 LD_A_IND_IX_OFF(outputPrevPrev->operand);
-            } else if (outputPrevPrev->type == TYPE_CHAIN_ANS) {
+            } else if (outputPrevPrevType == TYPE_CHAIN_ANS) {
                 if (expr.outputRegister == REGISTER_HL) {
                     LD_A_L();
                 } else if (expr.outputRegister == REGISTER_DE) {
@@ -431,35 +432,78 @@ uint8_t parseFunction(uint24_t index) {
     
     // randInt(
     else if (function == t2ByteTok && function2 == tRandInt) {
-        if (outputPrevPrev->type == TYPE_CHAIN_PUSH) {
-            if (outputPrev->type != TYPE_CHAIN_ANS) {
-                return E_ICE_ERROR;
+        bool usedAlreadyRand = ice.usedAlreadyRand;
+        
+        if (outputPrevPrevType == TYPE_STRING || outputPrevType == TYPE_STRING) {
+            return E_SYNTAX;
+        }
+        
+        if (outputPrevType == TYPE_CHAIN_ANS) {
+            AnsToHL();
+            if (outputPrevPrevType == TYPE_CHAIN_PUSH) {
+                POP_DE();
+            } else if (outputPrevPrevType == TYPE_NUMBER) {
+                LD_DE_IMM(outputPrevPrev->operand - 1);
             }
-            PushHLDE();
-            CallRoutine(&ice.usedAlreadyRand, &ice.randAddr, (uint8_t*)RandData, SIZEOF_RAND_DATA);
+        }
+        if (outputPrevPrevType == TYPE_CHAIN_ANS) {
+            AnsToDE();
+            if (outputPrevType == TYPE_VARIABLE) {
+                LD_HL_IND_IX_OFF(outputPrevOperand);
+            }
+        }
+        if (outputPrevPrevType == TYPE_VARIABLE) {
+            LD_DE_IND_IX_OFF(outputPrevPrev->operand);
+        }
+        if (outputPrevType == TYPE_VARIABLE && outputPrevPrevType <= TYPE_VARIABLE) {
+            LD_HL_IND_IX_OFF(outputPrevOperand);
+        }
+        if (outputPrevPrevType == TYPE_NUMBER && outputPrevType != TYPE_NUMBER) {
+            LD_DE_IMM(outputPrevPrev->operand - 1);
+        }
+        if (outputPrevType == TYPE_NUMBER && outputPrevPrevType != TYPE_NUMBER) {
+            LD_HL_IMM(outputPrevOperand + 1);
+        }
+        
+        if (outputPrevPrevType != TYPE_NUMBER || outputPrevType != TYPE_NUMBER) {
+            PUSH_DE();
+            OR_A_SBC_HL_DE();
+        }
+        if (outputPrevPrevType != TYPE_NUMBER && outputPrevType != TYPE_NUMBER) {
+            INC_HL();
+        }
+        if (outputPrevPrevType != TYPE_NUMBER || outputPrevType != TYPE_NUMBER) {
+            PUSH_HL();
+        }
+        
+        CallRoutine(&ice.usedAlreadyRand, &ice.randAddr, (uint8_t*)RandData, SIZEOF_RAND_DATA);
+        if (!usedAlreadyRand) {
             ice.dataOffsetStack[ice.dataOffsetElements++] = (uint24_t*)(ice.randAddr + 2);
             w24((uint8_t*)(ice.randAddr + 2), ice.randAddr + 85);
-            ice.modifiedIY = true;
-            EX_DE_HL();
-            POP_HL();
-            POP_BC();
-            OR_A_A();
-            SBC_HL_BC();
-            INC_HL();
-            PUSH_BC();
-            PUSH_HL();
-            POP_BC();
-            EX_DE_HL();
-            CALL(__idvrmu);
-            POP_DE();
-            ADD_HL_DE();
-            ResetReg(REGISTER_HL);
-            ResetReg(REGISTER_DE);
-            reg.AIsNumber = true;
-            reg.AIsVariable = false;
-            reg.AValue = 0;
-        } else if (outputPrevPrev->type == TYPE_CHAIN_ANS) {
         }
+        
+        if (outputPrevPrevType != TYPE_NUMBER || outputPrevType != TYPE_NUMBER) {
+            POP_BC();
+        } else {
+            LD_BC_IMM(outputPrevOperand - outputPrevPrev->operand + 1);
+        }
+        CALL(__idvrmu);
+        if (outputPrevType != TYPE_NUMBER || outputPrevPrevType != TYPE_NUMBER) {
+            POP_DE();
+        } else {
+            LD_DE_IMM(outputPrevPrev->operand);
+        }
+        if (outputPrevType == TYPE_NUMBER && outputPrevPrevType != TYPE_NUMBER) {
+            INC_DE();
+        }
+        ADD_HL_DE();
+        
+        ice.modifiedIY = true;
+        ResetReg(REGISTER_HL);
+        ResetReg(REGISTER_DE);
+        reg.AIsNumber = true;
+        reg.AIsVariable = false;
+        reg.AValue = 0;
     }
     
     // sub(
@@ -631,7 +675,7 @@ uint8_t parseFunction(uint24_t index) {
         * Returns: PTR to sprite (sprite)
         *****************************************************/
         
-        if (amountOfArguments != 3 || outputPrevPrev->type != TYPE_NUMBER || outputPrev->type != TYPE_NUMBER) {
+        if (amountOfArguments != 3 || outputPrevPrevType != TYPE_NUMBER || outputPrevType != TYPE_NUMBER) {
             return E_SYNTAX;
         }
         
@@ -767,9 +811,10 @@ uint8_t parseFunction(uint24_t index) {
         *****************************************************/
         
         uint8_t outputPrevPrevPrevType = outputPrevPrevPrev->type & 0x7F;
-        uint8_t outputPrevPrevType = outputPrevPrev->type & 0x7F;
         uint24_t outputPrevPrevPrevOperand = outputPrevPrevPrev->operand;
         uint24_t outputPrevPrevOperand = outputPrevPrev->operand;
+        
+        outputPrevPrevType = outputPrevPrevType & 0x7F;
         
         if (amountOfArguments < 3 || amountOfArguments > 4) {
             return E_ARGUMENTS;
@@ -846,7 +891,7 @@ uint8_t parseFunction(uint24_t index) {
             uint8_t width = outputPrevPrev->operand;
             uint8_t height = outputPrev->operand;
             
-            if (outputPrevPrev->type != TYPE_NUMBER || outputPrevType != TYPE_NUMBER) {
+            if (outputPrevPrevType != TYPE_NUMBER || outputPrevType != TYPE_NUMBER) {
                 return E_SYNTAX;
             }
             
@@ -860,7 +905,7 @@ uint8_t parseFunction(uint24_t index) {
         } else if (amountOfArguments == 3) {
             uint8_t *a;
             
-            if(outputPrevPrevPrev->type != TYPE_NUMBER || outputPrevPrev->type != TYPE_NUMBER || outputPrev->type != TYPE_STRING) {
+            if(outputPrevPrevPrev->type != TYPE_NUMBER || outputPrevPrevType != TYPE_NUMBER || outputPrevType != TYPE_STRING) {
                 return E_SYNTAX;
             }
             
@@ -970,7 +1015,7 @@ uint8_t parseFunction(uint24_t index) {
             temp = 0;
             while (1) {
                 outputPrev = &outputPtr[--startIndex];
-                outputPrevType = outputPrev->type;
+                outputPrevType = outputPrevType;
                 outputPrevOperand = outputPrev->operand;
                 
                 if (outputPrevType == TYPE_C_START) {
