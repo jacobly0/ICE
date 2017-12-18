@@ -1,7 +1,7 @@
 #include "hooks/ti84pce.inc"
 
 #define AMOUNT_OF_CUSTOM_TOKENS 8
-#define AMOUNT_OF_GRAPHX_FUNCTIONS 92
+#define AMOUNT_OF_GRAPHX_FUNCTIONS 89
 #define AMOUNT_OF_FILEIOC_FUNCTIONS 21
 
 KeyHook_start:
@@ -22,7 +22,7 @@ KeyHook_start:
 	ld	a, (progToEdit)
 	or	a, a
 	jr	z, DisplayCustomTokensAndCFunctions
-; Stupid OS, we need to copy it to safe RAM, because the OS clears progToEdit when opening another menu
+; Stupid OS, we need to copy it to safe RAM, because the OS clears progToEdit when opening another OS context
 	ld	de, saveSScreen
 	ld	hl, progToEdit
 	call	_Mov9b
@@ -152,7 +152,15 @@ KeyNotDown:
 	add	a, e
 	sub	a, AMOUNT_OF_CUSTOM_TOKENS
 	jr	c, InsertCustomToken
-	ld	hl, saveSScreen + 9
+; Check ignored C functions
+	cp	a, 55 + AMOUNT_OF_FILEIOC_FUNCTIONS
+	jr	c, +_
+	inc	a
+	inc	a
+_:	cp	a, 74 + AMOUNT_OF_FILEIOC_FUNCTIONS
+	jr	c, +_
+	inc	a
+_:	ld	hl, saveSScreen + 9
 	cp	a, AMOUNT_OF_FILEIOC_FUNCTIONS
 	jr	nc, +_
 	ld	(hl), tSum
@@ -185,9 +193,11 @@ _:	add	a, t0
 	inc	hl
 	ld	(hl), 0
 	ld	hl, saveSScreen + 9
+	jr	InsertCFunctionLoop
 InsertCFunctionLoop:
 	ld	a, (hl)
 	or	a, a
+KeyIsClear:
 	jr	z, BufferSearch
 	ld	de, (editTail)
 	ld	a, (de)
@@ -216,7 +226,6 @@ InsertCustomToken:
 	call	_BufReplace
 	jr	BufferSearch
 _:	call	_BufInsert
-KeyIsClear:
 BufferSearch:
 	ld	bc, 0
 _:	call	_BufLeft
@@ -364,6 +373,13 @@ GetDetValueStop:
 	jr	++_
 _:	ld	de, AMOUNT_OF_GRAPHX_FUNCTIONS
 	ld	bc, CData5
+	ld	a, l
+	cp	a, 55
+	jr	z, WrongDetValue
+	cp	a, 56
+	jr	z, WrongDetValue
+	cp	a, 73
+	jr	z, WrongDetValue
 _:	or	a, a
 	sbc	hl, de
 	jr	nc, WrongDetValue
@@ -489,8 +505,8 @@ G52:  .db "TransparentTilemap(PTR,X,Y)", 0
 G53:  .db "TransparentTilemap_NoClip(PTR,X,Y)", 0
 G54:  .db "TilePtr(PTR,X,Y)", 0
 G55:  .db "TilePtrMapped(PTR,ROW,COL)", 0
-G56:  .db "LZDecompress()", 0
-G57:  .db "AllocSprite()", 0
+G56:
+G57:
 G58:  .db "Sprite(PTR,X,Y)", 0
 G59:  .db "TransparentSprite(PTR,X,Y)", 0
 G60:  .db "Sprite_NoClip(PTR,X,Y)", 0
@@ -501,14 +517,14 @@ G64:  .db "ScaledTransparentSprite_NoClip(PTR,X,Y)", 0
 G65:  .db "FlipSpriteY(PTR_IN,PTR_OUT)", 0
 G66:  .db "FlipSpriteX(PTR_IN,PTR_OUT)", 0
 G67:  .db "RotateSpriteC(PTR_IN,PTR_OUT)", 0
-Tab7:
 G68:  .db "RotateSpriteCC(PTR_IN,PTR_OUT)", 0
 G69:  .db "RotateSpriteHalf(PTR_IN,PTR_OUT)", 0
+Tab7:
 G70:  .db "Polygon(POINTS,NUM)", 0
 G71:  .db "Polygon_NoClip(POINTS,NUM)", 0
 G72:  .db "FillTriangle(X1,Y1,X2,Y2,X3,Y3)", 0
 G73:  .db "FillTriangle_NoClip(X1,Y1,X2,Y2,X3,Y3)", 0
-G74:  .db "LZDecompressSprite()", 0
+G74:
 G75:  .db "SetTextScale(W_SCALE,H_SCALE)", 0
 G76:  .db "SetTransparentColor(COLOR)", 0
 G77:  .db "ZeroScreen()", 0
@@ -518,10 +534,10 @@ G80:  .db "Lighten(COLOR,AMOUNT)", 0
 G81:  .db "Darken(COLOR,AMOUNT)", 0
 G82:  .db "SetFontHeight(HEIGHT)", 0
 G83:  .db "ScaledSprite(PTR_IN,PTR_OUT)", 0
-Tab8:
 G84:  .db "FloodFill(X,Y,COLOR)", 0
 G85:  .db "RLETSprite(PTR,X,Y)", 0
 G86:  .db "RLETSprite_NoClip(PTR,X,Y)", 0
+Tab8:
 G87:  .db "ConvertFromRLETSprite(PTR_IN,PTR_OUT)", 0
 G88:  .db "ConvertToRLETSprite(PTR_IN,PTR_OUT)", 0
 G89:  .db "ConvertToNewRLETSprite()", 0
