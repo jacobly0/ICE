@@ -961,10 +961,16 @@ void AddChainAnsNumber(void) {
         LD_HL_IMM(number);
         ADD_A_L();
         LD_L_A();
-        JR_NC(4);
-        LD_L(-1);
-        INC_HL();
-        LD_L_A();
+        if ((number & 0x00FF00) != 0x00FF00) {
+            ADC_A_H();
+            SUB_A_L();
+            LD_H_A();
+        } else {
+            JR_NC(4);
+            LD_L(-1);
+            INC_HL();
+            LD_L_A();
+        }
     } else {
         if (number < 5) {
             uint8_t a;
