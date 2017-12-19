@@ -928,8 +928,7 @@ void DivNumberVariable(void) {
     DivChainAnsVariable();
 }
 void DivNumberChainAns(void) {
-    PushHLDE();
-    POP_BC();
+    AnsToBC();
     LD_HL_IMM(entry1_operand);
 }
 void DivVariableNumber(void) {
@@ -941,13 +940,11 @@ void DivVariableVariable(void) {
     DivChainAnsVariable();
 }
 void DivVariableChainAns(void) {
-    PushHLDE();
-    POP_BC();
+    AnsToBC();
     LD_HL_IND_IX_OFF(entry1_operand);
 }
 void DivChainPushChainAns(void) {
-    PushHLDE();
-    POP_BC();
+    AnsToBC();
     POP_HL();
 }
 void AddChainAnsNumber(void) {

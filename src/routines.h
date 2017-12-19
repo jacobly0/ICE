@@ -16,6 +16,7 @@ void RegChangeHLDE(void);
 void PushHLDE(void);
 void AnsToHL(void);
 void AnsToDE(void);
+void AnsToBC(void);
 void displayMessageLineScroll(char*);
 void MaybeAToHL(void);
 void MaybeLDIYFlags(void);

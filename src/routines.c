@@ -44,6 +44,20 @@ void AnsToDE(void) {
     }
     expr.outputRegister = REGISTER_DE;
 }
+
+void AnsToBC(void) {
+    if (expr.outputRegister == REGISTER_A) {
+        LD_BC_IMM(0);
+        LD_C_A();
+        reg.BCIsNumber = reg.AIsNumber;
+        reg.BCIsVariable = reg.AIsVariable;
+        reg.BCValue = reg.AValue;
+    } else {
+        PushHLDE();
+        POP_BC();
+    }
+}
+
 void ClearAnsFlags(void) {
     expr.AnsSetZeroFlag = expr.AnsSetZeroFlagReversed = expr.AnsSetCarryFlag = expr.AnsSetCarryFlagReversed = false;
 }

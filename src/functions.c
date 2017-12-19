@@ -823,16 +823,14 @@ uint8_t parseFunction(uint24_t index) {
                 if (outputPrevType != TYPE_CHAIN_ANS) {
                     return E_ICE_ERROR;
                 }
-                PushHLDE();
-                POP_BC();
+                AnsToBC();
                 POP_HL();
             }
             if (outputPrevPrevType == TYPE_CHAIN_ANS) {
                 AnsToHL();
             }
-            if (outputPrevType == TYPE_CHAIN_ANS) {
-                PushHLDE();
-                POP_BC();
+            if (outputPrevType == TYPE_CHAIN_ANS && outputPrevPrevType != TYPE_CHAIN_PUSH) {
+                AnsToBC();
             }
         } else if (outputPrevPrevPrevType == TYPE_CHAIN_ANS) {
             AnsToDE();
