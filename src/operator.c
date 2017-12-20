@@ -1103,6 +1103,8 @@ void SubChainAnsNumber(void) {
         expr.AnsSetZeroFlag = true;
         expr.ZeroCarryFlagRemoveAmountOfBytes = 3;
     } else {
+        MaybeAToHL();
+        
         if (number < 5) {
             uint8_t a;
             
