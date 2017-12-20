@@ -1092,25 +1092,34 @@ void AddStringString(void) {
 void SubChainAnsNumber(void) {
     uint24_t number = entry2_operand;
     
-    MaybeAToHL();
-    if (number < 5) {
-        uint8_t a;
-        
-        for (a = 0; a < (uint8_t)number; a++) {
-            if (expr.outputRegister == REGISTER_HL) {
-                DEC_HL();
-            } else {
-                DEC_DE();
-            }
-            expr.outputReturnRegister = expr.outputRegister;
+    if (expr.outputRegister == REGISTER_A && number < 256) {
+        if (!number) {
+            expr.outputReturnRegister = REGISTER_A;
+            return;
         }
+        SUB_A(number);
+        SBC_HL_HL();
+        LD_L_A();
     } else {
-        if (expr.outputRegister == REGISTER_HL) {
-            LD_DE_IMM(0 - number);
+        if (number < 5) {
+            uint8_t a;
+            
+            for (a = 0; a < (uint8_t)number; a++) {
+                if (expr.outputRegister == REGISTER_HL) {
+                    DEC_HL();
+                } else {
+                    DEC_DE();
+                }
+                expr.outputReturnRegister = expr.outputRegister;
+            }
         } else {
-            LD_HL_IMM(0 - number);
+            if (expr.outputRegister == REGISTER_HL) {
+                LD_DE_IMM(0 - number);
+            } else {
+                LD_HL_IMM(0 - number);
+            }
+            ADD_HL_DE();
         }
-        ADD_HL_DE();
     }
 }
 void SubChainAnsVariable(void) {
