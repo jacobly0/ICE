@@ -613,6 +613,8 @@ uint8_t parseFunction(uint24_t index) {
             return E_ARGUMENTS;
         }
         
+        ice.programDataPtr -= 18;
+        
         // Fetch the 8 uint8_t variables
         for (a = 0; a < 9; a++) {
             outputTemp = &outputPtr[getIndexOffset(startIndex + a)];
