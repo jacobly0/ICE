@@ -109,6 +109,10 @@ int main(int argc, char **argv) {
         } else {
             RET();
         }
+    } else {
+        CALL(ice.programPtr - ice.programData + 9 + PRGM_START);
+        LD_IY_IMM(flags);
+        RET();
     }
     
     // Sorry :3
