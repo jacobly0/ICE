@@ -1100,6 +1100,8 @@ void SubChainAnsNumber(void) {
         SUB_A(number);
         SBC_HL_HL();
         LD_L_A();
+        expr.AnsSetZeroFlag = true;
+        expr.ZeroCarryFlagRemoveAmountOfBytes = 3;
     } else {
         if (number < 5) {
             uint8_t a;
