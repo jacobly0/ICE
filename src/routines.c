@@ -18,10 +18,7 @@ extern variable_t variableStack[85];
 
 void ProgramPtrToOffsetStack(void) {
     ice.dataOffsetStack[ice.dataOffsetElements++] = (uint24_t*)(ice.programPtr + 1);
-}
-
-void ProgramDataPtrToOffsetStack(void) {
-    ice.dataOffsetStack[ice.dataOffsetElements++] = (uint24_t*)ice.programDataPtr;
+    reg.allowedToOptimize = false;
 }
 
 void AnsToHL(void) {
@@ -67,46 +64,53 @@ void ChangeRegValue(uint24_t inValue, uint24_t outValue, uint8_t opcodes[7]) {
     
     expr.SizeOfOutputNumber = 0;
     
-    if (outValue - inValue < 5) {
-        for (a = 0; a < (uint8_t)(outValue - inValue); a++) {
-            output(uint8_t, opcodes[0]);
-            expr.SizeOfOutputNumber++;
-        }
-    } else if (inValue - outValue < 5) {
-        for (a = 0; a < (uint8_t)(inValue - outValue); a++) {
-            output(uint8_t, opcodes[1]);
-            expr.SizeOfOutputNumber++;
-        }
-    } else if (inValue < 256 && outValue < 512) {
-        if (outValue > 255) {
-            output(uint8_t, opcodes[2]);
+    if (reg.allowedToOptimize) {
+        if (outValue - inValue < 5) {
+            for (a = 0; a < (uint8_t)(outValue - inValue); a++) {
+                output(uint8_t, opcodes[0]);
+                expr.SizeOfOutputNumber++;
+            }
+        } else if (inValue - outValue < 5) {
+            for (a = 0; a < (uint8_t)(inValue - outValue); a++) {
+                output(uint8_t, opcodes[1]);
+                expr.SizeOfOutputNumber++;
+            }
+        } else if (inValue < 256 && outValue < 512) {
+            if (outValue > 255) {
+                output(uint8_t, opcodes[2]);
+                expr.SizeOfOutputNumber = 1;
+            }
+            if (inValue != (outValue & 255)) {
+                output(uint8_t, opcodes[4]);
+                output(uint8_t, outValue);
+                expr.SizeOfOutputNumber += 2;
+            }
+        } else if (inValue < 512 && outValue < 256) {
+            output(uint8_t, opcodes[3]);
             expr.SizeOfOutputNumber = 1;
-        }
-        if (inValue != (outValue & 255)) {
-            output(uint8_t, opcodes[4]);
-            output(uint8_t, outValue);
-            expr.SizeOfOutputNumber += 2;
-        }
-    } else if (inValue < 512 && outValue < 256) {
-        output(uint8_t, opcodes[3]);
-        expr.SizeOfOutputNumber = 1;
-        if ((inValue & 255) != outValue) {
-            output(uint8_t, opcodes[4]);
-            output(uint8_t, outValue);
+            if ((inValue & 255) != outValue) {
+                output(uint8_t, opcodes[4]);
+                output(uint8_t, outValue);
+                expr.SizeOfOutputNumber = 3;
+            }
+        } else if (inValue < 65536 && outValue < 65536 && (inValue & 255) == (outValue & 255)) {
+            output(uint8_t, opcodes[5]);
+            output(uint8_t, outValue >> 8);
+            expr.SizeOfOutputNumber = 2;
+        } else if (outValue >= IX_VARIABLES - 0x80 && outValue <= IX_VARIABLES + 0x7F) {
+            output(uint16_t, 0x22ED);
+            output(uint8_t, outValue - IX_VARIABLES);
             expr.SizeOfOutputNumber = 3;
+        } else {
+            output(uint8_t, opcodes[6]);
+            output(uint24_t, outValue);
+            expr.SizeOfOutputNumber = 4;
         }
-    } else if (inValue < 65536 && outValue < 65536 && (inValue & 255) == (outValue & 255)) {
-        output(uint8_t, opcodes[5]);
-        output(uint8_t, outValue >> 8);
-        expr.SizeOfOutputNumber = 2;
-    } else if (outValue >= IX_VARIABLES - 0x80 && outValue <= IX_VARIABLES + 0x7F) {
-        output(uint16_t, 0x22ED);
-        output(uint8_t, outValue - IX_VARIABLES);
-        expr.SizeOfOutputNumber = 3;
     } else {
         output(uint8_t, opcodes[6]);
         output(uint24_t, outValue);
         expr.SizeOfOutputNumber = 4;
+        reg.allowedToOptimize = true;
     }
 }
 
@@ -302,33 +306,15 @@ bool CheckEOL(void) {
     return false;
 }
 
-uint8_t SquishHexadecimals(uint8_t *prevDataPtr) {
-    uint8_t *prevDataPtr2 = prevDataPtr;
-            
-    // Replace the hexadecimal string to hexadecimal bytes
-    while (prevDataPtr != ice.programDataPtr - 1 && *prevDataPtr) {
-        uint8_t tok1, tok2;
-        
-        if ((tok1 = IsHexadecimal(*prevDataPtr++)) == 16 || (tok2 = IsHexadecimal(*prevDataPtr++)) == 16) {
-            return E_SYNTAX;
-        }
-        *prevDataPtr2++ = (tok1 << 4) + tok2;
-    }
-    
-    ice.programDataPtr = prevDataPtr2;
-    
-    return VALID;
-}
-
 void CallRoutine(bool *routineBool, uint24_t *routineAddress, const uint8_t *routineData, uint8_t routineLength) {
     // Store the pointer to the call to the stack, to replace later
     ProgramPtrToOffsetStack();
     
-    // We need to add the getKeyFast routine to the data section
+    // We need to add the routine to the data section
     if (!*routineBool) {
+        ice.programDataPtr -= routineLength;
         *routineAddress = (uintptr_t)ice.programDataPtr;
         memcpy(ice.programDataPtr, routineData, routineLength);
-        ice.programDataPtr += routineLength;
         *routineBool = true;
     }
     

@@ -334,16 +334,15 @@ uint8_t parseFunction(uint24_t index) {
         }
         
         if (!ice.usedAlreadySinCos) {
+            ice.programDataPtr -= SIZEOF_SINCOS_DATA;
             ice.SinCosAddr = (uintptr_t)ice.programDataPtr;
             memcpy(ice.programDataPtr, SincosData, SIZEOF_SINCOS_DATA);
             
             // 16 = distance from start of routine to "ld de, SinTable"
-            ice.programDataPtr += 16;
-            ProgramDataPtrToOffsetStack();
+            ice.dataOffsetStack[ice.dataOffsetElements++] = (uint24_t*)(ice.programDataPtr + 16);
             
             // This is the "ld de, SinTable", 18 is the distance from "ld de, SinTable" to "SinTable"
-            *(uint24_t*)ice.programDataPtr = (uint24_t)ice.programDataPtr + 18;
-            ice.programDataPtr += SIZEOF_SINCOS_DATA - 16;
+            *(uint24_t*)(ice.programDataPtr + 16) = (uint24_t)ice.programDataPtr + 18 + 16;
             ice.usedAlreadySinCos = true;
         }
 
@@ -354,30 +353,21 @@ uint8_t parseFunction(uint24_t index) {
         expr.outputReturnRegister = REGISTER_DE;
     }
     
-    // min(
-    else if (function == tMin) {
+    // min(, max(
+    else if (function == tMin || function == tMax) {
         if ((res = parseFunction2Args(index, REGISTER_DE, amountOfArguments, false)) != VALID) {
             return res;
         }
         
         OR_A_SBC_HL_DE();
         ADD_HL_DE();
-        JR_C(1);
+        if (function == tMin) {
+            JR_C(1);
+        } else {
+            JR_NC(1);
+        }
         EX_DE_HL();
         ResetReg(REGISTER_HL);                 // DE is already reset because of "add hl, de \ ex de, hl"
-    }
-    
-    // max(
-    else if (function == tMax) {
-        if ((res = parseFunction2Args(index, REGISTER_DE, amountOfArguments, false)) != VALID) {
-            return res;
-        }
-        
-        OR_A_SBC_HL_DE();
-        ADD_HL_DE();
-        JR_NC(1);
-        EX_DE_HL();
-        ResetReg(REGISTER_HL);
     }
     
     // mean(
@@ -615,7 +605,7 @@ uint8_t parseFunction(uint24_t index) {
         ****************************************************************/
         
         uint24_t startIndex = -1 - amountOfArguments;
-        uint8_t *tempDataPtr = ice.programDataPtr;
+        uint8_t *tempDataPtr = ice.programDataPtr - 18;                 // 18 = sizeof(tilemap_t)
         element_t *outputTemp;
         uint8_t a;
         
@@ -660,7 +650,6 @@ uint8_t parseFunction(uint24_t index) {
         // Build a new tilemap struct in the program data
         ProgramPtrToOffsetStack();
         LD_HL_IMM((uint24_t)tempDataPtr);
-        ice.programDataPtr += 18;
     }
     
     // LoadData(
@@ -683,9 +672,9 @@ uint8_t parseFunction(uint24_t index) {
         if (outputPrev->operand == 3) {
             // Copy the LoadData( routine to the data section
             if (!ice.usedAlreadyLoadSprite) {
+                ice.programDataPtr -= 32;
                 ice.LoadSpriteAddr = (uintptr_t)ice.programDataPtr;
                 memcpy(ice.programDataPtr, LoadspriteData, 32);
-                ice.programDataPtr += 32;
                 ice.usedAlreadyLoadSprite = true;
             }
             
@@ -713,9 +702,9 @@ uint8_t parseFunction(uint24_t index) {
         else {
             // Copy the LoadData( routine to the data section
             if (!ice.usedAlreadyLoadTilemap) {
+                ice.programDataPtr -= 59;
                 ice.LoadTilemapAddr = (uintptr_t)ice.programDataPtr;
                 memcpy(ice.programDataPtr, LoadtilemapData, 59);
-                ice.programDataPtr += 59;
                 ice.usedAlreadyLoadTilemap = true;
             }
             
@@ -797,7 +786,7 @@ uint8_t parseFunction(uint24_t index) {
         if ((res = InsertDataElements(amountOfArguments, startIndex, (&outputPtr[getIndexOffset(startIndex + 1)])->operand, 2)) != VALID) {
             return res;
         }
-        LD_BC_IMM(ice.programDataPtr - prevProgDataPtr);
+        LD_BC_IMM(prevProgDataPtr - ice.programDataPtr);
         LDIR();
     }
     
@@ -905,16 +894,13 @@ uint8_t parseFunction(uint24_t index) {
                 return E_SYNTAX;
             }
             
-            for (a = ice.programDataPtr - 1; a >= (uint8_t*)outputPrev->operand; a--) {
-                *(a + 2) = *a;
-            }
-            ice.programDataPtr += 2;
+            ice.programDataPtr -= 2;
             ProgramPtrToOffsetStack();
-            LD_HL_IMM(outputPrev->operand);
+            LD_HL_IMM((uint24_t)ice.programDataPtr);
             ResetReg(REGISTER_HL);
             
-            *(uint8_t*)outputPrev->operand = outputPrevPrevPrev->operand;
-            *(uint8_t*)(outputPrev->operand + 1) = outputPrevPrev->operand;
+            *ice.programDataPtr = outputPrevPrevPrev->operand;
+            *(ice.programDataPtr + 1) = outputPrevPrev->operand;
         } else {
             return E_ARGUMENTS;
         }
@@ -1336,9 +1322,12 @@ uint8_t InsertDataElements(uint8_t amountOfArguments, uint24_t startIndex, uint8
     element_t *outputTemp;
     element_t *outputPtr = (element_t*)outputStack;
     uint8_t a;
+    uint8_t *newProgramDataPtr;
     
     ProgramPtrToOffsetStack();
-    LD_HL_IMM((uint24_t)ice.programDataPtr);
+    ice.programDataPtr -= dataSize * (amountOfArguments - startA);
+    newProgramDataPtr = ice.programDataPtr;
+    LD_HL_IMM((uint24_t)newProgramDataPtr);
     
     for (a = startA; a < amountOfArguments; a++) {
         outputTemp = &outputPtr[getIndexOffset(startIndex + a)];
@@ -1355,6 +1344,8 @@ uint8_t InsertDataElements(uint8_t amountOfArguments, uint24_t startIndex, uint8
         }
         ice.programDataPtr += dataSize;
     }
+    
+    ice.programDataPtr = newProgramDataPtr;
     
     return VALID;
 }

@@ -63,13 +63,14 @@ int main(int argc, char **argv) {
     fprintf(stdout, "%s\nPrescanning...\n", infoStr);
     _seek(0, SEEK_END, ice.inPrgm);
     
-    ice.programLength  = _tell(ice.inPrgm);
-    ice.programData    = malloc(0xFFFF);
-    ice.programPtr     = ice.programData + SIZEOF_CHEADER;
-    ice.programDataPtr = ice.programDataData;
-    ice.LblPtr         = ice.LblStack;
-    ice.GotoPtr        = ice.GotoStack;
-    ice.CBaseAddress   = ice.programPtr;
+    ice.programLength   = _tell(ice.inPrgm);
+    ice.programData     = malloc(0xFFFF + 0x100);
+    ice.programPtr      = ice.programData + SIZEOF_CHEADER;
+    ice.programDataData = ice.programData + 0xFFFF;
+    ice.programDataPtr  = ice.programDataData;
+    ice.LblPtr          = ice.LblStack;
+    ice.GotoPtr         = ice.GotoStack;
+    ice.CBaseAddress    = ice.programPtr;
     
     // Pre-scan program (and subprograms) and find all the GRAPHX routines
     memcpy(ice.programData, CheaderData, SIZEOF_CHEADER);
@@ -152,10 +153,10 @@ findNextLabel:;
         
         // Get the sizes of both stacks
         ice.programSize = (uintptr_t)ice.programPtr - (uintptr_t)ice.programData;
-        programDataSize = (uintptr_t)ice.programDataPtr - (uintptr_t)ice.programDataData;
+        programDataSize = (uintptr_t)ice.programDataData - (uintptr_t)ice.programDataPtr;
         
         // Change the pointers to the data as well, but first calculate the offset
-        offset = PRGM_START + ice.programSize - (uintptr_t)ice.programDataData;
+        offset = PRGM_START + ice.programSize - (uintptr_t)ice.programDataPtr;
         while (ice.dataOffsetElements--) {
             uint24_t *tempDataOffsetStackPtr = ice.dataOffsetStack[ice.dataOffsetElements];
             
@@ -178,7 +179,7 @@ findNextLabel:;
         
         // Write the header, main program, and data to output :D
         memcpy(&export[3], ice.programData, ice.programSize);
-        memcpy(&export[3 + ice.programSize], ice.programDataData, programDataSize);
+        memcpy(&export[3 + ice.programSize], ice.programDataPtr, programDataSize);
         
         // Write the actual program file
         export_program(ice.outName, export, totalSize);

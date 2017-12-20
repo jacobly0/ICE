@@ -126,14 +126,15 @@ void main(void) {
     ice.inPrgm = _open(var_name);
     _seek(0, SEEK_END, ice.inPrgm);
     ice.programLength = _tell(ice.inPrgm);
-    ice.programData    = (uint8_t*)0xD52C00;
     strcpy(ice.currProgName[ice.inPrgm], var_name);
-
-    ice.programPtr     = ice.programData + SIZEOF_CHEADER;
-    ice.programDataPtr = ice.programDataData;
-    ice.LblPtr         = ice.LblStack;
-    ice.GotoPtr        = ice.GotoStack;
-    ice.CBaseAddress   = ice.programPtr;
+    
+    ice.programData     = (uint8_t*)0xD52C00;
+    ice.programPtr      = ice.programData + SIZEOF_CHEADER;
+    ice.programDataData = ice.programData + 0xFFFF;
+    ice.programDataPtr  = ice.programDataData;
+    ice.LblPtr          = ice.LblStack;
+    ice.GotoPtr         = ice.GotoStack;
+    ice.CBaseAddress    = ice.programPtr;
     
     // Pre-scan program (and subprograms) and find all the GRAPHX routines
     memcpy(ice.programData, CheaderData, SIZEOF_CHEADER);
@@ -224,10 +225,10 @@ findNextLabel:;
         
         // Get the sizes of both stacks
         ice.programSize = (uintptr_t)ice.programPtr - (uintptr_t)ice.programData;
-        programDataSize = (uintptr_t)ice.programDataPtr - (uintptr_t)ice.programDataData;
+        programDataSize = (uintptr_t)ice.programDataData - (uintptr_t)ice.programDataPtr;
         
         // Change the pointers to the data as well, but first calculate the offset
-        offset = PRGM_START + ice.programSize - (uintptr_t)ice.programDataData;
+        offset = PRGM_START + ice.programSize - (uintptr_t)ice.programDataPtr;
         while (ice.dataOffsetElements--) {
             uint24_t *tempDataOffsetStackPtr = ice.dataOffsetStack[ice.dataOffsetElements];
             
@@ -260,7 +261,7 @@ findNextLabel:;
         
         // Write the header, main program, and data to output :D
         ti_Write(ice.programData, ice.programSize, 1, ice.outPrgm);
-        if (programDataSize) ti_Write(ice.programDataData, programDataSize, 1, ice.outPrgm);
+        if (programDataSize) ti_Write(ice.programDataPtr, programDataSize, 1, ice.outPrgm);
         
         // Yep, we are really done!
         gfx_SetTextFGColor(4);

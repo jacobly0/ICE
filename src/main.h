@@ -34,7 +34,7 @@ typedef struct {
     
     uint8_t  nestedBlocks;                                  // Amount of nested If/Repeat/While
     uint8_t  *programData;                                  // Address of the program
-    uint8_t  programDataData[50000];                        // Address of the program data
+    uint8_t  *programDataData;                              // Address of the end of the program data
     uint8_t  *programPtr;                                   // Pointer to the program
     uint8_t  *programPtrBackup;                             // Same as above
     uint8_t  *programDataPtr;                               // Pointer to the program data
@@ -149,6 +149,7 @@ typedef struct {
     bool     AIsNumber;
     bool     AIsVariable;
     bool     tempBool;
+    bool     allowedToOptimize;
     
     uint8_t  HLVariable;
     uint8_t  DEVariable;

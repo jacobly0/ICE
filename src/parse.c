@@ -447,20 +447,30 @@ foundRight2ByteToken:
         
         // Parse a string of tokens
         else if (tok == tAPost) {
+            uint8_t *tempProgramPtr = ice.programPtr;
+            uint24_t length;
+            
             outputCurr->type = TYPE_STRING;
-            outputCurr->operand = (uint24_t)ice.programDataPtr;
             outputElements++;
             mask = TYPE_MASK_U24;
             
             while ((token = _getc()) != EOF && (uint8_t)token != tEnter && (uint8_t)token != tStore && (uint8_t)token != tAPost) {
-                *ice.programDataPtr++ = token;
+                *ice.programPtr++ = token;
                 
                 if (memchr(All2ByteTokens, token, 11)) {
-                    *ice.programDataPtr++ = _getc();
+                    *ice.programPtr++ = _getc();
                 }
             }
             
-            *ice.programDataPtr++ = 0;
+            *ice.programPtr++ = 0;
+            
+            length = ice.programPtr - tempProgramPtr;
+            ice.programDataPtr -= length;
+            memcpy(ice.programDataPtr, tempProgramPtr, length);
+            ice.programPtr = tempProgramPtr;
+            
+            outputCurr->operand = (uint24_t)ice.programDataPtr;
+            
             if ((uint8_t)token == tStore || (uint8_t)token == tEnter) {
                 continue;
             }
@@ -468,36 +478,55 @@ foundRight2ByteToken:
         
         // Parse a string of characters
         else if (tok == tString) {
-            uint8_t *tempDataPtr = ice.programDataPtr, *a;
+            uint24_t length;
+            uint8_t *tempDataPtr = ice.programPtr, *a;
             uint8_t amountOfHexadecimals = 0;
             bool needWarning = true;
             
             outputCurr->type = TYPE_STRING;
-            outputCurr->operand = (uint24_t)ice.programDataPtr;
             outputElements++;
             mask = TYPE_MASK_U24;
             stackPrev = &stackPtr[stackElements-1];
             
-            token = grabString(&ice.programDataPtr, true);
+            token = grabString(&ice.programPtr, true);
             if ((uint8_t)stackPrev->operand == tVarOut && (uint8_t)(stackPrev->operand >> 16) == tDefineSprite) {
                 needWarning = false;
             }
             
-            for (a = tempDataPtr; a < ice.programDataPtr; a++) {
+            for (a = tempDataPtr; a < ice.programPtr; a++) {
                 if (IsHexadecimal(*a) == 16) {
                     goto noSquishing;
                 }
                 amountOfHexadecimals++;
             }
             if (!(amountOfHexadecimals & 1)) {
-                SquishHexadecimals(tempDataPtr);
+                uint8_t *prevDataPtr = tempDataPtr;
+                uint8_t *prevDataPtr2 = tempDataPtr;
+                
+                while (prevDataPtr != ice.programPtr) {
+                    uint8_t tok1 = IsHexadecimal(*prevDataPtr++);
+                    uint8_t tok2 = IsHexadecimal(*prevDataPtr++);
+                    
+                    *prevDataPtr2++ = (tok1 << 4) + tok2;
+                }
+                
+                ice.programPtr = prevDataPtr2;
+                
                 if (needWarning) {
                     displayError(W_SQUISHED);
                 }
             }
             
 noSquishing:
-            *ice.programDataPtr++ = 0;
+            *ice.programPtr++ = 0;
+            
+            length = ice.programPtr - tempDataPtr;
+            ice.programDataPtr -= length;
+            memcpy(ice.programDataPtr, tempDataPtr, length);
+            ice.programPtr = tempDataPtr;
+            
+            outputCurr->operand = (uint24_t)ice.programDataPtr;
+            
             if ((uint8_t)token == tStore || (uint8_t)token == tEnter) {
                 continue;
             }
@@ -1147,11 +1176,13 @@ uint8_t JumpBackwards(uint8_t *startAddr, uint8_t whichOpcode) {
         
         *ice.programPtr++ = whichOpcode;
         *ice.programPtr++ = startAddr - 2 - tempPtr;
+        
         return true;
     } else {
         // JR cc to JP cc
         *ice.programPtr++ = whichOpcode + 0xA2 + (whichOpcode == 0x18 ? 9 : 0);
         output(uint24_t, startAddr - ice.programData + PRGM_START);
+        
         return false;
     }
 }
@@ -1587,26 +1618,33 @@ static uint8_t functionFor(int token) {
 }
 
 static uint8_t functionPrgm(int token) {
+    uint24_t length;
     uint8_t a = 0;
     uint8_t *tempProgramPtr;
     
     MaybeLDIYFlags();
     tempProgramPtr = ice.programPtr;
     
-    ProgramPtrToOffsetStack();
-    LD_HL_IMM((uint24_t)ice.programDataPtr);
-    *ice.programDataPtr++ = TI_PRGM_TYPE;
+    *ice.programPtr++ = TI_PRGM_TYPE;
 
     // Fetch the name
     while ((token = _getc()) != EOF && (uint8_t)token != tEnter && ++a < 9) {
-        *ice.programDataPtr++ = token;
+        *ice.programPtr++ = token;
     }
-    *ice.programDataPtr++ = 0;
+    *ice.programPtr++ = 0;
     
     // Check if valid program name
     if (!a || a == 9) {
         return E_INVALID_PROG;
     }
+    
+    length = ice.programPtr - tempProgramPtr;
+    ice.programDataPtr -= length;
+    memcpy(ice.programDataPtr, tempProgramPtr, length);
+    ice.programPtr = tempProgramPtr;
+    
+    ProgramPtrToOffsetStack();
+    LD_HL_IMM((uint24_t)ice.programDataPtr);
     
     // Insert the routine to run it
     CALL(_Mov9ToOP1);
@@ -1725,9 +1763,9 @@ static uint8_t functionInput(int token) {
     
     // Copy the Input routine to the data section
     if (!ice.usedAlreadyInput) {
+        ice.programDataPtr -= SIZEOF_INPUT_DATA;
         ice.InputAddr = (uintptr_t)ice.programDataPtr;
         memcpy(ice.programDataPtr, (uint8_t*)InputData, SIZEOF_INPUT_DATA);
-        ice.programDataPtr += SIZEOF_INPUT_DATA;
         ice.usedAlreadyInput = true;
     }
     
