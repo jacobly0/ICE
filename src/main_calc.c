@@ -278,6 +278,8 @@ findNextLabel:;
             sprintf(buf, "Previous size: %u bytes", previousSize);
             displayMessageLineScroll(buf);
         }
+        sprintf(buf, "Output program: %s", ice.outName);
+        displayMessageLineScroll(buf);
     } else {
         displayError(res);
     }
