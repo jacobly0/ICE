@@ -35,7 +35,11 @@ MultiplySmall:
 	ld	h, e
 	ld	de, 0000150h
 	ex	de, hl
-	jp	InsertDEHL
+InsertDEHL:			; instead of "jp InsertDEHL"
+	push	hl
+	call	InsertHLbis
+	pop	hl
+	jr	InsertHL
 MultiplyLarge:
 	ld	a, (iy+9)
 	or	a, a
@@ -45,7 +49,8 @@ MultiplyLarge:
 	ld	a, 001h
 	call	InsertAHL
 	ld	hl, 0000154h
-	jp	InsertCallHL
+	ld	a, 0CDh		; instead of "jp InsertCallHL"
+	jr	InsertAHL
 DoInsertHLDE:
 	djnz	DontNeedPushHLPopDE
 	ld	a, 0E5h
@@ -55,6 +60,21 @@ DoInsertHLDE:
 	add	a, (iy+9)
 	call	InsertA
 	jr	DontInsertEXDEHL2
+InsertAHL:
+	call	InsertA
+InsertHL:
+	ex	de, hl
+InsertHLbis:
+	push	hl
+	ld	hl, (hl)
+	ld	(hl), de
+	inc	hl
+	inc	hl
+	inc	hl
+	ex	de, hl
+	pop	hl
+	ld	(hl), de
+	ret
 DontNeedPushHLPopDE:
 	ld	a, (iy+9)
 	or	a, a
@@ -75,7 +95,6 @@ InsertAddHLDE:
 	ld	a, 019h
 	call	c, InsertA
 	jr	InsertAddHLDE
-    
 InsertA:
 	push	hl
 	ld	hl, (iy+6)
@@ -87,29 +106,3 @@ InsertA:
 	ld	(hl), bc
 	pop	hl
 	ret
-InsertAHL:
-	push	hl
-	call	InsertA
-	pop	hl
-InsertHL:
-	ex	de, hl
-	ld	hl, (iy+6)
-	push	hl
-	ld	hl, (hl)
-	ld	(hl), de
-	inc	hl
-	inc	hl
-	inc	hl
-	ex	de, hl
-	pop	hl
-	ld	(hl), de
-	ret
-InsertCallHL:
-	ld	a, 0CDh
-	jr	InsertAHL
-InsertDEHL:
-	push	hl
-	ex	de, hl
-	call	InsertHL
-	pop	hl
-	jr	InsertHL
