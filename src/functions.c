@@ -275,7 +275,7 @@ uint8_t parseFunction(uint24_t index) {
             SBC_A_A();
             INC_A();
             expr.outputReturnRegister = REGISTER_A;
-            if (expr.ZeroCarryFlagRemoveAmountOfBytes) {
+            if (expr.AnsSetZeroFlag || expr.AnsSetCarryFlag || expr.AnsSetZeroFlagReversed || expr.AnsSetCarryFlagReversed) {
                 bool temp = expr.AnsSetZeroFlag;
                 
                 expr.ZeroCarryFlagRemoveAmountOfBytes += 4;
@@ -532,7 +532,7 @@ uint8_t parseFunction(uint24_t index) {
     // length(
     else if (function == t2ByteTok && function2 == tLength) {
         if (outputPrevType == TYPE_STRING) {
-            LD_HL_STRING(outputPrev->operand);
+            LD_HL_STRING(outputPrev->operand, TYPE_STRING);
         } else {
             if ((res = parseFunction1Arg(index, REGISTER_HL_DE, amountOfArguments)) != VALID) {
                 return res;
@@ -685,13 +685,10 @@ uint8_t parseFunction(uint24_t index) {
             ProgramPtrToOffsetStack();
             LD_ADDR_HL(ice.LoadSpriteAddr + 27);
             
-            if (outputPrevPrevPrev->type == TYPE_STRING) {
-                LD_HL_STRING(outputPrevPrevPrev->operand - 1);
-            } else if (outputPrevPrevPrev->type == TYPE_OS_STRING) {
-                LD_HL_IMM(outputPrevPrevPrev->operand - 1);
-            } else {
+            if (outputPrevPrevPrev->type < TYPE_STRING) {
                 return E_SYNTAX;
             }
+            LD_HL_STRING(outputPrevPrevPrev->operand - 1, outputPrevPrevPrev->type);
             
             // Call the right routine
             ProgramPtrToOffsetStack();
@@ -726,13 +723,10 @@ uint8_t parseFunction(uint24_t index) {
             ProgramPtrToOffsetStack();
             LD_ADDR_A(ice.LoadTilemapAddr + 45);
             
-            if (outputPrevPrevPrev->type == TYPE_STRING) {
-                LD_HL_STRING(outputPrevPrevPrev->operand - 1);
-            } else if (outputPrevPrevPrev->type == TYPE_OS_STRING) {
-                LD_HL_IMM(outputPrevPrevPrev->operand - 1);
-            } else {
+            if (outputPrevPrevPrev->type < TYPE_STRING) {
                 return E_SYNTAX;
             }
+            LD_HL_STRING(outputPrevPrevPrev->operand - 1, outputPrevPrevPrev->type);
             
             // Call the right routine
             ProgramPtrToOffsetStack();

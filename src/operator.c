@@ -279,8 +279,8 @@ uint8_t parseOperator(element_t *outputPrevPrevPrev, element_t *outputPrevPrev, 
     return VALID;
 }
 
-void LD_HL_STRING(uint24_t stringPtr) {
-    if (stringPtr != ice.tempStrings[TempString1] && stringPtr != ice.tempStrings[TempString2]) {
+void LD_HL_STRING(uint24_t stringPtr, uint8_t type) {
+    if ((type != TYPE_OS_STRING) && (stringPtr != ice.tempStrings[TempString1] && stringPtr != ice.tempStrings[TempString2])) {
         ProgramPtrToOffsetStack();
     }
     LD_HL_IMM(stringPtr);
@@ -433,7 +433,7 @@ void StoChainAnsChainAns(void) {
     StoToChainAns();
 }
 void StoStringChainAns(void) {
-    LD_HL_STRING(entry0_operand);
+    LD_HL_STRING(entry0_operand, entry0->type);
     StoChainAnsChainAns();
 }
 void StoToChainAns(void) {
@@ -447,7 +447,7 @@ void StoToChainAns(void) {
     }
 }
 void StoStringString(void) {
-    LD_HL_STRING(entry1_operand);
+    LD_HL_STRING(entry1_operand, entry1->type);
     PUSH_HL();
     LD_HL_IMM(entry2_operand);
     PUSH_HL();
@@ -456,8 +456,7 @@ void StoStringString(void) {
     POP_BC();
 }
 void StoStringVariable(void) {
-    ProgramPtrToOffsetStack();
-    LD_HL_IMM(entry1_operand);
+    LD_HL_STRING(entry1_operand, entry1->type);
     LD_IX_OFF_IND_HL(entry2_operand);
 }
 void BitAndChainAnsNumber(void) {

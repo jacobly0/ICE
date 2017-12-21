@@ -741,16 +741,10 @@ uint8_t parsePostFixFromIndexToIndex(uint24_t startIndex, uint24_t endIndex) {
             LD_HL_IND_IX_OFF(outputOperand);
         } 
         
-        // It's a string
-        else if (outputType == TYPE_STRING) {
+        // String
+        else if (outputType >= TYPE_STRING) {
             expr.outputIsString = true;
-            LD_HL_STRING(outputOperand);
-        }
-        
-        // It's an OS string
-        else if (outputType == TYPE_OS_STRING) {
-            LD_HL_IMM(outputOperand);
-            expr.outputIsString = true;
+            LD_HL_STRING(outputOperand, outputType);
         }
         
         // Expression is an empty function or operator, i.e. not(, +
