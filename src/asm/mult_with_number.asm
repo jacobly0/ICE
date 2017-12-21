@@ -65,6 +65,7 @@ InsertAHL:
 InsertHL:
 	ex	de, hl
 InsertHLbis:
+	ld	hl, (iy+6)
 	push	hl
 	ld	hl, (hl)
 	ld	(hl), de
