@@ -35,9 +35,9 @@ DisplayTabWithTokens:
 	pop	de
 	ld	hl, 30
 	ld	(penRow), hl
-	ld	hl, 12
+	ld	l, 12
 	ld	(penCol), hl
-	ld	b, 0
+	ld	b, h
 	ld	a, d
 	ld	e, 3
 	mlt	de
@@ -48,7 +48,7 @@ DisplayTabWithTokens:
 	ld	hl, (hl)
 	add	hl, de
 	ld	d, a
-	ld	e, 0
+	ld	e, b
 	jr	DisplayTokensLoop
 KeyIsLeft:
 	ld	a, d
@@ -69,14 +69,11 @@ DisplayTokensLoop:
 	inc	b
 	call	_VPutS
 	push	hl
-	push	de
-	ld	hl, (penRow)
-	ld	de, 13
-	add	hl, de
-	ld	(penRow), hl
+	ld	a, (penRow)
+	add	a, 13
+	ld	(penRow), a
 	ld	hl, 12
 	ld	(penCol), hl
-	pop	de
 	pop	hl
 	ld	a, (hl)
 	or	a, a
@@ -94,7 +91,7 @@ GetRightCustomToken:
 	ld	d, b
 	ld	e, a
 	ld	(penRow), hl
-	ld	hl, 1
+	ld	l, 1
 	ld	(penCol), hl
 	push	hl
 	push	de
@@ -286,12 +283,12 @@ TokenHook_start:
 	cp	a, 5 + (AMOUNT_OF_CUSTOM_TOKENS * 3)
 	ret	nc
 	sub	a, 5
-	ld	de, (rawKeyHookPtr)
-	ld	hl, TokenHook_data
+	sbc	hl, hl
+	ld	l, a
+	ld	de, TokenHook_data
 	add	hl, de
-	ld	bc, 0
-	ld	c, a
-	add	hl, bc
+	ld	de, (rawKeyHookPtr)
+	add	hl, de
 	ld	hl, (hl)
 	add	hl, de
 	ret
