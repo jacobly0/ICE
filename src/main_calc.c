@@ -38,10 +38,10 @@ void main(void) {
         asm("ld de, 17");
         asm("add hl, de");
         asm("call 00213CCh");
-        asm("ld de, 513");
+        asm("ld de, 496");
         asm("add hl, de");
         asm("call 00213F8h");
-        asm("ld de, 34");
+        asm("ld de, 32");
         asm("add hl, de");
         asm("call 00213C4h");
         ti_Close(ice.inPrgm);

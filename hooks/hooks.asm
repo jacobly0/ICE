@@ -33,9 +33,9 @@ DisplayTabWithTokens:
 	push	de
 	call	_ClrLCDFull
 	pop	de
-	ld	hl, 30
-	ld	(penRow), hl
-	ld	l, 12
+	ld	a, 30
+	ld	(penRow), a
+	ld	hl, 12
 	ld	(penCol), hl
 	ld	b, h
 	ld	a, d
@@ -79,27 +79,27 @@ DisplayTokensLoop:
 	or	a, a
 	jr	nz, DisplayTokensLoop
 StopDisplayingTokens:
-	ld	hl, 1
-	ld	(penCol), hl
+	ld	a, 1
+	ld	(penCol), a
 GetRightCustomToken:
+; penRow = 30+e*13
 	ld	a, e
-	ld	b, d
-	ld	d, 13
-	mlt	de
-	ld	hl, 30
-	add	hl, de
-	ld	d, b
-	ld	e, a
-	ld	(penRow), hl
-	ld	l, 1
-	ld	(penCol), hl
-	push	hl
+	add	a, a
+	add	a, a
+	ld	b, a
+	add	a, a
+	add	a, b
+	add	a, e
+	add	a, 30
+	ld	(penRow), a
+	ld	a, 1
+	ld	(penCol), a
 	push	de
 	ld	a, '>'
 	call	_VPutMap
 	pop	de
-	pop	hl
-	ld	(penCol), hl
+	ld	a, 1
+	ld	(penCol), a
 KeyLoop:
 	call	_GetCSC
 	or	a, a
