@@ -3,7 +3,7 @@
 
 #define AMOUNT_OF_GRAPHX_FUNCTIONS 92
 #define AMOUNT_OF_FILEIOC_FUNCTIONS 21
-#define STACK_SIZE 250
+#define STACK_SIZE 500
 #define SIZEOF_KEYPAD_DATA 18
 #define SIZEOF_RAND_DATA   103
 #define SIZEOF_SQRT_DATA   43
@@ -12,7 +12,7 @@
 #define SIZEOF_OR_DATA     10
 #define SIZEOF_AND_DATA    11
 #define SIZEOF_XOR_DATA    13
-#define SIZEOF_INPUT_DATA  90
+#define SIZEOF_INPUT_DATA  96
 #define SIZEOF_PAUSE_DATA  20
 #define SIZEOF_MALLOC_DATA 21
 #define SIZEOF_CHEADER     116
@@ -48,18 +48,18 @@ typedef struct {
     uint8_t  amountOfGotos;                                 // Amount of Goto's
     uint8_t  amountOfVariablesUsed;                         // Amount of used variables (max 85)
     
-    uint24_t *dataOffsetStack[500];                         // Stack of the address to point to the data, which needs to be changed after compiling
+    uint24_t *dataOffsetStack[1000];                        // Stack of the address to point to the data, which needs to be changed after compiling
     uint24_t dataOffsetElements;                            // Amount of stack elements of above
     uint24_t dataOffsetElementsBackup;                      // Same as above
-    uint24_t *ForLoopSMCStack[50];                          // Used for SMC in For loops
+    uint24_t *ForLoopSMCStack[100];                         // Used for SMC in For loops
     uint24_t ForLoopSMCElements;                            // Amount of elements in above stack
     uint24_t currentLine;                                   // The amount of parsed lines, useful for displaying it when an error occurs
     uint24_t programSize;                                   // Size of the output program
     uint24_t *stack[STACK_SIZE*5];                          // Stacks for compiling arguments
     uint24_t *stackStart;                                   // Start of the stack
-    uint24_t LblStack[200];                                 // Label stack
+    uint24_t LblStack[1000];                                // Label stack
     uint24_t *LblPtr;                                       // Pointer to the label stack
-    uint24_t GotoStack[200];                                // Goto stack
+    uint24_t GotoStack[2000];                               // Goto stack
     uint24_t *GotoPtr;                                      // Pointer to the goto stack
     uint24_t OSLists[6];                                    // Used to allocate OS lists
     uint24_t OSStrings[10];                                 // Used to allocate OS string
@@ -165,7 +165,7 @@ typedef struct {
 } reg_t;
 
 typedef struct {
-    char     name[10];
+    char     name[20];
     uint24_t addr;
     uint24_t offset;
     uint24_t dataOffsetElements;
@@ -174,7 +174,7 @@ typedef struct {
 
 typedef struct {
     uint8_t offset;
-    char    name[10];
+    char    name[20];
 } variable_t;
 
 extern ice_t ice;
@@ -208,6 +208,7 @@ void MeanData(void);
 void SqrtData(void);
 void PauseData(void);
 void GotoEditor(char*, uint16_t);
+void RunPrgm(char*);
 #endif
 
 #endif

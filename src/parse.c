@@ -28,7 +28,7 @@ extern const uint8_t PrgmData[];
 extern uint8_t (*functions[256])(int token);
 const char implementedFunctions[] = {tNot, tMin, tMax, tMean, tSqrt, tDet, tSum, tSin, tCos, 0};
 const uint8_t All2ByteTokens[] = {0x5C, 0x5D, 0x5E, 0x60, 0x61, 0x62, 0x63, 0x7E, 0xAA, 0xBB, 0xEF};
-const uint8_t implementedFunctions2[24] = {tExtTok, tRemainder,
+const uint8_t implementedFunctions2[22] = {tExtTok, tRemainder,
                                            t2ByteTok, tSubStrng,
                                            t2ByteTok, tLength,
                                            t2ByteTok, tRandInt,
@@ -738,8 +738,12 @@ uint8_t parsePostFixFromIndexToIndex(uint24_t startIndex, uint24_t endIndex) {
         // Expression is only a variable
         else if (outputType == TYPE_VARIABLE) {
             expr.outputIsVariable = true;
-            LD_HL_IND_IX_OFF(outputOperand);
-        } 
+            output(uint16_t, 0x27DD);
+            output(uint8_t, outputOperand);
+            reg.HLIsNumber = false;
+            reg.HLIsVariable = true;
+            reg.HLVariable = outputOperand;
+        }
         
         // String
         else if (outputType >= TYPE_STRING) {
@@ -753,19 +757,6 @@ uint8_t parsePostFixFromIndexToIndex(uint24_t startIndex, uint24_t endIndex) {
         }
         
         return VALID;
-    } else if (amountOfStackElements == 2) {
-        outputCurr = &outputPtr[tempIndex = getNextIndex()];
-        
-        if (outputCurr->type != TYPE_FUNCTION || ((uint8_t)outputCurr->operand != tDet && (uint8_t)outputCurr->operand != tSum)) {
-            outputCurr = &outputPtr[tempIndex = getNextIndex()];
-        }
-        
-        // It should be a function with a single argument, i.e. det(0 / not(A
-        if (outputCurr->type != TYPE_FUNCTION) {
-            return E_SYNTAX;
-        }
-        
-        return parseFunction(tempIndex);
     }
     
     // 3 or more entries, full expression
@@ -1662,6 +1653,12 @@ static uint8_t functionCustom(int token) {
             return VALID;
         } else {
             SeekMinus1();
+// Suck it
+#if defined(COMPUTER_ICE) || defined(SC)
+            if (tok == 0x0A) {
+                SeekMinus1();
+            }
+#endif
             
             return parseExpression(token);
         }
@@ -1677,7 +1674,7 @@ static uint8_t functionLbl(int token) {
     uint8_t a = 0;
     
     // Get the label name
-    while ((token = _getc()) != EOF && (uint8_t)token != tEnter && a < 10) {
+    while ((token = _getc()) != EOF && (uint8_t)token != tEnter && a < 20) {
         labelCurr->name[a++] = token;
     }
     labelCurr->name[a] = 0;
@@ -1702,7 +1699,7 @@ void insertGotoLabel(void) {
     uint8_t a = 0;
     int token;
     
-    while ((token = _getc()) != EOF && (uint8_t)token != tEnter && a < 10) {
+    while ((token = _getc()) != EOF && (uint8_t)token != tEnter && a < 20) {
         gotoCurr->name[a++] = token;
     }
     gotoCurr->name[a] = 0;
@@ -1743,16 +1740,30 @@ static uint8_t functionPause(int token) {
 }
 
 static uint8_t functionInput(int token) {
-    uint8_t tok;
+    uint8_t tok, res;
     
-    if ((tok = _getc()) < tA || tok > tTheta) {
+    expr.inFunction = true;
+    if ((res = parseExpression(_getc())) != VALID) {
+        return res;
+    }
+    
+    if (ice.tempToken == tComma && expr.outputIsString) {
+        expr.inFunction = true;
+        if ((res = parseExpression(_getc())) != VALID) {
+            return res;
+        }
+        *(ice.programPtr - 2) = 0x7E;
+    } else {
+        *(ice.programPtr - 2) = 0x7E;
+        
+        // FF0000 reads all zeroes, and that's important
+        LD_HL_IMM(0xFF0000);
+    }
+    
+    if (ice.tempToken != tEnter || !expr.outputIsVariable) {
         return E_SYNTAX;
     }
-    LD_A(GetVariableOffset(tok));
     
-    if (!CheckEOL()) {
-        return E_SYNTAX;
-    }
     MaybeLDIYFlags();
     
     // Copy the Input routine to the data section

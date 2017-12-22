@@ -286,16 +286,33 @@ findNextLabel:;
     
 stop:
     gfx_SetTextFGColor(0);
-    gfx_PrintStringXY("[Press any key to quit]", 85, 230);
-    while (!os_GetCSC());
+    gfx_SetColor(0);
+    gfx_PrintStringXY("Run", 9, 232);
+    gfx_PrintStringXY("Back", 70, 232);
+    gfx_PrintStringXY("Goto", 222, 232);
+    gfx_PrintStringXY("Quit", 285, 232);
+    gfx_Rectangle_NoClip(1, 230, 40, 11);
+    gfx_Rectangle_NoClip(279, 230, 40, 11);
+    gfx_SetPixel(2, 231);
+    gfx_SetPixel(39, 231);
+    gfx_SetPixel(280, 231);
+    gfx_SetPixel(317, 231);
+    gfx_SetColor(255);
+    gfx_SetPixel(1, 230);
+    gfx_SetPixel(40, 230);
+    gfx_SetPixel(279, 230);
+    gfx_SetPixel(318, 230);
+    while (!(key = os_GetCSC()));
 err:
     // Return immediately
     gfx_End();
-    prgm_CleanUp();
     if (res != VALID && !ti_IsArchived(ice.inPrgm)) {
         GotoEditor(ice.currProgName[ice.inPrgm], ti_Tell(ice.inPrgm) - 1);
     }
     ti_CloseAll();
+    if (key == sk_Yequ && res == VALID) {
+        RunPrgm(ice.outName);
+    }
 }
 
 void preScanProgram(uint24_t CFunctionsStack[], uint8_t *CFunctionsCounter, bool detectOSVars) {

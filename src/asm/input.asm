@@ -3,10 +3,12 @@ segment data
 .def _InputData
 
 _InputData:
+	ld	de, 0D00879h		; ioPrompt
+	ld	bc, 26
+	ldir
 	call	0020814h		; _ClrScrn
 	call	0020828h		; _HomeUp
 	xor	a, a
-	ld	(0D00879h), a		; ioPrompt
 	ld	(0D00599h), a		; curUnder
 	ld	b, (iy+9)
 	ld	c, (iy+28)

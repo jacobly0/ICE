@@ -10,7 +10,7 @@
 #include "operator.h"
 
 #define LB_X 80
-#define LB_Y 200
+#define LB_Y 210
 #define LB_W 160
 #define LB_H 10
 
@@ -322,9 +322,9 @@ void CallRoutine(bool *routineBool, uint24_t *routineAddress, const uint8_t *rou
 }
 
 uint8_t GetVariableOffset(uint8_t tok) {
-    char variableName[11] = {0};
+    char variableName[21] = {0};
     variable_t *variableNew;
-    uint24_t a = 1, b;
+    uint8_t a = 1, b;
     
     variableName[0] = tok;
     while ((tok = _getc()) >= tA && tok <= tTheta) {
