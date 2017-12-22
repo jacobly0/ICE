@@ -4,9 +4,11 @@ segment data
 
 _MeanData:
 	add	hl, de
+	rla
 	push	hl
 	ld	hl,2
 	add	hl,sp
+	rra
 	rr	(hl)
 	pop	hl
 	rr	h
