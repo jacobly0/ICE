@@ -378,8 +378,6 @@ uint8_t parseFunction(uint24_t index) {
         
         CallRoutine(&ice.usedAlreadyMean, &ice.MeanAddr, (uint8_t*)MeanData, SIZEOF_MEAN_DATA);
         ResetReg(REGISTER_HL);
-
-        ice.modifiedIY = true;
     }
     
     // remainder(
