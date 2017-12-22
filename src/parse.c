@@ -1653,12 +1653,6 @@ static uint8_t functionCustom(int token) {
             return VALID;
         } else {
             SeekMinus1();
-// Suck it
-#if defined(COMPUTER_ICE) || defined(SC)
-            if (tok == 0x0A) {
-                SeekMinus1();
-            }
-#endif
             
             return parseExpression(token);
         }

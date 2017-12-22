@@ -45,7 +45,7 @@ typedef FILE* ti_var_t;
 typedef uint32_t uint24_t;
 
 #define _rewind(x)   fseek(x, 0x4A, SEEK_SET)
-#define _open(x)     fopen(x, "r")
+#define _open(x)     fopen(x, "rb")
 #define _tell(x)     ftell(x)
 #define _seek(x,y,z) fseek(z,x,y);
 
