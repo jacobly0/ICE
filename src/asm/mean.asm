@@ -3,11 +3,13 @@ segment data
 .def _MeanData
 
 _MeanData:
-	ld	iy, 0
-	add	iy, sp
 	add	hl, de
+	rla
 	push	hl
-	rr	(iy-1)
+	ld	hl,2
+	add	hl,sp
+	rra
+	rr	(hl)
 	pop	hl
 	rr	h
 	rr	l
