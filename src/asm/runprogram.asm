@@ -4,6 +4,13 @@ segment data
 
 _RunPrgm:
 	call	0021A3Ch		; _DrawStatusBar
+	ld	de, 0D11C56h		; plotSScreen + 60000
+	ld	hl, StartRunProgram
+	ld	bc, EndRunProgram - StartRunProgram
+	ldir
+	jp	0D11C56h		; plotSScreen + 60000
+	
+StartRunProgram:
 	ld	hl, 0005B05h
 	ld	(0D005F8h), hl		; OP1
 	ld	hl, 3
@@ -29,16 +36,19 @@ _RunPrgm:
 	pop	bc
 	pop	hl
 	ldir
-	push	ix
-	ld	hl, (0D0118Ch)		; asm_prgm_size
-	push	hl
+	ld	hl, 0D1A881h		; userMem
+	ld	de, (0D0118Ch)		; asm_prgm_size
+	call	0020590h		; _DelMem
 	call	00202C8h		; _OP4ToOP1
 	call	0020F00h		; _ParseOP1
 	ld	hl, 0005B05h
 	ld	(0D005F8h), hl		; OP1
 	call	002050Ch		; _ChkFindSym
 	call	0020588h		; _DelVar
-	pop	hl
-	ld	(0D0118Ch), hl		; asm_prgm_size
-	pop	ix
-	ret
+	call	0020ED4h		; _ClrTR
+	ld	a, 040h			; cxCmd
+	call	0020170h		; _NewContext0
+	ld	sp, (0D007FAh)		; onSP
+	call	002103Ch		; _resetStacks
+	jp	0020154h		; _Mon
+EndRunProgram:
