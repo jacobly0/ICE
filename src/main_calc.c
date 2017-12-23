@@ -20,11 +20,12 @@ extern label_t labelStack[150];
 extern label_t gotoStack[150];
 
 void main(void) {
-    uint8_t selectedProgram = 0, key, amountOfPrograms, res = VALID;
+    uint8_t selectedProgram, key, amountOfPrograms, res = VALID;
     uint24_t programDataSize, offset, totalSize;
     const char ICEheader[] = {tii, 0};
     char buf[30], *var_name;
-    void *search_pos = NULL;
+    void *search_pos;
+    bool didCompile;
     
     // Install hooks
     ti_CloseAll();
@@ -44,13 +45,13 @@ void main(void) {
         asm("ld de, 32");
         asm("add hl, de");
         asm("call 00213C4h");
-        ti_Close(ice.inPrgm);
     }
     
     asm("ld iy, 0D00080h");
     asm("set 3, (iy+024h)");
     
     // Yay, GUI! :)
+displayMainScreen:
     gfx_Begin();
 
     gfx_SetColor(189);
@@ -61,6 +62,11 @@ void main(void) {
     gfx_PrintStringXY(infoStr, 21, 1);
     
     // Get all the programs that start with the [i] token
+    search_pos = NULL;
+    selectedProgram = 0;
+    didCompile = false;
+    ti_CloseAll();
+    
     while((var_name = ti_DetectVar(&search_pos, ICEheader, TI_PRGM_TYPE)) && ++selectedProgram <= 22) {
         if (*var_name < 64) {
             *var_name += 64;
@@ -75,6 +81,17 @@ void main(void) {
         goto stop;
     }
     
+    // Display quit button
+    gfx_PrintStringXY("Quit", 285, 232);
+    gfx_SetColor(0);
+    gfx_Rectangle_NoClip(279, 230, 40, 11);
+    gfx_SetPixel(280, 231);
+    gfx_SetPixel(317, 231);
+    gfx_SetColor(255);
+    gfx_SetPixel(279, 230);
+    gfx_SetPixel(318, 230);
+    gfx_SetColor(0);
+    
     // Select a program
     selectedProgram = 1;
     while ((key = os_GetCSC()) != sk_Enter & key != sk_2nd) {
@@ -87,7 +104,7 @@ void main(void) {
             gfx_FillRectangle_NoClip(1, selectionOffset, 8, 8);
 
             // Stop and quit
-            if (key == sk_Clear) {
+            if (key == sk_Clear || key == sk_Graph) {
                 goto err;
             }
 
@@ -113,11 +130,15 @@ void main(void) {
     
     // Erase screen
     gfx_SetColor(255);
-    gfx_FillRectangle_NoClip(0, 11, 320, 229);
+    gfx_FillRectangle_NoClip(0, 11, 320, 210);
     
     // Grab the right program
     search_pos = NULL;
     while(((var_name = ti_DetectVar(&search_pos, ICEheader, TI_PRGM_TYPE)) != NULL) && --selectedProgram);
+    
+    // Set some vars
+    didCompile = true;
+    memset(&ice, 0, sizeof ice);
     
     gfx_SetTextXY(1, 12);
     displayMessageLineScroll("Prescanning...");
@@ -287,32 +308,54 @@ findNextLabel:;
 stop:
     gfx_SetTextFGColor(0);
     gfx_SetColor(0);
-    gfx_PrintStringXY("Run", 9, 232);
-    gfx_PrintStringXY("Back", 70, 232);
-    gfx_PrintStringXY("Goto", 222, 232);
-    gfx_PrintStringXY("Quit", 285, 232);
-    gfx_Rectangle_NoClip(1, 230, 40, 11);
-    gfx_Rectangle_NoClip(279, 230, 40, 11);
-    gfx_SetPixel(2, 231);
-    gfx_SetPixel(39, 231);
-    gfx_SetPixel(280, 231);
-    gfx_SetPixel(317, 231);
-    gfx_SetColor(255);
-    gfx_SetPixel(1, 230);
-    gfx_SetPixel(40, 230);
-    gfx_SetPixel(279, 230);
-    gfx_SetPixel(318, 230);
+    if (didCompile) {
+        if (res == VALID) {
+            gfx_PrintStringXY("Run", 9, 232);
+            gfx_Rectangle_NoClip(1, 230, 40, 11);
+            gfx_SetPixel(2, 231);
+            gfx_SetPixel(39, 231);
+        } else {
+            gfx_PrintStringXY("Goto", 222, 232);
+            gfx_Rectangle_NoClip(217, 230, 40, 11);
+            gfx_SetPixel(218, 231);
+            gfx_SetPixel(255, 231);
+        }
+        gfx_PrintStringXY("Back", 70, 232);
+        gfx_Rectangle_NoClip(65, 230, 40, 11);
+        gfx_SetPixel(66, 231);
+        gfx_SetPixel(103, 231);
+        gfx_SetColor(255);
+        if (res == VALID) {
+            gfx_SetPixel(1, 230);
+            gfx_SetPixel(40, 230);
+        } else {
+            gfx_SetPixel(217, 230);
+            gfx_SetPixel(256, 230);
+        }
+        
+        gfx_SetPixel(65, 230);
+        gfx_SetPixel(104, 230);
+    }
     while (!(key = os_GetCSC()));
 err:
-    // Return immediately
     gfx_End();
-    if (res != VALID && !ti_IsArchived(ice.inPrgm)) {
-        GotoEditor(ice.currProgName[ice.inPrgm], ti_Tell(ice.inPrgm) - 1);
+    
+    if (didCompile) {
+        if (key == sk_Yequ && res == VALID) {
+            RunPrgm(ice.outName);
+        }
+        if (key == sk_Window) {
+            // Erase screen
+            gfx_SetColor(255);
+            gfx_FillRectangle_NoClip(0, 11, 320, 229);
+            
+            goto displayMainScreen;
+        }
+        if (key == sk_Trace && res != VALID && !ti_IsArchived(ice.inPrgm)) {
+            GotoEditor(ice.currProgName[ice.inPrgm], ti_Tell(ice.inPrgm) - 1);
+        }
     }
     ti_CloseAll();
-    if (key == sk_Yequ && res == VALID) {
-        RunPrgm(ice.outName);
-    }
 }
 
 void preScanProgram(uint24_t CFunctionsStack[], uint8_t *CFunctionsCounter, bool detectOSVars) {
