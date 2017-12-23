@@ -2,53 +2,64 @@
 segment data
 .def _RunPrgm
 
+.ref __errsp
+
 _RunPrgm:
 	call	0021A3Ch		; _DrawStatusBar
-	ld	de, 0D11C56h		; plotSScreen + 60000
+	ld	de, 0D09466h		; plotSScreen
 	ld	hl, StartRunProgram
 	ld	bc, EndRunProgram - StartRunProgram
 	ldir
-	jp	0D11C56h		; plotSScreen + 60000
+	jp	0D09466h		; plotSScreen
 	
 StartRunProgram:
-	ld	hl, 0005B05h
-	ld	(0D005F8h), hl		; OP1
-	ld	hl, 3
-	add	hl, sp
-	ld	hl, (hl)
-	push	hl
-	call	00000D4h		; __strlen
-	push	hl
-	inc	hl
-	inc	hl
-	inc	hl
-	call	0020568h		; __CreateProg
-	inc	de
-	inc	de
-	ex	de, hl
-	ld	(hl), 0BBh		; t2ByteTok
-	inc	hl
-	ld	(hl), 06Ah		; tAsm
-	inc	hl
-	ld	(hl), 05Fh		; tPrgm
-	inc	hl
-	ex	de, hl
-	pop	bc
+; Copy the name to OP1
 	pop	hl
+	pop	hl			; HL points to the program name
+	ld	de, 0D005F9h		; OP1 + 1
+	push	de
+	ld	bc, 8
 	ldir
+	pop	hl
+	dec	hl
+	ld	(hl), 5			; ProgObj
+	
+; Cleanup C things
+	ld	sp, (__errsp + 1);
+	pop	af
+	pop	de
+	ld	(de), a
+	pop	iy
+	push	hl
+	call	00004F0h		; usb_ResetTimers
+	pop	hl
+	
+; Remove ICE from UserMem
 	ld	hl, 0D1A881h		; userMem
 	ld	de, (0D0118Ch)		; asm_prgm_size
 	call	0020590h		; _DelMem
-	call	00202C8h		; _OP4ToOP1
-	call	0020F00h		; _ParseOP1
-	ld	hl, 0005B05h
-	ld	(0D005F8h), hl		; OP1
+	
+; Copy the new program to UserMem and jump to it
 	call	002050Ch		; _ChkFindSym
-	call	0020588h		; _DelVar
-	call	0020ED4h		; _ClrTR
-	ld	a, 040h			; cxCmd
-	call	0020170h		; _NewContext0
-	ld	sp, (0D007FAh)		; onSP
-	call	002103Ch		; _resetStacks
-	jp	0020154h		; _Mon
+	ex	de, hl
+	call	0021D9Ch		; _LoadDEInd_s
+	inc	hl
+	inc	hl
+	push	hl
+	push	de
+	ex	de, hl
+	call	002072Ch		; _ErrNotEnoughMem
+	pop	hl
+	ld	(0D0118Ch), hl		; asm_prgm_size
+	ld	de, 0D1A881h		; userMem
+	push	de
+	call	0020514h		; _InsertMem
+	pop	de
+	pop	hl
+	ld	bc, (0D0118Ch)		; asm_prgm_size
+	add	hl, bc
+	ldir
+	
+; An finally run the program!
+	jp	0D1A881h		; userMem
 EndRunProgram:
