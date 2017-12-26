@@ -57,6 +57,7 @@
 #define OP_LD_H       0x26
 #define OP_JR_Z       0x28
 #define OP_ADD_HL_HL  0x29
+#define OP_LD_HL_IND  0x2A
 #define OP_DEC_HL     0x2B
 #define OP_LD_L       0x2E
 #define OP_JR_NC      0x30
@@ -155,6 +156,7 @@
 #define LD_BC_IMM(val)        do { LoadRegValue(REGISTER_BC, val); } while (0)
 #define LD_DE_IMM(val)        do { LoadRegValue(REGISTER_DE, val); } while (0)
 #define LD_HL_IMM(val)        do { LoadRegValue(REGISTER_HL, val); } while (0)
+#define LD_HL_IND(val)        do { output(uint8_t, OP_LD_HL_IND); output(uint24_t, val); ResetReg(REGISTER_HL); } while (0)
 #define LD_IMM_A(val)         do { output(uint8_t, OP_LD_IMM_A); output(uint24_t, val); } while (0)
 #define LD_SIS_IMM_HL(val)    do { output(uint16_t, 0x2240); output(uint16_t, val); } while (0)
 #define LD_SIS_HL(val)        do { output(uint16_t, 0x2140); output(uint16_t, val); } while (0)

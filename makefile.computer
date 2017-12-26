@@ -28,7 +28,7 @@ $(TARGET): .FORCE $(OBJECTS)
 	$(CC) $(CFLAGS) $< -o $@
 
 %.bin: %.asm
-	spasm -E $< -D.def=\; -Ddata=\; -Ddb=.db
+	spasm -E $< -D.def=\; -D.ref=\; -Ddata=\; -D__errsp=0; -Ddb=.db
 
 clean:
 	$(RM) $(call NATIVEPATH,$(TARGET).exe $(OBJECTS) $(BINOBJECTS))

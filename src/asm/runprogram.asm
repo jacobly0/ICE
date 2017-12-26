@@ -30,9 +30,7 @@ StartRunProgram:
 	pop	de
 	ld	(de), a
 	pop	iy
-	push	hl
 	call	00004F0h		; usb_ResetTimers
-	pop	hl
 	
 ; Remove ICE from UserMem
 	ld	hl, 0D1A881h		; userMem

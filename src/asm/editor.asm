@@ -2,10 +2,11 @@
 segment data
 .def _GotoEditor
 
+.ref __errsp
+
 _GotoEditor:
 	ld	iy, 0D00080h		; flags
 	call	0021A3Ch		; _DrawStatusBar
-	call	00004F0h		; _usb_DisableTimer
 	pop	bc
 	pop	hl
 	pop	de
@@ -13,6 +14,15 @@ _GotoEditor:
 	ld	de, 0D0065Bh		; progToEdit
 	ld	bc, 8
 	ldir
+	
+; Cleanup C things
+	ld	sp, (__errsp + 1);
+	pop	af
+	pop	de
+	ld	(de), a
+	pop	iy
+	call	00004F0h		; usb_ResetTimers
+	
 	ld	de, 0D0EA1Fh		; plotSScreen
 	ld	hl, StartProgramEditor
 	ld	bc, StopProgramEditor - StartProgramEditor

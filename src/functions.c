@@ -15,6 +15,7 @@
 INCBIN(Sqrt, "src/asm/sqrt.bin");
 INCBIN(Mean, "src/asm/mean.bin");
 INCBIN(Rand, "src/asm/rand.bin");
+INCBIN(Timer, "src/asm/timer.bin");
 INCBIN(Malloc, "src/asm/malloc.bin");
 INCBIN(Sincos, "src/asm/sincos.bin");
 INCBIN(Keypad, "src/asm/keypad.bin");
@@ -26,6 +27,7 @@ INCBIN(Loadtilemap, "src/asm/loadtilemap.bin");
 extern const uint8_t SqrtData[];
 extern const uint8_t MeanData[];
 extern const uint8_t RandData[];
+extern const uint8_t TimerData[];
 extern const uint8_t MallocData[];
 extern const uint8_t SincosData[];
 extern const uint8_t KeypadData[];
@@ -199,6 +201,27 @@ uint8_t parseFunction(uint24_t index) {
         }
         ice.modifiedIY = true;
         ResetAllRegs();
+    }
+    
+    // startTmr
+    else if (function == tExtTok && function2 == tStartTmr) {
+        CallRoutine(&ice.usedAlreadyTimer, &ice.TimerAddr, (uint8_t*)TimerData, SIZEOF_TIMER_DATA);
+    }
+    
+    // checkTmr(
+    else if (function == tExtTok && function2 == tCheckTmr) {
+        if (outputPrevType == TYPE_NUMBER) {
+            LD_DE_IMM(outputPrevOperand);
+        } else if (outputPrevType == TYPE_VARIABLE) {
+            LD_DE_IND_IX_OFF(outputPrevOperand);
+        } else if (outputPrevType == TYPE_CHAIN_ANS) {
+            AnsToDE();
+        } else {
+            return E_SYNTAX;
+        }
+        
+        LD_HL_IND(0xF20000);
+        OR_A_SBC_HL_DE();
     }
     
     // getKey / getKey(X)

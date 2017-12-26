@@ -26,19 +26,33 @@ extern const uint8_t PrgmData[];
 #endif
 
 extern uint8_t (*functions[256])(int token);
-const char implementedFunctions[] = {tNot, tMin, tMax, tMean, tSqrt, tDet, tSum, tSin, tCos, 0};
 const uint8_t All2ByteTokens[] = {0x5C, 0x5D, 0x5E, 0x60, 0x61, 0x62, 0x63, 0x7E, 0xAA, 0xBB, 0xEF};
-const uint8_t implementedFunctions2[22] = {tExtTok, tRemainder,
-                                           t2ByteTok, tSubStrng,
-                                           t2ByteTok, tLength,
-                                           t2ByteTok, tRandInt,
-                                           tVarOut, tDefineSprite,
-                                           tVarOut, tData,
-                                           tVarOut, tCopy,
-                                           tVarOut, tAlloc,
-                                           tVarOut, tDefineTilemap,
-                                           tVarOut, tCopyData,
-                                           tVarOut, tLoadData
+const uint8_t implementedFunctions[78] = { tNot,      0,              1,
+                                           tMin,      0,              2,
+                                           tMax,      0,              2,
+                                           tMean,     0,              2,
+                                           tSqrt,     0,              1,
+                                           tDet,      0,              255,
+                                           tSum,      0,              255,
+                                           tSin,      0,              1,
+                                           tCos,      0,              1,
+                                           tRand,     0,              0,
+                                           tLParen,   0,              1,
+                                           tLBrace,   0,              1,
+                                           tLBrack,   0,              1,
+                                           tExtTok,   tRemainder,     2,
+                                           tExtTok,   tCheckTmr,      2,
+                                           tExtTok,   tStartTmr,      0,
+                                           t2ByteTok, tSubStrng,      3,
+                                           t2ByteTok, tLength,        1,
+                                           t2ByteTok, tRandInt,       2,
+                                           tVarOut,   tDefineSprite,  255,
+                                           tVarOut,   tData,          255,
+                                           tVarOut,   tCopy,          255,
+                                           tVarOut,   tAlloc,         1,
+                                           tVarOut,   tDefineTilemap, 255,
+                                           tVarOut,   tCopyData,      255,
+                                           tVarOut,   tLoadData,      255
                                           };
 element_t outputStack[400];
 element_t stack[200];
@@ -102,8 +116,7 @@ uint8_t parseExpression(int token) {
     */
 
     while (token != EOF && (tok = (uint8_t)token) != tEnter) {
-        bool IsA2ByteToken = memchr(All2ByteTokens, tok, 11) && 1;
-        
+fetchNoNewToken:
         outputCurr = &outputPtr[outputElements];
         stackCurr  = &stackPtr[stackElements];
         
@@ -381,53 +394,6 @@ stackToOutputReturn1:
             mask = TYPE_MASK_U24;
         }
         
-        // Process a function, ( { [
-        else if (strchr(implementedFunctions, tok) ||
-                    tok == t2ByteTok || tok == tExtTok || tok == tVarOut ||
-                    tok == tLParen || tok == tLBrace || tok == tLBrack) {
-            if (IsA2ByteToken) {
-                uint8_t temp2 = _getc();
-                uint24_t temp3;
-                
-                for (temp3 = 0; temp3 < sizeof(implementedFunctions2); temp3 += 2) {
-                    if (tok == implementedFunctions2[temp3] && temp2 == implementedFunctions2[temp3 + 1]) {
-                        goto foundRight2ByteToken;
-                    }
-                }
-                return E_UNIMPLEMENTED;
-foundRight2ByteToken:
-                token = token + (temp2 << 16);
-            }
-            // We always have at least 1 argument
-            *++amountOfArgumentsStackPtr = 1;
-            stackCurr->type = TYPE_FUNCTION;
-            stackCurr->mask = mask;
-            stackCurr->operand = token + ((tok == tLBrace && storeDepth) << 16);
-            stackElements++;
-            mask = TYPE_MASK_U24;
-            canUseMask = 2;
-            
-            // Check if it's a C function
-            if (tok == tDet || tok == tSum) {
-                outputCurr->type = TYPE_C_START;
-                outputElements++;
-                
-                if ((tok = (uint8_t)(token = _getc())) < t0 || tok > t9) {
-                    return E_SYNTAX;
-                }
-                prevTokenWasDetOrSum = 2;
-                continue;
-            }
-        }
-        
-        // rand
-        else if (tok == tRand) {
-            outputCurr->type = TYPE_FUNCTION;
-            outputCurr->operand = 0x0000AB;
-            outputElements++;
-            mask = TYPE_MASK_U24;
-        }
-        
         // getKey / getKey(
         else if (tok == tGetKey) {
             mask = TYPE_MASK_U24;
@@ -540,12 +506,55 @@ noSquishing:
             mask = TYPE_MASK_U24;
         }
         
-        // Oops, unknown token...
+        // Parse a function
         else {
+            uint8_t a, tok2 = 0;
+            
+            if (tok == tExtTok || tok == t2ByteTok || tok == tVarOut) {
+                tok2 = _getc();
+            }
+            
+            for (a = 0; a < sizeof(implementedFunctions); a += 3) {
+                if (tok == implementedFunctions[a] && tok2 == implementedFunctions[a + 1]) {
+                    if (implementedFunctions[a + 2]) {
+                        // We always have at least 1 argument
+                        *++amountOfArgumentsStackPtr = 1;
+                        stackCurr->type = TYPE_FUNCTION;
+                        stackCurr->mask = mask;
+                        stackCurr->operand = tok + (((tok == tLBrace && storeDepth) + tok2) << 16);
+                        stackElements++;
+                        mask = TYPE_MASK_U24;
+                        canUseMask = 2;
+                        
+                        // Check if it's a C function
+                        if (tok == tDet || tok == tSum) {
+                            outputCurr->type = TYPE_C_START;
+                            outputElements++;
+                            
+                            if ((tok = (uint8_t)(token = _getc())) < t0 || tok > t9) {
+                                return E_SYNTAX;
+                            }
+                            prevTokenWasDetOrSum = 2;
+                            
+                            goto fetchNoNewToken;
+                        }
+                    } else {
+                        outputCurr->type = TYPE_FUNCTION;
+                        outputCurr->operand = (tok2 << 16) + tok;
+                        outputElements++;
+                        mask = TYPE_MASK_U24;
+                    }
+                    
+                    goto fetchNewToken;
+                }
+            }
+            
+            // Oops, unknown token...
             return E_UNIMPLEMENTED;
         }
         
         // Yay, fetch the next token, it's great, it's true, I like it
+fetchNewToken:
         token = _getc();
     }
     
@@ -579,6 +588,7 @@ stackToOutputReturn2:
         // Check if the types are number | number | ... | function (specific function or pointer)
         if (loopIndex >= index && outputCurr->type == TYPE_FUNCTION && 
                 (uint8_t)outputCurr->operand != tDet &&
+                !((uint8_t)outputCurr->operand == tExtTok && (uint8_t)(outputCurr->operand >> 16) == tCheckTmr) &&
                 (uint8_t)outputCurr->operand != tLBrace &&
                 (uint8_t)outputCurr->operand != tSum &&
                 (uint8_t)outputCurr->operand != tVarOut &&

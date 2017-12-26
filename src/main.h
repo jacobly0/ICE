@@ -5,7 +5,7 @@
 #define AMOUNT_OF_FILEIOC_FUNCTIONS 21
 #define STACK_SIZE 500
 #define SIZEOF_KEYPAD_DATA 18
-#define SIZEOF_RAND_DATA   103
+#define SIZEOF_RAND_DATA   101
 #define SIZEOF_SQRT_DATA   43
 #define SIZEOF_SINCOS_DATA 99
 #define SIZEOF_MEAN_DATA   17
@@ -15,6 +15,7 @@
 #define SIZEOF_INPUT_DATA  96
 #define SIZEOF_PAUSE_DATA  20
 #define SIZEOF_MALLOC_DATA 21
+#define SIZEOF_TIMER_DATA  18
 #define SIZEOF_CHEADER     116
 
 #define tDefineSprite      0x0A
@@ -113,6 +114,9 @@ typedef struct {
     bool     usedAlreadyMalloc;                             // Only once the "Alloc(" routine in the program data
     uint24_t MallocAddr;                                    // Address of the "Alloc(" routine in the program data
     
+    bool     usedAlreadyTimer;                              // Only once the timer routine in the program data
+    uint24_t TimerAddr;                                     // Address of the timer routine in the program data
+    
 #ifdef SC
     uint24_t progInputPtr;
     uint8_t  progInputData[0xFFFF];
@@ -201,6 +205,7 @@ void InputData(void);
 void MallocData(void);
 void SincosData(void);
 void PrgmData(void);
+void TimerData(void);
 void StringConcatenateData(void);
 void LoadspriteData(void);
 void LoadtilemapData(void);
