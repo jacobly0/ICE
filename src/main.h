@@ -15,7 +15,7 @@
 #define SIZEOF_INPUT_DATA  96
 #define SIZEOF_PAUSE_DATA  20
 #define SIZEOF_MALLOC_DATA 21
-#define SIZEOF_TIMER_DATA  18
+#define SIZEOF_TIMER_DATA  15
 #define SIZEOF_CHEADER     116
 
 #define tDefineSprite      0x0A
