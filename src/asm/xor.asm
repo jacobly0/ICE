@@ -9,6 +9,6 @@ _XorData:				; Credits to Runer112
 	ex	de, hl
 	add	hl, bc
 	sbc	a, c
-	adc	a, a
+	add	a, c
 	sbc	hl, hl
 	inc	hl
