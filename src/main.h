@@ -5,7 +5,7 @@
 #define AMOUNT_OF_FILEIOC_FUNCTIONS 21
 #define STACK_SIZE 500
 #define SIZEOF_KEYPAD_DATA 18
-#define SIZEOF_RAND_DATA   101
+#define SIZEOF_RAND_DATA   118
 #define SIZEOF_SQRT_DATA   43
 #define SIZEOF_SINCOS_DATA 99
 #define SIZEOF_MEAN_DATA   16
@@ -196,6 +196,7 @@ void CProgramHeaderData(void);
 void OrData(void);
 void AndData(void);
 void XorData(void);
+void SRandData(void);
 void RandData(void);
 void KeypadData(void);
 void GetKeyFastData(void);

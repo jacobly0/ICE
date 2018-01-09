@@ -18,6 +18,7 @@ reg_t reg;
 extern label_t labelStack[150];
 extern label_t gotoStack[150];
 extern const uint8_t CheaderData[];
+extern const uint8_t SRandData[];
 extern const uint8_t FileiocheaderData[];
 
 void w24(void *x, uint32_t val) {
@@ -96,6 +97,23 @@ int main(int argc, char **argv) {
     ice.freeMemoryPtr = (ice.tempStrings[1] = (ice.tempStrings[0] = pixelShadow + 2000 * ice.amountOfOSLocationsUsed) + 2000) + 2000;
     
     LD_IX_IMM(IX_VARIABLES);
+    
+    // Eventually seed the rand
+    if (ice.usesRandRoutine) {
+        ice.programDataPtr -= SIZEOF_RAND_DATA;
+        ice.randAddr = (uint24_t)ice.programDataPtr;
+        memcpy(ice.programDataPtr, SRandData, SIZEOF_RAND_DATA);
+        ice.dataOffsetStack[ice.dataOffsetElements++] = (uint24_t*)(ice.randAddr + 2);
+        w24((uint8_t*)(ice.randAddr + 2), ice.randAddr + 102);
+        ice.dataOffsetStack[ice.dataOffsetElements++] = (uint24_t*)(ice.randAddr + 6);
+        w24((uint8_t*)(ice.randAddr + 6), ice.randAddr + 105);
+        ice.dataOffsetStack[ice.dataOffsetElements++] = (uint24_t*)(ice.randAddr + 19);
+        w24((uint8_t*)(ice.randAddr + 19), ice.randAddr + 102);
+        
+        LD_HL_IND(0xF30044);
+        ProgramPtrToOffsetStack();
+        CALL((uint24_t)ice.programDataPtr);
+    }
    
     // Do the stuff
     res = parseProgram();
@@ -192,6 +210,12 @@ void preScanProgram(uint24_t CFunctionsStack[], uint8_t *CFunctionsCounter, bool
         } else if (tok == tVarLst && !expr.inString && detectOSVars) {
             if (!ice.OSLists[token = _getc()]) {
                 ice.OSLists[token] = pixelShadow + 2000 * (ice.amountOfOSLocationsUsed++);
+            }
+        } else if (tok == tRand) {
+            ice.usesRandRoutine = true;
+        } else if (tok == tExtTok) {
+            if ((uint8_t)_getc() == tRandInt) {
+                ice.usesRandRoutine = true;
             }
         } else if (tok == tVarStrng && !expr.inString && detectOSVars) {
             if (!ice.OSStrings[token = _getc()]) {

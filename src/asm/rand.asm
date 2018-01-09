@@ -1,53 +1,66 @@
 .assume adl = 1
 segment data
 .def _RandData
+.def _SRandData
+
+_SRandData:
+	xor	a, a
+	ld	(0), hl
+	ld	hl, 0
+	ld	(hl), a
+	ld	b, 12
+__setstateloop:
+	inc	hl
+	ld	(hl), b
+	djnz	__setstateloop
+	ret
 
 _RandData:
-	ld	iy,0
-	ld	hl,(iy+0*4+0)
+	ld	iy, 0
+	ld	hl, (iy+0*4+0)
 	push	hl
-	ld	hl,(iy+0*4+2)
+	ld	hl, (iy+0*4+2)
 	push	hl
-	lea	hl,iy+1*4
-	lea	de,iy+0*4
-	ld	bc,3*4
+	lea	hl, iy+1*4
+	lea	de, iy+0*4
+	ld	bc, 3*4
 	ldir
 	pop	bc
 	pop	de
-	ld	h,d
-	ld	l,e
-	add	hl,hl
-	add	hl,hl
-	add	hl,hl
-	ld	a,b
-	xor	a,h
-	ld	h,a
-	xor	a,(iy+3*4+2)
-	ld	(iy+3*4+3),a
-	ld	b,a
-	ld	a,c
-	xor	a,l
-	ld	l,a
-	xor	a,(iy+3*4+1)
-	ld	(iy+3*4+2),a
-	xor	a,a
-	add.s	hl,hl
-	adc	a,a
-	add.s	hl,hl
-	adc	a,a
-	add.s	hl,hl
-	adc	a,a
-	xor	a,d
-	xor	a,(iy+3*4+0)
-	ld	(iy+3*4+1),a
-	ld	a,e
-	xor	a,h
-	ld	(iy+3*4+0),a
-	ld	hl,(iy+3*4)
-	ld	a,b
-	ld	de,(iy+2*4)
-	ld	c,(iy+2*4+3)
-	add	hl,de
+	ld	h, d
+	ld	l, e
+	add	hl, hl
+	add	hl, hl
+	add	hl, hl
+	ld	a, b
+	xor	a, h
+	ld	h, a
+	xor	a, (iy+3*4+2)
+	ld	(iy+3*4+3), a
+	ld	b, a
+	ld	a, c
+	xor	a, l
+	ld	l, a
+	xor	a, (iy+3*4+1)
+	ld	(iy+3*4+2), a
+	xor	a, a
+	add.s	hl, hl
+	adc	a, a
+	add.s	hl, hl
+	adc	a, a
+	add.s	hl, hl
+	adc	a, a
+	xor	a, d
+	xor	a, (iy+3*4+0)
+	ld	(iy+3*4+1), a
+	ld	a, e
+	xor	a, h
+	ld	(iy+3*4+0), a
+	ld	hl, (iy+3*4)
+	ld	a, b
+	ld	de, (iy+2*4)
+	ld	c, (iy+2*4+3)
+	add	hl, de
 	ret
 	
 __state:

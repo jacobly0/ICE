@@ -191,14 +191,9 @@ uint8_t parseFunction(uint24_t index) {
     
     // rand
     if (function == tRand) {
-        bool usedAlreadyRand = ice.usedAlreadyRand;
+        ProgramPtrToOffsetStack();
+        CALL(ice.randAddr + 17);
         
-        CallRoutine(&ice.usedAlreadyRand, &ice.randAddr, (uint8_t*)RandData, SIZEOF_RAND_DATA);
-        
-        if (!usedAlreadyRand) {
-            ice.dataOffsetStack[ice.dataOffsetElements++] = (uint24_t*)(ice.randAddr + 2);
-            w24((uint8_t*)(ice.randAddr + 2), ice.randAddr + 85);
-        }
         ice.modifiedIY = true;
         ResetAllRegs();
     }
@@ -487,11 +482,8 @@ uint8_t parseFunction(uint24_t index) {
             PUSH_HL();
         }
         
-        CallRoutine(&ice.usedAlreadyRand, &ice.randAddr, (uint8_t*)RandData, SIZEOF_RAND_DATA);
-        if (!usedAlreadyRand) {
-            ice.dataOffsetStack[ice.dataOffsetElements++] = (uint24_t*)(ice.randAddr + 2);
-            w24((uint8_t*)(ice.randAddr + 2), ice.randAddr + 85);
-        }
+        ProgramPtrToOffsetStack();
+        CALL(ice.randAddr + 17);
         
         if (outputPrevPrevType != TYPE_NUMBER || outputPrevType != TYPE_NUMBER) {
             POP_BC();
