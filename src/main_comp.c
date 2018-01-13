@@ -239,19 +239,15 @@ void preScanProgram(uint24_t CFunctionsStack[], uint8_t *CFunctionsCounter, bool
             if (!ice.OSLists[token = _getc()]) {
                 ice.OSLists[token] = pixelShadow + 2000 * (ice.amountOfOSLocationsUsed++);
             }
-        } else if (tok == tRand) {
+        } else if (tok == tRand && !expr.inString) {
             ice.usesRandRoutine = true;
-        } else if (tok == tExtTok) {
-            if ((uint8_t)_getc() == tRandInt) {
-                ice.usesRandRoutine = true;
-            }
         } else if (tok == tVarStrng && !expr.inString && detectOSVars) {
             if (!ice.OSStrings[token = _getc()]) {
                 ice.OSStrings[token] = pixelShadow + 2000 * (ice.amountOfOSLocationsUsed++);
             }
         } else if (tok == t2ByteTok && !expr.inString) {
             // AsmComp(
-            if ((uint8_t)_getc() == tAsmComp) {
+            if ((tok = (uint8_t)_getc()) == tAsmComp) {
                 char tempName[9] = {0};
                 uint8_t a = 0;
                 ti_var_t tempProg = ice.inPrgm;
@@ -266,6 +262,8 @@ void preScanProgram(uint24_t CFunctionsStack[], uint8_t *CFunctionsCounter, bool
                     fclose(ice.inPrgm);
                 }
                 ice.inPrgm = tempProg;
+            } else if (tok == tRandInt) {
+                ice.usesRandRoutine = true;
             }
         } else if (((tok == tDet && detectOSVars) || (tok == tSum && !detectOSVars)) && !expr.inString) {
             uint8_t tok1 = _getc();
