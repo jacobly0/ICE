@@ -977,7 +977,7 @@ static uint8_t functionI(int token) {
                     SeekMinus1();
                 }
             }
-
+            
             // Don't increment the pointer for now, we will do that later :)
             *ice.programPtr = 0;
 
@@ -996,8 +996,12 @@ static uint8_t functionI(int token) {
                 w24(ice.programPtr + 2, r24(ice.programPtr + 2) + offset);
                 w24(ice.programPtr + 53, r24(ice.programPtr + 53) + offset);
                 w24(ice.programPtr + 66, r24(ice.programPtr + 66) + offset);
+                if (ice.usesRandRoutine) {
+                    ice.dataOffsetStack[ice.dataOffsetElements-1] = (uint24_t*)((uint8_t*)ice.dataOffsetStack[ice.dataOffsetElements-1] + offset);
+                }
                 if (ice.amountOfGraphxRoutinesUsed || ice.amountOfFileiocRoutinesUsed) {
-                    uint8_t *writeAddr = ice.programPtr + ice.programSize - 16;
+                    uint8_t *writeAddr = ice.programPtr + ice.programSize - 16 - (ice.usesRandRoutine ? 8 : 0);
+                    
                     w24(writeAddr, r24(writeAddr) + offset);
                 }
             }
