@@ -1224,6 +1224,7 @@ uint8_t functionRepeat(int token) {
     
     // Skip the condition for now
     skipLine();
+    ResetAllRegs();
     
     // Parse the code inside the loop
     if ((res = parseProgram()) != E_END && res != VALID) {
