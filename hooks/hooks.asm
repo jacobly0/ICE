@@ -424,7 +424,7 @@ F02:  .db "Open(NAME,MODE)", 0
 F03:  .db "OpenVar(NAME,MODE,TYPE)", 0
 F04:  .db "Close(SLOT)", 0
 F05:  .db "Write(DATA,SIZE,COUNT,SLOT)", 0
-F06:  .db "Read(DATA,SIZE,COUNT,SLOT)", 0
+F06:  .db "Read(PTR,SIZE,COUNT,SLOT)", 0
 F07:  .db "GetChar(SLOT)", 0
 F08:  .db "PutChar(CHAR,SLOT)", 0
 Tab2:
