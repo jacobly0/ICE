@@ -11,7 +11,7 @@ If you want to compile it for the TI-84 Plus CE, be sure you have the [C toolcha
 
 If you want to compile it for the computer, be sure to install [mingw](https://sourceforge.net/projects/mingw/files/), and run `make -f makefile.computer` from the command line (or run `build_comp.bat`). That should create `ice.exe` in the main folder.
 
-If you want to compile the hooks for the calculator, download [spasm-ng](https://github.com/alberthdev/spasm-ng/releases) and run `spasm -E hooks\hooks.asm bin\ICEAPPV.8xv` from the command line (or run the `build_hooks.bat` file). The `build_hooks.bat` file will create the "bin" directory/ folder for you if it does not exist.
+If you want to compile the hooks for the calculator, download [spasm-ng](https://github.com/alberthdev/spasm-ng/releases) and run `spasm -E hooks\hooks.asm bin\ICEAPPV.8xv` from the command line (or run the `build_hooks.bat` file). The `build_hooks.bat` file will create the `bin/` folder for you if it does not exist.
 
 ### Bugs
 If you find a bug, or if you see the message `ICE ERROR: please report it!`, be sure to make an issue here, or post it on the relevant [Cemetech topic](https://www.cemetech.net/forum/viewtopic.php?t=12616).
