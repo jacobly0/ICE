@@ -4,7 +4,7 @@
 ICE Compiler is a program that compiles TI-BASIC-like language to assembler. Create insane games, take full advanage of the color screen, and close the gap to using other languages! Not only will your Basic programs enjoy increased speed, it is also easy to use. Type your program in the normal editor, compile within seconds, for hours of fun! No shell is required.
 
 ### Navigation
-Run `Asm(prgmICE` from the homescreen. This will show a list of compilable programs. Use the `[UP]` and `[DOWN]` keys to select the right program, and press `[ENTER]` or `[2ND]`. Your program will now be compiled!  You can now run your program with "Asm(prgmNAME".
+Run `Asm(prgmICE` from the homescreen. This will show a list of compilable programs. Use the `[UP]` and `[DOWN]` keys to select the right program, and press `[ENTER]` or `[2ND]`. Your program will now be compiled!  You can now run your program with `Asm(prgmNAME` or press `[Y=]` after compiling.
 
 ### Build
 If you want to compile it for the TI-84 Plus CE, be sure you have the [C toolchain](http://tiny.cc/clibs) installed. Then run `make` from the command line (or run `build_calc.bat`). After a few seconds, `ICE.8xp` will be placed in the `bin` folder.
