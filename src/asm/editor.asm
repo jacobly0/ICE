@@ -10,7 +10,7 @@ _GotoEditor:
 	pop	bc
 	pop	hl
 	pop	de
-	ld.sis	(0D008E3h & 0FFFFh), de	; errOffset
+	ld.sis	(008E3h), de		; errOffset
 	ld	de, 0D0065Bh		; progToEdit
 	ld	bc, 8
 	ldir
@@ -41,7 +41,7 @@ StartProgramEditor:
 	call	0020170h		; _NewContext0
 	ld	sp, (0D007FAh)		; onSP
 	call	002103Ch		; _resetStacks
-	ld.sis	bc, (0D008E3h & 0FFFFh)	; errOffset
+	ld.sis	bc, (008E3h)		; errOffset
 	ld	hl, (0D0243Dh)		; editTail
 	ld	de, (0D0243Ah)		; editCursor
 	ld	a, b
