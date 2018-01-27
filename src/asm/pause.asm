@@ -2,7 +2,7 @@
 segment data
 .def _PauseData
 
-_PauseData
+_PauseData:
 	di
 	dec	hl
 _PauseLoop:
