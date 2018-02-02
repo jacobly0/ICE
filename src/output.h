@@ -10,6 +10,7 @@
 #define curCol            0xD00596
 #define OP1               0xD005F8
 #define pixelShadow       0xD031F6
+#define mpBlLevel         0xF60024
                        
 #define _GetCSC           0x02014C
 #define _Mov9ToOP1        0x020320

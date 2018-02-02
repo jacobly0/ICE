@@ -27,7 +27,7 @@ extern const uint8_t PrgmData[];
 
 extern uint8_t (*functions[256])(int token);
 const uint8_t All2ByteTokens[] = {0x5C, 0x5D, 0x5E, 0x60, 0x61, 0x62, 0x63, 0x7E, 0xAA, 0xBB, 0xEF};
-const uint8_t implementedFunctions[78] = { tNot,      0,              1,
+const uint8_t implementedFunctions[81] = { tNot,      0,              1,
                                            tMin,      0,              2,
                                            tMax,      0,              2,
                                            tMean,     0,              2,
@@ -52,7 +52,8 @@ const uint8_t implementedFunctions[78] = { tNot,      0,              1,
                                            tVarOut,   tAlloc,         1,
                                            tVarOut,   tDefineTilemap, 255,
                                            tVarOut,   tCopyData,      255,
-                                           tVarOut,   tLoadData,      255
+                                           tVarOut,   tLoadData,      255,
+                                           tVarOut,   tSetBrightness, 1
                                           };
 element_t outputStack[400];
 element_t stack[200];
@@ -1659,7 +1660,7 @@ static uint8_t functionPrgm(int token) {
 static uint8_t functionCustom(int token) {
     uint8_t tok = _getc();
     
-    if (tok >= tDefineSprite && tok <= tLoadData) {
+    if (tok >= tDefineSprite && tok <= tSetBrightness) {
         // Call
         if (tok == tCall) {
             insertGotoLabel();

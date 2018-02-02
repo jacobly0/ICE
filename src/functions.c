@@ -915,6 +915,21 @@ uint8_t parseFunction(uint24_t index) {
         }
     }
     
+    // SetBrightness
+    else if (function == tVarOut && function2 == tSetBrightness) {
+        if ((res = parseFunction1Arg(index, REGISTER_HL, amountOfArguments)) != VALID) {
+            return res;
+        }
+        
+        if (expr.outputRegister == REGISTER_HL) {
+            LD_A_L();
+        } else if (expr.outputRegister == REGISTER_DE) {
+            LD_A_E();
+        }
+        
+        LD_IMM_A(mpBlLevel);
+    }
+    
     // {}
     else if (function == tLBrace) {
         /*****************************************************

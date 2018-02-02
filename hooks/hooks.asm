@@ -1,6 +1,6 @@
 #include "hooks/ti84pce.inc"
 
-#define AMOUNT_OF_CUSTOM_TOKENS 8
+#define AMOUNT_OF_CUSTOM_TOKENS 9
 #define AMOUNT_OF_GRAPHX_FUNCTIONS 89
 #define AMOUNT_OF_FILEIOC_FUNCTIONS 21
 
@@ -418,6 +418,7 @@ C5:   .db "Alloc(BYTES)", 0
 C6:   .db "DefineTilemap()", 0
 C7:   .db "CopyData(PTR_OUT,SIZE,CONST...)", 0
 C8:   .db "LoadData(TILEMAP,OFFSET,SIZE)", 0
+C9:   .db "SetBrightness(LEVEL)", 0
 
 F01:  .db "CloseAll()", 0
 F02:  .db "Open(NAME,MODE)", 0
@@ -426,8 +427,8 @@ F04:  .db "Close(SLOT)", 0
 F05:  .db "Write(DATA,SIZE,COUNT,SLOT)", 0
 F06:  .db "Read(PTR,SIZE,COUNT,SLOT)", 0
 F07:  .db "GetChar(SLOT)", 0
-F08:  .db "PutChar(CHAR,SLOT)", 0
 Tab2:
+F08:  .db "PutChar(CHAR,SLOT)", 0
 F09:  .db "Delete(NAME)", 0
 F10:  .db "DeleteVar(NAME,TYPE)", 0
 F11:  .db "Seek(OFFSET,ORIGIN,SLOT)", 0
@@ -444,8 +445,8 @@ F21:  .db "DetectVar(", 014h, "PTR,DATA,TYPE)", 0
       
 G01:  .db "Begin()", 0
 G02:  .db "End()", 0
-G03:  .db "SetColor(COLOR)", 0
 Tab3:
+G03:  .db "SetColor(COLOR)", 0
 G04:  .db "SetDefaultPalette()", 0
 G05:  .db "SetPalette(PALETTE)", 0
 G06:  .db "FillScreen(COLOR)", 0
@@ -461,8 +462,8 @@ G15:  .db "PrintChar(CHAR)", 0
 G16:  .db "PrintInt(N,CHARS)", 0
 G17:  .db "PrintUInt(N,CHARS)", 0
 G18:  .db "PrintString(STRING)", 0
-G19:  .db "PrintStringXY(STRING,X,Y)", 0
 Tab4:
+G19:  .db "PrintStringXY(STRING,X,Y)", 0
 G20:  .db "SetTextXY(X,Y)", 0
 G21:  .db "SetTextBGColor(COLOR)", 0
 G22:  .db "SetTextFGColor(COLOR)", 0
@@ -478,8 +479,8 @@ G31:  .db "Line(X1,Y1,X2,Y2)", 0
 G32:  .db "HorizLine(X,Y,LENGTH)", 0
 G33:  .db "VertLine(X,Y,LENGTH)", 0
 G34:  .db "Circle(X,Y,R)", 0
-G35:  .db "FillCircle(X,Y,R)", 0
 Tab5:
+G35:  .db "FillCircle(X,Y,R)", 0
 G36:  .db "Rectangle(X,Y,W,H)", 0
 G37:  .db "FillRectangle(X,Y,W,H)", 0
 G38:  .db "Line_NoClip(X1,Y1,X2,Y2)", 0
@@ -495,8 +496,8 @@ G47:  .db "ShiftUp(PIXELS)", 0
 G48:  .db "ShiftLeft(PIXELS)", 0
 G49:  .db "ShiftRight(PIXELS)", 0
 G50:  .db "Tilemap(PTR,X,Y)", 0
-G51:  .db "Tilemap_NoClip(PTR,X,Y)", 0
 Tab6:
+G51:  .db "Tilemap_NoClip(PTR,X,Y)", 0
 G52:  .db "TransparentTilemap(PTR,X,Y)", 0
 G53:  .db "TransparentTilemap_NoClip(PTR,X,Y)", 0
 G54:  .db "TilePtr(PTR,X,Y)", 0
@@ -514,8 +515,8 @@ G65:  .db "FlipSpriteY(PTR_IN,PTR_OUT)", 0
 G66:  .db "FlipSpriteX(PTR_IN,PTR_OUT)", 0
 G67:  .db "RotateSpriteC(PTR_IN,PTR_OUT)", 0
 G68:  .db "RotateSpriteCC(PTR_IN,PTR_OUT)", 0
-G69:  .db "RotateSpriteHalf(PTR_IN,PTR_OUT)", 0
 Tab7:
+G69:  .db "RotateSpriteHalf(PTR_IN,PTR_OUT)", 0
 G70:  .db "Polygon(POINTS,NUM)", 0
 G71:  .db "Polygon_NoClip(POINTS,NUM)", 0
 G72:  .db "FillTriangle(X1,Y1,X2,Y2,X3,Y3)", 0
@@ -532,8 +533,8 @@ G82:  .db "SetFontHeight(HEIGHT)", 0
 G83:  .db "ScaledSprite(PTR_IN,PTR_OUT)", 0
 G84:  .db "FloodFill(X,Y,COLOR)", 0
 G85:  .db "RLETSprite(PTR,X,Y)", 0
-G86:  .db "RLETSprite_NoClip(PTR,X,Y)", 0
 Tab8:
+G86:  .db "RLETSprite_NoClip(PTR,X,Y)", 0
 G87:  .db "ConvertFromRLETSprite(PTR_IN,PTR_OUT)", 0
 G88:  .db "ConvertToRLETSprite(PTR_IN,PTR_OUT)", 0
 G89:  .db "ConvertToNewRLETSprite()", 0
@@ -552,6 +553,7 @@ Tok5: .db 087h, 6,  "Alloc("
 Tok6: .db 042h, 14, "DefineTilemap("
 Tok7: .db 043h, 9,  "CopyData("
 Tok8: .db 0FFh, 9,  "LoadData("
+Tok9: .db 0BAh, 14, "SetBrightness("
 
 TabData:
 	.dl Tab1
@@ -689,6 +691,7 @@ TokenHook_data:
 	.dl Tok6
 	.dl Tok7
 	.dl Tok8
+	.dl Tok9
 
 CustomTokensProgramText:
 	.db "PROGRAM:", 0

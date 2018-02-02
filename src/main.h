@@ -26,6 +26,7 @@
 #define tDefineTilemap     0x0F
 #define tCopyData          0x10
 #define tLoadData          0x11
+#define tSetBrightness     0x12
 
 #define IX_VARIABLES       0xD13F47
 
