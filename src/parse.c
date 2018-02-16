@@ -704,6 +704,7 @@ uint8_t parsePostFixFromIndexToIndex(uint24_t startIndex, uint24_t endIndex) {
     outputOperand = outputCurr->operand;
     ice.stackStart = (uint24_t*)(ice.stackDepth * STACK_SIZE + ice.stack);
     setStackValues(ice.stackStart, ice.stackStart);
+    reg.allowedToOptimize = true;
     
     // Clean the expr struct
     memset(&expr, 0, sizeof expr);

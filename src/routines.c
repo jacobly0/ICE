@@ -110,8 +110,8 @@ void ChangeRegValue(uint24_t inValue, uint24_t outValue, uint8_t opcodes[7]) {
         output(uint8_t, opcodes[6]);
         output(uint24_t, outValue);
         expr.SizeOfOutputNumber = 4;
-        reg.allowedToOptimize = true;
     }
+    reg.allowedToOptimize = true;
 }
 
 void LoadRegValue(uint8_t reg2, uint24_t val) {
