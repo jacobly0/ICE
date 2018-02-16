@@ -236,12 +236,15 @@ BufferFound:
 	push	bc
 	call	_ClrLCDFull
 	call	_ClrTxtShd
-	ld	de, CustomTokensProgramText
-	ld	hl, (rawKeyHookPtr)
-	add	hl, de
 	xor	a, a
 	ld	(curCol), a
 	ld	(curRow), a
+	ld	a, (winTop)
+	or	a, a
+	jr	z, DisplayProgramText		; This is apparently a Cesium feature
+	ld	de, CustomTokensProgramText
+	ld	hl, (rawKeyHookPtr)
+	add	hl, de
 	call	_PutS
 	ld	hl, saveSScreen
 	ld	b, 8
@@ -252,6 +255,7 @@ _:	ld	a, (hl)
 	inc	hl
 	djnz	-_
 _:	call	_NewLine
+DisplayProgramText:
 	ld	a, ':'
 	call	_PutC
 	call	_DispEOW
