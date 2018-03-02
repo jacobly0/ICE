@@ -8,7 +8,7 @@
 NAME        ?= ICE
 COMPRESSED  ?= YES
 ICON        ?= icon.png
-DESCRIPTION ?= "ICE Compiler v2.0"
+DESCRIPTION ?= "ICE Compiler v2.1"
 
 # ----------------------------
 

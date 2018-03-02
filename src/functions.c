@@ -192,7 +192,7 @@ uint8_t parseFunction(uint24_t index) {
     // rand
     if (function == tRand) {
         ProgramPtrToOffsetStack();
-        CALL(ice.randAddr + 17); 
+        CALL(ice.randAddr + 17);
         
         ice.modifiedIY = true;
         ResetAllRegs();
