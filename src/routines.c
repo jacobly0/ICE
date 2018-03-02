@@ -420,6 +420,16 @@ int grabString(uint8_t **outputPtr, bool stopAtStoreAndString) {
     return token;
 }
 
+void printButton(uint24_t xPos) {
+    gfx_SetColor(0);
+    gfx_Rectangle_NoClip(xPos, 230, 40, 11);
+    gfx_SetPixel(xPos + 1, 231);
+    gfx_SetPixel(xPos + 38, 231);
+    gfx_SetColor(255);
+    gfx_SetPixel(xPos, 230);
+    gfx_SetPixel(xPos + 39, 230);
+}
+
 #else
     
 const char *tokenStrings[] = {

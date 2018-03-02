@@ -25,5 +25,6 @@ uint8_t GetVariableOffset(uint8_t);
 bool CheckEOL(void);
 int getNextToken(void);
 int grabString(uint8_t**, bool);
+void printButton(uint24_t);
 
 #endif

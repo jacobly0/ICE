@@ -101,13 +101,7 @@ void main(void) {
     
     // Display quit button
     gfx_PrintStringXY("Quit", 285, 232);
-    gfx_SetColor(0);
-    gfx_Rectangle_NoClip(279, 230, 40, 11);
-    gfx_SetPixel(280, 231);
-    gfx_SetPixel(317, 231);
-    gfx_SetColor(255);
-    gfx_SetPixel(279, 230);
-    gfx_SetPixel(318, 230);
+    printButton(279);
     gfx_SetColor(0);
     
     // Select a program
@@ -339,34 +333,16 @@ findNextLabel:;
     
 stop:
     gfx_SetTextFGColor(0);
-    gfx_SetColor(0);
     if (didCompile) {
         if (res == VALID) {
             gfx_PrintStringXY("Run", 9, 232);
-            gfx_Rectangle_NoClip(1, 230, 40, 11);
-            gfx_SetPixel(2, 231);
-            gfx_SetPixel(39, 231);
+            printButton(1);
         } else {
             gfx_PrintStringXY("Goto", 222, 232);
-            gfx_Rectangle_NoClip(217, 230, 40, 11);
-            gfx_SetPixel(218, 231);
-            gfx_SetPixel(255, 231);
+            printButton(217);
         }
         gfx_PrintStringXY("Back", 70, 232);
-        gfx_Rectangle_NoClip(65, 230, 40, 11);
-        gfx_SetPixel(66, 231);
-        gfx_SetPixel(103, 231);
-        gfx_SetColor(255);
-        if (res == VALID) {
-            gfx_SetPixel(1, 230);
-            gfx_SetPixel(40, 230);
-        } else {
-            gfx_SetPixel(217, 230);
-            gfx_SetPixel(256, 230);
-        }
-        
-        gfx_SetPixel(65, 230);
-        gfx_SetPixel(104, 230);
+        printButton(65);
     }
     while (!(key = os_GetCSC()));
 err:
