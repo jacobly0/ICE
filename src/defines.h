@@ -49,7 +49,6 @@ typedef uint32_t uint24_t;
 #define _tell(x)     ftell(x)
 #define _seek(x,y,z) fseek(z,x,y);
 
-
 #else
     
 // Lmao

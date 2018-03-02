@@ -25,10 +25,11 @@ static int myCompare(const void * a, const void * b) {
 }
 
 void main(void) {
-    uint8_t selectedProgram, key, amountOfPrograms, res = VALID, temp;
+    uint8_t selectedProgram, amountOfPrograms, res = VALID, temp;
     uint24_t programDataSize, offset, totalSize;
     const char ICEheader[] = {tii, 0};
-    char buf[30], *var_name = "";
+    char buf[30], *temp_name = "", *var_name = "";
+    sk_key_t key;
     void *search_pos;
     bool didCompile;
     
@@ -71,18 +72,16 @@ void main(void) {
     didCompile = false;
     ti_CloseAll();
     
-    dbg_Debugger();
-    
     for (temp = TI_PRGM_TYPE; temp <= TI_PPRGM_TYPE; temp++) {
         search_pos = NULL;
-        while((var_name = ti_DetectVar(&search_pos, ICEheader, temp)) && selectedProgram <= 22) {
-            if ((uint8_t)(*var_name) < 64) {
-                *var_name += 64;
+        while((temp_name = ti_DetectVar(&search_pos, ICEheader, temp)) && selectedProgram <= 22) {
+            if ((uint8_t)(*temp_name) < 64) {
+                *temp_name += 64;
             }
             
             // Save the program name
             inputPrograms[selectedProgram] = malloc(sizeof(char*));
-            strcpy(inputPrograms[selectedProgram++], var_name);
+            strcpy(inputPrograms[selectedProgram++], temp_name);
         }
     }
     
@@ -113,7 +112,7 @@ void main(void) {
     
     // Select a program
     selectedProgram = 1;
-    while ((key = os_GetCSC()) != sk_Enter & key != sk_2nd) {
+    while ((key = os_GetCSC()) != sk_Enter && key != sk_2nd) {
         uint8_t selectionOffset = selectedProgram * 10 + 3;
 
         gfx_PrintStringXY(">", 1, selectionOffset);
