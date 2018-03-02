@@ -1,3 +1,2 @@
-if not exist obj mkdir obj
-make
+make debug
 pause

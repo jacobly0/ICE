@@ -16,14 +16,19 @@ expr_t expr;
 reg_t reg;
 
 const char *infoStr = "ICE Compiler v2.1 - By Peter \"PT_\" Tillema";
+char *inputPrograms[22];
 extern label_t labelStack[150];
 extern label_t gotoStack[150];
 
+static int myCompare(const void * a, const void * b) {
+    return strcmp(*(const char **)a, *(const char **)b);
+}
+
 void main(void) {
-    uint8_t selectedProgram, key, amountOfPrograms, res = VALID;
+    uint8_t selectedProgram, key, amountOfPrograms, res = VALID, temp;
     uint24_t programDataSize, offset, totalSize;
     const char ICEheader[] = {tii, 0};
-    char buf[30], *var_name;
+    char buf[30], *var_name = "";
     void *search_pos;
     bool didCompile;
     
@@ -51,7 +56,7 @@ void main(void) {
     asm("set 3, (iy+024h)");
     
     // Yay, GUI! :)
-displayMainScreen:
+    displayMainScreen:
     gfx_Begin();
 
     gfx_SetColor(189);
@@ -62,23 +67,37 @@ displayMainScreen:
     gfx_PrintStringXY(infoStr, 21, 1);
     
     // Get all the programs that start with the [i] token
-    search_pos = NULL;
     selectedProgram = 0;
     didCompile = false;
     ti_CloseAll();
     
-    while((var_name = ti_DetectVar(&search_pos, ICEheader, TI_PRGM_TYPE)) && ++selectedProgram <= 22) {
-        if (*var_name < 64) {
-            *var_name += 64;
+    dbg_Debugger();
+    
+    for (temp = TI_PRGM_TYPE; temp <= TI_PPRGM_TYPE; temp++) {
+        search_pos = NULL;
+        while((var_name = ti_DetectVar(&search_pos, ICEheader, temp)) && selectedProgram <= 22) {
+            if ((uint8_t)(*var_name) < 64) {
+                *var_name += 64;
+            }
+            
+            // Save the program name
+            inputPrograms[selectedProgram] = malloc(sizeof(char*));
+            strcpy(inputPrograms[selectedProgram++], var_name);
         }
-        gfx_PrintStringXY(var_name, 10, selectedProgram*10 + 3);
     }
+    
     amountOfPrograms = selectedProgram;
     
     // Check if there are ICE programs
     if (!amountOfPrograms) {
         gfx_PrintStringXY("No programs found!", 10, 13);
         goto stop;
+    }
+    
+    // Display all the sorted programs
+    qsort(inputPrograms, amountOfPrograms, sizeof(char *), myCompare);
+    for (temp = 0; temp < amountOfPrograms; temp++) {
+        gfx_PrintStringXY(inputPrograms[temp], 10, temp * 10 + 13);
     }
     
     // Display quit button
@@ -95,7 +114,7 @@ displayMainScreen:
     // Select a program
     selectedProgram = 1;
     while ((key = os_GetCSC()) != sk_Enter & key != sk_2nd) {
-        uint8_t selectionOffset = selectedProgram*10 + 3;
+        uint8_t selectionOffset = selectedProgram * 10 + 3;
 
         gfx_PrintStringXY(">", 1, selectionOffset);
 
@@ -132,11 +151,8 @@ displayMainScreen:
     gfx_SetColor(255);
     gfx_FillRectangle_NoClip(0, 11, 320, 210);
     
-    // Grab the right program
-    search_pos = NULL;
-    while(((var_name = ti_DetectVar(&search_pos, ICEheader, TI_PRGM_TYPE)) != NULL) && --selectedProgram);
-    
     // Set some vars
+    strcpy(var_name, inputPrograms[selectedProgram - 1]);
     didCompile = true;
     memset(&ice, 0, sizeof ice);
     
