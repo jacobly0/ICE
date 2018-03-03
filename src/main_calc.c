@@ -17,6 +17,7 @@ prescan_t prescan;
 reg_t reg;
 
 const char *infoStr = "ICE Compiler v2.1 - By Peter \"PT_\" Tillema";
+const uint8_t colorTable[16] = {255,24,224,0,248,36,227,97,9,19,230,255,181,107,106,74};    // Thanks Cesium :D
 char *inputPrograms[22];
 extern label_t labelStack[150];
 extern label_t gotoStack[150];
@@ -188,8 +189,6 @@ void main(void) {
 
         // Get hexadecimal
         do {
-            const uint8_t colorTable[16] = {255,24,224,0,248,36,227,97,9,19,230,255,181,107,106,74};    // Thanks Cesium :D
-            
             if ((temp = IsHexadecimal(_getc())) == 16) {
                 displayError(E_INVALID_HEX);
                 goto stop;
@@ -202,10 +201,10 @@ void main(void) {
             goto stop;
         }
         
+        // Check description
         if ((uint8_t)_getc() == tii) {
             grabString(&ice.programPtr, false);
         }
-        
         *ice.programPtr++ = 0;
 
         // Write the right jp offset

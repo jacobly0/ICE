@@ -66,7 +66,6 @@ label_t labelStack[150];
 label_t gotoStack[150];
 variable_t variableStack[85];
 
-
 uint8_t parseProgram(void) {
     int token;
     uint8_t ret = VALID;
