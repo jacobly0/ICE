@@ -1,7 +1,7 @@
 #include "defines.h"
+#include "main.h"
 #include "routines.h"
 
-#include "main.h"
 #include "functions.h"
 #include "errors.h"
 #include "stack.h"
@@ -15,6 +15,26 @@
 #define LB_H 10
 
 extern variable_t variableStack[85];
+
+prog_t *GetProgramName(void) {
+    prog_t *ret;
+    uint8_t a = 0;
+    int token;
+    
+    ret = malloc(sizeof(prog_t));
+    ret->errorCode = VALID;
+    
+    while ((token = _getc()) != EOF && (uint8_t)token != tEnter) {
+        if (a == 8) {
+            ret->errorCode = E_INVALID_PROG;
+            return ret;
+        }
+        ret->prog[a++] = (uint8_t)token;
+    }
+    ret->prog[a] = 0;
+    
+    return ret;
+}
 
 void ProgramPtrToOffsetStack(void) {
     ice.dataOffsetStack[ice.dataOffsetElements++] = (uint24_t*)(ice.programPtr + 1);

@@ -145,6 +145,37 @@ typedef struct {
 } expr_t;
 
 typedef struct {
+    bool     modifiedIY;
+    bool     usedTempStrings;
+    bool     hasGraphxStart;
+    bool     hasGraphxEnd;
+    bool     hasFileiocStart;
+    bool     hasGraphxFunctions;
+    bool     hasFileiocFunctions;
+    
+    uint8_t  amountOfRandRoutines;
+    uint8_t  amountOfSqrtRoutines;
+    uint8_t  amountOfMeanRoutines;
+    uint8_t  amountOfInputRoutines;
+    uint8_t  amountOfPauseRoutines;
+    uint8_t  amountOfSinCosRoutines;
+    uint8_t  amountOfLoadSpriteRoutines;
+    uint8_t  amountOfLoadTilemapRoutines;
+    uint8_t  amountOfMallocRoutines;
+    uint8_t  amountOfTimerRoutines;
+    uint8_t  amountOfOSVarsUsed;
+    
+    uint24_t amountOfLbls;
+    uint24_t amountOfGotos;
+    uint24_t GraphxRoutinesStack[AMOUNT_OF_GRAPHX_FUNCTIONS];
+    uint24_t FileiocRoutinesStack[AMOUNT_OF_FILEIOC_FUNCTIONS];
+    uint24_t OSStrings[10];
+    uint24_t OSLists[10];
+    uint24_t freeMemoryPtr;
+    uint24_t tempStrings[2];
+} prescan_t;
+
+typedef struct {
     bool     HLIsNumber;
     bool     HLIsVariable;
     bool     DEIsNumber;
@@ -182,12 +213,18 @@ typedef struct {
     char    name[20];
 } variable_t;
 
+typedef struct {
+    uint8_t errorCode;
+    char    prog[9];
+} prog_t;
+
 extern ice_t ice;
 extern expr_t expr;
+extern prescan_t prescan;
 extern reg_t reg;
 extern variable_t variable;
 
-void preScanProgram(uint24_t a[], uint8_t*, bool);
+void preScanProgram(void);
 
 #if !defined(COMPUTER_ICE) && !defined(SC)
 void CheaderData(void);

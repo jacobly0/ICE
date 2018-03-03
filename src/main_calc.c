@@ -13,6 +13,7 @@
 
 ice_t ice;
 expr_t expr;
+prescan_t prescan;
 reg_t reg;
 
 const char *infoStr = "ICE Compiler v2.1 - By Peter \"PT_\" Tillema";
@@ -159,58 +160,43 @@ void main(void) {
     strcpy(ice.currProgName[ice.inPrgm], var_name);
     
     ice.programData     = (uint8_t*)0xD52C00;
-    ice.programPtr      = ice.programData + SIZEOF_CHEADER;
+    ice.programPtr      = ice.programData;
     ice.programDataData = ice.programData + 0xFFFF;
     ice.programDataPtr  = ice.programDataData;
     ice.LblPtr          = ice.LblStack;
     ice.GotoPtr         = ice.GotoStack;
-    ice.CBaseAddress    = ice.programPtr;
     
     // Pre-scan program (and subprograms) and find all the GRAPHX routines
-    memcpy(ice.programData, CheaderData, SIZEOF_CHEADER);
-    preScanProgram(ice.GraphxRoutinesStack, &ice.amountOfGraphxRoutinesUsed, true);
-    
-    // If there are no GRAPHX functions, remove the GRAPHX header
-    if (!ice.amountOfGraphxRoutinesUsed) {
-        ice.programPtr -= 9;
-        ice.CBaseAddress -= 9;
-    }
-    
-    // Prescan the program again to detect all the FILEIOC routines
-    memcpy(ice.programPtr, FileiocheaderData, 10);
-    ice.programPtr += 10;
-    preScanProgram(ice.FileiocRoutinesStack, &ice.amountOfFileiocRoutinesUsed, false);
-    
-    // If there are no GRAPHX functions, remove the GRAPHX header
-    if (!ice.amountOfFileiocRoutinesUsed) {
-        ice.programPtr -= 10;
+    dbg_Debugger();
+    preScanProgram();
+    if (prescan.hasGraphxFunctions) {
+        uint8_t a;
         
-        // No C function at all
-        if (!ice.amountOfGraphxRoutinesUsed) {
-            ice.programPtr = ice.programData;
+        memcpy(ice.programData, CheaderData, SIZEOF_CHEADER);
+        ice.programPtr += SIZEOF_CHEADER;
+        for (a = 0; a < AMOUNT_OF_GRAPHX_FUNCTIONS; a++) {
+            if (prescan.GraphxRoutinesStack[a]) {
+                prescan.GraphxRoutinesStack[a] = (uint24_t)ice.programPtr;
+                JP(a * 3);
+            }
         }
+    } else if (prescan.hasFileiocFunctions) {
+        memcpy(ice.programData, CheaderData, SIZEOF_CHEADER - 9);
+        ice.programPtr += SIZEOF_CHEADER - 9;
     }
     
-    ice.CBaseAddress -= ice.programData - (uint8_t*)PRGM_START;
-    
-    // Clear up program before and after running
-    if (ice.amountOfGraphxRoutinesUsed || ice.amountOfFileiocRoutinesUsed) {
-        CALL(_RunIndicOff);
-        CALL(ice.programPtr - ice.programData + (ice.amountOfGraphxRoutinesUsed ? 12 : 9) + PRGM_START);
-        LD_IY_IMM(flags);
-        if (ice.amountOfGraphxRoutinesUsed) {
-            JP(_DrawStatusBar);
-        } else {
-            RET();
+    if (prescan.hasFileiocFunctions) {
+        uint8_t a;
+        
+        memcpy(ice.programPtr, FileiocheaderData, 10);
+        ice.programPtr += 10;
+        for (a = 0; a < AMOUNT_OF_FILEIOC_FUNCTIONS; a++) {
+            if (prescan.FileiocRoutinesStack[a]) {
+                prescan.FileiocRoutinesStack[a] = (uint24_t)ice.programPtr;
+                JP(a * 3);
+            }
         }
-    } else {
-        CALL(ice.programPtr - ice.programData + 9 + PRGM_START);
-        LD_IY_IMM(flags);
-        RET();
     }
-    
-    // Sorry :3
-    ice.freeMemoryPtr = (ice.tempStrings[1] = (ice.tempStrings[0] = pixelShadow + 2000 * ice.amountOfOSLocationsUsed) + 2000) + 2000;
     
     LD_IX_IMM(IX_VARIABLES);
     
@@ -366,74 +352,103 @@ err:
     ti_CloseAll();
 }
 
-void preScanProgram(uint24_t CFunctionsStack[], uint8_t *CFunctionsCounter, bool detectOSVars) {
+void preScanProgram(void) {
+    bool inString = false, afterNewLine = true;
     int token;
     
     _rewind(ice.inPrgm);
     
     // Scan the entire program
-    while ((int)(token = _getc()) != EOF) {
+    while ((token = _getc()) != EOF) {
         uint8_t tok = (uint8_t)token;
         
+        if (afterNewLine) {
+            afterNewLine = false;
+            if (tok == tii) {
+                skipLine();
+            } else if (tok == tLbl) {
+                prescan.amountOfLbls++;
+            } else if (tok == tGoto) {
+                prescan.amountOfGotos++;
+            }
+        }
+        
         if (tok == tString) {
-            expr.inString = !expr.inString;
-        } else if (tok == tEnter) {
-            expr.inString = false;
-        } else if (tok == tii && !expr.inString) {
-            skipLine();
+            inString = !inString;
         } else if (tok == tStore) {
-            expr.inString = false;
-        } else if (tok == tVarLst && !expr.inString && detectOSVars) {
-            if (!ice.OSLists[token = _getc()]) {
-                ice.OSLists[token] = pixelShadow + 2000 * (ice.amountOfOSLocationsUsed++);
-            }
-        } else if (tok == tRand && !expr.inString) {
-            ice.usesRandRoutine = true;
-        } else if (tok == tVarStrng && !expr.inString && detectOSVars) {
-            if (!ice.OSStrings[token = _getc()]) {
-                ice.OSStrings[token] = pixelShadow + 2000 * (ice.amountOfOSLocationsUsed++);
-            }
-        } else if (tok == t2ByteTok && !expr.inString) {
-            // AsmComp(
-            if ((tok = (uint8_t)_getc()) == tAsmComp) {
-                char tempName[9] = {0};
-                uint8_t a = 0;
-                ti_var_t tempProg = ice.inPrgm;
-
-                while ((int)(token = _getc()) != EOF && (tok = (uint8_t)token) != tEnter && a < 9) {
-                    tempName[a++] = tok;
+            inString = false;
+        }
+        
+        if (!inString) {
+            if (tok == tEnter || tok == tColon) {
+                inString = false;
+                afterNewLine = 2;
+            } else if (tok == tStore) {
+                inString = false;
+            } else if (tok == tRand) {
+                prescan.amountOfRandRoutines++;
+                prescan.modifiedIY = true;
+            } else if (tok == tSqrt) {
+                prescan.amountOfSqrtRoutines++;
+                prescan.modifiedIY = true;
+            } else if (tok == tMean) {
+                prescan.amountOfMeanRoutines++;
+            } else if (tok == tInput) {
+                prescan.amountOfInputRoutines++;
+            } else if (tok == tPause) {
+                prescan.amountOfPauseRoutines++;
+            } else if (tok == tVarLst) {
+                if (!prescan.OSLists[token = _getc()]) {
+                    prescan.OSLists[token] = pixelShadow + 2000 * (prescan.amountOfOSVarsUsed++);
                 }
-                tempName[a] = 0;
+            } else if (tok == tVarStrng) {
+                if (!ice.OSStrings[token = _getc()]) {
+                    ice.OSStrings[token] = pixelShadow + 2000 * (prescan.amountOfOSVarsUsed++);
+                }
+            } else if (tok == t2ByteTok) {
+                // AsmComp(
+                if ((tok = (uint8_t)_getc()) == tAsmComp) {
+                    ti_var_t tempProg = ice.inPrgm;
+                    prog_t *newProg = GetProgramName();
+                    
+                    if ((ice.inPrgm = _open(newProg->prog))) {
+                        preScanProgram();
+                    }
+                    _close(ice.inPrgm);
+                    ice.inPrgm = tempProg;
+                } else if (tok == tRandInt) {
+                    prescan.amountOfRandRoutines++;
+                    prescan.modifiedIY = true;
+                }
+            } else if (tok == tDet || tok == tSum) {
+                uint8_t tok1 = _getc();
+                uint8_t tok2 = _getc();
                 
-                if ((ice.inPrgm = _open(tempName))) {
-                    preScanProgram(CFunctionsStack, CFunctionsCounter, detectOSVars);
+                prescan.modifiedIY = true;
+                
+                // Invalid det( command
+                if (tok1 < t0 || tok1 > t9) {
+                    break;
                 }
-                _close(ice.inPrgm);
-                ice.inPrgm = tempProg;
-            } else if (tok == tRandInt) {
-                ice.usesRandRoutine = true;
-            }
-        } else if (((tok == tDet && detectOSVars) || (tok == tSum && !detectOSVars)) && !expr.inString) {
-            uint8_t tok1 = _getc();
-            uint8_t tok2 = _getc();
-
-            // Invalid det( command
-            if (tok1 < t0 || tok1 > t9) {
-                break;
-            }
-            
-            // Get the det( command
-            if (tok2 < t0 || tok2 > t9) {
-                tok = tok1 - t0;
-            } else {
-                tok = (tok1 - t0) * 10 + (tok2 - t0);
-            }
-            
-            // Insert the C routine
-            if (!CFunctionsStack[tok]) {
-                CFunctionsStack[tok] = ice.programPtr - ice.CBaseAddress;
-                JP(tok * 3);
-                (*CFunctionsCounter)++;
+                
+                // Get the det( command
+                if (tok2 < t0 || tok2 > t9) {
+                    tok = tok1 - t0;
+                } else {
+                    tok = (tok1 - t0) * 10 + (tok2 - t0);
+                }
+                
+                if (tok == tDet) {
+                    prescan.hasGraphxFunctions = true;
+                    if (!prescan.GraphxRoutinesStack[tok]) {
+                        prescan.GraphxRoutinesStack[tok] = 1;
+                    }
+                } else {
+                    prescan.hasFileiocFunctions = true;
+                    if (!prescan.FileiocRoutinesStack[tok]) {
+                        prescan.FileiocRoutinesStack[tok] = 1;
+                    }
+                }
             }
         }
     }
