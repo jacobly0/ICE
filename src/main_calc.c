@@ -199,9 +199,19 @@ void main(void) {
     
     // Check strings
     if (prescan.usedTempStrings) {
-        prescan.tempStrings[0] = pixelShadow + 2000 * prescan.amountOfOSVarsUsed;
-        prescan.tempStrings[1] = pixelShadow + 2000 + 2000 * prescan.amountOfOSVarsUsed;
-        prescan.freeMemoryPtr = pixelShadow + 4000 + 2000 * prescan.amountOfOSVarsUsed;
+        prescan.freeMemoryPtr = (prescan.tempStrings[1] = (prescan.tempStrings[0] = pixelShadow + 2000 * prescan.amountOfOSVarsUsed) + 2000) + 2000;
+    }
+    
+    // Cleanup code
+    if (prescan.hasGraphxFunctions) {
+        CALL(_RunIndicOff);
+        CALL(ice.programPtr - ice.programData + PRGM_START);
+        LD_IY_IMM(flags);
+        JP(_DrawStatusBar);
+    } else if (prescan.modifiedIY) {
+        CALL(ice.programPtr - ice.programData + PRGM_START);
+        LD_IY_IMM(flags);
+        RET();
     }
     
     LD_IX_IMM(IX_VARIABLES);
