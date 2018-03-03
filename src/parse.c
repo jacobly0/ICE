@@ -25,36 +25,41 @@ extern const uint8_t InputData[];
 extern const uint8_t PrgmData[];
 #endif
 
+#define AMOUNT_OF_FUNCTIONS 28
+
 extern uint8_t (*functions[256])(int token);
 const uint8_t All2ByteTokens[] = {0x5C, 0x5D, 0x5E, 0x60, 0x61, 0x62, 0x63, 0x7E, 0xAA, 0xBB, 0xEF};
-const uint8_t implementedFunctions[81] = { tNot,      0,              1,
-                                           tMin,      0,              2,
-                                           tMax,      0,              2,
-                                           tMean,     0,              2,
-                                           tSqrt,     0,              1,
-                                           tDet,      0,              255,
-                                           tSum,      0,              255,
-                                           tSin,      0,              1,
-                                           tCos,      0,              1,
-                                           tRand,     0,              0,
-                                           tLParen,   0,              1,
-                                           tLBrace,   0,              1,
-                                           tLBrack,   0,              1,
-                                           tExtTok,   tRemainder,     2,
-                                           tExtTok,   tCheckTmr,      2,
-                                           tExtTok,   tStartTmr,      0,
-                                           t2ByteTok, tSubStrng,      3,
-                                           t2ByteTok, tLength,        1,
-                                           t2ByteTok, tRandInt,       2,
-                                           tVarOut,   tDefineSprite,  255,
-                                           tVarOut,   tData,          255,
-                                           tVarOut,   tCopy,          255,
-                                           tVarOut,   tAlloc,         1,
-                                           tVarOut,   tDefineTilemap, 255,
-                                           tVarOut,   tCopyData,      255,
-                                           tVarOut,   tLoadData,      255,
-                                           tVarOut,   tSetBrightness, 1
-                                          };
+const uint8_t implementedFunctions[AMOUNT_OF_FUNCTIONS][4] = {
+// function / second byte / amount of arguments / allow arguments as numbers
+    {tNot,      0,              1,   1},
+    {tMin,      0,              2,   1},
+    {tMax,      0,              2,   1},
+    {tMean,     0,              2,   1},
+    {tSqrt,     0,              1,   1},
+    {tDet,      0,              255, 0},
+    {tSum,      0,              255, 0},
+    {tSin,      0,              1,   1},
+    {tCos,      0,              1,   1},
+    {tRand,     0,              0,   0},
+    {tAns,      0,              0,   0},
+    {tLParen,   0,              1,   0},
+    {tLBrace,   0,              1,   0},
+    {tLBrack,   0,              1,   0},
+    {tExtTok,   tRemainder,     2,   1},
+    {tExtTok,   tCheckTmr,      2,   0},
+    {tExtTok,   tStartTmr,      0,   0},
+    {t2ByteTok, tSubStrng,      3,   0},
+    {t2ByteTok, tLength,        1,   0},
+    {t2ByteTok, tRandInt,       2,   0},
+    {tVarOut,   tDefineSprite,  255, 0},
+    {tVarOut,   tData,          255, 0},
+    {tVarOut,   tCopy,          255, 0},
+    {tVarOut,   tAlloc,         1,   0},
+    {tVarOut,   tDefineTilemap, 255, 0},
+    {tVarOut,   tCopyData,      255, 0},
+    {tVarOut,   tLoadData,      3,   0},
+    {tVarOut,   tSetBrightness, 1,   0}
+};
 element_t outputStack[400];
 element_t stack[200];
 label_t labelStack[150];
@@ -515,9 +520,9 @@ noSquishing:
                 tok2 = _getc();
             }
             
-            for (a = 0; a < sizeof(implementedFunctions); a += 3) {
-                if (tok == implementedFunctions[a] && tok2 == implementedFunctions[a + 1]) {
-                    if (implementedFunctions[a + 2]) {
+            for (a = 0; a < AMOUNT_OF_FUNCTIONS; a ++) {
+                if (tok == implementedFunctions[a][0] && tok2 == implementedFunctions[a][1]) {
+                    if (implementedFunctions[a][2]) {
                         // We always have at least 1 argument
                         *++amountOfArgumentsStackPtr = 1;
                         stackCurr->type = TYPE_FUNCTION;
@@ -587,64 +592,61 @@ stackToOutputReturn2:
         }
         
         // Check if the types are number | number | ... | function (specific function or pointer)
-        if (loopIndex >= index && outputCurr->type == TYPE_FUNCTION && 
-                (uint8_t)outputCurr->operand != tDet &&
-                !((uint8_t)outputCurr->operand == tExtTok && (uint8_t)(outputCurr->operand >> 16) == tCheckTmr) &&
-                (uint8_t)outputCurr->operand != tLBrace &&
-                (uint8_t)outputCurr->operand != tSum &&
-                (uint8_t)outputCurr->operand != tVarOut &&
-                (uint8_t)outputCurr->operand != tRand &&
-                (uint8_t)outputCurr->operand != tGetKey &&
-                (uint8_t)outputCurr->operand != t2ByteTok) {
-            uint24_t outputPrevOperand = outputPrev->operand, outputPrevPrevOperand = outputPrevPrev->operand;
+        if (loopIndex >= index && outputCurr->type == TYPE_FUNCTION) {
+            uint8_t a, function = (uint8_t)outputCurr->operand, function2 = (uint8_t)(outputCurr->operand >> 16);
             
-            for (a = 1; a <= index; a++) {
-                if (((&outputPtr[loopIndex-a])->type & 0x7F) != TYPE_NUMBER) {
-                    goto DontDeleteFunction;
+            for (a = 0; a < AMOUNT_OF_FUNCTIONS; a++) {
+                if (function == implementedFunctions[a][0] && function2 == implementedFunctions[a][1] && implementedFunctions[a][3]) {
+                    uint24_t outputPrevOperand = outputPrev->operand, outputPrevPrevOperand = outputPrevPrev->operand;
+                    
+                    for (a = 1; a <= index; a++) {
+                        if (((&outputPtr[loopIndex-a])->type & 0x7F) != TYPE_NUMBER) {
+                            goto DontDeleteFunction;
+                        }
+                    }
+                    
+                    switch (function) {
+                        case tNot:
+                            temp = !outputPrevOperand;
+                            break;
+                        case tMin:
+                            temp = (outputPrevOperand < outputPrevPrevOperand) ? outputPrevOperand : outputPrevPrevOperand;
+                            break;
+                        case tMax:
+                            temp = (outputPrevOperand > outputPrevPrevOperand) ? outputPrevOperand : outputPrevPrevOperand;
+                            break;
+                        case tMean:
+                            // I can't simply add, and divide by 2, because then it *might* overflow in case that A + B > 0xFFFFFF
+                            temp = ((long)outputPrevOperand + (long)outputPrevPrevOperand) / 2;
+                            break;
+                        case tSqrt:
+                            temp = sqrt(outputPrevOperand);
+                            break;
+                        case tExtTok:
+                            if ((uint8_t)(outputCurr->operand >> 16) != tRemainder) {
+                                return E_ICE_ERROR;
+                            }
+                            temp = outputPrevOperand % outputPrevPrevOperand;
+                            break;
+                        case tSin:
+                            temp = 255*sin((double)outputPrevOperand * (2 * M_PI / 256));
+                            break;
+                        case tCos:
+                            temp = 255*cos((double)outputPrevOperand * (2 * M_PI / 256));
+                            break;
+                        default:
+                            return E_ICE_ERROR;
+                    }
+                    
+                    // And remove everything
+                    (&outputPtr[loopIndex - index])->operand = temp;
+                    memcpy(&outputPtr[loopIndex - index + 1], &outputPtr[loopIndex + 1], (outputElements - 1) * sizeof(element_t));
+                    outputElements -= index;
+                    loopIndex -= index - 1;
                 }
             }
-            
-            // The function has only numbers as argument, so remove them as well :)
-            switch ((uint8_t)outputCurr->operand) {
-                case tNot:
-                    temp = !outputPrevOperand;
-                    break;
-                case tMin:
-                    temp = (outputPrevOperand < outputPrevPrevOperand) ? outputPrevOperand : outputPrevPrevOperand;
-                    break;
-                case tMax:
-                    temp = (outputPrevOperand > outputPrevPrevOperand) ? outputPrevOperand : outputPrevPrevOperand;
-                    break;
-                case tMean:
-                    // I can't simply add, and divide by 2, because then it *might* overflow in case that A + B > 0xFFFFFF
-                    temp = ((long)outputPrevOperand + (long)outputPrevPrevOperand) / 2;
-                    break;
-                case tSqrt:
-                    temp = sqrt(outputPrevOperand);
-                    break;
-                case tExtTok:
-                    if ((uint8_t)(outputCurr->operand >> 16) != tRemainder) {
-                        return E_ICE_ERROR;
-                    }
-                    temp = outputPrevOperand % outputPrevPrevOperand;
-                    break;
-                case tSin:
-                    temp = 255*sin((double)outputPrevOperand * (2 * M_PI / 256));
-                    break;
-                case tCos:
-                    temp = 255*cos((double)outputPrevOperand * (2 * M_PI / 256));
-                    break;
-                default:
-                    return E_ICE_ERROR;
-            }
-            
-            // And remove everything
-            (&outputPtr[loopIndex - index])->operand = temp;
-            memcpy(&outputPtr[loopIndex - index + 1], &outputPtr[loopIndex + 1], (outputElements - 1) * sizeof(element_t));
-            outputElements -= index;
-            loopIndex -= index - 1;
-DontDeleteFunction:;
         }
+DontDeleteFunction:;
     }
     
     // Check if the expression is valid
@@ -680,7 +682,6 @@ stackToOutput:
         
         outputCurr->type = stackPrev->type;
         outputCurr->mask = stackPrev->mask;
-        
         outputCurr->operand = temp;
     }
     
@@ -865,6 +866,14 @@ uint8_t parsePostFixFromIndexToIndex(uint24_t startIndex, uint24_t endIndex) {
                     (&outputPtr[tempIndex])->type = TYPE_CHAIN_PUSH;
                     PushHLDE();
                     expr.outputRegister = REGISTER_HL;
+                }
+                
+                for (temp = 0; temp < AMOUNT_OF_FUNCTIONS; temp++) {
+                    if (implementedFunctions[temp][0] == (uint8_t)outputCurr->operand && implementedFunctions[temp][1] == function2) {
+                        if (amountOfArguments != implementedFunctions[temp][2] && implementedFunctions[temp][2] != 255) {
+                            return E_ARGUMENTS;
+                        }
+                    }
                 }
                 
                 if ((temp = parseFunction(loopIndex)) != VALID) {
@@ -2052,7 +2061,7 @@ uint8_t (*functions[256])(int) = {
     tokenWrongPlace,    //111
     tokenWrongPlace,    //112
     tokenWrongPlace,    //113
-    tokenUnimplemented, //114
+    parseExpression,    //114
     tokenUnimplemented, //115
     tokenUnimplemented, //116
     tokenUnimplemented, //117

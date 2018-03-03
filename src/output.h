@@ -20,6 +20,8 @@
 #define _HomeUp           0x020828
 #define _RunIndicOff      0x020848
 #define _ParseInp         0x020F00
+#define _RclAns           0x020F50
+#define _ConvOP1          0x020F70
 #define _DrawStatusBar    0x021A3C
 #define _os_GetCSC        0x021D3C
 #define _SetHLUTo0        0x021D8C

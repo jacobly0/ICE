@@ -198,6 +198,14 @@ uint8_t parseFunction(uint24_t index) {
         ResetAllRegs();
     }
     
+    // Ans
+    else if (function == tAns) {
+        CALL(_RclAns);
+        CALL(_ConvOP1);
+        ResetAllRegs();
+        expr.outputReturnRegister = REGISTER_DE;
+    }
+    
     // startTmr
     else if (function == tExtTok && function2 == tStartTmr) {
         CallRoutine(&ice.usedAlreadyTimer, &ice.TimerAddr, (uint8_t*)TimerData, SIZEOF_TIMER_DATA);
@@ -284,7 +292,7 @@ uint8_t parseFunction(uint24_t index) {
     
     // not(
     else if (function == tNot) {
-        if ((res = parseFunction1Arg(index, REGISTER_HL_DE, amountOfArguments)) != VALID) {
+        if ((res = parseFunction1Arg(index, REGISTER_HL_DE)) != VALID) {
             return res;
         }
         
@@ -334,7 +342,7 @@ uint8_t parseFunction(uint24_t index) {
     
     // sqrt(
     else if (function == tSqrt) {
-        if ((res = parseFunction1Arg(index, REGISTER_HL, amountOfArguments)) != VALID) {
+        if ((res = parseFunction1Arg(index, REGISTER_HL)) != VALID) {
             return res;
         }
         
@@ -347,7 +355,7 @@ uint8_t parseFunction(uint24_t index) {
     
     // sin(, cos(
     else if (function == tSin || function == tCos) {
-        if ((res = parseFunction1Arg(index, REGISTER_HL, amountOfArguments)) != VALID) {
+        if ((res = parseFunction1Arg(index, REGISTER_HL)) != VALID) {
             return res;
         }
         
@@ -373,7 +381,7 @@ uint8_t parseFunction(uint24_t index) {
     
     // min(, max(
     else if (function == tMin || function == tMax) {
-        if ((res = parseFunction2Args(index, REGISTER_DE, amountOfArguments, false)) != VALID) {
+        if ((res = parseFunction2Args(index, REGISTER_DE, false)) != VALID) {
             return res;
         }
         
@@ -390,7 +398,7 @@ uint8_t parseFunction(uint24_t index) {
     
     // mean(
     else if (function == tMean) {
-        if ((res = parseFunction2Args(index, REGISTER_DE, amountOfArguments, false)) != VALID) {
+        if ((res = parseFunction2Args(index, REGISTER_DE, false)) != VALID) {
             return res;
         }
         
@@ -424,7 +432,7 @@ uint8_t parseFunction(uint24_t index) {
             reg.HLValue = reg.AValue;
             reg.HLVariable = reg.AVariable;
         } else {
-            if ((res = parseFunction2Args(index, REGISTER_BC, amountOfArguments, true)) != VALID) {
+            if ((res = parseFunction2Args(index, REGISTER_BC, true)) != VALID) {
                 return res;
             }
             CALL(__idvrmu);
@@ -519,7 +527,7 @@ uint8_t parseFunction(uint24_t index) {
         }
         
         // Parse last 2 argument
-        if ((res = parseFunction2Args(index, REGISTER_BC, amountOfArguments - 1, true)) != VALID) {
+        if ((res = parseFunction2Args(index, REGISTER_BC, true)) != VALID) {
             return res;
         }
         
@@ -547,7 +555,7 @@ uint8_t parseFunction(uint24_t index) {
         if (outputPrevType == TYPE_STRING) {
             LD_HL_STRING(outputPrev->operand, TYPE_STRING);
         } else {
-            if ((res = parseFunction1Arg(index, REGISTER_HL_DE, amountOfArguments)) != VALID) {
+            if ((res = parseFunction1Arg(index, REGISTER_HL_DE)) != VALID) {
                 return res;
             }
             MaybeAToHL();
@@ -572,7 +580,7 @@ uint8_t parseFunction(uint24_t index) {
     
     // Alloc(
     else if (function == tVarOut && function2 == tAlloc) {
-        if ((res = parseFunction1Arg(index, REGISTER_HL, amountOfArguments)) != VALID) {
+        if ((res = parseFunction1Arg(index, REGISTER_HL)) != VALID) {
             return res;
         }
         
@@ -679,7 +687,7 @@ uint8_t parseFunction(uint24_t index) {
         * Returns: PTR to sprite (sprite)
         *****************************************************/
         
-        if (amountOfArguments != 3 || outputPrevPrevType != TYPE_NUMBER || outputPrevType != TYPE_NUMBER) {
+        if (outputPrevPrevType != TYPE_NUMBER || outputPrevType != TYPE_NUMBER) {
             return E_SYNTAX;
         }
         
@@ -917,7 +925,7 @@ uint8_t parseFunction(uint24_t index) {
     
     // SetBrightness
     else if (function == tVarOut && function2 == tSetBrightness) {
-        if ((res = parseFunction1Arg(index, REGISTER_HL, amountOfArguments)) != VALID) {
+        if ((res = parseFunction1Arg(index, REGISTER_HL)) != VALID) {
             return res;
         }
         
@@ -939,9 +947,6 @@ uint8_t parseFunction(uint24_t index) {
         * Returns: 1-, 2- or 3-byte value at address PTR
         *****************************************************/
         
-        if (amountOfArguments != 1) {
-            return E_ARGUMENTS;
-        }
         if (outputPrevType == TYPE_NUMBER || outputPrevType == TYPE_STRING || outputPrev->type == TYPE_OS_STRING) {
             if (outputPrevType == TYPE_STRING && outputPrevOperand != ice.tempStrings[TempString1] && outputPrevOperand != ice.tempStrings[TempString2]) {
                 ProgramPtrToOffsetStack();
@@ -1171,7 +1176,7 @@ uint8_t parseFunction(uint24_t index) {
     return VALID;
 }
 
-uint8_t parseFunction1Arg(uint24_t index, uint8_t outputRegister1, uint8_t amountOfArguments) {
+uint8_t parseFunction1Arg(uint24_t index, uint8_t outputRegister1) {
     element_t *outputPtr = (element_t*)outputStack, *outputPrev;
     uint24_t outputOperand;
     uint8_t outputPrevType;
@@ -1179,10 +1184,6 @@ uint8_t parseFunction1Arg(uint24_t index, uint8_t outputRegister1, uint8_t amoun
     outputPrev = &outputPtr[getIndexOffset(-2)];
     outputPrevType = outputPrev->type;
     outputOperand = outputPrev->operand;
-    
-    if (amountOfArguments != 1) {
-        return E_ARGUMENTS;
-    }
     
     if ((outputPrevType & 0x7F) == TYPE_NUMBER) {
         LD_HL_IMM(outputOperand);
@@ -1199,7 +1200,7 @@ uint8_t parseFunction1Arg(uint24_t index, uint8_t outputRegister1, uint8_t amoun
     return VALID;
 }
 
-uint8_t parseFunction2Args(uint24_t index, uint8_t outputReturnRegister, uint8_t amountOfArguments, bool orderDoesMatter) {
+uint8_t parseFunction2Args(uint24_t index, uint8_t outputReturnRegister, bool orderDoesMatter) {
     element_t *outputPtr = (element_t*)outputStack, *outputPrev, *outputPrevPrev;
     uint8_t outputPrevType, outputPrevPrevType;
     uint24_t outputPrevOperand, outputPrevPrevOperand;
@@ -1210,10 +1211,6 @@ uint8_t parseFunction2Args(uint24_t index, uint8_t outputReturnRegister, uint8_t
     outputPrevPrevType    = outputPrevPrev->type;
     outputPrevOperand     = outputPrev->operand;
     outputPrevPrevOperand = outputPrevPrev->operand;
-    
-    if (amountOfArguments != 2) {
-        return E_ARGUMENTS;
-    }
     
     if ((outputPrevPrevType & 0x7F) == TYPE_NUMBER) {
         if ((outputPrevType & 0x7F) == TYPE_NUMBER) {

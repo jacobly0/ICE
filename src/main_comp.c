@@ -52,7 +52,7 @@ int main(int argc, char **argv) {
 
     var_name = argv[1];
     if (argc != 2) {
-        fprintf(stderr, "Error: Missing program as input\n");
+        fprintf(stderr, "Error: invalid amount of arguments\n");
         exit(1);
     }
     
