@@ -33,6 +33,7 @@ void main(void) {
     sk_key_t key;
     void *search_pos;
     bool didCompile;
+    prog_t *outputPrgm;
     
     // Install hooks
     ti_CloseAll();
@@ -166,12 +167,55 @@ void main(void) {
     ice.LblPtr          = ice.LblStack;
     ice.GotoPtr         = ice.GotoStack;
     
-    // Pre-scan program (and subprograms) and find all the C functions
     preScanProgram();
+    
+    // Check for icon and description before putting the C functions in the output program
+    _getc();
+    outputPrgm = GetProgramName();
+    if (outputPrgm->errorCode != VALID) {
+        displayError(outputPrgm->errorCode);
+        goto stop;
+    }
+    strcpy(ice.outName, outputPrgm->prog);
+    
+    // Has icon
+    if ((uint8_t)_getc() == tii && (uint8_t)_getc() == tString) {
+        uint8_t b = 0;
+        
+        *ice.programPtr = OP_JP;
+        w24(ice.programPtr + 4, 0x101001);
+        ice.programPtr += 7;
+
+        // Get hexadecimal
+        do {
+            const uint8_t colorTable[16] = {255,24,224,0,248,36,227,97,9,19,230,255,181,107,106,74};    // Thanks Cesium :D
+            
+            if ((temp = IsHexadecimal(_getc())) == 16) {
+                displayError(E_INVALID_HEX);
+                goto stop;
+            }
+            *ice.programPtr++ = colorTable[temp];
+        } while (++b);
+        
+        if ((uint8_t)_getc() != tString || (uint8_t)_getc() != tEnter) {
+            displayError(E_SYNTAX);
+            goto stop;
+        }
+        
+        if ((uint8_t)_getc() == tii) {
+            grabString(&ice.programPtr, false);
+        }
+        
+        *ice.programPtr++ = 0;
+
+        // Write the right jp offset
+        w24(ice.programData + 1, ice.programPtr - ice.programData + PRGM_START);
+    }
+    
     if (prescan.hasGraphxFunctions) {
         uint8_t a;
         
-        memcpy(ice.programData, CheaderData, SIZEOF_CHEADER);
+        memcpy(ice.programPtr, CheaderData, SIZEOF_CHEADER);
         ice.programPtr += SIZEOF_CHEADER;
         for (a = 0; a < AMOUNT_OF_GRAPHX_FUNCTIONS; a++) {
             if (prescan.GraphxRoutinesStack[a]) {
@@ -180,7 +224,7 @@ void main(void) {
             }
         }
     } else if (prescan.hasFileiocFunctions) {
-        memcpy(ice.programData, CheaderData, SIZEOF_CHEADER - 9);
+        memcpy(ice.programPtr, CheaderData, SIZEOF_CHEADER - 9);
         ice.programPtr += SIZEOF_CHEADER - 9;
     }
     
@@ -197,10 +241,7 @@ void main(void) {
         }
     }
     
-    // Check strings
-    if (prescan.usedTempStrings) {
-        prescan.freeMemoryPtr = (prescan.tempStrings[1] = (prescan.tempStrings[0] = pixelShadow + 2000 * prescan.amountOfOSVarsUsed) + 2000) + 2000;
-    }
+    prescan.freeMemoryPtr = (prescan.tempStrings[1] = (prescan.tempStrings[0] = pixelShadow + 2000 * prescan.amountOfOSVarsUsed) + 2000) + 2000;
     
     // Cleanup code
     if (prescan.hasGraphxFunctions) {

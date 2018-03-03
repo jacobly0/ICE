@@ -74,9 +74,6 @@ typedef struct {
     ti_var_t inPrgm;                                        // Used for getting tokens
     ti_var_t outPrgm;                                       // Used for writing bytes
     
-    bool     gotName;                                       // Already got the output name
-    bool     gotIconDescription;                            // Already got the icon + description
-    bool     usedCodeAfterHeader;                           // An icon/description can't be placed after some code
     bool     lastTokenIsReturn;                             // Last token is a "Return", so we can omit our "ret" :)
     bool     modifiedIY;                                    // Some routines modify IY, and some routines needs it
     bool     inDispExpression;                              // Used for optimizing <variable>+<number> that it doesn't overwrite IY

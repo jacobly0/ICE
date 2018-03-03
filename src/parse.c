@@ -73,10 +73,6 @@ uint8_t parseProgram(void) {
 
     // Do things based on the token
     while ((token = _getc()) != EOF) {
-        if ((uint8_t)token != tii) {
-            ice.usedCodeAfterHeader = true;
-        }
-        
         ice.lastTokenIsReturn = false;
         ice.inDispExpression = false;
         ice.currentLine++;
@@ -918,118 +914,6 @@ uint8_t parsePostFixFromIndexToIndex(uint24_t startIndex, uint24_t endIndex) {
 }
 
 static uint8_t functionI(int token) {
-    const uint8_t colorTable[16] = {255,24,224,0,248,36,227,97,9,19,230,255,181,107,106,74};    // Thanks Cesium :D
-
-    // Only get the output name, icon or description at the top of your program
-    if (!ice.usedCodeAfterHeader) {
-        uint24_t offset;
-        
-        // Get the output name
-        if (!ice.gotName) {
-            uint8_t a = 0;
-            
-            while ((token = _getc()) != EOF && (uint8_t)token != tEnter && a < 9) {
-                ice.outName[a++] = token;
-            }
-            
-            if (!a || a == 9) {
-                return E_INVALID_PROG;
-            }
-            
-            ice.gotName = true;
-            
-            return VALID;
-        }
-
-        // Get the icon and description
-        else if (!ice.gotIconDescription) {
-            uint8_t b = 0;
-            
-            ice.programSize = ice.programPtr - ice.programData;
-            
-            // Move header to take place for the icon and description, setup pointer
-            memcpy(ice.programData + 600, ice.programData, ice.programSize);
-            ice.programPtr = ice.programData;
-            
-            // Insert "jp <random>" and Cesium header
-            *ice.programPtr = OP_JP;
-            w24(ice.programPtr + 4, 0x101001);
-            ice.programPtr += 7;
-            
-            // Icon should start with a "
-            if ((uint8_t)_getc() != tString) {
-                return E_WRONG_ICON;
-            }
-
-            // Get hexadecimal
-            do {
-                uint8_t tok;
-                
-                if ((tok = IsHexadecimal(_getc())) == 16) {
-                    return E_INVALID_HEX;
-                }
-                *ice.programPtr++ = colorTable[tok];
-            } while (++b);
-            
-            // Move on to the description
-            if ((uint8_t)(token = _getc()) == tString) {
-                token = _getc();
-            }
-
-            if (token != EOF) {
-                if ((uint8_t)token != tEnter) {
-                    return E_SYNTAX;
-                }
-                
-                // Check if there is a description
-                if ((uint8_t)(token = _getc()) == tii) {
-                    grabString(&ice.programPtr, false);
-                } else if (token != EOF) {
-                    SeekMinus1();
-                }
-            }
-            
-            // Don't increment the pointer for now, we will do that later :)
-            *ice.programPtr = 0;
-
-            // Get the correct offset
-            offset = ice.programPtr - ice.programData + 1;
-
-            // Write the right jp offset
-            w24(ice.programData + 1, offset + PRGM_START);
-            
-            // Copy header back
-            memcpy(ice.programPtr + 1, ice.programData + 600, ice.programSize);
-            
-            // If C functions were detected, update the pointers
-            // Magic numbers everywhere! :D
-            if (ice.programSize > 10) {
-                w24(ice.programPtr + 2, r24(ice.programPtr + 2) + offset);
-                w24(ice.programPtr + 53, r24(ice.programPtr + 53) + offset);
-                w24(ice.programPtr + 66, r24(ice.programPtr + 66) + offset);
-                if (ice.usesRandRoutine) {
-                    ice.dataOffsetStack[ice.dataOffsetElements-1] = (uint24_t*)((uint8_t*)ice.dataOffsetStack[ice.dataOffsetElements-1] + offset);
-                }
-                if (ice.amountOfGraphxRoutinesUsed || ice.amountOfFileiocRoutinesUsed) {
-                    uint8_t *writeAddr = ice.programPtr + ice.programSize - 16 - (ice.usesRandRoutine ? 8 : 0);
-                    
-                    w24(writeAddr, r24(writeAddr) + offset);
-                }
-            }
-            ice.programPtr += ice.programSize + 1;
-            ice.CBaseAddress += offset;
-            ice.gotIconDescription = true;
-            
-            return VALID;
-        }
-        
-        // Don't return and treat as a comment
-        else {
-            ice.usedCodeAfterHeader = true;
-        }
-    }
-
-    // Treat it as a comment
     skipLine();
 
     return VALID;
