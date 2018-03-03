@@ -166,8 +166,7 @@ void main(void) {
     ice.LblPtr          = ice.LblStack;
     ice.GotoPtr         = ice.GotoStack;
     
-    // Pre-scan program (and subprograms) and find all the GRAPHX routines
-    dbg_Debugger();
+    // Pre-scan program (and subprograms) and find all the C functions
     preScanProgram();
     if (prescan.hasGraphxFunctions) {
         uint8_t a;
@@ -196,6 +195,13 @@ void main(void) {
                 JP(a * 3);
             }
         }
+    }
+    
+    // Check strings
+    if (prescan.usedTempStrings) {
+        prescan.tempStrings[0] = pixelShadow + 2000 * prescan.amountOfOSVarsUsed;
+        prescan.tempStrings[1] = pixelShadow + 2000 + 2000 * prescan.amountOfOSVarsUsed;
+        prescan.freeMemoryPtr = pixelShadow + 4000 + 2000 * prescan.amountOfOSVarsUsed;
     }
     
     LD_IX_IMM(IX_VARIABLES);
@@ -374,6 +380,7 @@ void preScanProgram(void) {
         }
         
         if (tok == tString) {
+            prescan.usedTempStrings = true;
             inString = !inString;
         } else if (tok == tStore) {
             inString = false;
@@ -397,13 +404,16 @@ void preScanProgram(void) {
                 prescan.amountOfInputRoutines++;
             } else if (tok == tPause) {
                 prescan.amountOfPauseRoutines++;
+            } else if (tok == tSin || tok == tCos) {
+                prescan.amountOfSinCosRoutines++;
             } else if (tok == tVarLst) {
                 if (!prescan.OSLists[token = _getc()]) {
                     prescan.OSLists[token] = pixelShadow + 2000 * (prescan.amountOfOSVarsUsed++);
                 }
             } else if (tok == tVarStrng) {
-                if (!ice.OSStrings[token = _getc()]) {
-                    ice.OSStrings[token] = pixelShadow + 2000 * (prescan.amountOfOSVarsUsed++);
+                prescan.usedTempStrings = true;
+                if (!prescan.OSStrings[token = _getc()]) {
+                    prescan.OSStrings[token] = pixelShadow + 2000 * (prescan.amountOfOSVarsUsed++);
                 }
             } else if (tok == t2ByteTok) {
                 // AsmComp(
@@ -433,20 +443,29 @@ void preScanProgram(void) {
                 
                 // Get the det( command
                 if (tok2 < t0 || tok2 > t9) {
-                    tok = tok1 - t0;
+                    token = tok1 - t0;
                 } else {
-                    tok = (tok1 - t0) * 10 + (tok2 - t0);
+                    token = (tok1 - t0) * 10 + (tok2 - t0);
                 }
                 
                 if (tok == tDet) {
                     prescan.hasGraphxFunctions = true;
-                    if (!prescan.GraphxRoutinesStack[tok]) {
-                        prescan.GraphxRoutinesStack[tok] = 1;
+                    if (!token) {
+                        prescan.hasGraphxStart = true;
+                    }
+                    if (token == 1) {
+                        prescan.hasGraphxEnd = true;
+                    }
+                    if (!prescan.GraphxRoutinesStack[token]) {
+                        prescan.GraphxRoutinesStack[token] = 1;
                     }
                 } else {
                     prescan.hasFileiocFunctions = true;
-                    if (!prescan.FileiocRoutinesStack[tok]) {
-                        prescan.FileiocRoutinesStack[tok] = 1;
+                    if (!token) {
+                        prescan.hasFileiocStart = true;
+                    }
+                    if (!prescan.FileiocRoutinesStack[token]) {
+                        prescan.FileiocRoutinesStack[token] = 1;
                     }
                 }
             }
