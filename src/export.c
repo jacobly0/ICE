@@ -5,7 +5,7 @@
 #include <string.h>
 #include <stdlib.h>
 
-#if defined(COMPUTER_ICE) || defined(SC)
+#if defined(COMPUTER_ICE) || defined(__EMSCRIPTEN__)
 
 #define m8(x)  ((x)&255)
 #define mr8(x) (((x)>>8)&255)
@@ -36,18 +36,18 @@ void export_program(const char *name, uint8_t *data, size_t size) {
     unsigned int data_size;
     unsigned int i,checksum;
     FILE *out_file;
-    
+
     // gather structure information
     uint8_t *output = calloc(0x10100, sizeof(uint8_t));
     unsigned int offset = size + 0x4A;
-    
+
     // Write header bytes
     memcpy(output, header, sizeof header);
-    
+
     // write name
     memcpy(&output[0x3C], name, strlen(name));
     memcpy(&output[0x4A], data, size);
-    
+
     // write config bytes
     output[0x37] = 0x0D;
     output[0x3B] = 0x06;
@@ -82,22 +82,22 @@ void export_program(const char *name, uint8_t *data, size_t size) {
 
     output[offset++] = m8(checksum);
     output[offset++] = mr8(checksum);
-    
+
 #ifdef COMPUTER_ICE
 
     // write the buffer to the file
     char *file_name = str_dupcat(name, ".8xp");
-    
+
     if (!(out_file = fopen(file_name, "wb"))) {
         fprintf(stderr, "Unable to open output program file.");
         exit(1);
     }
-    
+
     fwrite(output, 1, offset, out_file);
-    
+
     // close the file
     fclose(out_file);
-    
+
     // free the memory
     free(file_name);
 #else

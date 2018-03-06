@@ -6,7 +6,7 @@
 #include <string.h>
 #include <stdlib.h>
 
-#ifdef SC
+#ifdef __EMSCRIPTEN__
 
 #include <emscripten.h>
 
@@ -19,26 +19,26 @@ bool ice_open(char tempName[9]) {
     bool ret = EM_ASM_({
         return ice_open_js($0, $1, $2, $3);
     }, tempName, ice.progInputData, &ice.programLength, ice.progInputPtr);
-    
+
     if (ret) {
         ice.progInputPtr = 0;
     }
-    
+
     return ret;
 }
 
 // This function is called first when clicking on 'Compile'
 void ice_open_first_prog(void) {
     char *fake_argv[0];
-    
+
     memset(&ice, 0, sizeof(ice_t));
     memset(&reg, 0, sizeof(reg_t));
     EM_ASM_({
         ice_open_first_prog_js($0, $1);
     }, ice.progInputData, &ice.programLength);
-    
+
     ice.progInputPtr = 0;
-    
+
     // Call the main function to start compiling!
     main(0, fake_argv);
 }

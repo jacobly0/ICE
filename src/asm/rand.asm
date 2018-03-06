@@ -62,9 +62,9 @@ _RandData:
 	ld	c, (iy+2*4+3)
 	add	hl, de
 	ret
-	
+
 __state:
-	db	10h, 0Fh, 0Eh, 0Dh
-	db	0Ch, 0Bh, 0Ah, 09h
-	db	08h, 07h, 06h, 05h
-	db	04h, 03h, 02h, 01h
+	.db	10h, 0Fh, 0Eh, 0Dh
+	.db	0Ch, 0Bh, 0Ah, 09h
+	.db	08h, 07h, 06h, 05h
+	.db	04h, 03h, 02h, 01h
