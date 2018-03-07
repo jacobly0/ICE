@@ -208,6 +208,8 @@ void main(void) {
         // Write the right jp offset
         w24(ice.programData + 1, ice.programPtr - ice.programData + PRGM_START);
     }
+    
+    _rewind(ice.inPrgm);
 
     if (prescan.hasGraphxFunctions) {
         uint8_t a;
