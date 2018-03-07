@@ -3,7 +3,11 @@
 
 #include <stdbool.h>
 #include <stdint.h>
+#ifdef __EMSCRIPTEN__
+#include "tice.h"
+#else
 #include <tice.h>
+#endif
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>

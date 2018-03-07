@@ -41,8 +41,9 @@ uint32_t r24(void *x) {
 }
 
 int main(int argc, char **argv) {
-    uint8_t res;
+    uint8_t res, temp;
     uint24_t programDataSize, offset, totalSize;
+    prog_t *outputPrgm;
 
     ice.programData    = malloc(0xFFFF);
     ice.programPtr     = ice.programData + SIZEOF_CHEADER;
