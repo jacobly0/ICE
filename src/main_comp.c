@@ -22,7 +22,7 @@ extern label_t gotoStack[150];
 
 #define INCBIN_PREFIX
 #include "incbin.h"
-INCBIN(SRand, "src/asm/rand.bin");
+INCBIN(SRand, "src/asm/srand.bin");
 INCBIN(Cheader, "src/asm/cheader.bin");
 INCBIN(Fileiocheader, "src/asm/fileiocheader.bin");
 

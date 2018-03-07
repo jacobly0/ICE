@@ -18,7 +18,7 @@ reg_t reg;
 extern label_t labelStack[150];
 extern label_t gotoStack[150];
 extern const uint8_t CheaderData[];
-extern const uint8_t SRandData[];
+extern const uint8_t SrandData[];
 extern const uint8_t FileiocheaderData[];
 const uint8_t colorTable[16] = {255,24,224,0,248,36,227,97,9,19,230,255,181,107,106,74};    // Thanks Cesium :D
 
@@ -130,7 +130,7 @@ int main(int argc, char **argv) {
     if (ice.usesRandRoutine) {
         ice.programDataPtr -= SIZEOF_RAND_DATA;
         ice.randAddr = (uint24_t)ice.programDataPtr;
-        memcpy(ice.programDataPtr, SRandData, SIZEOF_RAND_DATA);
+        memcpy(ice.programDataPtr, SrandData, SIZEOF_RAND_DATA);
         ice.dataOffsetStack[ice.dataOffsetElements++] = (uint24_t*)(ice.randAddr + 2);
         w24((uint8_t*)(ice.randAddr + 2), ice.randAddr + 102);
         ice.dataOffsetStack[ice.dataOffsetElements++] = (uint24_t*)(ice.randAddr + 6);
