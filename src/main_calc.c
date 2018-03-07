@@ -29,7 +29,7 @@ void main(void) {
     uint8_t selectedProgram, amountOfPrograms, res = VALID, temp;
     uint24_t programDataSize, offset, totalSize;
     const char ICEheader[] = {tii, 0};
-    char buf[30], *temp_name = "", *var_name = "";
+    char buf[30], *temp_name = "", var_name[9];
     sk_key_t key;
     void *search_pos;
     bool didCompile;
@@ -82,7 +82,7 @@ void main(void) {
             }
 
             // Save the program name
-            inputPrograms[selectedProgram] = malloc(sizeof(char*));
+            inputPrograms[selectedProgram] = malloc(9);
             strcpy(inputPrograms[selectedProgram++], temp_name);
         }
     }
@@ -168,6 +168,7 @@ void main(void) {
     ice.GotoPtr         = ice.GotoStack;
 
     // Check for icon and description before putting the C functions in the output program
+    preScanProgram();
     _getc();
     outputPrgm = GetProgramName();
     if (outputPrgm->errorCode != VALID) {
@@ -207,8 +208,6 @@ void main(void) {
         // Write the right jp offset
         w24(ice.programData + 1, ice.programPtr - ice.programData + PRGM_START);
     }
-
-    preScanProgram();
 
     if (prescan.hasGraphxFunctions) {
         uint8_t a;

@@ -75,6 +75,7 @@ int main(int argc, char **argv) {
     ice.GotoPtr         = ice.GotoStack;
 
     // Check for icon and description before putting the C functions in the output program
+    preScanProgram();
     _getc();
     outputPrgm = GetProgramName();
     if (outputPrgm->errorCode != VALID) {
@@ -114,8 +115,6 @@ int main(int argc, char **argv) {
         // Write the right jp offset
         w24(ice.programData + 1, ice.programPtr - ice.programData + PRGM_START);
     }
-
-    preScanProgram();
 
     if (prescan.hasGraphxFunctions) {
         uint8_t a;

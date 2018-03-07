@@ -1,6 +1,6 @@
 #!/bin/bash
 # By Peter PT_ Tillema
-make
+make debug
 make -f makefile.computer
 cd src/asm
 for f in *.bin
