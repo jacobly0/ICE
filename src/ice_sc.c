@@ -13,11 +13,12 @@
 uint24_t tempProgInputPtr;
 ice_t ice;
 reg_t reg;
+prescan_t prescan;
 
 bool ice_open(char tempName[9]) {
     // Load the data and reset the pointer
     bool ret = EM_ASM_({
-        return ice_open_js($0, $1, $2, $3);
+        return compiler.openProg($0, $1, $2, $3);
     }, tempName, ice.progInputData, &ice.programLength, ice.progInputPtr);
 
     if (ret) {
@@ -33,8 +34,9 @@ void ice_open_first_prog(void) {
 
     memset(&ice, 0, sizeof(ice_t));
     memset(&reg, 0, sizeof(reg_t));
+    memset(&prescan, 0, sizeof(prescan_t));
     EM_ASM_({
-        ice_open_first_prog_js($0, $1);
+        compiler.openFirstProg($0, $1);
     }, ice.progInputData, &ice.programLength);
 
     ice.progInputPtr = 0;
@@ -45,19 +47,19 @@ void ice_open_first_prog(void) {
 
 void ice_close(void) {
     EM_ASM_({
-        ice_close_js($0, $1, $2);
+        compiler.closeProg($0, $1, $2);
     }, ice.progInputData, &ice.programLength, &ice.progInputPtr);
 }
 
 void ice_error(char *error, uint24_t currentLine) {
     EM_ASM_({
-        ice_display_error($0, $1);
+        compiler.error($0, $1);
     }, error, currentLine);
 }
 
 void ice_export(uint8_t *outputPtr, uint24_t size) {
     EM_ASM_({
-        ice_export_program($0, $1, $2);
+        compiler.exportProgram($0, $1, $2);
     }, ice.outName, outputPtr, size);
 }
 
