@@ -1,6 +1,5 @@
 bin
 obj
-src/data.c
 ice
 *.a1
 *.bin
