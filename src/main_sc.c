@@ -44,12 +44,13 @@ int main(int argc, char **argv) {
     uint8_t res, temp;
     uint24_t programDataSize, offset, totalSize;
     prog_t *outputPrgm;
-
-    ice.programData    = malloc(0xFFFF);
-    ice.programPtr     = ice.programData;
-    ice.programDataPtr = ice.programDataData;
-    ice.LblPtr         = ice.LblStack;
-    ice.GotoPtr        = ice.GotoStack;
+    
+    ice.programData     = malloc(0xFFFF + 0x100);
+    ice.programPtr      = ice.programData;
+    ice.programDataData = ice.programData + 0xFFFF;
+    ice.programDataPtr  = ice.programDataData;
+    ice.LblPtr          = ice.LblStack;
+    ice.GotoPtr         = ice.GotoStack;
 
     // Check for icon and description before putting the C functions in the output program
     preScanProgram();
