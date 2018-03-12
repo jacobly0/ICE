@@ -23,6 +23,8 @@ bool ice_open(char tempName[9]) {
 
     if (ret) {
         ice.progInputPtr = 0;
+    } else {
+        ice_error(errors[E_PROG_NOT_FOUND], ice.currentLine);
     }
 
     return ret;
