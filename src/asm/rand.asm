@@ -1,19 +1,6 @@
 .assume adl = 1
 segment data
 .def _RandData
-.def _SRandData
-
-_SRandData:
-	xor	a, a
-	ld	(0), hl
-	ld	hl, 0
-	ld	(hl), a
-	ld	b, 12
-__setstateloop:
-	inc	hl
-	ld	(hl), b
-	djnz	__setstateloop
-	ret
 
 _RandData:
 	ld	iy, 0
@@ -62,9 +49,9 @@ _RandData:
 	ld	c, (iy+2*4+3)
 	add	hl, de
 	ret
-	
+
 __state:
-	db	10h, 0Fh, 0Eh, 0Dh
-	db	0Ch, 0Bh, 0Ah, 09h
-	db	08h, 07h, 06h, 05h
-	db	04h, 03h, 02h, 01h
+	.db	10h, 0Fh, 0Eh, 0Dh
+	.db	0Ch, 0Bh, 0Ah, 09h
+	.db	08h, 07h, 06h, 05h
+	.db	04h, 03h, 02h, 01h

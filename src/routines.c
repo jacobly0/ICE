@@ -1,7 +1,7 @@
 #include "defines.h"
+#include "main.h"
 #include "routines.h"
 
-#include "main.h"
 #include "functions.h"
 #include "errors.h"
 #include "stack.h"
@@ -15,6 +15,144 @@
 #define LB_H 10
 
 extern variable_t variableStack[85];
+prescan_t prescan;
+
+void preScanProgram(void) {
+    bool inString = false, afterNewLine = true;
+    int token;
+
+    _rewind(ice.inPrgm);
+
+    // Scan the entire program
+    while ((token = _getc()) != EOF) {
+        uint8_t tok = (uint8_t)token;
+
+        if (afterNewLine) {
+            afterNewLine = false;
+            if (tok == tii) {
+                skipLine();
+            } else if (tok == tLbl) {
+                prescan.amountOfLbls++;
+            } else if (tok == tGoto) {
+                prescan.amountOfGotos++;
+            }
+        }
+
+        if (tok == tString) {
+            prescan.usedTempStrings = true;
+            inString = !inString;
+        } else if (tok == tStore) {
+            inString = false;
+        }
+
+        if (!inString) {
+            if (tok == tEnter || tok == tColon) {
+                inString = false;
+                afterNewLine = 2;
+            } else if (tok == tStore) {
+                inString = false;
+            } else if (tok == tRand) {
+                prescan.amountOfRandRoutines++;
+                prescan.modifiedIY = true;
+            } else if (tok == tSqrt) {
+                prescan.amountOfSqrtRoutines++;
+                prescan.modifiedIY = true;
+            } else if (tok == tMean) {
+                prescan.amountOfMeanRoutines++;
+            } else if (tok == tInput) {
+                prescan.amountOfInputRoutines++;
+            } else if (tok == tPause) {
+                prescan.amountOfPauseRoutines++;
+            } else if (tok == tSin || tok == tCos) {
+                prescan.amountOfSinCosRoutines++;
+            } else if (tok == tVarLst) {
+                if (!prescan.OSLists[token = _getc()]) {
+                    prescan.OSLists[token] = pixelShadow + 2000 * (prescan.amountOfOSVarsUsed++);
+                }
+            } else if (tok == tVarStrng) {
+                prescan.usedTempStrings = true;
+                if (!prescan.OSStrings[token = _getc()]) {
+                    prescan.OSStrings[token] = pixelShadow + 2000 * (prescan.amountOfOSVarsUsed++);
+                }
+            } else if (tok == t2ByteTok) {
+                // AsmComp(
+                if ((tok = (uint8_t)_getc()) == tAsmComp) {
+                    ti_var_t tempProg = ice.inPrgm;
+                    prog_t *newProg = GetProgramName();
+
+                    if ((ice.inPrgm = _open(newProg->prog))) {
+                        preScanProgram();
+                    }
+                    _close(ice.inPrgm);
+                    ice.inPrgm = tempProg;
+                } else if (tok == tRandInt) {
+                    prescan.amountOfRandRoutines++;
+                    prescan.modifiedIY = true;
+                }
+            } else if (tok == tDet || tok == tSum) {
+                uint8_t tok1 = _getc();
+                uint8_t tok2 = _getc();
+
+                prescan.modifiedIY = true;
+
+                // Invalid det( command
+                if (tok1 < t0 || tok1 > t9) {
+                    break;
+                }
+
+                // Get the det( command
+                if (tok2 < t0 || tok2 > t9) {
+                    token = tok1 - t0;
+                } else {
+                    token = (tok1 - t0) * 10 + (tok2 - t0);
+                }
+
+                if (tok == tDet) {
+                    prescan.hasGraphxFunctions = true;
+                    if (!token) {
+                        prescan.hasGraphxStart = true;
+                    }
+                    if (token == 1) {
+                        prescan.hasGraphxEnd = true;
+                    }
+                    if (!prescan.GraphxRoutinesStack[token]) {
+                        prescan.GraphxRoutinesStack[token] = 1;
+                    }
+                } else {
+                    prescan.hasFileiocFunctions = true;
+                    if (!token) {
+                        prescan.hasFileiocStart = true;
+                    }
+                    if (!prescan.FileiocRoutinesStack[token]) {
+                        prescan.FileiocRoutinesStack[token] = 1;
+                    }
+                }
+            }
+        }
+    }
+
+    _rewind(ice.inPrgm);
+}
+
+prog_t *GetProgramName(void) {
+    prog_t *ret;
+    uint8_t a = 0;
+    int token;
+
+    ret = malloc(sizeof(prog_t));
+    ret->errorCode = VALID;
+
+    while ((token = _getc()) != EOF && (uint8_t)token != tEnter) {
+        if (a == 8) {
+            ret->errorCode = E_INVALID_PROG;
+            return ret;
+        }
+        ret->prog[a++] = (uint8_t)token;
+    }
+    ret->prog[a] = 0;
+
+    return ret;
+}
 
 void ProgramPtrToOffsetStack(void) {
     ice.dataOffsetStack[ice.dataOffsetElements++] = (uint24_t*)(ice.programPtr + 1);
@@ -61,9 +199,9 @@ void ClearAnsFlags(void) {
 
 void ChangeRegValue(uint24_t inValue, uint24_t outValue, uint8_t opcodes[7]) {
     uint8_t a = 0;
-    
+
     expr.SizeOfOutputNumber = 0;
-    
+
     if (reg.allowedToOptimize) {
         if (outValue - inValue < 5) {
             for (a = 0; a < (uint8_t)(outValue - inValue); a++) {
@@ -118,7 +256,7 @@ void LoadRegValue(uint8_t reg2, uint24_t val) {
     if (reg2 == REGISTER_HL) {
         if (reg.HLIsNumber) {
             uint8_t opcodes[7] = {OP_INC_HL, OP_DEC_HL, OP_INC_H, OP_DEC_H, OP_LD_L, OP_LD_H, OP_LD_HL};
-            
+
             ChangeRegValue(reg.HLValue, val, opcodes);
         } else if (val) {
             output(uint8_t, OP_LD_HL);
@@ -135,7 +273,7 @@ void LoadRegValue(uint8_t reg2, uint24_t val) {
     } else if (reg2 == REGISTER_DE) {
         if (reg.DEIsNumber) {
             uint8_t opcodes[7] = {OP_INC_DE, OP_DEC_DE, OP_INC_D, OP_DEC_D, OP_LD_E, OP_LD_D, OP_LD_DE};
-            
+
             ChangeRegValue(reg.DEValue, val, opcodes);
         } else {
             output(uint8_t, OP_LD_DE);
@@ -209,14 +347,14 @@ void ResetReg(uint8_t reg2) {
 void RegChangeHLDE(void) {
     uint8_t  temp8;
     uint24_t temp24;
-    
+
     temp8 = reg.HLIsNumber;
     reg.HLIsNumber = reg.DEIsNumber;
     reg.DEIsNumber = temp8;
     temp24 = reg.HLValue;
     reg.HLValue = reg.DEValue;
     reg.DEValue = temp24;
-    
+
     temp8 = reg.HLIsVariable;
     reg.HLIsVariable = reg.DEIsVariable;
     reg.DEIsVariable = temp8;
@@ -242,12 +380,12 @@ void SeekMinus1(void) {
 }
 
 void displayMessageLineScroll(char *string) {
-#if !defined(COMPUTER_ICE) && !defined(SC)
+#if !defined(COMPUTER_ICE) && !defined(__EMSCRIPTEN__)
     char buf[30];
     char c;
-    
+
     gfx_SetTextXY(1, gfx_GetTextY());
-    
+
     // Display the string
     while(c = *string++) {
         if (gfx_GetTextY() > 190) {
@@ -287,7 +425,7 @@ void PushHLDE(void) {
 
 uint8_t IsHexadecimal(int token) {
     uint8_t tok = token;
-    
+
     if (tok >= t0 && tok <= t9) {
         return tok - t0;
     } else if (tok >= tA && tok <= tF) {
@@ -299,7 +437,7 @@ uint8_t IsHexadecimal(int token) {
 
 bool CheckEOL(void) {
     int token;
-    
+
     if ((token = _getc()) == EOF || (uint8_t)token == tEnter) {
         return true;
     }
@@ -309,7 +447,7 @@ bool CheckEOL(void) {
 void CallRoutine(bool *routineBool, uint24_t *routineAddress, const uint8_t *routineData, uint8_t routineLength) {
     // Store the pointer to the call to the stack, to replace later
     ProgramPtrToOffsetStack();
-    
+
     // We need to add the routine to the data section
     if (!*routineBool) {
         ice.programDataPtr -= routineLength;
@@ -317,7 +455,7 @@ void CallRoutine(bool *routineBool, uint24_t *routineAddress, const uint8_t *rou
         memcpy(ice.programDataPtr, routineData, routineLength);
         *routineBool = true;
     }
-    
+
     CALL(*routineAddress);
 }
 
@@ -325,7 +463,7 @@ uint8_t GetVariableOffset(uint8_t tok) {
     char variableName[21] = {0};
     variable_t *variableNew;
     uint8_t a = 1, b;
-    
+
     variableName[0] = tok;
     while ((tok = _getc()) >= tA && tok <= tTheta) {
         variableName[a++] = tok;
@@ -334,22 +472,22 @@ uint8_t GetVariableOffset(uint8_t tok) {
     if (tok != 0xFF) {
         SeekMinus1();
     }
-    
+
     // This variable already exists
     for (b = 0; b < ice.amountOfVariablesUsed; b++) {
         if (!strcmp(variableName, (&variableStack[b])->name)) {
             return (&variableStack[b])->offset;
         }
     }
-    
+
     // Create new variable
     variableNew = &variableStack[ice.amountOfVariablesUsed];
     memcpy(variableNew->name, variableName, a + 1);
-    
+
     return variableNew->offset = ice.amountOfVariablesUsed++ * 3 - 128;
 }
 
-#if !defined(COMPUTER_ICE) && !defined(SC)
+#if !defined(COMPUTER_ICE) && !defined(__EMSCRIPTEN__)
 
 void displayLoadingBarFrame(void) {
     // Display a fancy loading bar during compiling ;)
@@ -371,52 +509,52 @@ int getNextToken(void) {
 int grabString(uint8_t **outputPtr, bool stopAtStoreAndString) {
     void *dataPtr = ti_GetDataPtr(ice.inPrgm);
     uint24_t token;
-    
+
     while ((token = _getc()) != EOF && !(stopAtStoreAndString && ((uint8_t)token == tString || (uint8_t)token == tStore)) && (uint8_t)token != tEnter) {
         uint24_t strLength, a;
         const char *dataString;
         uint8_t tokSize;
-        
+
         // Get the token in characters, and copy to the output
         dataString = ti_GetTokenString(&dataPtr, &tokSize, &strLength);
         memcpy(*outputPtr, dataString, strLength);
-        
+
         for (a = 0; a < strLength; a++) {
             uint8_t char2 = *(*outputPtr + a);
-            
+
             // Differences in TI-ASCII and ASCII set, C functions expect the normal ASCII set
             // There are no 4sqrt( and theta symbol in the first 128 characters of the ASCII set
             if (char2 == 0x24 || char2 == 0x5B) {
                 char2 = 0;
             }
-            
+
             // $ = 0x24
             if (char2 == 0xF2) {
                 char2 = 0x24;
             }
-            
+
             // [ = 0x5B
             if (char2 == 0xC1) {
                 char2 = 0x5B;
             }
-            
+
             // All the first 32 and last 128 characters are different
             if (char2 < 32 || char2 > 127) {
                 displayError(W_WRONG_CHAR);
                 char2 = 0;
             }
-            
+
             *(*outputPtr + a) = char2;
         }
-        
+
         *outputPtr += strLength;
-        
+
         // If it's a 2-byte token, we also need to get the second byte of it
         if (tokSize == 2) {
             _getc();
         }
     }
-    
+
     return token;
 }
 
@@ -431,7 +569,7 @@ void printButton(uint24_t xPos) {
 }
 
 #else
-    
+
 const char *tokenStrings[] = {
     "►DMS",
 	"►Dec",
@@ -1224,19 +1362,19 @@ const char *tokenStrings[] = {
 	"toString(",
 	"eval("
 };
-    
+
 int grabString(uint8_t **outputPtr, bool stopAtStoreAndString) {
     char tempString[16];
     uint24_t output, a;
-    
+
     while (1) {
         int token = _getc();
         uint8_t tok = token;
-        
+
         if (tok == tEnter || token == EOF || (stopAtStoreAndString && (tok == tStore || tok == tString))) {
             return token;
         }
-        
+
         if (tok == 0x5C) {
             output = 255 + _getc();
         } else if (tok == 0x5D) {
@@ -1264,30 +1402,30 @@ int grabString(uint8_t **outputPtr, bool stopAtStoreAndString) {
         } else {
             output = token - 1;
         }
-        
+
         strcpy(tempString, tokenStrings[output]);
-        
+
         for (a = 0; a < 16; a++) {
             uint8_t char2 = tempString[a];
-            
+
             if (!char2) {
                 break;
             }
-            
+
             // No weird characters
             if (char2 < 32 || char2 > 127) {
                 displayError(W_WRONG_CHAR);
                 char2 = 0;
             }
-            
+
             *(*outputPtr)++ = char2;
         }
     }
 }
 
-    
+
 #ifdef COMPUTER_ICE
-    
+
 int getNextToken(void) {
     if ((uint24_t)_tell(ice.inPrgm) < ice.programLength - 2) {
         return fgetc(ice.inPrgm);
@@ -1296,14 +1434,14 @@ int getNextToken(void) {
 }
 
 #else
-    
+
 int getNextToken(void) {
     if (_tell(ice.inPrgm) < ice.programLength) {
         return ice.progInputData[ice.progInputPtr++];
     }
     return EOF;
 }
-    
+
 #endif
 
 #endif

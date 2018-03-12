@@ -17,7 +17,7 @@ INCBIN(Or, "src/asm/or.bin");
 INCBIN(Xor, "src/asm/xor.bin");
 #endif
 
-#ifdef SC
+#ifdef __EMSCRIPTEN__
 extern const uint8_t AndData[];
 extern const uint8_t OrData[];
 extern const uint8_t XorData[];
@@ -39,7 +39,7 @@ static uint24_t entry2_operand;
 static uint8_t oper;
 static bool canOptimizeConcatenateStrings;
 
-#if defined(COMPUTER_ICE) || defined(SC)
+#if defined(COMPUTER_ICE) || defined(__EMSCRIPTEN__)
 static uint8_t clz(uint24_t x) {
     uint8_t n = 0;
     if (!x) {
@@ -56,7 +56,7 @@ void MultWithNumber(uint24_t num, uint8_t *programPtr, bool ChangeRegisters) {
     (void)programPtr;
     uint24_t bit;
     uint8_t po2 = !(num & (num - 1));
-    
+
     if (24 - clz(num) + __builtin_popcount(num) - 2 * po2 < 10) {
         if(!po2) {
             if (!ChangeRegisters) {
@@ -156,7 +156,7 @@ static void getEntryOperands() {
 
 static void swapEntries() {
     element_t *temp;
-    
+
     temp = entry1;
     entry1 = entry2;
     entry2 = temp;
@@ -165,22 +165,22 @@ static void swapEntries() {
 
 uint8_t parseOperator(element_t *outputPrevPrevPrev, element_t *outputPrevPrev, element_t *outputPrev, element_t *outputCurr, bool canOptimizeStrings) {
     uint8_t type1Masked, type1, type2;
-    
+
     type1 = outputPrevPrev->type;
     type1Masked = type1 & 0x7F;
     type2 = outputPrev->type;
     canOptimizeConcatenateStrings = canOptimizeStrings;
-    
+
     oper = outputCurr->operand;
-    
+
     // Get the right arguments
     entry0 = outputPrevPrevPrev;
     entry1 = outputPrevPrev;
     entry2 = outputPrev;
     getEntryOperands();
-    
+
     ClearAnsFlags();
-    
+
     if (type1 >= TYPE_STRING && type2 == TYPE_OS_STRING && oper == tStore) {
         StoStringString();
     } else if (type1 >= TYPE_STRING && type2 >= TYPE_STRING && oper == tAdd) {
@@ -196,24 +196,24 @@ uint8_t parseOperator(element_t *outputPrevPrevPrev, element_t *outputPrevPrev, 
         ) {
             return E_SYNTAX;
         }
-        
+
         // Store to a pointer
         if (oper == tStore && type2 == TYPE_FUNCTION) {
             type2 = TYPE_CHAIN_ANS;
             type1Masked = outputPrevPrevPrev->type & 0x7F;
-            
+
             // If string->pointer, do it immediately
             if (type1Masked == TYPE_STRING) {
                 StoStringChainAns();
                 return VALID;
             }
         }
-        
+
         if (type1Masked == TYPE_CHAIN_PUSH) {
             if (type2 != TYPE_CHAIN_ANS) {
                 return E_ICE_ERROR;
             }
-            
+
             // Call the right CHAIN_PUSH | CHAIN_ANS function
             (*operatorChainPushChainAnsFunctions[getIndexOfOperator(oper) - 1])();
         } else {
@@ -224,7 +224,7 @@ uint8_t parseOperator(element_t *outputPrevPrevPrev, element_t *outputPrevPrev, 
             // Swap operands for compiler optimizations
             if (oper == tLE || oper == tLT || (operatorCanSwap[getIndexOfOperator(oper) - 1] && (type1Masked == TYPE_NUMBER || type2 == TYPE_CHAIN_ANS))) {
                 uint8_t temp = type1Masked;
-                
+
                 type1Masked = type2;
                 type2 = temp;
                 swapEntries();
@@ -234,11 +234,11 @@ uint8_t parseOperator(element_t *outputPrevPrevPrev, element_t *outputPrevPrev, 
                     oper = tGT;
                 }
             }
-            
+
             // Call the right function!
             (*operatorFunctions[((getIndexOfOperator(oper) - 1) * 9) + (type1Masked * 3) + type2])();
         }
-        
+
         // If the operator is /, the routine always ends with call __idvrmu \ expr.outputReturnRegister == REGISTER_DE
         if (oper == tDiv && !(expr.outputRegister == REGISTER_A && entry2_operand == 1)) {
             CALL(__idvrmu);
@@ -249,13 +249,13 @@ uint8_t parseOperator(element_t *outputPrevPrevPrev, element_t *outputPrevPrev, 
             reg.AValue = 0;
             expr.outputReturnRegister = REGISTER_DE;
         }
-        
+
         // If the operator is *, and both operands not a number, it always ends with call __imuls
         if (oper == tMul && type1Masked != TYPE_NUMBER && type2 != TYPE_NUMBER && !(expr.outputRegister == REGISTER_A && entry2_operand < 256)) {
             CALL(__imuls);
             ResetReg(REGISTER_HL);
         }
-        
+
         if (expr.outputRegister != REGISTER_A && !(type2 == TYPE_NUMBER && entry2_operand < 256)) {
             if (oper == tDotIcon) {
                 CALL(__iand);
@@ -268,13 +268,13 @@ uint8_t parseOperator(element_t *outputPrevPrevPrev, element_t *outputPrevPrev, 
                 ResetReg(REGISTER_HL);
             }
         }
-        
+
         // If the operator is -, and the second operand not a number, it always ends with or a, a \ sbc hl, de
         if (oper == tSub && type2 != TYPE_NUMBER) {
             OR_A_SBC_HL_DE();
         }
     }
-    
+
     expr.outputRegister = expr.outputReturnRegister;
     return VALID;
 }
@@ -309,7 +309,7 @@ void StoVariableVariable(void) {
 void StoNumberChainAns(void) {
     uint8_t type = entry1->type;
     uint8_t mask = entry2->mask;
-    
+
     if (type == TYPE_NUMBER) {
         if (mask == TYPE_MASK_U8) {
             LD_A(entry0_operand);
@@ -343,7 +343,7 @@ void StoNumberChainAns(void) {
 void StoVariableChainAns(void) {
     uint8_t type = entry1->type;
     uint8_t mask = entry2->mask;
-    
+
     if (type == TYPE_NUMBER) {
         if (mask == TYPE_MASK_U8) {
             LD_A_IND_IX_OFF(entry0_operand);
@@ -391,7 +391,7 @@ void StoChainPushChainAns(void) {
 void StoChainAnsChainAns(void) {
     uint8_t type = entry1->type;
     uint8_t mask = entry2->mask;
-    
+
     if (type == TYPE_NUMBER) {
         if (mask == TYPE_MASK_U8) {
             if (expr.outputRegister == REGISTER_HL) {
@@ -673,7 +673,7 @@ void EQInsert() {
 }
 void EQChainAnsNumber(void) {
     uint24_t number = entry2_operand;
-    
+
     if (expr.outputRegister == REGISTER_A && entry2_operand < 256) {
         if (oper == tNE) {
             ADD_A(255 - entry2_operand);
@@ -872,7 +872,7 @@ void LEChainPushChainAns(void) {
 
 void MulChainAnsNumber(void) {
     uint24_t number = entry2_operand;
-    
+
     if (expr.outputRegister == REGISTER_A && entry2_operand < 256) {
         LD_L_A();
         LD_H(entry2_operand);
@@ -948,7 +948,7 @@ void DivChainPushChainAns(void) {
 }
 void AddChainAnsNumber(void) {
     uint24_t number = entry2_operand;
-    
+
     if (expr.outputRegister == REGISTER_A) {
         if (!number) {
             expr.outputReturnRegister = REGISTER_A;
@@ -970,7 +970,7 @@ void AddChainAnsNumber(void) {
     } else {
         if (number < 5) {
             uint8_t a;
-            
+
             for (a = 0; a < (uint8_t)number; a++) {
                 if (expr.outputRegister == REGISTER_HL) {
                     INC_HL();
@@ -1035,12 +1035,12 @@ void AddStringString(void) {
     *        <TempString1>+<TempString2>     --> strcat(<TempString1>, <TempString2>)
     *        <TempString2>+<string2>         --> strcat(<TempString2>, <string2>)
     *        <TempString2>+<TempString1>     --> strcat(<TempString2>, <TempString1>)
-    *        
+    *
     *    Output in TempString2 if:
     *        <TempString2>+X
     *        X+<TempString1>
     **/
-    
+
     if (comparePtrToTempStrings(entry1_operand)) {
         if (entry2->type == TYPE_STRING && !comparePtrToTempStrings(entry2_operand)) {
             ProgramPtrToOffsetStack();
@@ -1090,7 +1090,7 @@ void AddStringString(void) {
 }
 void SubChainAnsNumber(void) {
     uint24_t number = entry2_operand;
-    
+
     if (expr.outputRegister == REGISTER_A && number < 256) {
         if (!number) {
             expr.outputReturnRegister = REGISTER_A;
@@ -1103,10 +1103,10 @@ void SubChainAnsNumber(void) {
         expr.ZeroCarryFlagRemoveAmountOfBytes = 3;
     } else {
         MaybeAToHL();
-        
+
         if (number < 5) {
             uint8_t a;
-            
+
             for (a = 0; a < (uint8_t)number; a++) {
                 if (expr.outputRegister == REGISTER_HL) {
                     DEC_HL();
@@ -1190,7 +1190,7 @@ void (*operatorFunctions[272])(void) = {
     OperatorError,
     StoChainAnsVariable,
     StoChainAnsChainAns,
-    
+
     OperatorError,
     OperatorError,
     OperatorError,
@@ -1200,7 +1200,7 @@ void (*operatorFunctions[272])(void) = {
     BitAndChainAnsNumber,
     BitAndChainAnsVariable,
     OperatorError,
-    
+
     OperatorError,
     OperatorError,
     OperatorError,
@@ -1210,7 +1210,7 @@ void (*operatorFunctions[272])(void) = {
     BitOrChainAnsNumber,
     BitOrChainAnsVariable,
     OperatorError,
-    
+
     OperatorError,
     OperatorError,
     OperatorError,
@@ -1220,7 +1220,7 @@ void (*operatorFunctions[272])(void) = {
     BitXorChainAnsNumber,
     BitXorChainAnsVariable,
     OperatorError,
-    
+
     OperatorError,
     OperatorError,
     OperatorError,
@@ -1230,7 +1230,7 @@ void (*operatorFunctions[272])(void) = {
     AndChainAnsNumber,
     AndChainAnsVariable,
     OperatorError,
-    
+
     OperatorError,
     OperatorError,
     OperatorError,
@@ -1240,7 +1240,7 @@ void (*operatorFunctions[272])(void) = {
     XorChainAnsNumber,
     XorChainAnsVariable,
     OperatorError,
-    
+
     OperatorError,
     OperatorError,
     OperatorError,
@@ -1250,7 +1250,7 @@ void (*operatorFunctions[272])(void) = {
     OrChainAnsNumber,
     OrChainAnsVariable,
     OperatorError,
-    
+
     OperatorError,
     OperatorError,
     OperatorError,
@@ -1260,7 +1260,7 @@ void (*operatorFunctions[272])(void) = {
     EQChainAnsNumber,
     EQChainAnsVariable,
     OperatorError,
-    
+
     OperatorError,
     LTNumberVariable,
     LTNumberChainAns,
@@ -1270,7 +1270,7 @@ void (*operatorFunctions[272])(void) = {
     LTChainAnsNumber,
     LTChainAnsVariable,
     OperatorError,
-    
+
     OperatorError,
     GTNumberVariable,
     GTNumberChainAns,
@@ -1280,7 +1280,7 @@ void (*operatorFunctions[272])(void) = {
     GTChainAnsNumber,
     GTChainAnsVariable,
     OperatorError,
-    
+
     OperatorError,
     LENumberVariable,
     LENumberChainAns,
@@ -1290,7 +1290,7 @@ void (*operatorFunctions[272])(void) = {
     LEChainAnsNumber,
     LEChainAnsVariable,
     OperatorError,
-    
+
     OperatorError,
     GENumberVariable,
     GENumberChainAns,
@@ -1300,7 +1300,7 @@ void (*operatorFunctions[272])(void) = {
     GEChainAnsNumber,
     GEChainAnsVariable,
     OperatorError,
-    
+
     OperatorError,
     OperatorError,
     OperatorError,
@@ -1310,7 +1310,7 @@ void (*operatorFunctions[272])(void) = {
     NEChainAnsNumber,
     NEChainAnsVariable,
     OperatorError,
-    
+
     OperatorError,
     OperatorError,
     OperatorError,
@@ -1320,7 +1320,7 @@ void (*operatorFunctions[272])(void) = {
     MulChainAnsNumber,
     MulChainAnsVariable,
     OperatorError,
-    
+
     OperatorError,
     DivNumberVariable,
     DivNumberChainAns,
@@ -1330,7 +1330,7 @@ void (*operatorFunctions[272])(void) = {
     DivChainAnsNumber,
     DivChainAnsVariable,
     OperatorError,
-    
+
     OperatorError,
     OperatorError,
     OperatorError,
@@ -1340,7 +1340,7 @@ void (*operatorFunctions[272])(void) = {
     AddChainAnsNumber,
     AddChainAnsVariable,
     OperatorError,
-    
+
     OperatorError,
     SubNumberVariable,
     SubNumberChainAns,

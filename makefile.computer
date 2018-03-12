@@ -28,10 +28,9 @@ $(TARGET): .FORCE $(OBJECTS)
 	$(CC) $(CFLAGS) $< -o $@
 
 %.bin: %.asm
-	spasm -E $< -D.def=\; -D.ref=\; -Ddata=\; -D__errsp=0; -Ddb=.db
+	spasm -E $< -D.def=\; -D.ref=\; -Ddata=\; -D__errsp=0
 
 clean:
 	$(RM) $(call NATIVEPATH,$(TARGET).exe $(OBJECTS) $(BINOBJECTS))
 
 .PHONY: clean all
-

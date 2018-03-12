@@ -33,14 +33,13 @@
 typedef struct {
     char     outName[9];                                    // Output variable name
     char     currProgName[5][9];                            // Current program compiling
-    
+
     uint8_t  nestedBlocks;                                  // Amount of nested If/Repeat/While
     uint8_t  *programData;                                  // Address of the program
     uint8_t  *programDataData;                              // Address of the end of the program data
     uint8_t  *programPtr;                                   // Pointer to the program
     uint8_t  *programPtrBackup;                             // Same as above
     uint8_t  *programDataPtr;                               // Pointer to the program data
-    uint8_t  *CBaseAddress;                                 // Base of the C JP's
     uint8_t  amountOfGraphxRoutinesUsed;                    // Used for the relocation of C functions at the beginning of the program - GRAPHX
     uint8_t  amountOfFileiocRoutinesUsed;                   // Used for the relocation of C functions at the beginning of the program - FILEIOC
     uint8_t  tempToken;                                     // Used for functions, i.e. For(, where an argument can stop with either a comma or a parentheses
@@ -49,7 +48,7 @@ typedef struct {
     uint8_t  amountOfLbls;                                  // Amount of Lbl's
     uint8_t  amountOfGotos;                                 // Amount of Goto's
     uint8_t  amountOfVariablesUsed;                         // Amount of used variables (max 85)
-    
+
     uint24_t *dataOffsetStack[1000];                        // Stack of the address to point to the data, which needs to be changed after compiling
     uint24_t dataOffsetElements;                            // Amount of stack elements of above
     uint24_t dataOffsetElementsBackup;                      // Same as above
@@ -70,13 +69,10 @@ typedef struct {
     uint24_t FileiocRoutinesStack[AMOUNT_OF_FILEIOC_FUNCTIONS]; // The address of the relocation jumps of the FILEIOC lib
     uint24_t programLength;                                 // Size of input program
     uint24_t freeMemoryPtr;                                 // Pointer to safe RAM (after the OS variables)
-    
+
     ti_var_t inPrgm;                                        // Used for getting tokens
     ti_var_t outPrgm;                                       // Used for writing bytes
-    
-    bool     gotName;                                       // Already got the output name
-    bool     gotIconDescription;                            // Already got the icon + description
-    bool     usedCodeAfterHeader;                           // An icon/description can't be placed after some code
+
     bool     lastTokenIsReturn;                             // Last token is a "Return", so we can omit our "ret" :)
     bool     modifiedIY;                                    // Some routines modify IY, and some routines needs it
     bool     inDispExpression;                              // Used for optimizing <variable>+<number> that it doesn't overwrite IY
@@ -84,41 +80,41 @@ typedef struct {
     bool     startedFILEIOC;
     bool     endedGRAPHX;
     bool     usesRandRoutine;                               // Used to seed the rand routine when it's used
-    
+
     bool     usedAlreadyRand;                               // Only once the "rand" routine in the program data
     uint24_t randAddr;                                      // Address of the "rand" routine in the program data
-    
+
     bool     usedAlreadyGetKeyFast;                         // Only once the "getKey(X)" routine in the program data
     uint24_t getKeyFastAddr;                                // Address of the "getKey(X)" routine in the program data
-    
+
     bool     usedAlreadySqrt;                               // Only once the "sqrt(" routine in the program data
     uint24_t SqrtAddr;                                      // Address of the "sqrt(" routine in the program data
-    
+
     bool     usedAlreadyMean;                               // Only once the "mean(" routine in the program data
     uint24_t MeanAddr;                                      // Address of the "mean(" routine in the program data
-    
+
     bool     usedAlreadyInput;                              // Only once the "Input" routine in the program data
     uint24_t InputAddr;                                     // Address of the "Input" routine in the program data
-    
+
     bool     usedAlreadyPause;                              // Only once the "Pause " routine in the program data
     uint24_t PauseAddr;                                     // Address of the "Pause " routine in the program data
-    
+
     bool     usedAlreadySinCos;                             // Only once the "sin(" or "cos(" routine in the program data
     uint24_t SinCosAddr;                                    // Address of the "sin(" or "cos(" routine in the program data
-    
+
     bool     usedAlreadyLoadSprite;                         // Only once the "LoadData(" routine in the program data
     uint24_t LoadSpriteAddr;                                // Address of the "LoadData(" routine in the program data
-    
+
     bool     usedAlreadyLoadTilemap;                        // Only once the "LoadData(" routine in the program data
     uint24_t LoadTilemapAddr;                               // Address of the "LoadData(" routine in the program data
-    
+
     bool     usedAlreadyMalloc;                             // Only once the "Alloc(" routine in the program data
     uint24_t MallocAddr;                                    // Address of the "Alloc(" routine in the program data
-    
+
     bool     usedAlreadyTimer;                              // Only once the timer routine in the program data
     uint24_t TimerAddr;                                     // Address of the timer routine in the program data
-    
-#ifdef SC
+
+#ifdef __EMSCRIPTEN__
     uint24_t progInputPtr;
     uint8_t  progInputData[0xFFFF];
     uint8_t  errorCode;
@@ -135,14 +131,45 @@ typedef struct {
     bool     AnsSetZeroFlagReversed;
     bool     AnsSetCarryFlag;
     bool     AnsSetCarryFlagReversed;
-    
+
     uint8_t  ZeroCarryFlagRemoveAmountOfBytes;
     uint8_t  outputRegister;
     uint8_t  outputReturnRegister;
     uint8_t  SizeOfOutputNumber;
-    
+
     uint24_t outputNumber;
 } expr_t;
+
+typedef struct {
+    bool     modifiedIY;
+    bool     usedTempStrings;
+    bool     hasGraphxStart;
+    bool     hasGraphxEnd;
+    bool     hasFileiocStart;
+    bool     hasGraphxFunctions;
+    bool     hasFileiocFunctions;
+
+    uint8_t  amountOfRandRoutines;
+    uint8_t  amountOfSqrtRoutines;
+    uint8_t  amountOfMeanRoutines;
+    uint8_t  amountOfInputRoutines;
+    uint8_t  amountOfPauseRoutines;
+    uint8_t  amountOfSinCosRoutines;
+    uint8_t  amountOfLoadSpriteRoutines;
+    uint8_t  amountOfLoadTilemapRoutines;
+    uint8_t  amountOfMallocRoutines;
+    uint8_t  amountOfTimerRoutines;
+    uint8_t  amountOfOSVarsUsed;
+
+    uint24_t amountOfLbls;
+    uint24_t amountOfGotos;
+    uint24_t GraphxRoutinesStack[AMOUNT_OF_GRAPHX_FUNCTIONS];
+    uint24_t FileiocRoutinesStack[AMOUNT_OF_FILEIOC_FUNCTIONS];
+    uint24_t OSStrings[10];
+    uint24_t OSLists[10];
+    uint24_t freeMemoryPtr;
+    uint24_t tempStrings[2];
+} prescan_t;
 
 typedef struct {
     bool     HLIsNumber;
@@ -155,14 +182,14 @@ typedef struct {
     bool     AIsVariable;
     bool     tempBool;
     bool     allowedToOptimize;
-    
+
     uint8_t  HLVariable;
     uint8_t  DEVariable;
     uint8_t  BCVariable;
     uint8_t  AValue;
     uint8_t  AVariable;
     uint8_t  tempVariable;
-    
+
     uint24_t HLValue;
     uint24_t DEValue;
     uint24_t BCValue;
@@ -182,14 +209,18 @@ typedef struct {
     char    name[20];
 } variable_t;
 
+typedef struct {
+    uint8_t errorCode;
+    char    prog[9];
+} prog_t;
+
 extern ice_t ice;
 extern expr_t expr;
+extern prescan_t prescan;
 extern reg_t reg;
 extern variable_t variable;
 
-void preScanProgram(uint24_t a[], uint8_t*, bool);
-
-#if !defined(COMPUTER_ICE) && !defined(SC)
+#if !defined(COMPUTER_ICE) && !defined(__EMSCRIPTEN__)
 void CheaderData(void);
 void GraphxHeader(void);
 void FileiocheaderData(void);

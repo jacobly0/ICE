@@ -23,7 +23,7 @@ INCBIN(Loadsprite, "src/asm/loadsprite.bin");
 INCBIN(Loadtilemap, "src/asm/loadtilemap.bin");
 #endif
 
-#ifdef SC
+#ifdef __EMSCRIPTEN__
 extern const uint8_t SqrtData[];
 extern const uint8_t MeanData[];
 extern const uint8_t RandData[];
@@ -62,6 +62,7 @@ const uint8_t GraphxArgs[] = {
     RET_NONE | 3, SMALL_123,   // BlitLines
     RET_NONE | 5, SMALL_13,    // BlitArea
     RET_NONE | 1, SMALL_1,     // PrintChar
+    RET_NONE | 2, SMALL_2,     // PrintInt
     RET_NONE | 2, SMALL_2,     // PrintInt
     RET_NONE | 2, SMALL_2,     // PrintUInt
     RET_NONE | 1, ARG_NORM,    // PrintString
@@ -171,7 +172,7 @@ uint8_t parseFunction(uint24_t index) {
     element_t *outputPtr = (element_t*)outputStack, *outputPrev, *outputCurr, *outputPrevPrev, *outputPrevPrevPrev;
     uint8_t function, function2, amountOfArguments, temp, a, outputPrevType, outputPrevPrevType, res;
     uint24_t output, endIndex, startIndex, outputPrevOperand;
-    
+
     outputPrevPrevPrev = &outputPtr[getIndexOffset(-4)];
     outputPrevPrev     = &outputPtr[getIndexOffset(-3)];
     outputPrev         = &outputPtr[getIndexOffset(-2)];
@@ -180,24 +181,24 @@ uint8_t parseFunction(uint24_t index) {
     function           = output;
     function2          = output >> 16;
     amountOfArguments  = output >> 8;
-    
+
     outputPrevOperand  = outputPrev->operand;
     outputPrevType     = outputPrev->type & 0x7F;
     outputPrevPrevType = outputPrevPrev->type & 0x7F;
-    
+
     if (function != tNot) {
         ClearAnsFlags();
     }
-    
+
     // rand
     if (function == tRand) {
         ProgramPtrToOffsetStack();
         CALL(ice.randAddr + 17);
-        
+
         ice.modifiedIY = true;
         ResetAllRegs();
     }
-    
+
     // Ans
     else if (function == tAns) {
         CALL(_RclAns);
@@ -205,12 +206,12 @@ uint8_t parseFunction(uint24_t index) {
         ResetAllRegs();
         expr.outputReturnRegister = REGISTER_DE;
     }
-    
+
     // startTmr
     else if (function == tExtTok && function2 == tStartTmr) {
         CallRoutine(&ice.usedAlreadyTimer, &ice.TimerAddr, (uint8_t*)TimerData, SIZEOF_TIMER_DATA);
     }
-    
+
     // checkTmr(
     else if (function == tExtTok && function2 == tCheckTmr) {
         if (outputPrevType == TYPE_NUMBER) {
@@ -222,11 +223,11 @@ uint8_t parseFunction(uint24_t index) {
         } else {
             return E_SYNTAX;
         }
-        
+
         LD_HL_IND(0xF20000);
         OR_A_SBC_HL_DE();
     }
-    
+
     // getKey / getKey(X)
     else if (function == tGetKey) {
         if (amountOfArguments) {
@@ -234,28 +235,28 @@ uint8_t parseFunction(uint24_t index) {
                 uint8_t key = outputPrevOperand;
                 uint8_t keyBit = 1;
                 /* This is the same as
-                    ((key-1)/8 & 7) * 2 = 
-                    (key-1)/4 & (7*2) = 
-                    (key-1) >> 2 & 14 
+                    ((key-1)/8 & 7) * 2 =
+                    (key-1)/4 & (7*2) =
+                    (key-1) >> 2 & 14
                 */
                 LD_B(0x1E - (((key - 1) >> 2) & 14));
-                
+
                 // Get the right bit for the keypress
                 if ((key - 1) & 7) {
                     uint8_t a;
-                    
+
                     for (a = 0; a < ((key - 1) & 7); a++) {
                         keyBit = keyBit << 1;
                     }
                 }
-                
+
                 LD_C(keyBit);
             } else if (outputPrevType == TYPE_VARIABLE) {
                 LD_A_IND_IX_OFF(outputPrevOperand);
             } else if (outputPrevType != TYPE_CHAIN_ANS) {
                 return E_SYNTAX;
             }
-            
+
             if (outputPrevType != TYPE_NUMBER) {
                 if (expr.outputRegister == REGISTER_A) {
                     DEC_A();
@@ -278,7 +279,7 @@ uint8_t parseFunction(uint24_t index) {
                     loadGetKeyFastData2();
                 }
             }
-            
+
             CallRoutine(&ice.usedAlreadyGetKeyFast, &ice.getKeyFastAddr, (uint8_t*)KeypadData, SIZEOF_KEYPAD_DATA);
             ResetReg(REGISTER_HL);
             ResetReg(REGISTER_A);
@@ -289,13 +290,13 @@ uint8_t parseFunction(uint24_t index) {
             ice.modifiedIY = false;
         }
     }
-    
+
     // not(
     else if (function == tNot) {
         if ((res = parseFunction1Arg(index, REGISTER_HL_DE)) != VALID) {
             return res;
         }
-        
+
         if (expr.outputRegister == REGISTER_A) {
             ADD_A(255);
             SBC_A_A();
@@ -303,7 +304,7 @@ uint8_t parseFunction(uint24_t index) {
             expr.outputReturnRegister = REGISTER_A;
             if (expr.AnsSetZeroFlag || expr.AnsSetCarryFlag || expr.AnsSetZeroFlagReversed || expr.AnsSetCarryFlagReversed) {
                 bool temp = expr.AnsSetZeroFlag;
-                
+
                 expr.ZeroCarryFlagRemoveAmountOfBytes += 4;
                 expr.AnsSetZeroFlag = expr.AnsSetZeroFlagReversed;
                 expr.AnsSetZeroFlagReversed = temp;
@@ -325,7 +326,7 @@ uint8_t parseFunction(uint24_t index) {
             SBC_HL_HL_INC_HL();
             if (expr.ZeroCarryFlagRemoveAmountOfBytes) {
                 bool temp = expr.AnsSetZeroFlag;
-                
+
                 expr.ZeroCarryFlagRemoveAmountOfBytes += 8 - (expr.outputRegister != REGISTER_HL);
                 expr.AnsSetZeroFlag = expr.AnsSetZeroFlagReversed;
                 expr.AnsSetZeroFlagReversed = temp;
@@ -339,34 +340,34 @@ uint8_t parseFunction(uint24_t index) {
             }
         }
     }
-    
+
     // sqrt(
     else if (function == tSqrt) {
         if ((res = parseFunction1Arg(index, REGISTER_HL)) != VALID) {
             return res;
         }
-        
+
         CallRoutine(&ice.usedAlreadySqrt, &ice.SqrtAddr, (uint8_t*)SqrtData, SIZEOF_SQRT_DATA);
         ResetAllRegs();
 
         expr.outputReturnRegister = REGISTER_DE;
         ice.modifiedIY = true;
     }
-    
+
     // sin(, cos(
     else if (function == tSin || function == tCos) {
         if ((res = parseFunction1Arg(index, REGISTER_HL)) != VALID) {
             return res;
         }
-        
+
         if (!ice.usedAlreadySinCos) {
             ice.programDataPtr -= SIZEOF_SINCOS_DATA;
             ice.SinCosAddr = (uintptr_t)ice.programDataPtr;
             memcpy(ice.programDataPtr, SincosData, SIZEOF_SINCOS_DATA);
-            
+
             // 16 = distance from start of routine to "ld de, SinTable"
             ice.dataOffsetStack[ice.dataOffsetElements++] = (uint24_t*)(ice.programDataPtr + 16);
-            
+
             // This is the "ld de, SinTable", 18 is the distance from "ld de, SinTable" to "SinTable"
             *(uint24_t*)(ice.programDataPtr + 16) = (uint24_t)ice.programDataPtr + 18 + 16;
             ice.usedAlreadySinCos = true;
@@ -375,16 +376,16 @@ uint8_t parseFunction(uint24_t index) {
         ProgramPtrToOffsetStack();
         CALL(ice.SinCosAddr + (function == tSin ? 4 : 0));
         ResetAllRegs();
-        
+
         expr.outputReturnRegister = REGISTER_DE;
     }
-    
+
     // min(, max(
     else if (function == tMin || function == tMax) {
         if ((res = parseFunction2Args(index, REGISTER_DE, false)) != VALID) {
             return res;
         }
-        
+
         OR_A_SBC_HL_DE();
         ADD_HL_DE();
         if (function == tMin) {
@@ -395,17 +396,17 @@ uint8_t parseFunction(uint24_t index) {
         EX_DE_HL();
         ResetReg(REGISTER_HL);                 // DE is already reset because of "add hl, de \ ex de, hl"
     }
-    
+
     // mean(
     else if (function == tMean) {
         if ((res = parseFunction2Args(index, REGISTER_DE, false)) != VALID) {
             return res;
         }
-        
+
         CallRoutine(&ice.usedAlreadyMean, &ice.MeanAddr, (uint8_t*)MeanData, SIZEOF_MEAN_DATA);
         ResetReg(REGISTER_HL);
     }
-    
+
     // remainder(
     else if (function == tExtTok && function2 == tRemainder) {
         if (outputPrevType == TYPE_NUMBER && outputPrevOperand <= 256 && !((uint8_t)outputPrevOperand & (uint8_t)(outputPrevOperand - 1))) {
@@ -443,15 +444,15 @@ uint8_t parseFunction(uint24_t index) {
             reg.AValue = 0;
         }
     }
-    
+
     // randInt(
     else if (function == t2ByteTok && function2 == tRandInt) {
         bool usedAlreadyRand = ice.usedAlreadyRand;
-        
+
         if (outputPrevPrevType == TYPE_STRING || outputPrevType == TYPE_STRING) {
             return E_SYNTAX;
         }
-        
+
         if (outputPrevType == TYPE_CHAIN_ANS) {
             AnsToHL();
             if (outputPrevPrevType == TYPE_CHAIN_PUSH) {
@@ -478,7 +479,7 @@ uint8_t parseFunction(uint24_t index) {
         if (outputPrevType == TYPE_NUMBER && outputPrevPrevType != TYPE_NUMBER) {
             LD_HL_IMM(outputPrevOperand + 1);
         }
-        
+
         if (outputPrevPrevType != TYPE_NUMBER || outputPrevType != TYPE_NUMBER) {
             PUSH_DE();
             OR_A_SBC_HL_DE();
@@ -489,10 +490,10 @@ uint8_t parseFunction(uint24_t index) {
         if (outputPrevPrevType != TYPE_NUMBER || outputPrevType != TYPE_NUMBER) {
             PUSH_HL();
         }
-        
+
         ProgramPtrToOffsetStack();
         CALL(ice.randAddr + 17);
-        
+
         if (outputPrevPrevType != TYPE_NUMBER || outputPrevType != TYPE_NUMBER) {
             POP_BC();
         } else {
@@ -508,7 +509,7 @@ uint8_t parseFunction(uint24_t index) {
             INC_DE();
         }
         ADD_HL_DE();
-        
+
         ice.modifiedIY = true;
         ResetReg(REGISTER_HL);
         ResetReg(REGISTER_DE);
@@ -516,28 +517,28 @@ uint8_t parseFunction(uint24_t index) {
         reg.AIsVariable = false;
         reg.AValue = 0;
     }
-    
+
     // sub(
     else if (function == t2ByteTok && function2 == tSubStrng) {
         uint24_t outputPrevPrevPrevOperand = outputPrevPrevPrev->operand;
-        
+
         // First argument should be a string
         if (outputPrevPrevPrev->type < TYPE_STRING) {
             return E_SYNTAX;
         }
-        
+
         // Parse last 2 argument
         if ((res = parseFunction2Args(index, REGISTER_BC, true)) != VALID) {
             return res;
         }
-        
+
         // Get the string into DE
-        if (outputPrevPrevPrev->type == TYPE_STRING && 
+        if (outputPrevPrevPrev->type == TYPE_STRING &&
               outputPrevPrevPrevOperand != ice.tempStrings[TempString1] && outputPrevPrevPrevOperand != ice.tempStrings[TempString2]) {
             ProgramPtrToOffsetStack();
         }
         LD_DE_IMM(outputPrevPrevPrevOperand);
-        
+
         // Add the offset to the string, and copy!
         ADD_HL_DE();
         if (outputPrevPrevPrevOperand == ice.tempStrings[TempString1]) {
@@ -549,7 +550,7 @@ uint8_t parseFunction(uint24_t index) {
         EX_DE_HL();
         LD_HL_VAL(0);
     }
-    
+
     // length(
     else if (function == t2ByteTok && function2 == tLength) {
         if (outputPrevType == TYPE_STRING) {
@@ -560,7 +561,7 @@ uint8_t parseFunction(uint24_t index) {
             }
             MaybeAToHL();
         }
-        
+
         PushHLDE();
         CALL(__strlen);
         POP_BC();
@@ -577,21 +578,21 @@ uint8_t parseFunction(uint24_t index) {
         }
         ResetReg(REGISTER_HL);
     }
-    
+
     // Alloc(
     else if (function == tVarOut && function2 == tAlloc) {
         if ((res = parseFunction1Arg(index, REGISTER_HL)) != VALID) {
             return res;
         }
-        
+
         InsertMallocRoutine();
     }
-    
+
     // Here are coming the special functions, with abnormal arguments
-    
+
     // DefineTilemap(
     else if (function == tVarOut && function2 == tDefineTilemap) {
-        /**************************************************************** 
+        /****************************************************************
         * C arguments:
         *  - uint8_t *mapData (pointer to data)
         *  - uint8_t **tilesData (pointer to table with pointers to data)
@@ -617,25 +618,25 @@ uint8_t parseFunction(uint24_t index) {
         *  - uint8_t WIDTH
         *  - uint8_t Y_LOC
         *  - uint24_t X_LOC
-        *  - uint8_t **tilesData pointer to data, we have to 
+        *  - uint8_t **tilesData pointer to data, we have to
         *       create our own table, by getting the size of
         *       each sprite, and thus finding all the sprites
         *  (- uint8_t *mapData (pointer to data))
         *
         * Returns: PTR to tilemap struct
         ****************************************************************/
-        
+
         uint24_t startIndex = -1 - amountOfArguments;
         uint8_t *tempDataPtr = ice.programDataPtr - 18;                 // 18 = sizeof(tilemap_t)
         element_t *outputTemp;
         uint8_t a;
-        
+
         if (amountOfArguments < 11 || amountOfArguments > 12) {
             return E_ARGUMENTS;
         }
-        
+
         ice.programDataPtr -= 18;
-        
+
         // Fetch the 8 uint8_t variables
         for (a = 0; a < 9; a++) {
             outputTemp = &outputPtr[getIndexOffset(startIndex + a)];
@@ -644,24 +645,24 @@ uint8_t parseFunction(uint24_t index) {
             }
             *(tempDataPtr + a + 6) = outputTemp->operand;
         }
-        
+
         // Fetch the only uint24_t variable (X_LOC)
         outputTemp = &outputPtr[getIndexOffset(startIndex + 9)];
         if (outputTemp->type != TYPE_NUMBER) {
             return E_SYNTAX;
         }
         *(uint24_t*)(tempDataPtr + 15) = outputTemp->operand;
-        
+
         // Fetch the tiles/sprites
         outputTemp = &outputPtr[getIndexOffset(startIndex + 10)];
         if (outputTemp->type != TYPE_VARIABLE) {
             return E_SYNTAX;
         }
-        
+
         LD_HL_IND_IX_OFF(outputTemp->operand);
         ProgramPtrToOffsetStack();
         LD_ADDR_HL((uint24_t)tempDataPtr + 3);
-        
+
         // Fetch the tilemap
         if (amountOfArguments > 11) {
             ProgramPtrToOffsetStack();
@@ -669,12 +670,12 @@ uint8_t parseFunction(uint24_t index) {
             ProgramPtrToOffsetStack();
             LD_ADDR_HL((uint24_t)tempDataPtr);
         }
-        
+
         // Build a new tilemap struct in the program data
         ProgramPtrToOffsetStack();
         LD_HL_IMM((uint24_t)tempDataPtr);
     }
-    
+
     // LoadData(
     else if (function == tVarOut && function2 == tLoadData) {
         /*****************************************************
@@ -686,11 +687,11 @@ uint8_t parseFunction(uint24_t index) {
         * Returns: PTR to table with sprite pointers (tilemap)
         * Returns: PTR to sprite (sprite)
         *****************************************************/
-        
+
         if (outputPrevPrevType != TYPE_NUMBER || outputPrevType != TYPE_NUMBER) {
             return E_SYNTAX;
         }
-        
+
         // Check if it's a sprite or a tilemap
         if (outputPrev->operand == 3) {
             // Copy the LoadData( routine to the data section
@@ -700,24 +701,24 @@ uint8_t parseFunction(uint24_t index) {
                 memcpy(ice.programDataPtr, LoadspriteData, 32);
                 ice.usedAlreadyLoadSprite = true;
             }
-            
+
             // Set which offset
             LD_HL_IMM(outputPrevPrev->operand + 2);
             ProgramPtrToOffsetStack();
             LD_ADDR_HL(ice.LoadSpriteAddr + 27);
-            
+
             if (outputPrevPrevPrev->type < TYPE_STRING) {
                 return E_SYNTAX;
             }
             LD_HL_STRING(outputPrevPrevPrev->operand - 1, outputPrevPrevPrev->type);
-            
+
             // Call the right routine
             ProgramPtrToOffsetStack();
             CALL(ice.LoadSpriteAddr);
-            
+
             ResetAllRegs();
         }
-        
+
         // It's a tilemap -.-
         else {
             // Copy the LoadData( routine to the data section
@@ -727,38 +728,38 @@ uint8_t parseFunction(uint24_t index) {
                 memcpy(ice.programDataPtr, LoadtilemapData, 59);
                 ice.usedAlreadyLoadTilemap = true;
             }
-            
+
             // Set which offset
             LD_HL_IMM(outputPrevPrev->operand + 2);
             ProgramPtrToOffsetStack();
             LD_ADDR_HL(ice.LoadTilemapAddr + 27);
-            
+
             // Set table base
             LD_HL_IMM(ice.freeMemoryPtr);
             ice.freeMemoryPtr += outputPrev->operand;
             ProgramPtrToOffsetStack();
             LD_ADDR_HL(ice.LoadTilemapAddr + 40);
-            
+
             // Set amount of sprites
             LD_A(outputPrev->operand / 3);
             ProgramPtrToOffsetStack();
             LD_ADDR_A(ice.LoadTilemapAddr + 45);
-            
+
             if (outputPrevPrevPrev->type < TYPE_STRING) {
                 return E_SYNTAX;
             }
             LD_HL_STRING(outputPrevPrevPrev->operand - 1, outputPrevPrevPrev->type);
-            
+
             // Call the right routine
             ProgramPtrToOffsetStack();
             CALL(ice.LoadTilemapAddr);
-            
+
             ResetAllRegs();
             reg.AIsNumber = true;
             reg.AValue = 0;
         }
     }
-    
+
     // Data(
     else if (function == tVarOut && function2 == tData) {
         /***********************************
@@ -768,14 +769,14 @@ uint8_t parseFunction(uint24_t index) {
         *
         * Returns: PTR to data
         ***********************************/
-        
+
         uint24_t startIndex = -1 - amountOfArguments;
-        
+
         if ((res = InsertDataElements(amountOfArguments, startIndex, (&outputPtr[getIndexOffset(startIndex)])->operand, 1)) != VALID) {
             return res;
         }
     }
-    
+
     // CopyData(
     else if (function == tVarOut && function2 == tCopyData) {
         /*****************************************************
@@ -784,11 +785,11 @@ uint8_t parseFunction(uint24_t index) {
         *  arg2: size in bytes of each entry
         *  arg3-argX: entries, constants
         *****************************************************/
-        
+
         element_t *outputTemp;
         uint24_t startIndex = -1 - amountOfArguments;
         uint8_t *prevProgDataPtr = ice.programDataPtr;
-        
+
         outputTemp = &outputPtr[getIndexOffset(startIndex)];
         if (outputTemp->type == TYPE_NUMBER) {
             LD_DE_IMM(outputTemp->operand);
@@ -799,14 +800,14 @@ uint8_t parseFunction(uint24_t index) {
         } else {
             return E_SYNTAX;
         }
-        
+
         if ((res = InsertDataElements(amountOfArguments, startIndex, (&outputPtr[getIndexOffset(startIndex + 1)])->operand, 2)) != VALID) {
             return res;
         }
         LD_BC_IMM(prevProgDataPtr - ice.programDataPtr);
         LDIR();
     }
-    
+
     // Copy(
     else if (function == tVarOut && function2 == tCopy) {
         /*****************************************************
@@ -815,15 +816,15 @@ uint8_t parseFunction(uint24_t index) {
         *  arg2: PTR to source
         *  arg3: size in bytes
         *****************************************************/
-        
+
         uint8_t outputPrevPrevPrevType = outputPrevPrevPrev->type & 0x7F;
         uint24_t outputPrevPrevPrevOperand = outputPrevPrevPrev->operand;
         uint24_t outputPrevPrevOperand = outputPrevPrev->operand;
-        
+
         if (amountOfArguments < 3 || amountOfArguments > 4) {
             return E_ARGUMENTS;
         }
-        
+
         if (outputPrevPrevPrevType <= TYPE_VARIABLE) {
             if (outputPrevPrevType == TYPE_CHAIN_PUSH) {
                 if (outputPrevType != TYPE_CHAIN_ANS) {
@@ -874,10 +875,10 @@ uint8_t parseFunction(uint24_t index) {
         } else {
             LDIR();
         }
-        
+
         return VALID;
     }
-    
+
     // DefineSprite(
     else if (function == tVarOut && function2 == tDefineSprite) {
         /*****************************************************
@@ -888,15 +889,15 @@ uint8_t parseFunction(uint24_t index) {
         *
         * Returns: PTR to sprite
         *****************************************************/
-        
+
         if (amountOfArguments == 2) {
             uint8_t width = outputPrevPrev->operand;
             uint8_t height = outputPrev->operand;
-            
+
             if (outputPrevPrevType != TYPE_NUMBER || outputPrevType != TYPE_NUMBER) {
                 return E_SYNTAX;
             }
-            
+
             LD_HL_IMM(width * height + 2);
             InsertMallocRoutine();
             JR_NC(6);
@@ -906,38 +907,38 @@ uint8_t parseFunction(uint24_t index) {
             DEC_HL();
         } else if (amountOfArguments == 3) {
             uint8_t *a;
-            
+
             if(outputPrevPrevPrev->type != TYPE_NUMBER || outputPrevPrevType != TYPE_NUMBER || outputPrevType != TYPE_STRING) {
                 return E_SYNTAX;
             }
-            
+
             ice.programDataPtr -= 2;
             ProgramPtrToOffsetStack();
             LD_HL_IMM((uint24_t)ice.programDataPtr);
             ResetReg(REGISTER_HL);
-            
+
             *ice.programDataPtr = outputPrevPrevPrev->operand;
             *(ice.programDataPtr + 1) = outputPrevPrev->operand;
         } else {
             return E_ARGUMENTS;
         }
     }
-    
+
     // SetBrightness
     else if (function == tVarOut && function2 == tSetBrightness) {
         if ((res = parseFunction1Arg(index, REGISTER_HL)) != VALID) {
             return res;
         }
-        
+
         if (expr.outputRegister == REGISTER_HL) {
             LD_A_L();
         } else if (expr.outputRegister == REGISTER_DE) {
             LD_A_E();
         }
-        
+
         LD_IMM_A(mpBlLevel);
     }
-    
+
     // {}
     else if (function == tLBrace) {
         /*****************************************************
@@ -946,7 +947,7 @@ uint8_t parseFunction(uint24_t index) {
         *
         * Returns: 1-, 2- or 3-byte value at address PTR
         *****************************************************/
-        
+
         if (outputPrevType == TYPE_NUMBER || outputPrevType == TYPE_STRING || outputPrev->type == TYPE_OS_STRING) {
             if (outputPrevType == TYPE_STRING && outputPrevOperand != ice.tempStrings[TempString1] && outputPrevOperand != ice.tempStrings[TempString2]) {
                 ProgramPtrToOffsetStack();
@@ -994,7 +995,7 @@ uint8_t parseFunction(uint24_t index) {
             expr.outputReturnRegister = REGISTER_A;
         }
     }
-    
+
     // det(, sum(
     else if (function == tDet || function == tSum) {
         /*****************************************************
@@ -1004,65 +1005,65 @@ uint8_t parseFunction(uint24_t index) {
         *
         * Returns: output of C function
         *****************************************************/
-        
+
         uint8_t smallArguments;
         uint8_t whichSmallArgument = 1 << (9 - amountOfArguments);
         uint8_t *startProgramPtr = 0;
-        
+
         if (function == tDet) {
             smallArguments = GraphxArgs[function2 * 2 + 1];
         } else {
             smallArguments = FileiocArgs[function2 * 2 + 1];
         }
-        
+
         endIndex = index;
         startIndex = index;
-        
+
         // Get all the arguments
         for (a = amountOfArguments; a >= 1; a--) {
             uint24_t *tempP1, *tempP2;
-            
+
             a--;
             temp = 0;
             while (1) {
                 outputPrev = &outputPtr[--startIndex];
                 outputPrevType = outputPrev->type;
                 outputPrevOperand = outputPrev->operand;
-                
+
                 if (outputPrevType == TYPE_C_START) {
                     if (!temp) {
                         break;
                     }
                     temp--;
                 }
-                
+
                 if (outputPrevType == TYPE_FUNCTION && ((uint8_t)outputPrevOperand == tDet || (uint8_t)outputPrevOperand == tSum)) {
                     temp++;
                 }
-                
+
                 if (outputPrevType == TYPE_ARG_DELIMITER && !temp) {
                     break;
                 }
             }
-            
+
             // Check if it's the first argument or not
             if ((outputPrevType == TYPE_ARG_DELIMITER && !a) ||
                 (outputPrevType == TYPE_C_START && a)) {
                 return E_ARGUMENTS;
             }
-            
+
             // Setup a new stack
             tempP1 = getStackVar(0);
             tempP2 = getStackVar(1);
             ice.stackDepth++;
-            
+
             startProgramPtr = ice.programPtr;
-            
+
             // And finally grab the argument, and return if an error occured
             if ((temp = parsePostFixFromIndexToIndex(startIndex + 1, endIndex - 1)) != VALID) {
                 return temp;
             }
-            
+
             // If the last (first) argument is fetched, it's the det( function, so ignore all the optimizations
             // Ignore them too if it's optimized, like fetching variable A if it's already in register HL
             if (ice.programPtr != startProgramPtr && a) {
@@ -1091,48 +1092,48 @@ uint8_t parseFunction(uint24_t index) {
             } else {
                 PushHLDE();
             }
-            
+
             ice.stackDepth--;
-            
+
             // And restore the stack
             setStackValues(tempP1, tempP2);
-            
+
             endIndex = startIndex;
             whichSmallArgument <<= 1;
             a++;
         }
-        
+
         ice.programPtr = startProgramPtr;
-        
+
         // Wow, unknown C function?
         if (function2 >= (function == tDet ? AMOUNT_OF_GRAPHX_FUNCTIONS : AMOUNT_OF_FILEIOC_FUNCTIONS)) {
             return E_UNKNOWN_C;
         }
-        
+
         // Get the amount of arguments, and call the function
         if (function == tDet) {
             temp = GraphxArgs[function2 * 2];
-            CALL((uint24_t)ice.CBaseAddress + ice.GraphxRoutinesStack[function2]);
+            CALL(prescan.GraphxRoutinesStack[function2]);
         } else {
             temp = FileiocArgs[function2 * 2];
-            CALL((uint24_t)ice.CBaseAddress + ice.FileiocRoutinesStack[function2]);
+            CALL(prescan.FileiocRoutinesStack[function2]);
         }
-        
+
         // Check if unimplemented function
         if (temp & UN) {
             return E_UNKNOWN_C;
         }
-        
+
         // Check the right amount of arguments
         if ((temp & 7) != amountOfArguments - 1) {
             return E_ARGUMENTS;
         }
-        
+
         // And pop the arguments
         for (a = 1; a < amountOfArguments; a++) {
             POP_BC();
         }
-        
+
         // Check if the output is 16-bits OR in A
         if (temp & RET_A) {
             expr.outputReturnRegister = REGISTER_A;
@@ -1140,7 +1141,7 @@ uint8_t parseFunction(uint24_t index) {
             EX_S_DE_HL();
             expr.outputReturnRegister = REGISTER_DE;
         }
-        
+
         // Warn if C function used BEFORE starting GRAPHX
         if (function == tDet) {
             if (function2 == 1) {
@@ -1154,7 +1155,7 @@ uint8_t parseFunction(uint24_t index) {
             }
             ice.startedGRAPHX = true;
         }
-        
+
         // Warn if C function used BEFORE starting FILEIOC
         else {
             if (!function2) {
@@ -1165,14 +1166,14 @@ uint8_t parseFunction(uint24_t index) {
             }
             ice.startedFILEIOC = true;
         }
-        
+
         ResetAllRegs();
         expr.outputIsNumber = expr.outputIsVariable = expr.outputIsString = false;
         ice.modifiedIY = true;
     }
-    
+
     expr.outputRegister = expr.outputReturnRegister;
-    
+
     return VALID;
 }
 
@@ -1180,11 +1181,11 @@ uint8_t parseFunction1Arg(uint24_t index, uint8_t outputRegister1) {
     element_t *outputPtr = (element_t*)outputStack, *outputPrev;
     uint24_t outputOperand;
     uint8_t outputPrevType;
-    
+
     outputPrev = &outputPtr[getIndexOffset(-2)];
     outputPrevType = outputPrev->type;
     outputOperand = outputPrev->operand;
-    
+
     if ((outputPrevType & 0x7F) == TYPE_NUMBER) {
         LD_HL_IMM(outputOperand);
     } else if (outputPrevType == TYPE_VARIABLE) {
@@ -1196,7 +1197,7 @@ uint8_t parseFunction1Arg(uint24_t index, uint8_t outputRegister1) {
     } else {
         return E_SYNTAX;
     }
-    
+
     return VALID;
 }
 
@@ -1204,14 +1205,14 @@ uint8_t parseFunction2Args(uint24_t index, uint8_t outputReturnRegister, bool or
     element_t *outputPtr = (element_t*)outputStack, *outputPrev, *outputPrevPrev;
     uint8_t outputPrevType, outputPrevPrevType;
     uint24_t outputPrevOperand, outputPrevPrevOperand;
-    
+
     outputPrev            = &outputPtr[getIndexOffset(-2)];
     outputPrevPrev        = &outputPtr[getIndexOffset(-3)];
     outputPrevType        = outputPrev->type;
     outputPrevPrevType    = outputPrevPrev->type;
     outputPrevOperand     = outputPrev->operand;
     outputPrevPrevOperand = outputPrevPrev->operand;
-    
+
     if ((outputPrevPrevType & 0x7F) == TYPE_NUMBER) {
         if ((outputPrevType & 0x7F) == TYPE_NUMBER) {
             LD_HL_IMM(outputPrevPrevOperand);
@@ -1342,7 +1343,7 @@ uint8_t parseFunction2Args(uint24_t index, uint8_t outputReturnRegister, bool or
     } else {
         return E_SYNTAX;
     }
-    
+
     return VALID;
 }
 
@@ -1351,12 +1352,12 @@ uint8_t InsertDataElements(uint8_t amountOfArguments, uint24_t startIndex, uint8
     element_t *outputPtr = (element_t*)outputStack;
     uint8_t a;
     uint8_t *newProgramDataPtr;
-    
+
     ProgramPtrToOffsetStack();
     ice.programDataPtr -= dataSize * (amountOfArguments - startA);
     newProgramDataPtr = ice.programDataPtr;
     LD_HL_IMM((uint24_t)newProgramDataPtr);
-    
+
     for (a = startA; a < amountOfArguments; a++) {
         outputTemp = &outputPtr[getIndexOffset(startIndex + a)];
         if (outputTemp->type != TYPE_NUMBER) {
@@ -1372,9 +1373,9 @@ uint8_t InsertDataElements(uint8_t amountOfArguments, uint24_t startIndex, uint8
         }
         ice.programDataPtr += dataSize;
     }
-    
+
     ice.programDataPtr = newProgramDataPtr;
-    
+
     return VALID;
 }
 
@@ -1400,15 +1401,15 @@ void loadGetKeyFastData2(void) {
 
 void InsertMallocRoutine(void) {
     bool boolUsed = ice.usedAlreadyMalloc;
-    
+
     CallRoutine(&ice.usedAlreadyMalloc, &ice.MallocAddr, (uint8_t*)MallocData, SIZEOF_MALLOC_DATA);
     *(uint24_t*)(ice.MallocAddr + 1) = ice.freeMemoryPtr;
-    
+
     if (!boolUsed) {
         ice.dataOffsetStack[ice.dataOffsetElements++] = (uint24_t*)(ice.MallocAddr + 6);
         *(uint24_t*)(ice.MallocAddr + 6) = ice.MallocAddr + 1;
     }
-    
+
     ResetReg(REGISTER_HL);
     ResetReg(REGISTER_DE);
     reg.BCIsVariable = false;

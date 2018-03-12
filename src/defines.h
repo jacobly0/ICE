@@ -3,7 +3,11 @@
 
 #include <stdbool.h>
 #include <stdint.h>
+#ifdef __EMSCRIPTEN__
+#include "tice.h"
+#else
 #include <tice.h>
+#endif
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
@@ -12,7 +16,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#if !defined(COMPUTER_ICE) && !defined(SC)
+#if !defined(COMPUTER_ICE) && !defined(__EMSCRIPTEN__)
 
 #include <fileioc.h>
 #include <graphx.h>
@@ -29,7 +33,7 @@
 #define _getc(x)     getNextToken(x)
 
 #else
-    
+
 #define _getc(x)     getNextToken(x)
 #define TI_PRGM_TYPE 5
 #define M_PI         3.14159265358979323846
@@ -46,15 +50,16 @@ typedef uint32_t uint24_t;
 
 #define _rewind(x)   fseek(x, 0x4A, SEEK_SET)
 #define _open(x)     fopen(x, "rb")
+#define _close(x)    fclose(x)
 #define _tell(x)     ftell(x)
 #define _seek(x,y,z) fseek(z,x,y);
 
 #else
-    
+
 // Lmao
 typedef bool ti_var_t;
 typedef uint32_t uint24_t;
-    
+
 #define _rewind(x)   ice.progInputPtr = 0
 #define _open(x)     ice_open(x)
 #define _tell(x)     ice.progInputPtr
@@ -67,7 +72,7 @@ typedef uint32_t uint24_t;
             ice.progInputPtr += x; \
         } \
     } while (0)
-        
+
 
 bool ice_open(char tempName[9]);
 void ice_open_first_prog(void);
@@ -77,7 +82,7 @@ void ice_export(uint8_t*, uint24_t);
 
 // Uh oh...
 int main(int argc, char **);
-    
+
 #endif
 
 #endif

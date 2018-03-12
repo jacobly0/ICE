@@ -11,7 +11,7 @@
 #define OP1               0xD005F8
 #define pixelShadow       0xD031F6
 #define mpBlLevel         0xF60024
-                       
+
 #define _GetCSC           0x02014C
 #define _Mov9ToOP1        0x020320
 #define _PutS             0x0207C0
@@ -207,10 +207,10 @@
 #define SBC_HL_DE()           do { output(uint16_t, 0x52ED); ResetReg(REGISTER_HL); } while (0)
 #define SBC_HL_HL()           do { output(uint16_t, 0x62ED); ResetReg(REGISTER_HL); } while (0)
 #define MLT_HL()              do { output(uint16_t, 0x6CED); ResetReg(REGISTER_HL); } while (0)
-    
+
 #define OR_A_SBC_HL_DE()      do { output(uint24_t, 0x52EDB7); ResetReg(REGISTER_HL); } while (0)
 #define SBC_HL_HL_INC_HL()    do { output(uint24_t, 0x2362ED); ResetReg(REGISTER_HL); } while (0)
-    
+
 #define PUSH_BC()             do { output(uint8_t, OP_PUSH_BC); } while (0)
 #define PUSH_DE()             do { output(uint8_t, OP_PUSH_DE); } while (0)
 #define PUSH_HL()             do { output(uint8_t, OP_PUSH_HL); } while (0)
@@ -238,7 +238,7 @@
 #define JR_NC(off)            do { output(uint8_t, OP_JR_NC); output(uint8_t, off); } while (0)
 #define JR_C(off)             do { output(uint8_t, OP_JR_C); output(uint8_t, off); } while (0)
 #define DJNZ(off)             do { output(uint8_t, OP_DJNZ); output(uint8_t, off); ResetReg(REGISTER_BC); } while (0)
-    
+
 #define LDIR()                do { output(uint16_t, 0xB0ED); reg.BCIsNumber = true; reg.BCIsVariable = false; reg.BCValue = 0; ResetReg(REGISTER_HL); ResetReg(REGISTER_DE); } while (0)
 #define LDDR()                do { output(uint16_t, 0xB8ED); reg.BCIsNumber = true; reg.BCIsVariable = false; reg.BCValue = 0; ResetReg(REGISTER_HL); ResetReg(REGISTER_DE); } while (0)
 
