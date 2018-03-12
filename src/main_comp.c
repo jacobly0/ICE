@@ -68,7 +68,7 @@ int main(int argc, char **argv) {
 
     ice.programLength   = _tell(ice.inPrgm);
     ice.programData     = malloc(0xFFFF + 0x100);
-    ice.programPtr      = ice.programData + SIZEOF_CHEADER;
+    ice.programPtr      = ice.programData;
     ice.programDataData = ice.programData + 0xFFFF;
     ice.programDataPtr  = ice.programDataData;
     ice.LblPtr          = ice.LblStack;
@@ -150,7 +150,7 @@ int main(int argc, char **argv) {
     prescan.freeMemoryPtr = (prescan.tempStrings[1] = (prescan.tempStrings[0] = pixelShadow + 2000 * prescan.amountOfOSVarsUsed) + 2000) + 2000;
 
     LD_IX_IMM(IX_VARIABLES);
-
+    
     // Eventually seed the rand
     if (ice.usesRandRoutine) {
         ice.programDataPtr -= SIZEOF_RAND_DATA;

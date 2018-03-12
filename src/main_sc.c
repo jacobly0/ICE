@@ -46,7 +46,7 @@ int main(int argc, char **argv) {
     prog_t *outputPrgm;
 
     ice.programData    = malloc(0xFFFF);
-    ice.programPtr     = ice.programData + SIZEOF_CHEADER;
+    ice.programPtr     = ice.programData;
     ice.programDataPtr = ice.programDataData;
     ice.LblPtr         = ice.LblStack;
     ice.GotoPtr        = ice.GotoStack;
