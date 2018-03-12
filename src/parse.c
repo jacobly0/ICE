@@ -1720,19 +1720,15 @@ static uint8_t functionBB(int token) {
     // AsmComp(
     else if ((uint8_t)token == tAsmComp) {
         char tempName[9];
-        uint8_t a = 0, res = VALID;
+        uint8_t res = VALID;
         uint24_t currentLine = ice.currentLine;
         ti_var_t tempProg = ice.inPrgm;
-
-        while ((token = _getc()) != EOF && (uint8_t)token != tEnter && (uint8_t)token != tRParen && a < 9) {
-            tempName[a++] = token;
+        prog_t *outputPrgm;
+        
+        outputPrgm = GetProgramName();
+        if (outputPrgm->errorCode != VALID) {
+            return outputPrgm->errorCode;
         }
-
-        if (!a || a == 9) {
-            return E_INVALID_PROG;
-        }
-
-        tempName[a] = 0;
 
 #ifdef COMPUTER_ICE
         if ((ice.inPrgm = _open(str_dupcat(tempName, ".8xp")))) {
@@ -1760,6 +1756,9 @@ static uint8_t functionBB(int token) {
             if ((res = parseProgram()) != VALID) {
                 return res;
             }
+            EM_ASM(
+                console.log("Wrong!");
+            );
             _close(ice.inPrgm);
             ice.currentLine = currentLine;
         } else {
