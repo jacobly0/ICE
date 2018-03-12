@@ -20,6 +20,7 @@ extern char *str_dupcat(const char *s, const char *c);
 #endif
 
 #ifdef __EMSCRIPTEN__
+#include <emscripten.h>
 extern const uint8_t PauseData[];
 extern const uint8_t InputData[];
 extern const uint8_t PrgmData[];
