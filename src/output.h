@@ -123,7 +123,7 @@
 #define OP_OR_A       0xF6
 #define OP_CP_A       0xFE
 
-#if !defined(COMPUTER_ICE) && !defined(SC)
+#if !defined(COMPUTER_ICE) && !defined(__EMSCRIPTEN__)
 #define output(type, value) \
     do { \
         *(type*)ice.programPtr = (value); \

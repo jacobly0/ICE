@@ -182,10 +182,10 @@ findNextLabel:;
 
         // Get the sizes of both stacks
         ice.programSize = (uintptr_t)ice.programPtr - (uintptr_t)ice.programData;
-        programDataSize = (uintptr_t)ice.programDataPtr - (uintptr_t)ice.programDataData;
+        programDataSize = (uintptr_t)ice.programDataData - (uintptr_t)ice.programDataPtr;
 
         // Change the pointers to the data as well, but first calculate the offset
-        offset = PRGM_START + ice.programSize - (uintptr_t)ice.programDataData;
+        offset = PRGM_START + ice.programSize - (uintptr_t)ice.programDataPtr;
         while (ice.dataOffsetElements--) {
             w24(ice.dataOffsetStack[ice.dataOffsetElements], *ice.dataOffsetStack[ice.dataOffsetElements] + offset);
         }

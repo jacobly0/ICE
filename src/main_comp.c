@@ -229,7 +229,7 @@ findNextLabel:;
 
         // Write the header, main program, and data to output :D
         memcpy(&export[3], ice.programData, ice.programSize);
-        memcpy(&export[3 + ice.programSize], ice.programDataPtr, programDataSize);
+        memcpy(&export[3 + ice.programSize], ice.programDataData, programDataSize);
 
         // Write the actual program file
         export_program(ice.outName, export, totalSize);
