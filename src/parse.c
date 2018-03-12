@@ -20,7 +20,6 @@ extern char *str_dupcat(const char *s, const char *c);
 #endif
 
 #ifdef __EMSCRIPTEN__
-#include <emscripten.h>
 extern const uint8_t PauseData[];
 extern const uint8_t InputData[];
 extern const uint8_t PrgmData[];
@@ -1757,9 +1756,7 @@ static uint8_t functionBB(int token) {
             if ((res = parseProgram()) != VALID) {
                 return res;
             }
-            EM_ASM(
-                console.log("Wrong!");
-            );
+            ice_console("Wrong!");
             _close(ice.inPrgm);
             ice.currentLine = currentLine;
         } else {
