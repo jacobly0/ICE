@@ -85,8 +85,6 @@ uint8_t parseProgram(void) {
 #endif
     }
     
-    ice_console("2");
-
     return ret;
 }
 
@@ -1761,7 +1759,6 @@ static uint8_t functionBB(int token) {
             _close(ice.inPrgm);
             ice.currentLine = currentLine;
         } else {
-            ice_console("1");
             res = E_PROG_NOT_FOUND;
         }
 #else

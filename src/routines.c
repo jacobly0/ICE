@@ -82,8 +82,8 @@ void preScanProgram(void) {
 
                     if ((ice.inPrgm = _open(newProg->prog))) {
                         preScanProgram();
+                        _close(ice.inPrgm);
                     }
-                    _close(ice.inPrgm);
                     ice.inPrgm = tempProg;
                 } else if (tok == tRandInt) {
                     prescan.amountOfRandRoutines++;

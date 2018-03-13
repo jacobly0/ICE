@@ -212,7 +212,6 @@ findNextLabel:;
         export_program(ice.outName, export, totalSize);
         free(export);
     } else {
-        ice_console("3");
         displayError(res);
     }
     return 0;
