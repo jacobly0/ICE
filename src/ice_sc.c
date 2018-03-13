@@ -52,6 +52,7 @@ void ice_close(void) {
 }
 
 void ice_error(char *error, uint24_t currentLine) {
+    ice_console("4");
     EM_ASM_({
         ICEcompiler.error($0, $1);
     }, error, currentLine);
