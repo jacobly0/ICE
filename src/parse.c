@@ -1719,7 +1719,6 @@ static uint8_t functionBB(int token) {
 
     // AsmComp(
     else if ((uint8_t)token == tAsmComp) {
-        char tempName[9];
         uint8_t res = VALID;
         uint24_t currentLine = ice.currentLine;
         ti_var_t tempProg = ice.inPrgm;
@@ -1731,13 +1730,13 @@ static uint8_t functionBB(int token) {
         }
 
 #ifdef COMPUTER_ICE
-        if ((ice.inPrgm = _open(str_dupcat(tempName, ".8xp")))) {
+        if ((ice.inPrgm = _open(str_dupcat(outputPrgm->prog, ".8xp")))) {
             int tempProgSize = ice.programLength;
 
             fseek(ice.inPrgm, 0, SEEK_END);
             ice.programLength = ftell(ice.inPrgm);
             _rewind(ice.inPrgm);
-            fprintf(stdout, "Compiling subprogram %s\n", str_dupcat(tempName, ".8xp"));
+            fprintf(stdout, "Compiling subprogram %s\n", str_dupcat(outputPrgm->prog, ".8xp"));
 
             // Compile it, and close
             ice.currentLine = 0;
@@ -1751,7 +1750,7 @@ static uint8_t functionBB(int token) {
             res = E_PROG_NOT_FOUND;
         }
 #elif defined(__EMSCRIPTEN__)
-        if ((ice.inPrgm = _open(tempName))) {
+        if ((ice.inPrgm = _open(outputPrgm->prog))) {
             ice.currentLine = 0;
             if ((res = parseProgram()) != VALID) {
                 return res;
@@ -1762,13 +1761,13 @@ static uint8_t functionBB(int token) {
             res = E_PROG_NOT_FOUND;
         }
 #else
-        if ((ice.inPrgm = _open(tempName))) {
+        if ((ice.inPrgm = _open(outputPrgm->prog))) {
             char buf[35];
 
             displayLoadingBarFrame();
-            sprintf(buf, "Compiling subprogram %s...", tempName);
+            sprintf(buf, "Compiling subprogram %s...", outputPrgm->prog);
             displayMessageLineScroll(buf);
-            strcpy(ice.currProgName[ice.inPrgm], tempName);
+            strcpy(ice.currProgName[ice.inPrgm], outputPrgm->prog);
 
             // Compile it, and close
             ice.currentLine = 0;
