@@ -506,8 +506,8 @@ G52:  .db "TransparentTilemap(PTR,X,Y)", 0
 G53:  .db "TransparentTilemap_NoClip(PTR,X,Y)", 0
 G54:  .db "TilePtr(PTR,X,Y)", 0
 G55:  .db "TilePtrMapped(PTR,ROW,COL)", 0
-G56:
-G57:
+G56:  .db " ", 0
+G57:  .db " ", 0
 G58:  .db "Sprite(PTR,X,Y)", 0
 G59:  .db "TransparentSprite(PTR,X,Y)", 0
 G60:  .db "Sprite_NoClip(PTR,X,Y)", 0
@@ -525,7 +525,7 @@ G70:  .db "Polygon(POINTS,NUM)", 0
 G71:  .db "Polygon_NoClip(POINTS,NUM)", 0
 G72:  .db "FillTriangle(X1,Y1,X2,Y2,X3,Y3)", 0
 G73:  .db "FillTriangle_NoClip(X1,Y1,X2,Y2,X3,Y3)", 0
-G74:
+G74:  .db " ", 0
 G75:  .db "SetTextScale(W_SCALE,H_SCALE)", 0
 G76:  .db "SetTransparentColor(COLOR)", 0
 G77:  .db "ZeroScreen()", 0
