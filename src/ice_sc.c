@@ -63,10 +63,4 @@ void ice_export(uint8_t *outputPtr, uint24_t size) {
     }, ice.outName, outputPtr, size);
 }
 
-void ice_console(char *string) {
-    EM_ASM_({
-        console.log($0);
-    }, string);
-}
-
 #endif

@@ -79,7 +79,6 @@ void ice_open_first_prog(void);
 void ice_close(void);
 void ice_error(char*, uint24_t);
 void ice_export(uint8_t*, uint24_t);
-void ice_console(char*);
 
 // Uh oh...
 int main(int argc, char **);
