@@ -13,7 +13,13 @@ _GotoEditor:
 	ld.sis	(008E3h), de		; errOffset
 	ld	de, 0D0065Bh		; progToEdit
 	ld	bc, 8
+	push	hl
 	ldir
+	pop	hl
+	
+; This is necessary because Cesium always assumes that OP1 is pushed before going into the editor
+	call	0020320h		; _Mov9ToOP1
+	call	0020628h		; _PushOP1
 	
 ; Cleanup C things
 	ld	sp, (__errsp + 1);
@@ -32,15 +38,8 @@ StartProgramEditor:
 	ld	hl, 0D1A881h		; userMem
 	ld	de, (0D0118Ch)		; asm_prgm_size
 	call	0020590h		; _DelMem
-	ld	a, 058h			; kExtApps
-	ld	(0D007E0h), a		; cxCurApp
 	ld	a, 046h			; kPrgmEd
-	call	00208BCh		; _PullDownChk
-	call	0020ED4h		; _ClrTR
-	ld	a, 046h			; kPrgmEd
-	call	0020170h		; _NewContext0
-	ld	sp, (0D007FAh)		; onSP
-	call	002103Ch		; _resetStacks
+	call	002016Ch		; _NewContext
 	ld.sis	bc, (008E3h)		; errOffset
 	ld	hl, (0D0243Dh)		; editTail
 	ld	de, (0D0243Ah)		; editCursor
