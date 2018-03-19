@@ -63,7 +63,6 @@ const uint8_t GraphxArgs[] = {
     RET_NONE | 5, SMALL_13,    // BlitArea
     RET_NONE | 1, SMALL_1,     // PrintChar
     RET_NONE | 2, SMALL_2,     // PrintInt
-    RET_NONE | 2, SMALL_2,     // PrintInt
     RET_NONE | 2, SMALL_2,     // PrintUInt
     RET_NONE | 1, ARG_NORM,    // PrintString
     RET_NONE | 3, ARG_NORM,    // PrintStringXY
