@@ -1112,10 +1112,10 @@ uint8_t parseFunction(uint24_t index) {
         // Get the amount of arguments, and call the function
         if (function == tDet) {
             temp = GraphxArgs[function2 * 2];
-            CALL(prescan.GraphxRoutinesStack[function2]);
+            CALL(prescan.GraphxRoutinesStack[function2] - (uint24_t)ice.programData + PRGM_START);
         } else {
             temp = FileiocArgs[function2 * 2];
-            CALL(prescan.FileiocRoutinesStack[function2]);
+            CALL(prescan.FileiocRoutinesStack[function2] - (uint24_t)ice.programData + PRGM_START);
         }
 
         // Check if unimplemented function

@@ -245,11 +245,11 @@ void main(void) {
     // Cleanup code
     if (prescan.hasGraphxFunctions) {
         CALL(_RunIndicOff);
-        CALL(ice.programPtr - ice.programData + PRGM_START);
+        CALL(ice.programPtr - ice.programData + PRGM_START + 12);
         LD_IY_IMM(flags);
         JP(_DrawStatusBar);
     } else if (prescan.modifiedIY) {
-        CALL(ice.programPtr - ice.programData + PRGM_START);
+        CALL(ice.programPtr - ice.programData + PRGM_START + 9);
         LD_IY_IMM(flags);
         RET();
     }
