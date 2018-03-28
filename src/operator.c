@@ -100,7 +100,7 @@ void MultWithNumber(uint24_t num, uint8_t *programPtr, bool ChangeRegisters) {
 #endif
 
 bool comparePtrToTempStrings(uint24_t addr) {
-    return (addr == ice.tempStrings[TempString1] || addr == ice.tempStrings[TempString2]);
+    return (addr == prescan.tempStrings[TempString1] || addr == prescan.tempStrings[TempString2]);
 }
 
 uint8_t getIndexOfOperator(uint8_t operator) {
@@ -280,7 +280,7 @@ uint8_t parseOperator(element_t *outputPrevPrevPrev, element_t *outputPrevPrev, 
 }
 
 void LD_HL_STRING(uint24_t stringPtr, uint8_t type) {
-    if ((type != TYPE_OS_STRING) && (stringPtr != ice.tempStrings[TempString1] && stringPtr != ice.tempStrings[TempString2])) {
+    if ((type != TYPE_OS_STRING) && (stringPtr != prescan.tempStrings[TempString1] && stringPtr != prescan.tempStrings[TempString2])) {
         ProgramPtrToOffsetStack();
     }
     LD_HL_IMM(stringPtr);
@@ -307,9 +307,9 @@ void StoVariableVariable(void) {
     StoChainAnsVariable();
 }
 void StoNumberChainAns(void) {
-    uint8_t type = entry1->type;
+    uint8_t type = entry1->type & 0x7F;
     uint8_t mask = entry2->mask;
-
+    
     if (type == TYPE_NUMBER) {
         if (mask == TYPE_MASK_U8) {
             LD_A(entry0_operand);
@@ -341,7 +341,7 @@ void StoNumberChainAns(void) {
     StoToChainAns();
 }
 void StoVariableChainAns(void) {
-    uint8_t type = entry1->type;
+    uint8_t type = entry1->type & 0x7F;
     uint8_t mask = entry2->mask;
 
     if (type == TYPE_NUMBER) {
@@ -389,7 +389,7 @@ void StoChainPushChainAns(void) {
     }
 }
 void StoChainAnsChainAns(void) {
-    uint8_t type = entry1->type;
+    uint8_t type = entry1->type & 0x7F;
     uint8_t mask = entry2->mask;
 
     if (type == TYPE_NUMBER) {
@@ -1068,10 +1068,10 @@ void AddStringString(void) {
             }
             LD_HL_IMM(entry1_operand);
             PUSH_HL();
-            if (entry2_operand == ice.tempStrings[TempString1]) {
-                LD_HL_IMM(ice.tempStrings[TempString2]);
+            if (entry2_operand == prescan.tempStrings[TempString1]) {
+                LD_HL_IMM(prescan.tempStrings[TempString2]);
             } else {
-                LD_HL_IMM(ice.tempStrings[TempString1]);
+                LD_HL_IMM(prescan.tempStrings[TempString1]);
             }
             PUSH_HL();
             CALL(__strcpy);

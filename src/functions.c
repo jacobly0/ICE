@@ -533,17 +533,17 @@ uint8_t parseFunction(uint24_t index) {
 
         // Get the string into DE
         if (outputPrevPrevPrev->type == TYPE_STRING &&
-              outputPrevPrevPrevOperand != ice.tempStrings[TempString1] && outputPrevPrevPrevOperand != ice.tempStrings[TempString2]) {
+              outputPrevPrevPrevOperand != prescan.tempStrings[TempString1] && outputPrevPrevPrevOperand != prescan.tempStrings[TempString2]) {
             ProgramPtrToOffsetStack();
         }
         LD_DE_IMM(outputPrevPrevPrevOperand);
 
         // Add the offset to the string, and copy!
         ADD_HL_DE();
-        if (outputPrevPrevPrevOperand == ice.tempStrings[TempString1]) {
-            LD_DE_IMM(ice.tempStrings[TempString2]);
+        if (outputPrevPrevPrevOperand == prescan.tempStrings[TempString1]) {
+            LD_DE_IMM(prescan.tempStrings[TempString2]);
         } else {
-            LD_DE_IMM(ice.tempStrings[TempString1]);
+            LD_DE_IMM(prescan.tempStrings[TempString1]);
         }
         LDIR();
         EX_DE_HL();
@@ -948,7 +948,7 @@ uint8_t parseFunction(uint24_t index) {
         *****************************************************/
 
         if (outputPrevType == TYPE_NUMBER || outputPrevType == TYPE_STRING || outputPrev->type == TYPE_OS_STRING) {
-            if (outputPrevType == TYPE_STRING && outputPrevOperand != ice.tempStrings[TempString1] && outputPrevOperand != ice.tempStrings[TempString2]) {
+            if (outputPrevType == TYPE_STRING && outputPrevOperand != prescan.tempStrings[TempString1] && outputPrevOperand != prescan.tempStrings[TempString2]) {
                 ProgramPtrToOffsetStack();
             }
             if (outputCurr->mask == TYPE_MASK_U8) {

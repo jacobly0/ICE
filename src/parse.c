@@ -218,7 +218,7 @@ fetchNoNewToken:
         // Process an OS list (number or list element)
         else if (tok == tVarLst) {
             outputCurr->type = TYPE_NUMBER;
-            outputCurr->operand = ice.OSLists[_getc()];
+            outputCurr->operand = prescan.OSLists[_getc()];
             outputElements++;
             mask = TYPE_MASK_U24;
 
@@ -321,9 +321,9 @@ stackToOutputReturn1:
 
                 outputCurr->operand = IX_VARIABLES + offset;
             } else if (tok == tVarLst) {
-                outputCurr->operand = ice.OSLists[_getc()];
+                outputCurr->operand = prescan.OSLists[_getc()];
             } else if (tok == tVarStrng) {
-                outputCurr->operand = ice.OSStrings[_getc()];
+                outputCurr->operand = prescan.OSStrings[_getc()];
             } else {
                 return E_SYNTAX;
             }
@@ -502,7 +502,7 @@ noSquishing:
         // Parse an OS string
         else if (tok == tVarStrng) {
             outputCurr->type = TYPE_OS_STRING;
-            outputCurr->operand = ice.OSStrings[_getc()];
+            outputCurr->operand = prescan.OSStrings[_getc()];
             outputElements++;
             mask = TYPE_MASK_U24;
         }
@@ -834,10 +834,10 @@ uint8_t parsePostFixFromIndexToIndex(uint24_t startIndex, uint24_t endIndex) {
                 // Check if it was a command with 2 strings, then the output is a string, not Ans
                 if ((uint8_t)outputCurr->operand == tAdd && outputPrevPrev->type >= TYPE_STRING && outputPrev->type >= TYPE_STRING) {
                     outputCurr->type = TYPE_STRING;
-                    if (outputPrevPrev->operand == ice.tempStrings[TempString2] || outputPrev->operand == ice.tempStrings[TempString1]) {
-                        outputCurr->operand = ice.tempStrings[TempString2];
+                    if (outputPrevPrev->operand == prescan.tempStrings[TempString2] || outputPrev->operand == prescan.tempStrings[TempString1]) {
+                        outputCurr->operand = prescan.tempStrings[TempString2];
                     } else {
-                        outputCurr->operand = ice.tempStrings[TempString1];
+                        outputCurr->operand = prescan.tempStrings[TempString1];
                     }
                     expr.outputIsString = true;
                 } else {
@@ -886,10 +886,10 @@ uint8_t parsePostFixFromIndexToIndex(uint24_t startIndex, uint24_t endIndex) {
                 // If it's a sub(, the output should be a string, not Ans
                 if ((uint8_t)outputCurr->operand == t2ByteTok && function2 == tSubStrng) {
                     outputCurr->type = TYPE_STRING;
-                    if (outputPrevPrevPrev->operand == ice.tempStrings[TempString1]) {
-                        outputCurr->operand = ice.tempStrings[TempString2];
+                    if (outputPrevPrevPrev->operand == prescan.tempStrings[TempString1]) {
+                        outputCurr->operand = prescan.tempStrings[TempString2];
                     } else {
-                        outputCurr->operand = ice.tempStrings[TempString1];
+                        outputCurr->operand = prescan.tempStrings[TempString1];
                     }
                     expr.outputIsString = true;
                     AnsDepth = 0;
