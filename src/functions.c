@@ -94,8 +94,8 @@ const uint8_t GraphxArgs[] = {
     RET_A    | 1, ARG_NORM,    // GetClipRegion
     RET_NONE | 1, SMALL_1,     // ShiftDown
     RET_NONE | 1, SMALL_1,     // ShiftUp
-    RET_NONE | 1, SMALL_1,     // ShiftLeft
-    RET_NONE | 1, SMALL_1,     // ShiftRight
+    RET_NONE | 1, ARG_NORM,    // ShiftLeft
+    RET_NONE | 1, ARG_NORM,    // ShiftRight
     RET_NONE | 3, ARG_NORM,    // Tilemap
     RET_NONE | 3, ARG_NORM,    // Tilemap_NoClip
     RET_NONE | 3, ARG_NORM,    // TransparentTilemap
