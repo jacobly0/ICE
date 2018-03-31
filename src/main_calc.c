@@ -257,10 +257,11 @@ void main(void) {
     LD_IX_IMM(IX_VARIABLES);
 
     // Eventually seed the rand
-    if (ice.usesRandRoutine) {
-        ice.programDataPtr -= SIZEOF_RAND_DATA;
+    if (prescan.amountOfRandRoutines) {
+        ice.programDataPtr -= SIZEOF_RAND_DATA + SIZEOF_SRAND_DATA;
         ice.randAddr = (uint24_t)ice.programDataPtr;
-        memcpy(ice.programDataPtr, SRandData, SIZEOF_RAND_DATA);
+        memcpy(ice.programDataPtr, SRandData, SIZEOF_SRAND_DATA);
+        memcpy(ice.programDataPtr + SIZEOF_SRAND_DATA, RandData, SIZEOF_RAND_DATA);
         ice.dataOffsetStack[ice.dataOffsetElements++] = (uint24_t*)(ice.randAddr + 2);
         w24((uint8_t*)(ice.randAddr + 2), ice.randAddr + 102);
         ice.dataOffsetStack[ice.dataOffsetElements++] = (uint24_t*)(ice.randAddr + 6);
