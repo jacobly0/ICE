@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python3
 # -*- coding: latin-1 -*-
 
 import irc.bot
@@ -129,7 +129,7 @@ class TestBot(irc.bot.SingleServerIRCBot):
         self.extraOutput += " | " + function[2]
 
 def main():
-    server = "irc.freenode.net"
+    server = "irc.choopa.net"
     port = 6667
     channel = "#icedev"
     nickname = "ICEbot"
