@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: latin-1 -*-
 
+import re
 import irc.bot
 import irc.strings
 from irc.client import ip_numstr_to_quad, ip_quad_to_numstr
@@ -36,6 +37,9 @@ class TestBot(irc.bot.SingleServerIRCBot):
     }
     extraOutput = ""
     namedFunctions = dict((doc[1].lower(), doc) for (n, doc) in detFunctions.items())
+    detMatch = re.compile("^det\(([0-9]+)\)?$")
+    sumMatch = re.compile("^sum\(([0-9]+)\)?$")
+    numMatch = re.compile("^([0-9]+)$")
 
     def __init__(self, channel, nickname, server, port=6667):
         irc.bot.SingleServerIRCBot.__init__(
@@ -68,58 +72,59 @@ class TestBot(irc.bot.SingleServerIRCBot):
         output = "[>b>oICE<s<b] "
         self.extraOutput = ""
 
-        if cmd == "" or len(cmd.split(" ")) != 1:
-            output += "invalid amount of arguments; use \"~ice det(XX)\" or \"~ice sum(XX)\" or \"~ice <function>\" to search for a function"
-        else:
-            if cmd[-1:] == ")":
-                cmd = cmd[0:-1]
+        print(cmd)
 
-            if cmd.startswith("det(") and cmd[4:].isdigit():
-                det = int(float(cmd[4:]))
-                
-                if det < len(self.detFunctions):
-                    self.func_to_string(self.detFunctions[det])
-                    output += self.extraOutput
-                else:
-                    output += "Invalid C function"
-            elif cmd.startswith("sum(") and cmd[4:].isdigit():
-                det = int(float(cmd[4:]))
-                output += "sum(" + str(det) + ") | "
-            elif cmd.isdigit():
-                det = int(float(cmd))
-
-                if det < len(self.detFunctions):
-                    self.func_to_string(self.detFunctions[det])
-                    output += self.extraOutput
-                else:
-                    output += "Invalid C function"
+        try:
+            if cmd == "" or len(cmd.split(" ")) != 1:
+                output += "invalid amount of arguments; use \"~ice det(XX)\" or \"~ice sum(XX)\" or \"~ice <function>\" to search for a function"
             else:
-                function = self.namedFunctions.get(cmd)
-                
-                if function is not None:
-                    self.func_to_string(function)
-                    output += self.extraOutput
+                if self.detMatch.match(cmd):
+                    det = int(float(cmd[4:]))
+                    
+                    if det < len(self.detFunctions):
+                        self.func_to_string(self.detFunctions[det])
+                        output += self.extraOutput
+                    else:
+                        output += "Invalid C function"
+                elif self.sumMatch.match(cmd):
+                    output += "sum"
+                elif self.numMatch.match(cmd):
+                    det = int(float(cmd))
+
+                    if det < len(self.detFunctions):
+                        self.func_to_string(self.detFunctions[det])
+                        output += self.extraOutput
+                    else:
+                        output += "Invalid C function"
                 else:
-                    output += "Unknown C function"
+                    function = self.namedFunctions.get(cmd)
+                    
+                    if function is not None:
+                        self.func_to_string(function)
+                        output += self.extraOutput
+                    else:
+                        output += "Unknown C function"
 
-        if e.target != "#cemetech":
-            output = output.replace(">b", "\x02")
-            output = output.replace(">n", "\x0302")
-            output = output.replace(">r", "\x0304")
-            output = output.replace(">o", "\x0307")
-            output = output.replace(">g", "\x0315")
-            output = output.replace("<b", "\x02")
-            output = output.replace("<s", "\x03")
-        else:
-            output = output.replace(">b", "")
-            output = output.replace(">n", "")
-            output = output.replace(">r", "")
-            output = output.replace(">o", "")
-            output = output.replace(">g", "")
-            output = output.replace("<b", "")
-            output = output.replace("<s", "")
+            if e.target != "#cemetech":
+                output = output.replace(">b", "\x02")
+                output = output.replace(">n", "\x0302")
+                output = output.replace(">r", "\x0304")
+                output = output.replace(">o", "\x0307")
+                output = output.replace(">g", "\x0315")
+                output = output.replace("<b", "\x02")
+                output = output.replace("<s", "\x03")
+            else:
+                output = output.replace(">b", "")
+                output = output.replace(">n", "")
+                output = output.replace(">r", "")
+                output = output.replace(">o", "")
+                output = output.replace(">g", "")
+                output = output.replace("<b", "")
+                output = output.replace("<s", "")
 
-        c.privmsg(e.target, output)
+            c.privmsg(e.target, output)
+        except:
+            traceback.print_exc()
 
     def func_to_string(self, function):
         self.extraOutput += ">b" + function[1] + "<b | "
@@ -129,13 +134,16 @@ class TestBot(irc.bot.SingleServerIRCBot):
         self.extraOutput += " | " + function[2]
 
 def main():
-    server = "irc.choopa.net"
+    server = "efnet.port80.se"
     port = 6667
     channel = "#icedev"
     nickname = "ICEbot"
 
     bot = TestBot(channel, nickname, server, port)
-    bot.start()
+    try:
+        bot.start()
+    except:
+        print("Error")
 
 
 if __name__ == "__main__":
