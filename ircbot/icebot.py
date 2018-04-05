@@ -71,24 +71,26 @@ class TestBot(irc.bot.SingleServerIRCBot):
         output = "[>b>oICE<s<b] "
         self.extraOutput = ""
 
-        print(cmd)
-
         try:
             if cmd == "" or len(cmd.split(" ")) != 1:
                 output += "invalid amount of arguments; use \"~ice det(XX)\" or \"~ice sum(XX)\" or \"~ice <function>\" to search for a function"
             else:
-                if self.detMatch.match(cmd):
-                    det = int(float(cmd[4:]))
+                detResult = re.search(self.detMatch, cmd)
+                sumResult = re.search(self.sumMatch, cmd)
+                numResult = re.search(self.numMatch, cmd)
+
+                if detResult:
+                    det = int(float(detResult.group(1)))
                     
                     if det < len(self.detFunctions):
                         self.func_to_string(self.detFunctions[det])
                         output += self.extraOutput
                     else:
                         output += "Invalid C function"
-                elif self.sumMatch.match(cmd):
+                elif sumResult:
                     output += "sum"
-                elif self.numMatch.match(cmd):
-                    det = int(float(cmd))
+                elif numResult:
+                    det = int(float(numResult.group(1)))
 
                     if det < len(self.detFunctions):
                         self.func_to_string(self.detFunctions[det])
