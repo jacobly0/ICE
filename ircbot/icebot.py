@@ -3,43 +3,18 @@
 
 import re
 import irc.bot
-import irc.strings
-from irc.client import ip_numstr_to_quad, ip_quad_to_numstr
 
-class TestBot(irc.bot.SingleServerIRCBot):
-    detFunctions = {
-        0: ("0", "Begin", "Sets up the graphics canvas (8bpp, default palette)."),
-        1: ("1", "End", "Closes the graphics library and sets up for the TI-OS."),
-        2: ("2,>rCOLOR<s", "SetColor", "Sets the global color index for all routines."),
-        3: ("3", "SetDefaultPalette", "Sets up the default palette where H=L (xLIBC palette)."),
-        4: ("4,>g\"DATA\"<s,>rSIZE<s,>rOFFSET<s", "SetPalette", "Sets entries in the palette. Each entry is 2 bytes, so >rSIZE<s should be the amount of entries you want to set times 2."),
-        5: ("5,>rCOLOR<s", "FillScreen", "Fills the screen with the specified color index."),
-        6: ("6,>rX<s,>rY<s", "SetPixel", "Sets the color pixel to the global color index."),
-        7: ("7,>rX<s,>rY<s", "GetPixel", "Gets a pixel's color index."),
-        8: ("8", "GetDraw", "Gets the current draw location. 0 = screen, 1 = buffer."),
-        9: ("9,>rBUFFER<s", "SetDraw", "Forces drawing routines to operate on the offscreen buffer or to operate on the visible screen. 0 = draw at screen, 1 = draw at buffer."),
-        10: ("10", "SwapDraw", "Safely swap the vram buffer pointers for double buffered output."),
-        11: ("11,>rBUFFER<s", "Blit", "Copies the buffer image to the screen and vice versa. 0 = copy screen to buffer, 1 = copy buffer to screen."),
-        12: ("12,>rBUFFER<s,>rY<s,>rLINES<s", "BlitLines", "Copies >rLINES<s lines starting at position >rY<s from the buffer to the screen or vice versa. 0 = copy screen to buffer, 1 = copy buffer to screen."),
-        13: ("13,>rBUFFER<s,>rX<s,>rY<s,>rWIDTH<s,>rHEIGHT<s", "BlitArea", "Copies a specific rectangle starting at (>rX<s,>rY<s) and dimensions (>rWIDTH<s,>rHEIGHT<s) from the buffer to the screen or vice versa. 0 = copy screen to buffer, 1 = copy buffer to screen."),
-        14: ("14,>rCHAR<s", "PrintChar", "Places a character at the current cursor position. Default coordinates are (0,0)."),
-        15: ("15,>rEXP<s,>rCHARS<s", "PrintInt", "Places signed >rEXP<s at the current cursor position with >rCHARS<s characters. Default coordinates are (0,0)."),
-        16: ("16,>rEXP<s,>rCHARS<s", "PrintUInt", "Places unsigned >rEXP<s at the current cursor position with >rCHARS<s characters. Default coordinates are (0,0)."),
-        17: ("17,>g\"STRING\"<s", "PrintString", "Places a string at the current cursor position. Default coordinates are (0,0)."),
-        18: ("18,>g\"STRING\"<s,>rX<s,>rY<s", "PrintStringXY", "Places a string at the given coordinates."),
-        19: ("19,>rX<s,>rY<s", "SetTextXY", "Sets the coordinates for text routines."),
-        20: ("20,>rCOLOR<s", "SetTextBGColor", "Sets the background text color for text routines. Default color is 255."),
-        21: ("21,>rCOLOR<s", "SetTextFGColor", "Sets the foreground text color for text routines. Default color is 0."),
-        22: ("22,>rCOLOR<s", "SetTextTransparentColor", "Sets the transparency text color for text routines. Default color is 255."),
-        23: ("23,>g\"DATA\"<s", "SetCustomFontData", "Sets the font for all text commands. >g\"DATA\"<s should either be a string with the data, or a pointer to the data of the formated 8x8 pixel font."),
-        24: ("24,>g\"DATA\"<s", "SetCustomFontSpacing", "Sets the custom font spacing for all text commands. >g\"DATA\"<s can also be a pointer to the data."),
-        25: ("25,>rSPACE<s", "SetMonoSpaceFont", "Sets the font to be monospace.")
-    }
-    extraOutput = ""
-    namedFunctions = dict((doc[1].lower(), doc) for (n, doc) in detFunctions.items())
-    detMatch = re.compile("^det\(([0-9]+)\)?$")
-    sumMatch = re.compile("^sum\(([0-9]+)\)?$")
-    numMatch = re.compile("^([0-9]+)$")
+class IceBot(irc.bot.SingleServerIRCBot):
+    functionPattern = re.compile(r"(\w+)\((\w+)(,[^)]*|)\)?")
+    tagPattern = re.compile(r"[<>][a-z]")
+    functionsByIndex, functionsByName = {}, {}
+    with open("icebot.txt") as data:
+        for line in data:
+            syntax, name, description = line[:-1].split('\t')
+            kind, index, arguments = functionPattern.fullmatch(syntax).groups()
+            arguments = arguments.split(',')
+            functionsByIndex.setdefault(kind, {})[int(index)] = functionsByName[name.lower()] = \
+                    ">b%s<b | >b>n%s(<s<b%s%s>b>n)<s<b | %s" % (name, kind, index, '>b>n,<s<b'.join(arguments), description)
 
     def __init__(self, channel, nickname, server, port=6667):
         irc.bot.SingleServerIRCBot.__init__(
@@ -53,86 +28,47 @@ class TestBot(irc.bot.SingleServerIRCBot):
         c.join(self.channel)
 
     def on_privmsg(self, c, e):
-        self.do_ice(e, e.arguments[0][5:])
+        c = self.connection
+        request = e.arguments[0].lower()
+
+        if request.startswith("~ice "):
+            request = request[5:]
+
+        c.privmsg(e.source.nick, self.do_ice(e, request))
 
     def on_pubmsg(self, c, e):
-        request = e.arguments[0]
+        c = self.connection
+        request = e.arguments[0].lower()
         nick = e.source.nick
 
         if nick == "saxjax":
             offset = request.find("]")
             request = request[offset+2:]
 
-        if request.startswith("~ice"):
-            self.do_ice(e, irc.strings.lower(request[5:]))
+        if request.startswith("~ice "):
+            c.privmsg(e.target, self.do_ice(e, request[5:]))
 
     def do_ice(self, e, cmd):
-        c = self.connection
         output = "[>b>oICE<s<b] "
-        self.extraOutput = ""
 
         try:
-            if cmd == "" or len(cmd.split(" ")) != 1:
-                output += "invalid amount of arguments; use \"~ice det(XX)\" or \"~ice sum(XX)\" or \"~ice <function>\" to search for a function"
+            functionMatch = self.functionPattern.fullmatch(cmd)
+            if functionMatch:
+                output += self.functionsByIndex[functionMatch.group(1).lower()][int(functionMatch.group(2))]
             else:
-                detResult = re.search(self.detMatch, cmd)
-                sumResult = re.search(self.sumMatch, cmd)
-                numResult = re.search(self.numMatch, cmd)
+                output += self.functionsByName[cmd.lower()]
+        except KeyError:
+            output += ">runknown function<s"
+        except ValueError:
+            output += ">rinvalid syntax<s: use \"~ice det(XX)\" or \"~ice sum(XX)\" or \"~ice <function>\" to search for a function"
 
-                if detResult:
-                    det = int(float(detResult.group(1)))
-                    
-                    if det < len(self.detFunctions):
-                        self.func_to_string(self.detFunctions[det])
-                        output += self.extraOutput
-                    else:
-                        output += "Invalid C function"
-                elif sumResult:
-                    output += "sum"
-                elif numResult:
-                    det = int(float(numResult.group(1)))
+        if e.target != "#cemetech":
+            for tag, irc in (">b", "\x02"), (">n", "\x0302"), (">r", "\x0304"), (">o", "\x0307"), (">g", "\x0315"), ("<b", "\x02"), ("<s", "\x03"):
+                output = output.replace(tag, irc)
+        else:
+            output = self.tagPattern.sub("", output)
 
-                    if det < len(self.detFunctions):
-                        self.func_to_string(self.detFunctions[det])
-                        output += self.extraOutput
-                    else:
-                        output += "Invalid C function"
-                else:
-                    function = self.namedFunctions.get(cmd)
-                    
-                    if function is not None:
-                        self.func_to_string(function)
-                        output += self.extraOutput
-                    else:
-                        output += "Unknown C function"
-
-            if e.target != "#cemetech":
-                output = output.replace(">b", "\x02")
-                output = output.replace(">n", "\x0302")
-                output = output.replace(">r", "\x0304")
-                output = output.replace(">o", "\x0307")
-                output = output.replace(">g", "\x0315")
-                output = output.replace("<b", "\x02")
-                output = output.replace("<s", "\x03")
-            else:
-                output = output.replace(">b", "")
-                output = output.replace(">n", "")
-                output = output.replace(">r", "")
-                output = output.replace(">o", "")
-                output = output.replace(">g", "")
-                output = output.replace("<b", "")
-                output = output.replace("<s", "")
-
-            c.privmsg(e.target, output)
-        except:
-            traceback.print_exc()
-
-    def func_to_string(self, function):
-        self.extraOutput += ">b" + function[1] + "<b | "
-        self.extraOutput += ">b>ndet(<s<b"
-        self.extraOutput += function[0]
-        self.extraOutput += ">b>n)<s<b"
-        self.extraOutput += " | " + function[2]
+        return output
 
 def main():
     server = "efnet.port80.se"
@@ -140,12 +76,8 @@ def main():
     channel = "#icedev"
     nickname = "ICEbot"
 
-    bot = TestBot(channel, nickname, server, port)
-    try:
-        bot.start()
-    except:
-        print("Error")
-
+    bot = IceBot(channel, nickname, server, port)
+    bot.start()
 
 if __name__ == "__main__":
     main()
