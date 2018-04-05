@@ -50,7 +50,6 @@ class TestBot(irc.bot.SingleServerIRCBot):
         c.nick(c.get_nickname() + "_")
 
     def on_welcome(self, c, e):
-        print("Joined channels")
         c.join(self.channel)
 
     def on_privmsg(self, c, e):
