@@ -1,6 +1,18 @@
 #!/usr/bin/env python3
 # -*- coding: latin-1 -*-
 
+# ICE IRC bot
+# Description: prints the C functions available in ICE Compiler
+# Author: Jacob Young and Peter Tillema
+# Date: 04/06/2018
+# Setup: 
+#  - install Python pip3: "sudo apt-get install python-pip3"
+#  - install pip3 IRC:    "pip3 install irc
+#  - set permission:      "chmod +x ./icebot.py
+#  - run it:              "./icebot.py"
+# Usage: Use "~ice det(X) or ~ice sum(X) or ~ice <function> to search for a function
+# If the match is close enough, it will use that function, i.e. "begi" would be "Begin"
+
 import re
 import irc.bot
 
@@ -31,17 +43,16 @@ class IceBot(irc.bot.SingleServerIRCBot):
             bests = bests[1:] + bests[:1]
         return bests[-1][-1]
 
-    def __init__(self, channels, nickname, server, port=6667):
+    def __init__(self, channel, nickname, server, port=6667):
         irc.bot.SingleServerIRCBot.__init__(
             self, [(server, port)], nickname, nickname)
-        self.channels = channels
+        self.channel = channel
 
     def on_nicknameinuse(self, c, e):
         c.nick(c.get_nickname() + "_")
 
     def on_welcome(self, c, e):
-        for channel in self.channels:
-            c.join(channel)
+        c.join(self.channel)
 
     def on_privmsg(self, c, e):
         c = self.connection
@@ -80,9 +91,9 @@ class IceBot(irc.bot.SingleServerIRCBot):
             else:
                 raise ValueError()
         except KeyError:
-            output += ">runknown function<s"
+            output += ">rUnknown function<s"
         except ValueError:
-            output += ">rinvalid syntax<s: use \"~ice det(XX)\" or \"~ice sum(XX)\" or \"~ice <function>\" to search for a function"
+            output += ">rInvalid syntax<s: use \"~ice det(XX)\" or \"~ice sum(XX)\" or \"~ice <function>\" to search for a function"
 
         if e.target != "#cemetech":
             for tag, irc in (">b", "\x02"), (">n", "\x0302"), (">r", "\x0304"), (">o", "\x0307"), (">g", "\x0315"), ("<b", "\x02"), ("<s", "\x03"):
@@ -95,7 +106,7 @@ class IceBot(irc.bot.SingleServerIRCBot):
 def main():
     server = "efnet.port80.se"
     port = 6667
-    channels = "#cemetech", "#icedev"
+    channels = "#cemetech,#ez80-dev,#icedev"
     nickname = "ICEbot"
 
     bot = IceBot(channels, nickname, server, port)
