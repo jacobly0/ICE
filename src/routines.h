@@ -14,6 +14,8 @@ void ChangeRegValue(uint24_t, uint24_t, uint8_t opcodes[7]);
 void ResetAllRegs(void);
 void ResetReg(uint8_t);
 void RegChangeHLDE(void);
+void SetRegHLToRegDE(void);
+void SetRegDEToRegHL(void);
 void PushHLDE(void);
 void AnsToHL(void);
 void AnsToDE(void);

@@ -62,17 +62,11 @@ void MultWithNumber(uint24_t num, uint8_t *programPtr, bool ChangeRegisters) {
             if (!ChangeRegisters) {
                 PUSH_HL();
                 POP_DE();
-                reg.DEIsNumber = reg.HLIsNumber;
-                reg.DEIsVariable = reg.HLIsVariable;
-                reg.DEValue = reg.HLValue;
-                reg.DEVariable = reg.HLVariable;
+                SetRegHLToRegDE();
             } else {
                 PUSH_DE();
                 POP_HL();
-                reg.HLIsNumber = reg.DEIsNumber;
-                reg.HLIsVariable = reg.DEIsVariable;
-                reg.HLValue = reg.DEValue;
-                reg.HLVariable = reg.DEVariable;
+                SetRegDEToRegHL();
             }
         }
         for (bit = 1 << (22 - clz(num)); bit; bit >>= 1) {

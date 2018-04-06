@@ -193,6 +193,20 @@ void AnsToBC(void) {
     }
 }
 
+void SetRegHLToRegDE(void) {
+    reg.DEIsNumber = reg.HLIsNumber;
+    reg.DEIsVariable = reg.HLIsVariable;
+    reg.DEValue = reg.HLValue;
+    reg.DEVariable = reg.HLVariable;
+}
+
+void SetRegDEToRegHL(void) {
+    reg.HLIsNumber = reg.DEIsNumber;
+    reg.HLIsVariable = reg.DEIsVariable;
+    reg.HLValue = reg.DEValue;
+    reg.HLVariable = reg.DEVariable;
+}
+
 void ClearAnsFlags(void) {
     expr.AnsSetZeroFlag = expr.AnsSetZeroFlagReversed = expr.AnsSetCarryFlag = expr.AnsSetCarryFlagReversed = false;
 }

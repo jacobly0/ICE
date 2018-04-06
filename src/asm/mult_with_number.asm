@@ -1,6 +1,8 @@
 .assume adl = 1
 segment data
 .def _MultWithNumber
+.ref _SetRegHLToRegDE
+.ref _SetRegDEToRegHL
 
 _MultWithNumber:
 	ld	iy, 0
@@ -53,6 +55,12 @@ MultiplyLarge:
 	jr	InsertAHL
 DoInsertHLDE:
 	djnz	DontNeedPushHLPopDE
+	ld	a, (iy+9)
+	or	a, a
+	push	af
+	call	z, _SetRegHLToRegDE
+	pop	af
+	call	nz, _SetRegDEToRegHL
 	ld	a, 0E5h
 	sub	a, (iy+9)
 	call	InsertA
