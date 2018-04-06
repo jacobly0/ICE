@@ -6,15 +6,30 @@ import irc.bot
 
 class IceBot(irc.bot.SingleServerIRCBot):
     functionPattern = re.compile(r"(\w+)\((\w+)(,[^)]*|)\)?")
+    namePattern = re.compile(r"\w+")
     tagPattern = re.compile(r"[<>][a-z]")
-    functionsByIndex, functionsByName = {}, {}
+    functions = {}
     with open("icebot.txt") as data:
         for line in data:
             syntax, name, description = line[:-1].split('\t')
             kind, index, arguments = functionPattern.fullmatch(syntax).groups()
             arguments = arguments.split(',')
-            functionsByIndex.setdefault(kind, {})[int(index)] = functionsByName[name.lower()] = \
-                    ">b%s<b | >b>n%s(<s<b%s%s>b>n)<s<b | %s" % (name, kind, index, '>b>n,<s<b'.join(arguments), description)
+            functions.setdefault(kind, {})[int(index)] = (
+                name.casefold(), ">b%s<b | >b>n%s(<s<b%s%s>b>n)<s<b | %s" %
+                (name, kind, index, '>b>n,<s<b'.join(arguments), description))
+
+    @staticmethod
+    def __distance(a, b):
+        bests = [[2, 1] + [None] * len(b), [*range(0, len(b) + 2)], [1, *range(0, len(b) + 1)]]
+        for i in range(len(a)):
+            for j in range(len(b)):
+                bests[0][j + 2] = min(bests[-1][j + 2] + 1, bests[0][j + 1] + 1,
+                                      bests[-1][j + 1] + (0 if a[i] == b[j] else 2),
+                                      bests[-2][j] + (1 if i and j and a[i-1] == b[j]
+                                                      and a[i] == b[j-1] else 4))
+            bests = bests[1:] + bests[:1]
+            bests[0][:2] = i + 3, i + 2
+        return bests[-1][-1]
 
     def __init__(self, channel, nickname, server, port=6667):
         irc.bot.SingleServerIRCBot.__init__(
@@ -53,10 +68,16 @@ class IceBot(irc.bot.SingleServerIRCBot):
 
         try:
             functionMatch = self.functionPattern.fullmatch(cmd)
+            cmd = cmd.casefold().strip()
             if functionMatch:
-                output += self.functionsByIndex[functionMatch.group(1).lower()][int(functionMatch.group(2))]
+                output += self.functions[functionMatch.group(1).lower()][int(functionMatch.group(2))][1]
+            elif self.namePattern.fullmatch(cmd):
+                best = min((self.__distance(function[0], cmd), *function) for kind in self.functions.values() for function in kind.values())
+                if 2*best[0] > len(best[1]):
+                    raise KeyError()
+                output += best[2]
             else:
-                output += self.functionsByName[cmd.lower()]
+                raise ValueError()
         except KeyError:
             output += ">runknown function<s"
         except ValueError:
