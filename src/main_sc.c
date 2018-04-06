@@ -18,6 +18,7 @@ reg_t reg;
 extern label_t labelStack[150];
 extern label_t gotoStack[150];
 extern const uint8_t CheaderData[];
+extern const uint8_t RandData[];
 extern const uint8_t SrandData[];
 extern const uint8_t FileiocheaderData[];
 const uint8_t colorTable[16] = {255,24,224,0,248,36,227,97,9,19,230,255,181,107,106,74};    // Thanks Cesium :D
