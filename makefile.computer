@@ -4,6 +4,9 @@ CFLAGS := -Wall -Wextra -Wno-unknown-pragmas -Wno-unused-variable -Wno-unused-pa
 LDFLAGS := -flto
 SOURCES := $(wildcard src/*.c)
 ASMSOURCES := $(wildcard src/asm/*.asm)
+ASMSOURCES := $(filter-out src/asm/editor.asm, $(ASMSOURCES))
+ASMSOURCES := $(filter-out src/asm/mult_with_number.asm, $(ASMSOURCES))
+ASMSOURCES := $(filter-out src/asm/runprogram.asm, $(ASMSOURCES))
 
 ifeq ($(OS),Windows_NT)
 NATIVEPATH = $(subst /,\,$(1))
@@ -28,7 +31,7 @@ $(TARGET): .FORCE $(OBJECTS)
 	$(CC) $(CFLAGS) $< -o $@
 
 %.bin: %.asm
-	spasm -E $< -D.def=\; -D.ref=\; -Ddata=\; -D__errsp=0
+	spasm -E $< -D.def=\; -D.ref=\; -Ddata=\;
 
 clean:
 	$(RM) $(call NATIVEPATH,$(TARGET).exe $(OBJECTS) $(BINOBJECTS))
