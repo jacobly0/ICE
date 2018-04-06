@@ -157,9 +157,9 @@ void main(void) {
 
     ice.inPrgm = _open(var_name);
     _seek(0, SEEK_END, ice.inPrgm);
-    ice.programLength = _tell(ice.inPrgm);
     strcpy(ice.currProgName[ice.inPrgm], var_name);
 
+    ice.programLength   = _tell(ice.inPrgm);
     ice.programData     = (uint8_t*)0xD52C00;
     ice.programPtr      = ice.programData;
     ice.programDataData = ice.programData + 0xFFFF;

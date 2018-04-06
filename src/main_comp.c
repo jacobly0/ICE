@@ -22,6 +22,7 @@ extern label_t gotoStack[150];
 
 #define INCBIN_PREFIX
 #include "incbin.h"
+INCBIN(Rand, "src/asm/rand.bin");
 INCBIN(SRand, "src/asm/srand.bin");
 INCBIN(Cheader, "src/asm/cheader.bin");
 INCBIN(Fileiocheader, "src/asm/fileiocheader.bin");
@@ -148,14 +149,27 @@ int main(int argc, char **argv) {
     }
 
     prescan.freeMemoryPtr = (prescan.tempStrings[1] = (prescan.tempStrings[0] = pixelShadow + 2000 * prescan.amountOfOSVarsUsed) + 2000) + 2000;
+    
+    // Cleanup code
+    if (prescan.hasGraphxFunctions) {
+        CALL(_RunIndicOff);
+        CALL(ice.programPtr - ice.programData + PRGM_START + 12);
+        LD_IY_IMM(flags);
+        JP(_DrawStatusBar);
+    } else if (prescan.modifiedIY) {
+        CALL(ice.programPtr - ice.programData + PRGM_START + 9);
+        LD_IY_IMM(flags);
+        RET();
+    }
 
     LD_IX_IMM(IX_VARIABLES);
-    
+
     // Eventually seed the rand
-    if (ice.usesRandRoutine) {
-        ice.programDataPtr -= SIZEOF_RAND_DATA;
+    if (prescan.amountOfRandRoutines) {
+        ice.programDataPtr -= SIZEOF_RAND_DATA + SIZEOF_SRAND_DATA;
         ice.randAddr = (uint24_t)ice.programDataPtr;
-        memcpy(ice.programDataPtr, SRandData, SIZEOF_RAND_DATA);
+        memcpy(ice.programDataPtr, SRandData, SIZEOF_SRAND_DATA);
+        memcpy(ice.programDataPtr + SIZEOF_SRAND_DATA, RandData, SIZEOF_RAND_DATA);
         ice.dataOffsetStack[ice.dataOffsetElements++] = (uint24_t*)(ice.randAddr + 2);
         w24((uint8_t*)(ice.randAddr + 2), ice.randAddr + 102);
         ice.dataOffsetStack[ice.dataOffsetElements++] = (uint24_t*)(ice.randAddr + 6);
@@ -171,17 +185,17 @@ int main(int argc, char **argv) {
     // Do the stuff
     fprintf(stdout, "Compiling program %s...\n", var_name);
     res = parseProgram();
-
+    
     // Create or empty the output program if parsing succeeded
     if (res == VALID) {
         uint8_t currentGoto, currentLbl;
         uint24_t previousSize = 0;
-
+        
         // If the last token is not "Return", write a "ret" to the program
         if (!ice.lastTokenIsReturn) {
             RET();
         }
-
+        
         // Find all the matching Goto's/Lbl's
         for (currentGoto = 0; currentGoto < ice.amountOfGotos; currentGoto++) {
             label_t *curGoto = &gotoStack[currentGoto];
@@ -202,18 +216,18 @@ int main(int argc, char **argv) {
             goto stop;
 findNextLabel:;
         }
-
+        
         // Get the sizes of both stacks
         ice.programSize = (uintptr_t)ice.programPtr - (uintptr_t)ice.programData;
         programDataSize = (uintptr_t)ice.programDataData - (uintptr_t)ice.programDataPtr;
-
+        
         // Change the pointers to the data as well, but first calculate the offset
         offset = PRGM_START + ice.programSize - (uintptr_t)ice.programDataPtr;
         while (ice.dataOffsetElements--) {
             w24(ice.dataOffsetStack[ice.dataOffsetElements], *ice.dataOffsetStack[ice.dataOffsetElements] + offset);
         }
         totalSize = ice.programSize + programDataSize + 3;
-
+        
         if (ice.startedGRAPHX && !ice.endedGRAPHX) {
             displayError(W_CLOSE_GRAPHX);
         }
@@ -229,11 +243,12 @@ findNextLabel:;
 
         // Write the header, main program, and data to output :D
         memcpy(&export[3], ice.programData, ice.programSize);
-        memcpy(&export[3 + ice.programSize], ice.programDataData, programDataSize);
+        memcpy(&export[3 + ice.programSize], ice.programDataPtr, programDataSize);
 
         // Write the actual program file
         export_program(ice.outName, export, totalSize);
         free(export);
+        free(ice.programData);
 
         // Display the size
         fprintf(stdout, "Succesfully compiled to %s.8xp!\n", ice.outName);

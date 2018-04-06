@@ -126,14 +126,27 @@ int main(int argc, char **argv) {
     }
 
     prescan.freeMemoryPtr = (prescan.tempStrings[1] = (prescan.tempStrings[0] = pixelShadow + 2000 * prescan.amountOfOSVarsUsed) + 2000) + 2000;
+    
+    // Cleanup code
+    if (prescan.hasGraphxFunctions) {
+        CALL(_RunIndicOff);
+        CALL(ice.programPtr - ice.programData + PRGM_START + 12);
+        LD_IY_IMM(flags);
+        JP(_DrawStatusBar);
+    } else if (prescan.modifiedIY) {
+        CALL(ice.programPtr - ice.programData + PRGM_START + 9);
+        LD_IY_IMM(flags);
+        RET();
+    }
 
     LD_IX_IMM(IX_VARIABLES);
 
     // Eventually seed the rand
-    if (ice.usesRandRoutine) {
-        ice.programDataPtr -= SIZEOF_RAND_DATA;
+    if (prescan.amountOfRandRoutines) {
+        ice.programDataPtr -= SIZEOF_RAND_DATA + SIZEOF_SRAND_DATA;
         ice.randAddr = (uint24_t)ice.programDataPtr;
-        memcpy(ice.programDataPtr, SrandData, SIZEOF_RAND_DATA);
+        memcpy(ice.programDataPtr, SRandData, SIZEOF_SRAND_DATA);
+        memcpy(ice.programDataPtr + SIZEOF_SRAND_DATA, RandData, SIZEOF_RAND_DATA);
         ice.dataOffsetStack[ice.dataOffsetElements++] = (uint24_t*)(ice.randAddr + 2);
         w24((uint8_t*)(ice.randAddr + 2), ice.randAddr + 102);
         ice.dataOffsetStack[ice.dataOffsetElements++] = (uint24_t*)(ice.randAddr + 6);
@@ -206,7 +219,7 @@ findNextLabel:;
 
         // Write the header, main program, and data to output :D
         memcpy(&export[3], ice.programData, ice.programSize);
-        memcpy(&export[3 + ice.programSize], ice.programDataData, programDataSize);
+        memcpy(&export[3 + ice.programSize], ice.programDataPtr, programDataSize);
 
         // Write the actual program file
         export_program(ice.outName, export, totalSize);

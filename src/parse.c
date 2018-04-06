@@ -75,7 +75,7 @@ uint8_t parseProgram(void) {
         ice.lastTokenIsReturn = false;
         ice.inDispExpression = false;
         ice.currentLine++;
-
+        
         if ((ret = (*functions[token])(token)) != VALID) {
             break;
         }
@@ -459,7 +459,7 @@ stackToOutputReturn1:
             if ((uint8_t)stackPrev->operand == tVarOut && (uint8_t)(stackPrev->operand >> 16) == tDefineSprite) {
                 needWarning = false;
             }
-
+            
             for (a = tempDataPtr; a < ice.programPtr; a++) {
                 if (IsHexadecimal(*a) == 16) {
                     goto noSquishing;
@@ -486,12 +486,12 @@ stackToOutputReturn1:
 
 noSquishing:
             *ice.programPtr++ = 0;
-
+            
             length = ice.programPtr - tempDataPtr;
             ice.programDataPtr -= length;
             memcpy(ice.programDataPtr, tempDataPtr, length);
             ice.programPtr = tempDataPtr;
-
+            
             outputCurr->operand = (uint24_t)ice.programDataPtr;
 
             if ((uint8_t)token == tStore || (uint8_t)token == tEnter) {
