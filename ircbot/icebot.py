@@ -96,7 +96,7 @@ class IceBot(irc.bot.SingleServerIRCBot):
             output += ">rInvalid syntax<s: use \"~ice det(XX)\" or \"~ice sum(XX)\" or \"~ice <function>\" to search for a function"
 
         if e.target != "#cemetech":
-            for tag, irc in (">b", "\x02"), (">n", "\x0302"), (">r", "\x0304"), (">o", "\x0307"), (">g", "\x0315"), ("<b", "\x02"), ("<s", "\x03"):
+            for tag, irc in (">b", "\x02"), (">i", "\x1D"), (">n", "\x0302"), (">r", "\x0304"), (">o", "\x0307"), (">l", "\x0309"), (">g", "\x0315"), ("<b", "\x02"), ("<i", "\x1D"), ("<s", "\x03"):
                 output = output.replace(tag, irc)
         else:
             output = self.tagPattern.sub("", output)

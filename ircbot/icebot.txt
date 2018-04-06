@@ -47,3 +47,42 @@ det(45,>rPIXELS<s)	ShiftDown	Shifts whatever is in the clip down by some pixels.
 det(46,>rPIXELS<s)	ShiftUp	Shifts whatever is in the clip up by some pixels.
 det(47,>rPIXELS<s)	ShiftLeft	Shifts whatever is in the clip left by some pixels.
 det(48,>rPIXELS<s)	ShiftRight	Shifts whatever is in the clip right by some pixels.
+det(49,>lVAR<s,>rX_OFFSET<s,>rY_OFFSET<s)	Tilemap	Displays a clipped tilemap. >lVAR<s should point to the tilemap structure, which you can get with >nDefineTilemap(<s.
+det(50,>lVAR<s,>rX_OFFSET<s,>rY_OFFSET<s)	Tilemap_NoClip	Displays a tilemap. >lVAR<s should point to the tilemap structure, which you can get with >nDefineTilemap(<s.
+det(51,>lVAR<s,>rX_OFFSET<s,>rY_OFFSET<s)	TransparentTilemap	Displays a transparent, clipped tilemap. >lVAR<s should point to the tilemap structure, which you can get with >nDefineTilemap(<s.
+det(52,>lVAR<s,>rX_OFFSET<s,>rY_OFFSET<s)	TransparentTilemap_NoClip	Displays a transparent tilemap. >lVAR<s should point to the tilemap structure, which you can get with >nDefineTilemap(<s.
+det(53,>lVAR<s,>rX_OFFSET<s,>rY_OFFSET<s)	TilePtr	Gets a pointer to a particular tile given a tilemap and pixel offsets. >lVAR<s should point to the tilemap structure, which you can get with >nDefineTilemap(<s.
+det(54,>lVAR<s,>rROW<s,>rCOL<s)	TilePtrMapped	Gets a pointer to a particular tile given a tilemap and offsets. >lVAR<s should point to the tilemap structure, which you can get with >nDefineTilemap(<s.
+det(57,>rPTR<s,>rX<s,>rY<s)	Sprite	Draws a clipped sprite.
+det(58,>rPTR<s,>rX<s,>rY<s)	TransparentSprite	Draws a clipped transparent sprite to the current buffer. The transparent color is 0.
+det(59,>rPTR<s,>rX<s,>rY<s)	Sprite_NoClip	Places an sprite on the screen as fast as possible.
+det(60,>rPTR<s,>rX<s,>rY<s)	TransparentSprite_NoClip	Draws a transparent sprite to the current buffer. Default transparent color is 0.
+det(61,>rPTR<s,>rX<s,>rY<s,>rWSCALE<s,>rHSCALE<s)	GetSprite	Gets a sprite off the buffer, and stores it to the memory pointed to by >rPTR<s. Note: you need to store the width and the height (both 1-byte values) to the memory first.
+det(62,>rPTR<s,>rX<s,>rY<s,>rWSCALE<s,>rHSCALE<s)	ScaledSprite_NoClip	Draws a scaled sprite to the screen.
+det(63,>rPTR<s,>rX<s,>rY<s,>rWSCALE<s,>rHSCALE<s)	ScaledTransparentSprite_NoClip	Draws a scaled sprite to the screen with transparency. Default transparent color is 0.
+det(64,>rPTR_IN<s,>rPTR_OUT<s)	FlipSpriteY	Flips a sprite along the Y-axis.
+det(65,>rPTR_IN<s,>rPTR_OUT<s)	FlipSpriteX	Flips a sprite along the X-axis.
+det(66,>rPTR_IN<s,>rPTR_OUT<s)	RotateSpriteC	Rotates a sprite 90 degrees clockwise.
+det(67,>rPTR_IN<s,>rPTR_OUT<s)	RotateSpriteCC	Rotates a sprite 90 degrees counter clockwise.
+det(68,>rPTR_IN<s,>rPTR_OUT<s)	RotateSpriteHalf	Rotates a sprite 180 degrees.
+det(69,>rPTS<s,>rNUM_PTS<s)	Polygon	Draws a clipped polygon outline with >rNUM_PTS<s points. >rPTS<s should point to a 3-byte list, with all the X- and Y-coordinates of the points, so {>rX1<s,>rY1<s,>rX2<s,>rY2<s,...}
+det(70,>rPTS<s,>rNUM_PTS<s)	Polygon_NoClip	Draws a polygon outline with >rNUM_PTS<s points. >rPTS<s should point to a 3-byte list, with all the X- and Y-coordinates of the points, so {>rX1<s,>rY1<s,>rX2<s,>rY2<s,...}
+det(71,>rX1<s,>rY1<s,>rX2<s,>rY2<s,>rX3<s,>rY3<s)	FillTriangle	Draws a filled triangle with clipping.
+det(72,>rX1<s,>rY1<s,>rX2<s,>rY2<s,>rX3<s,>rY3<s)	FillTriangle_NoClip	Draws a filled triangle without clipping.
+det(74,>rXSCALE<s,>rYSCALE<s)	SetTextScale	Changes the amount of text scaling (note that height and width are independent).
+det(75,>rCOLOR<s)	SetTransparentColor	Sets the global transparent color index for all routines.
+det(76)	ZeroScreen	Fills the current screen with a bunch of zeros. Same as det(5,0) but faster.
+det(77,>rCONFIG<s)	SetTextConfig	Configures text depending on the arguments. 1 = clipping, 2 = no clipping.
+det(78,>rCHAR<s)	GetSpriteChar	Creates a temporary sprite of char >rCHAR<s. Returns a pointer to the sprite data. >iNote: you need to set the right colors first with SetTextBGColor, SetTextFGColor, SetTextTransparentColor and SetTransparentColor!<i
+det(79,>rCOLOR<s,>rAMOUNT<s)	Lighten	Lightens a given 1555 color; useful for palette color conversions. >rAMOUNT<s is the amount to lighten by.
+det(80,>rCOLOR<s,>rAMOUNT<s)	Darken	Darkens a given 1555 color; useful for palette color conversions. >rAMOUNT<s is the amount to darken by.
+det(81,>rHEIGHT<s)	SetFontHeight	Sets the height of the font in pixels.
+det(82,>rPTR_IN<s,>rPTR_OUT<s)	ScaleSprite	Resizes a sprite to new dimensions.
+det(83,>rX<s,>rY<s,>rCOLOR<s)	FloodFill	Fills an area with a color.
+det(84,>rPTR<s,>rX<s,>rY<s)	RLETSprite	Draws a sprite with RLE transparency.
+det(85,>rPTR<s,>rX<s,>rY<s)	RLETSprite_NoClip	Draws an unclipped sprite with RLE transparency.
+det(86,>rPTR_IN<s,>rPTR_OUT<s)	ConvertFromRLETSprite	Converts a sprite with RLE transpareny to a sprite with normal transparency.
+det(87,>rPTR_IN<s,>rPTR_OUT<s)	ConvertToRLETSprite	Converts a sprite with normal transpareny to a sprite with RLE transparency.
+det(89,>rPTR_IN<s,>rPTR_OUT<s,>rANGLE<s,>rSCALE<s)	RotateScaleSprite	Fixed rotation with scaling factor for sprites. >iA scale factor of 64 represents 100% scaling. This routine only accepts square input sprites.<i >rANGLE<s should be in [0,255].
+det(90,>rPTR<s,>rX<s,>rY<s,>rANGLE<s,>rSCALE<s)	RotatedScaledTransparentSprite_NoClip	Fixed rotation with scaling factor for sprites with transparency. >iA scale factor of 64 represents 100% scaling. This routine only accepts square input sprites.<i >rANGLE<s should be in [0,255].
+det(91,>rPTR<s,>rX<s,>rY<s,>rANGLE<s,>rSCALE<s)	RotatedScaledSprite_NoClip	Fixed rotation with scaling factor for sprites without transparency. >iA scale factor of 64 represents 100% scaling. This routine only accepts square input sprites.<i >rANGLE<s should be in [0,255].
