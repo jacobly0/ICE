@@ -20,27 +20,28 @@ class IceBot(irc.bot.SingleServerIRCBot):
 
     @staticmethod
     def __distance(a, b):
-        bests = [[2, 1] + [None] * len(b), [*range(0, len(b) + 2)], [1, *range(0, len(b) + 1)]]
+        bests = [[None] * (len(b) + 2), [*range(0, len(b) + 2)], [1, *range(0, len(b) + 1)]]
         for i in range(len(a)):
+            bests[0][:2] = range(i + 2, i, -1)
             for j in range(len(b)):
                 bests[0][j + 2] = min(bests[-1][j + 2] + 1, bests[0][j + 1] + 1,
                                       bests[-1][j + 1] + (0 if a[i] == b[j] else 2),
                                       bests[-2][j] + (1 if i and j and a[i-1] == b[j]
                                                       and a[i] == b[j-1] else 4))
             bests = bests[1:] + bests[:1]
-            bests[0][:2] = i + 3, i + 2
         return bests[-1][-1]
 
-    def __init__(self, channel, nickname, server, port=6667):
+    def __init__(self, channels, nickname, server, port=6667):
         irc.bot.SingleServerIRCBot.__init__(
             self, [(server, port)], nickname, nickname)
-        self.channel = channel
+        self.channels = channels
 
     def on_nicknameinuse(self, c, e):
         c.nick(c.get_nickname() + "_")
 
     def on_welcome(self, c, e):
-        c.join(self.channel)
+        for channel in self.channels:
+            c.join(channel)
 
     def on_privmsg(self, c, e):
         c = self.connection
@@ -94,10 +95,10 @@ class IceBot(irc.bot.SingleServerIRCBot):
 def main():
     server = "efnet.port80.se"
     port = 6667
-    channel = "#icedev"
+    channels = "#cemetech", "#icedev"
     nickname = "ICEbot"
 
-    bot = IceBot(channel, nickname, server, port)
+    bot = IceBot(channels, nickname, server, port)
     bot.start()
 
 if __name__ == "__main__":
