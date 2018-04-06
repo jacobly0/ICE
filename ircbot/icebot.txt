@@ -1,0 +1,26 @@
+det(0)	Begin	Sets up the graphics canvas (8bpp, default palette).
+det(1)	End	Closes the graphics library and sets up for the TI-OS.
+det(2,>rCOLOR<s)	SetColor	Sets the global color index for all routines.
+det(3)	SetDefaultPalette	Sets up the default palette where H=L (xLIBC palette).
+det(4,>g"DATA"<s,>rSIZE<s,>rOFFSET<s)	SetPalette	Sets entries in the palette. Each entry is 2 bytes, so >rSIZE<s should be the amount of entries you want to set times 2.
+det(5,>rCOLOR<s)	FillScreen	Fills the screen with the specified color index.
+det(6,>rX<s,>rY<s)	SetPixel	Sets the color pixel to the global color index.
+det(7,>rX<s,>rY<s)	GetPixel	Gets a pixel's color index.
+det(8)	GetDraw	Gets the current draw location. 0 = screen, 1 = buffer.
+det(9,>rBUFFER<s)	SetDraw	Forces drawing routines to operate on the offscreen buffer or to operate on the visible screen. 0 = draw at screen, 1 = draw at buffer.
+det(10)	SwapDraw	Safely swap the vram buffer pointers for double buffered output.
+det(11,>rBUFFER<s)	Blit	Copies the buffer image to the screen and vice versa. 0 = copy screen to buffer, 1 = copy buffer to screen.
+det(12,>rBUFFER<s,>rY<s,>rLINES<s)	BlitLines	Copies >rLINES<s lines starting at position >rY<s from the buffer to the screen or vice versa. 0 = copy screen to buffer, 1 = copy buffer to screen.
+det(13,>rBUFFER<s,>rX<s,>rY<s,>rWIDTH<s,>rHEIGHT<s)	BlitArea	Copies a specific rectangle starting at (>rX<s,>rY<s) and dimensions (>rWIDTH<s,>rHEIGHT<s) from the buffer to the screen or vice versa. 0 = copy screen to buffer, 1 = copy buffer to screen.
+det(14,>rCHAR<s)	PrintChar	Places a character at the current cursor position. Default coordinates are (0,0).
+det(15,>rEXP<s,>rCHARS<s)	PrintInt	Places signed >rEXP<s at the current cursor position with >rCHARS<s characters. Default coordinates are (0,0).
+det(16,>rEXP<s,>rCHARS<s)	PrintUInt	Places unsigned >rEXP<s at the current cursor position with >rCHARS<s characters. Default coordinates are (0,0).
+det(17,>g"STRING"<s)	PrintString	Places a string at the current cursor position. Default coordinates are (0,0).
+det(18,>g"STRING"<s,>rX<s,>rY<s)	PrintStringXY	Places a string at the given coordinates.
+det(19,>rX<s,>rY<s)	SetTextXY	Sets the coordinates for text routines.
+det(20,>rCOLOR<s)	SetTextBGColor	Sets the background text color for text routines. Default color is 255.
+det(21,>rCOLOR<s)	SetTextFGColor	Sets the foreground text color for text routines. Default color is 0.
+det(22,>rCOLOR<s)	SetTextTransparentColor	Sets the transparency text color for text routines. Default color is 255.
+det(23,>g"DATA"<s)	SetCustomFontData	Sets the font for all text commands. >g"DATA"<s should either be a string with the data, or a pointer to the data of the formated 8x8 pixel font.
+det(24,>g"DATA"<s)	SetCustomFontSpacing	Sets the custom font spacing for all text commands. >g"DATA"<s can also be a pointer to the data.
+det(25,>rSPACE<s)	SetMonoSpaceFont	Sets the font to be monospace.
