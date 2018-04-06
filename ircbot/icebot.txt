@@ -24,3 +24,26 @@ det(22,>rCOLOR<s)	SetTextTransparentColor	Sets the transparency text color for t
 det(23,>g"DATA"<s)	SetCustomFontData	Sets the font for all text commands. >g"DATA"<s should either be a string with the data, or a pointer to the data of the formated 8x8 pixel font.
 det(24,>g"DATA"<s)	SetCustomFontSpacing	Sets the custom font spacing for all text commands. >g"DATA"<s can also be a pointer to the data.
 det(25,>rSPACE<s)	SetMonoSpaceFont	Sets the font to be monospace.
+det(26,>g"STRING"<s)	GetStringWidth	Gets the pixel width of >g"STRING"<s.
+det(27,>rCHAR<s)	GetCharWidth	Gets the pixel width of the char >rCHAR<s.
+det(28)	GetTextX	Returns the current text cursor X position.
+det(29)	GetTextY	Returns the current text cursor Y position.
+det(30,>rX1<s,>rY1<s,>rX2<s,>rY2<s)	Line	Draws an arbitrarily clipped line.
+det(31,>rX<s,>rY<s,>rLENGTH<s)	HorizLine	Draws an clipped horizontal line with the global color index.
+det(32,>rX<s,>rY<s,>rLENGTH<s)	VertLine	Draws an clipped vertical line with the global color index.
+det(33,>rX<s,>rY<s,>rRADIUS<s)	Circle	Draws a clipped circle outline.
+det(34,>rX<s,>rY<s,>rRADIUS<s)	FillCircle	Draws a clipped filled circle.
+det(35,>rX<s,>rY<s,>rWIDTH<s,>rHEIGHT<s)	Rectangle	Draws an clipped rectangle outline with the global color index.
+det(36,>rX<s,>rY<s,>rWIDTH<s,>rHEIGHT<s)	FillRectangle	Draws an clipped rectangle with the global color index.
+det(37,>rX1<s,>rY1<s,>rX2<s,>rY2<s)	Line_NoClip	Draws an arbitrarily unclipped line.
+det(38,>rX<s,>rY<s,>rLENGTH<s)	HorizLine_NoClip	Draws an unclipped horizontal line with the global color index.
+det(39,>rX<s,>rY<s,>rLENGTH<s)	VertLine_NoClip	Draws an unclipped vertical line with the global color index.
+det(40,>rX<s,>rY<s,>rRADIUS<s)	FillCircle_NoClip	Draws an unclipped filled circle.
+det(41,>rX<s,>rY<s,>rWIDTH<s,>rHEIGHT<s)	Rectangle_NoClip	Draws an unclipped rectangle outline with the global color index.
+det(42,>rX<s,>rY<s,>rWIDTH<s,>rHEIGHT<s)	FillRectangle_NoClip	Draws an unclipped rectangle with the global color index.
+det(43,>rXMIN<s,>rYMIN<s,>rXMAX<s,>rYMAX<s)	SetClipRegion	Sets the clipping for clipped routines.
+det(44,>rCLIP_REGION<s)	GetClipRegion	>rCLIP_REGION<s is a pointer to the region bounds. Returns 0 if offscreen, 1 if onscreen.
+det(45,>rPIXELS<s)	ShiftDown	Shifts whatever is in the clip down by some pixels.
+det(46,>rPIXELS<s)	ShiftUp	Shifts whatever is in the clip up by some pixels.
+det(47,>rPIXELS<s)	ShiftLeft	Shifts whatever is in the clip left by some pixels.
+det(48,>rPIXELS<s)	ShiftRight	Shifts whatever is in the clip right by some pixels.
