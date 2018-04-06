@@ -145,7 +145,7 @@ int main(int argc, char **argv) {
     if (prescan.amountOfRandRoutines) {
         ice.programDataPtr -= SIZEOF_RAND_DATA + SIZEOF_SRAND_DATA;
         ice.randAddr = (uint24_t)ice.programDataPtr;
-        memcpy(ice.programDataPtr, SRandData, SIZEOF_SRAND_DATA);
+        memcpy(ice.programDataPtr, SrandData, SIZEOF_SRAND_DATA);
         memcpy(ice.programDataPtr + SIZEOF_SRAND_DATA, RandData, SIZEOF_RAND_DATA);
         ice.dataOffsetStack[ice.dataOffsetElements++] = (uint24_t*)(ice.randAddr + 2);
         w24((uint8_t*)(ice.randAddr + 2), ice.randAddr + 102);
