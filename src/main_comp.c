@@ -224,7 +224,7 @@ findNextLabel:;
         // Change the pointers to the data as well, but first calculate the offset
         offset = PRGM_START + ice.programSize - (uintptr_t)ice.programDataPtr;
         while (ice.dataOffsetElements--) {
-            w24(ice.dataOffsetStack[ice.dataOffsetElements], *ice.dataOffsetStack[ice.dataOffsetElements] + offset);
+            w24(ice.dataOffsetStack[ice.dataOffsetElements], r24(ice.dataOffsetStack[ice.dataOffsetElements]) + offset);
         }
         totalSize = ice.programSize + programDataSize + 3;
         
