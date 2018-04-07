@@ -86,3 +86,25 @@ det(87,>rPTR_IN<s,>rPTR_OUT<s)	ConvertToRLETSprite	Converts a sprite with normal
 det(89,>rPTR_IN<s,>rPTR_OUT<s,>rANGLE<s,>rSCALE<s)	RotateScaleSprite	Fixed rotation with scaling factor for sprites. >iA scale factor of 64 represents 100% scaling. This routine only accepts square input sprites.<i >rANGLE<s should be in [0,255].
 det(90,>rPTR<s,>rX<s,>rY<s,>rANGLE<s,>rSCALE<s)	RotatedScaledTransparentSprite_NoClip	Fixed rotation with scaling factor for sprites with transparency. >iA scale factor of 64 represents 100% scaling. This routine only accepts square input sprites.<i >rANGLE<s should be in [0,255].
 det(91,>rPTR<s,>rX<s,>rY<s,>rANGLE<s,>rSCALE<s)	RotatedScaledSprite_NoClip	Fixed rotation with scaling factor for sprites without transparency. >iA scale factor of 64 represents 100% scaling. This routine only accepts square input sprites.<i >rANGLE<s should be in [0,255].
+sum(0)	CloseAll	Closes all open slots. >iCall this before you use any variable functions!<i
+sum(1,>g"NAME"<s,>g"MODE"<s)	Open	Opens an appvar with name >g"NAME"<s. Returns the slot number or 0 if failure. >g"MODE"<s options: >g"r"<s - Opens a file for reading. The file must exist. Keeps file in archive if in archive.; >g"w"<s - Creates an empty file for writing. Overwrites file if already exists.; >g"a"<s - Appends to a file. Writing operations, append data at the end of the file. The file is created if it does not exist.; >g"r+"<s - Opens a file to update both reading and writing. The file must exist. Moves file from archive to RAM if in archive.; >g"w+"<s - Creates an empty file for both reading and writing. Overwrites file if already exists.; >g"a+"<s - Opens a file for reading and appending. Moves file from archive to RAM if in archive. Created if it does not exist.
+sum(2,>g"NAME"<s,>g"MODE"<s,>rTYPE<s)	OpenVar	Opens a variable with name >g"NAME"<s and type >rTYPE<s. See sum(1) for the >g"MODE"<s options. Returns the slot number or 0 if failure. >rTYPE<s options: 0 - Real; 1 - Real list; 2 - Matrix; 3 - Equation; 4 - String; 5 - Program; 6 - Protected program; 12 - Complex; 13 - Complex list; 21 - Appvar; 22 - Temp program.
+sum(3,>rSLOT<s)	Close	Frees an open slot.
+sum(4,>g"DATA"<s,>rSIZE<s,>rCOUNT<s,>rSLOT<s)	Write	Writes >rCOUNT<s times >rSIZE<s bytes from >g"DATA"<s to the variable in slot >rSLOT<s.
+sum(5,>rPTR<s,>rSIZE<s,>rCOUNT<s,>rSLOT<s)	Read	Reads >rCOUNT<s times >rSIZE<s bytes from the variable in slot >rSLOT<s to >rPTR<s.
+sum(6,>rSLOT<s)	GetChar	Gets a char from the variable in slot >rSLOT<s and increments the offset.
+sum(7,>rCHAR<s,>rSLOT<s)	PutChar	Writes a char to the variable in slot >rSLOT<s and increments the offset.
+sum(8,>g"NAME"<s)	Delete	Delets an appvar.
+sum(9,>g"NAME"<s,>rTYPE<s)	DeleteVar	Delets a variable with type >rTYPE<s. See sum(2 for the types.
+sum(10,>rOFFSET<s,>rORIGIN<s,>rSLOT<s)	Seek	Seeks the variable in slot >rSLOT<s to an offset. >rORIGIN<s options: 0 - SEEK_SET - seek from beginning of file; 1 - SEEK_CUR - seek from current offset in file; 2 - SEEK_END - seek from end of file.
+sum(11,>rSIZE<s,>rSLOT<s)	Resize	Resizes the variable in slot >rSLOT<s.
+sum(12,>rSLOT<s)	IsArchived	Returns 0 if the variable in slot >rSLOT<s is in RAM, and 1 if in archive.
+sum(13,>rARCHIVED<s,>rSLOT<s)	SetArchiveStatus	Sends the variable into either the archive or RAM if needed. >rARCHIVED<s options: 0 - Send to RAM; 1 - Send to archive<br>
+
+sum(14,>rSLOT<s)	Tell	Returns the offset in a slot.
+sum(15,>rSLOT<s)	Rewind	Seeks to the start of the variable in slot >rSLOT<s.
+sum(16,>rSLOT<s)	GetSize	Gets the size of the variable in slot >rSLOT<s.
+sum(17,°>rREAD_PTR<s,°>lLEN_TOK<s,°>lLEN_STR<s)	GetTokenString	Reads the token at >rREAD_PTR<s and returns a pointer to the characters. Both variables >lLEN_TOK<s and >lLEN_STR<s gets overwritten with respectively the length of the token (1- or 2-byte token) and the length of the string (the amount of characters).
+sum(18,>rSLOT<s)	GetDataPtr	Gets a pointer to the data located at the current position of the variable in slot >rSLOT<s.
+sum(19,°>lPOS<s,>g"DATA"<s)	Detect	Finds the first appvar starting at >lPOS<s which starts with the data >g"DATA"<s. If you want to search for all appvars, you can replace >g"DATA"<s with 0. Returns the pointer to the filename. >lPOS<s is updated each call, and should be 0 to start the search. Returns 0 if no more appvars found.
+sum(20,°>lPOS<s,>g"DATA"<s,>rTYPE<s)	DetectVar	Finds the first variable with type >rTYPE<s starting at >lPOS<s which starts with the data >g"DATA"<s. If you want to search for all variables with type >rTYPE<s, you can replace >g"DATA"<s with 0. Returns the pointer to the filename. >lPOS<s is updated each call, and should be 0 to start the search. Returns 0 if no more variables found. See sum(2) for the types.
