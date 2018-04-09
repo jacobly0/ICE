@@ -107,3 +107,11 @@ sum(17,^^o>rREAD_PTR<s,^^o>lLEN_TOK<s,^^o>lLEN_STR<s)	GetTokenString	Reads the t
 sum(18,>rSLOT<s)	GetDataPtr	Gets a pointer to the data located at the current position of the variable in slot >rSLOT<s.
 sum(19,^^o>lPOS<s,>g"DATA"<s)	Detect	Finds the first appvar starting at >lPOS<s which starts with the data >g"DATA"<s. If you want to search for all appvars, you can replace >g"DATA"<s with 0. Returns the pointer to the filename. >lPOS<s is updated each call, and should be 0 to start the search. Returns 0 if no more appvars found.
 sum(20,^^o>lPOS<s,>g"DATA"<s,>rTYPE<s)	DetectVar	Finds the first variable with type >rTYPE<s starting at >lPOS<s which starts with the data >g"DATA"<s. If you want to search for all variables with type >rTYPE<s, you can replace >g"DATA"<s with 0. Returns the pointer to the filename. >lPOS<s is updated each call, and should be 0 to start the search. Returns 0 if no more variables found.
+DefineSprite(>oWIDTH<s,>oHEIGHT<s,[>g"DATA"<s])	DefineSprite	Allocates >oWIDTH<s*>oHEIGHT<s+2 bytes for an empty sprite. This is recommend for duplicating, rotating or enlarging sprites. If >g"DATA"<s is given, it copies the data to this empty sprite. Returns a pointer to the allocated memory.
+Call >gLABEL<s	Call	Calls a label.
+Data(>oSIZE<s,>oCONST1<s,>oCONST<s...)	Data(	Places constant data in program memory with each element size of >oSIZE<s bytes. Returns a pointer to the data.
+Copy(>rDEST<s,>rSRC<s,>rSIZE<r)	Copy(	Copies >rSIZE<s bytes from >rSRC<s to >rDEST<s.
+Alloc(>rSIZE<o)	Alloc(	Allocates >rSIZE<s bytes in safe RAM. Returns a pointer to the memory or 0 if you allocated too much memory.
+CopyData(>rDEST<o,>oSIZE<s,>oCONST1<s,>oCONST2<s...)	CopyData(	Places constant data in program memory with each element size of >oSIZE<s bytes and copies it to DEST. Returns a pointer to the end of the data in the program data.
+LoadData(>g"APPVAR"<s,>rOFFSET<s,>rSIZE<s)	LoadData(	Returns a pointer to the table with pointers to the tiles from the tilemap in appvar >g"APPVAR"<s. This pointer should be used in >bDefineTilemap(<s. You can get these values from ConvPNG. See the Documentation for more information.
+SetBrightness(>rLEVEL<s)	SetBrightness(	Sets the brightness of the screen. 0=high (light), 255=low (dark).

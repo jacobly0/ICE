@@ -547,7 +547,7 @@ G91:  .db "Rot.Sc.Tr.Spr._NC(PTR,X,Y,ANGLE,SCALE)", 0
 G92:  .db "Rot.Sc.Spr._NC(PTR,X,Y,ANGLE,SCALE)", 0
       .db 0
       
-; First token is $62 $09
+; First token is $62 $0A
 ; These magic bytes can be found with _GetKeyPress
 Tok1: .db 090h, 13, "DefineSprite("
 Tok2: .db 0EEh, 5,  "Call "
