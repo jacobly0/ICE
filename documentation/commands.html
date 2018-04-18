@@ -838,12 +838,12 @@
                             <tr>
                                 <td><code><span class="bl">sum(</span>4,<span class="grey">"DATA"</span>,<span class="red">SIZE</span>,<span class="red">COUNT</span>,<span class="red">SLOT</span><span class="bl">)</span></code></td>
                                 <td>Write</td>
-                                <td>Writes <code><span class="red">COUNT</span></code> times <code><span class="red">SIZE</span></code> bytes from <code><span class="grey">"DATA"</span></code> to the variable in slot <code><span class="red">SLOT</span></code>.</td>
+                                <td>Writes <code><span class="grey">"DATA"</span></code> at the offset of the variable in slot <code><span class="red">SLOT</span></code>. Exactly <code><span class="red">COUNT</span></code> times <code><span class="red">SIZE</span></code> bytes are written, and this function returns <code><span class="red">SIZE</span></code> or <code>0</code> in an error occured. <code><span class="red">SIZE</span></code>*<code><span class="red">COUNT</span></code> is added to the variable offset.</td>
                             </tr>
                             <tr>
                                 <td><code><span class="bl">sum(</span>5,<span class="red">PTR</span>,<span class="red">SIZE</span>,<span class="red">COUNT</span>,<span class="red">SLOT</span><span class="bl">)</span></code></td>
                                 <td>Read</td>
-                                <td>Reads <code><span class="red">COUNT</span></code> times <code><span class="red">SIZE</span></code> bytes from the variable in slot <code><span class="red">SLOT</span></code> to <code><span class="red">PTR</span></code>.</td>
+                                <td>Reads <code><span class="red">COUNT</span></code> times <code><span class="red">SIZE</span></code> bytes from the variable in slot <code><span class="red">SLOT</span></code> and copies everything to <code><span class="red">PTR</span></code>. If everything went right, this function returns <code><span class="red">SIZE</span></code> or <code>0</code> if on failure. <code><span class="red">SIZE</span></code>*<code><span class="red">COUNT</span></code> is added to the variable offset.</td>
                             </tr>
                             <tr>
                                 <td><code><span class="bl">sum(</span>6,<span class="red">SLOT</span><span class="bl">)</span></code></td>

@@ -15,7 +15,7 @@ ice_t ice;
 expr_t expr;
 reg_t reg;
 
-const char *infoStr = "ICE Compiler v2.1 - By Peter \"PT_\" Tillema";
+const char *infoStr = "ICE Compiler v2.1.3.0 - By Peter \"PT_\" Tillema";
 const uint8_t colorTable[16] = {255,24,224,0,248,36,227,97,9,19,230,255,181,107,106,74};    // Thanks Cesium :D
 char *inputPrograms[22];
 extern label_t labelStack[150];
@@ -213,8 +213,14 @@ void main(void) {
 
     if (prescan.hasGraphxFunctions) {
         uint8_t a;
-
+        
+        // Copy the C header to the program
         memcpy(ice.programPtr, CheaderData, SIZEOF_CHEADER);
+        offset = ice.programPtr - ice.programData;
+        w24(ice.programPtr + 1, r24(ice.programPtr + 1) + offset);
+        w24(ice.programPtr + 52, r24(ice.programPtr + 52) + offset);
+        w24(ice.programPtr + 65, r24(ice.programPtr + 65) + offset);
+        
         ice.programPtr += SIZEOF_CHEADER;
         for (a = 0; a < AMOUNT_OF_GRAPHX_FUNCTIONS; a++) {
             if (prescan.GraphxRoutinesStack[a]) {
