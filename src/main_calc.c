@@ -47,7 +47,7 @@ void main(void) {
         asm("ld de, 17");
         asm("add hl, de");
         asm("call 00213CCh");
-        asm("ld de, 503");
+        asm("ld de, 492");
         asm("add hl, de");
         asm("call 00213F8h");
         asm("ld de, 32");
@@ -67,7 +67,7 @@ void main(void) {
     gfx_SetColor(0);
     gfx_SetTextFGColor(0);
     gfx_HorizLine_NoClip(0, 10, 320);
-    gfx_PrintStringXY(infoStr, 21, 1);
+    gfx_PrintStringXY(infoStr, 12, 1);
 
     // Get all the programs that start with the [i] token
     selectedProgram = 0;

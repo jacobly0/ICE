@@ -149,15 +149,7 @@ KeyNotDown:
 	add	a, e
 	sub	a, AMOUNT_OF_CUSTOM_TOKENS
 	jr	c, InsertCustomToken
-; Check ignored C functions
-	cp	a, 55 + AMOUNT_OF_FILEIOC_FUNCTIONS
-	jr	c, +_
-	inc	a
-	inc	a
-_:	cp	a, 74 + AMOUNT_OF_FILEIOC_FUNCTIONS
-	jr	c, +_
-	inc	a
-_:	ld	hl, saveSScreen + 9
+	ld	hl, saveSScreen + 9
 	cp	a, AMOUNT_OF_FILEIOC_FUNCTIONS
 	jr	nc, +_
 	ld	(hl), tSum
@@ -517,9 +509,9 @@ G63:  .db "ScaledSprite_NoClip(PTR,X,Y)", 0
 G64:  .db "ScaledTransparentSprite_NoClip(PTR,X,Y)", 0
 G65:  .db "FlipSpriteY(PTR_IN,PTR_OUT)", 0
 G66:  .db "FlipSpriteX(PTR_IN,PTR_OUT)", 0
+Tab7:
 G67:  .db "RotateSpriteC(PTR_IN,PTR_OUT)", 0
 G68:  .db "RotateSpriteCC(PTR_IN,PTR_OUT)", 0
-Tab7:
 G69:  .db "RotateSpriteHalf(PTR_IN,PTR_OUT)", 0
 G70:  .db "Polygon(POINTS,NUM)", 0
 G71:  .db "Polygon_NoClip(POINTS,NUM)", 0
@@ -534,10 +526,10 @@ G79:  .db "GetSpriteChar(CHAR)", 0
 G80:  .db "Lighten(COLOR,AMOUNT)", 0
 G81:  .db "Darken(COLOR,AMOUNT)", 0
 G82:  .db "SetFontHeight(HEIGHT)", 0
+Tab8:
 G83:  .db "ScaledSprite(PTR_IN,PTR_OUT)", 0
 G84:  .db "FloodFill(X,Y,COLOR)", 0
 G85:  .db "RLETSprite(PTR,X,Y)", 0
-Tab8:
 G86:  .db "RLETSprite_NoClip(PTR,X,Y)", 0
 G87:  .db "ConvertFromRLETSprite(PTR_IN,PTR_OUT)", 0
 G88:  .db "ConvertToRLETSprite(PTR_IN,PTR_OUT)", 0
