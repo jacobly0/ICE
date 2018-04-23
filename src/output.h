@@ -77,6 +77,7 @@
 #define OP_LD_E_A     0x5F
 #define OP_LD_H_A     0x67
 #define OP_LD_L_A     0x6F
+#define OP_LD_HL_C    0x71
 #define OP_LD_HL_D    0x72
 #define OP_LD_HL_E    0x73
 #define OP_LD_HL_A    0x77
@@ -178,6 +179,7 @@
 #define LD_H(val)             do { output(uint8_t, OP_LD_H); output(uint8_t, val); ResetReg(REGISTER_HL); } while (0)
 #define LD_L(val)             do { output(uint8_t, OP_LD_L); output(uint8_t, val); ResetReg(REGISTER_HL); } while (0)
 #define LD_HL_A()             do { output(uint8_t, OP_LD_HL_A); } while (0)
+#define LD_HL_C()             do { output(uint8_t, OP_LD_HL_C); } while (0)
 #define LD_HL_D()             do { output(uint8_t, OP_LD_HL_D); } while (0)
 #define LD_HL_E()             do { output(uint8_t, OP_LD_HL_E); } while (0)
 #define LD_A_DE()             do { output(uint8_t, OP_LD_A_DE); ResetReg(REGISTER_A); } while (0)

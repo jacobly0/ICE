@@ -545,9 +545,11 @@ uint8_t parseFunction(uint24_t index) {
         } else {
             LD_DE_IMM(prescan.tempStrings[TempString1]);
         }
+        PUSH_DE();
         LDIR();
         EX_DE_HL();
-        LD_HL_VAL(0);
+        LD_HL_C();
+        POP_HL();
     }
 
     // length(
