@@ -159,7 +159,7 @@ static void swapEntries() {
 
 uint8_t parseOperator(element_t *outputPrevPrevPrev, element_t *outputPrevPrev, element_t *outputPrev, element_t *outputCurr, bool canOptimizeStrings) {
     uint8_t type1Masked, type1, type2;
-
+    
     type1 = outputPrevPrev->type;
     type1Masked = type1 & 0x7F;
     type2 = outputPrev->type;
@@ -190,6 +190,8 @@ uint8_t parseOperator(element_t *outputPrevPrevPrev, element_t *outputPrevPrev, 
         ) {
             return E_SYNTAX;
         }
+        
+        type2 = type2 & 0x7F;
 
         // Store to a pointer
         if (oper == tStore && type2 == TYPE_FUNCTION) {
