@@ -15,7 +15,7 @@ ice_t ice;
 expr_t expr;
 reg_t reg;
 
-const char *infoStr = "ICE Compiler v2.1.3.1 - By Peter \"PT_\" Tillema";
+const char *infoStr = "ICE Compiler v2.1.3.2 - By Peter \"PT_\" Tillema";
 const uint8_t colorTable[16] = {255,24,224,0,248,36,227,97,9,19,230,255,181,107,106,74};    // Thanks Cesium :D
 char *inputPrograms[22];
 extern label_t labelStack[150];
