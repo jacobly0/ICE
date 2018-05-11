@@ -1402,13 +1402,13 @@ void loadGetKeyFastData2(void) {
 
 void InsertMallocRoutine(void) {
     bool boolUsed = ice.usedAlreadyMalloc;
-
+    
     CallRoutine(&ice.usedAlreadyMalloc, &ice.MallocAddr, (uint8_t*)MallocData, SIZEOF_MALLOC_DATA);
-    *(uint24_t*)(ice.MallocAddr + 1) = prescan.freeMemoryPtr;
+    w24(ice.MallocAddr + 1, prescan.freeMemoryPtr);
 
     if (!boolUsed) {
         ice.dataOffsetStack[ice.dataOffsetElements++] = (uint24_t*)(ice.MallocAddr + 6);
-        *(uint24_t*)(ice.MallocAddr + 6) = ice.MallocAddr + 1;
+        w24(ice.MallocAddr + 6, ice.MallocAddr + 1);
     }
 
     ResetReg(REGISTER_HL);
