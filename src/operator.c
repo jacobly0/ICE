@@ -427,8 +427,47 @@ void StoChainAnsChainAns(void) {
     StoToChainAns();
 }
 void StoStringChainAns(void) {
-    LD_HL_STRING(entry0_operand, entry0->type);
-    StoChainAnsChainAns();
+    uint8_t type = entry1->type & 0x7F;
+    uint8_t mask = entry2->mask;
+
+    if (type == TYPE_NUMBER) {
+        LD_HL_STRING(entry0_operand, entry0->type);
+        if (mask == TYPE_MASK_U24) {
+            LD_ADDR_HL(entry1_operand);
+        } else {
+            LD_A_L();
+            LD_ADDR_A(entry1_operand);
+            if (mask == TYPE_MASK_U16) {
+                LD_A_H();
+                LD_ADDR_A(entry1_operand + 1);
+            }
+        }
+    } else if (type == TYPE_VARIABLE) {
+        LD_HL_STRING(entry0_operand, entry0->type);
+        if (mask == TYPE_MASK_U24) {
+            LD_IX_OFF_IND_HL(entry1_operand);
+        } else {
+            LD_IX_OFF_IND_L(entry1_operand);
+            if (type == TYPE_MASK_U16) {
+                LD_IX_OFF_IND_H(entry1_operand + 1);
+            }
+        }
+    } else {
+        AnsToHL();
+        if ((entry0->type != TYPE_OS_STRING) && (entry0_operand != prescan.tempStrings[TempString1] && entry0_operand != prescan.tempStrings[TempString2])) {
+            ProgramPtrToOffsetStack();
+        }
+        LD_DE_IMM(entry0_operand);
+        if (type == TYPE_MASK_U24) {
+            LD_HL_DE();
+        } else {
+            LD_HL_E();
+            if (mask == TYPE_MASK_U16) {
+                INC_HL();
+                LD_HL_D();
+            }
+        }
+    }
 }
 void StoToChainAns(void) {
     if (entry2->mask == TYPE_MASK_U8) {

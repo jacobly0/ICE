@@ -67,6 +67,7 @@ class IceBot(irc.bot.SingleServerIRCBot):
         c = self.connection
         request = e.arguments[0].lower()
         nick = e.source.nick
+        print(e.source)
 
         if nick == "saxjax":
             offset = request.find("]")
@@ -106,7 +107,7 @@ class IceBot(irc.bot.SingleServerIRCBot):
 def main():
     server = "efnet.port80.se"
     port = 6667
-    channels = "#cemetech,#ez80-dev,#icedev"
+    channels = "#icedev"
     nickname = "ICEbot"
 
     bot = IceBot(channels, nickname, server, port)

@@ -135,7 +135,7 @@ fetchNoNewToken:
         if (prevTokenWasDetOrSum) {
             prevTokenWasDetOrSum--;
         }
-
+        
         // Process a number
         if (tok >= t0 && tok <= t9) {
             uint24_t output = token - t0;
@@ -708,6 +708,7 @@ uint8_t parsePostFixFromIndexToIndex(uint24_t startIndex, uint24_t endIndex) {
     // Get all the indexes of the expression
     temp = 0;
     amountOfStackElements = 0;
+    
     for (loopIndex = startIndex; loopIndex <= endIndex; loopIndex++) {
         outputCurr = &outputPtr[loopIndex];
 

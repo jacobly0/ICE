@@ -84,6 +84,7 @@
 #define OP_LD_A_B     0x78
 #define OP_LD_A_D     0x7A
 #define OP_LD_A_E     0x7B
+#define OP_LD_A_H     0x7C
 #define OP_LD_A_L     0x7D
 #define OP_LD_A_HL    0x7E
 #define OP_ADD_A_L    0x85
@@ -153,6 +154,8 @@
 #define LD_IY_IND_IX_OFF(off) do { output(uint16_t, 0x31DD); output(uint8_t, off); } while (0)
 #define LD_IX_OFF_IND_DE(off) do { output(uint16_t, 0x1FDD); output(uint8_t, off); reg.DEIsVariable = true; reg.DEVariable = off; } while (0)
 #define LD_IX_OFF_IND_HL(off) do { output(uint16_t, 0x2FDD); output(uint8_t, off); reg.HLIsVariable = true; reg.HLVariable = off; } while (0)
+#define LD_IX_OFF_IND_H(off)  do { output(uint16_t, 0x74DD); output(uint8_t, off); ResetReg(REGISTER_HL); } while (0)
+#define LD_IX_OFF_IND_L(off)  do { output(uint16_t, 0x75DD); output(uint8_t, off); ResetReg(REGISTER_HL); } while (0)
 #define LD_IX_IMM(val)        do { output(uint16_t, 0x21DD); output(uint24_t, val); } while (0)
 #define LD_IY_IMM(val)        do { output(uint16_t, 0x21FD); output(uint24_t, val); } while (0)
 #define LEA_HL_IY_OFF(off)    do { output(uint16_t, 0x23ED); output(uint8_t, off); ResetReg(REGISTER_HL); } while (0)
@@ -193,6 +196,7 @@
 #define LD_A_B()              do { output(uint8_t, OP_LD_A_B); ResetReg(REGISTER_A); } while (0)
 #define LD_A_D()              do { output(uint8_t, OP_LD_A_D); ResetReg(REGISTER_A); } while (0)
 #define LD_A_E()              do { output(uint8_t, OP_LD_A_E); ResetReg(REGISTER_A); } while (0)
+#define LD_A_H()              do { output(uint8_t, OP_LD_A_H); ResetReg(REGISTER_A); } while (0)
 #define LD_A_L()              do { output(uint8_t, OP_LD_A_L); ResetReg(REGISTER_A); } while (0)
 #define INC_H()               do { output(uint8_t, OP_INC_H); ResetReg(REGISTER_HL); } while (0)
 #define DEC_H()               do { output(uint8_t, OP_DEC_H); ResetReg(REGISTER_HL); } while (0)
