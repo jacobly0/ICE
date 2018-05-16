@@ -339,6 +339,15 @@ findNextLabel:;
         // Export the program
         ice.outPrgm = _open(ice.outName);
         if (ice.outPrgm) {
+            // This program already exists
+            if ((uint8_t)ti_GetC(ice.outPrgm) != 0xEF || (uint8_t)ti_GetC(ice.outPrgm) != 0x7B) {
+                gfx_SetTextFGColor(224);
+                displayMessageLineScroll("Output program already exists!");
+                displayMessageLineScroll("Delete program to continue.");
+                didCompile = false;
+                goto stop;
+            }
+            
             previousSize = ti_GetSize(ice.outPrgm);
             ti_Close(ice.outPrgm);
         }
