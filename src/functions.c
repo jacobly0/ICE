@@ -262,7 +262,6 @@ uint8_t parseFunction(uint24_t index) {
                     LD_D_A();
                     loadGetKeyFastData1();
                     LD_A_D();
-                    loadGetKeyFastData2();
                 } else {
                     if (expr.outputRegister == REGISTER_HL) {
                         LD_A_L();
@@ -275,8 +274,8 @@ uint8_t parseFunction(uint24_t index) {
                     } else {
                         LD_A_E();
                     }
-                    loadGetKeyFastData2();
                 }
+                loadGetKeyFastData2();
             }
 
             CallRoutine(&ice.usedAlreadyGetKeyFast, &ice.getKeyFastAddr, (uint8_t*)KeypadData, SIZEOF_KEYPAD_DATA);

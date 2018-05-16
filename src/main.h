@@ -4,6 +4,7 @@
 #define AMOUNT_OF_GRAPHX_FUNCTIONS 92
 #define AMOUNT_OF_FILEIOC_FUNCTIONS 21
 #define STACK_SIZE 500
+#define SIZEOF_DISP_DATA   18
 #define SIZEOF_KEYPAD_DATA 18
 #define SIZEOF_RAND_DATA   101
 #define SIZEOF_SRAND_DATA  17
@@ -110,6 +111,9 @@ typedef struct {
 
     bool     usedAlreadyTimer;                              // Only once the timer routine in the program data
     uint24_t TimerAddr;                                     // Address of the timer routine in the program data
+    
+    bool     usedAlreadyDisp;                               // Only once the Disp routine in the program data
+    uint24_t DispAddr;                                      // Address of the Disp routine in the program data
 
 #ifdef __EMSCRIPTEN__
     uint24_t progInputPtr;
@@ -236,6 +240,7 @@ void MallocData(void);
 void SincosData(void);
 void PrgmData(void);
 void TimerData(void);
+void DispData(void);
 void StringConcatenateData(void);
 void LoadspriteData(void);
 void LoadtilemapData(void);

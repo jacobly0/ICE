@@ -15,6 +15,7 @@
 INCBIN(Pause, "src/asm/pause.bin");
 INCBIN(Input, "src/asm/input.bin");
 INCBIN(Prgm, "src/asm/prgm.bin");
+INCBIN(Disp, "src/asm/disp.bin");
 
 extern char *str_dupcat(const char *s, const char *c);
 #endif
@@ -23,6 +24,7 @@ extern char *str_dupcat(const char *s, const char *c);
 extern const uint8_t PauseData[];
 extern const uint8_t InputData[];
 extern const uint8_t PrgmData[];
+extern const uint8_t DispData[];
 #endif
 
 #define AMOUNT_OF_FUNCTIONS 28
@@ -1226,12 +1228,9 @@ static uint8_t functionDisp(int token) {
         }
 
         AnsToHL();
-        MaybeLDIYFlags();
-        if (expr.outputIsString) {
-            CALL(_PutS);
-        } else {
-            AnsToHL();
-            CALL(_DispHL);
+        CallRoutine(&ice.usedAlreadyDisp, &ice.DispAddr, (uint8_t*)DispData, SIZEOF_DISP_DATA);
+        if (!expr.outputIsString) {
+            w24(ice.programPtr - 3, r24(ice.programPtr - 3) + 9);
         }
 
 checkArgument:
@@ -1326,17 +1325,14 @@ static uint8_t functionOutput(int token) {
 
     // Get the third argument = output thing
     if (ice.tempToken == tComma) {
-        MaybeLDIYFlags();
         if ((res = parseExpression(_getc())) != VALID) {
             return res;
         }
-
-        // Call the right function to display it
-        if (expr.outputIsString) {
-            CALL(_PutS);
-        } else {
-            AnsToHL();
-            CALL(_DispHL);
+        
+        AnsToHL();
+        CallRoutine(&ice.usedAlreadyDisp, &ice.DispAddr, (uint8_t*)DispData, SIZEOF_DISP_DATA);
+        if (!expr.outputIsString) {
+            w24(ice.programPtr - 3, r24(ice.programPtr - 3) + 9);
         }
         ResetAllRegs();
     } else if (ice.tempToken != tEnter) {
