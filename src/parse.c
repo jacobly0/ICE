@@ -1230,7 +1230,7 @@ static uint8_t functionDisp(int token) {
         AnsToHL();
         CallRoutine(&ice.usedAlreadyDisp, &ice.DispAddr, (uint8_t*)DispData, SIZEOF_DISP_DATA);
         if (!expr.outputIsString) {
-            w24(ice.programPtr - 3, r24(ice.programPtr - 3) + 9);
+            w24(ice.programPtr - 3, r24(ice.programPtr - 3) + 13);
         }
 
 checkArgument:
@@ -1332,7 +1332,7 @@ static uint8_t functionOutput(int token) {
         AnsToHL();
         CallRoutine(&ice.usedAlreadyDisp, &ice.DispAddr, (uint8_t*)DispData, SIZEOF_DISP_DATA);
         if (!expr.outputIsString) {
-            w24(ice.programPtr - 3, r24(ice.programPtr - 3) + 9);
+            w24(ice.programPtr - 3, r24(ice.programPtr - 3) + 13);
         }
         ResetAllRegs();
     } else if (ice.tempToken != tEnter) {
