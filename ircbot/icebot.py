@@ -5,7 +5,8 @@
 # Description: prints the C functions available in ICE Compiler
 # Author: Jacob Young and Peter Tillema
 # Date: 04/06/2018
-# Setup: 
+# Python version: 3.6.1
+# Setup:
 #  - install Python pip3: "sudo apt-get install python-pip3"
 #  - install pip3 IRC:    "pip3 install irc
 #  - set permission:      "chmod +x ./icebot.py
@@ -67,7 +68,6 @@ class IceBot(irc.bot.SingleServerIRCBot):
         c = self.connection
         request = e.arguments[0].lower()
         nick = e.source.nick
-        print(e.source)
 
         if nick == "saxjax":
             offset = request.find("]")
@@ -107,7 +107,7 @@ class IceBot(irc.bot.SingleServerIRCBot):
 def main():
     server = "efnet.port80.se"
     port = 6667
-    channels = "#icedev"
+    channels = "#cemetech,#ez80-dev,#icedev"
     nickname = "ICEbot"
 
     bot = IceBot(channels, nickname, server, port)
