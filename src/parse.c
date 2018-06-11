@@ -71,6 +71,10 @@ variable_t variableStack[85];
 uint8_t parseProgram(void) {
     int token;
     uint8_t ret = VALID;
+    
+    if (!ti_GetSize(ice.inPrgm)) {
+        return VALID;
+    }
 
     // Do things based on the token
     while ((token = _getc()) != EOF) {

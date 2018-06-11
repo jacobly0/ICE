@@ -84,7 +84,7 @@ void preScanProgram(void) {
                 if ((tok = (uint8_t)_getc()) == tAsmComp) {
                     ti_var_t tempProg = ice.inPrgm;
                     prog_t *newProg = GetProgramName();
-
+                    
                     if ((ice.inPrgm = _open(newProg->prog))) {
                         preScanProgram();
                         _close(ice.inPrgm);
