@@ -147,7 +147,7 @@ prog_t *GetProgramName(void) {
     ret = malloc(sizeof(prog_t));
     ret->errorCode = VALID;
 
-    while ((token = _getc()) != EOF && (uint8_t)token != tEnter) {
+    while ((token = _getc()) != EOF && (uint8_t)token != tEnter && (uint8_t)token != tRParen) {
         if (a == 8) {
             ret->errorCode = E_INVALID_PROG;
             return ret;
