@@ -607,8 +607,9 @@ stackToOutputReturn2:
         outputCurr = &outputPtr[loopIndex];
         index = outputCurr->operand >> 8;
 
-        // Check if the types are number | number | operator
+        // Check if the types are number | number | operator (not both OS strings though)
         if (loopIndex > 1 && outputPrevPrev->type == TYPE_NUMBER && outputPrev->type == TYPE_NUMBER &&
+               !(outputPrevPrev->isString && outputPrev->isString) && 
                outputCurr->type == TYPE_OPERATOR && (uint8_t)outputCurr->operand != tStore) {
             // If yes, execute the operator, and store it in the first entry, and remove the other 2
             outputPrevPrev->operand = executeOperator(outputPrevPrev->operand, outputPrev->operand, (uint8_t)outputCurr->operand);
@@ -833,7 +834,7 @@ uint8_t parsePostFixFromIndexToIndex(uint24_t startIndex, uint24_t endIndex) {
             outputPrevPrev = &outputPtr[getIndexOffset(-3)];
             outputNext     = &outputPtr[getIndexOffset(0)];
             outputNextNext = &outputPtr[getIndexOffset(1)];
-
+            
             // Check if we can optimize StrX + "..." -> StrX
             canOptimizeConcatenateStrings = (
                 (uint8_t)(outputCurr->operand) == tAdd &&
@@ -867,6 +868,7 @@ uint8_t parsePostFixFromIndexToIndex(uint24_t startIndex, uint24_t endIndex) {
             } else {
                 // Check if it was a command with 2 strings, then the output is a string, not Ans
                 if ((uint8_t)outputCurr->operand == tAdd && outputPrevPrev->isString && outputPrev->isString) {
+                    outputCurr->isString = true;
                     outputCurr->type = TYPE_STRING;
                     if (outputPrevPrev->operand == prescan.tempStrings[TempString2] || outputPrev->operand == prescan.tempStrings[TempString1]) {
                         outputCurr->operand = prescan.tempStrings[TempString2];

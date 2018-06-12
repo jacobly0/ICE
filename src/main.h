@@ -117,12 +117,6 @@ typedef struct {
     
     bool     usedAlreadyDisp;                               // Only once the Disp routine in the program data
     uint24_t DispAddr;                                      // Address of the Disp routine in the program data
-
-#ifdef __EMSCRIPTEN__
-    uint24_t progInputPtr;
-    uint8_t  progInputData[0xFFFF];
-    uint8_t  errorCode;
-#endif
 } ice_t;
 
 typedef struct {
