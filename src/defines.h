@@ -45,8 +45,6 @@ void w16(void *x, uint32_t val);
 uint32_t r24(void *x);
 void export_program(const char *name, uint8_t *data, size_t size);
 
-#ifdef COMPUTER_ICE
-
 typedef FILE* ti_var_t;
 typedef uint32_t uint24_t;
 
@@ -55,37 +53,6 @@ typedef uint32_t uint24_t;
 #define _close(x)    fclose(x)
 #define _tell(x)     ftell(x)
 #define _seek(x,y,z) fseek(z,x,y);
-
-#else
-
-// Lmao
-typedef bool ti_var_t;
-typedef uint32_t uint24_t;
-
-#define _rewind(x)   ice.progInputPtr = 0
-#define _open(x)     ice_open(x)
-#define _tell(x)     ice.progInputPtr
-#define _close(x)    ice_close()
-#define _seek(x,y,z) \
-    do { \
-        if (y == SEEK_SET) { \
-            ice.progInputPtr = x; \
-        } else if (y == SEEK_CUR) { \
-            ice.progInputPtr += x; \
-        } \
-    } while (0)
-
-
-bool ice_open(char tempName[9]);
-void ice_open_first_prog(void);
-void ice_close(void);
-void ice_error(char*, uint24_t);
-void ice_export(uint8_t*, uint24_t);
-
-// Uh oh...
-int main(int argc, char **);
-
-#endif
 
 #endif
 

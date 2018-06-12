@@ -1757,7 +1757,7 @@ static uint8_t functionBB(int token) {
             return outputPrgm->errorCode;
         }
 
-#ifdef COMPUTER_ICE
+#ifndef CALCULATOR
         if ((ice.inPrgm = _open(str_dupcat(outputPrgm->prog, ".8xp")))) {
             int tempProgSize = ice.programLength;
 
@@ -1774,17 +1774,6 @@ static uint8_t functionBB(int token) {
             fclose(ice.inPrgm);
             ice.currentLine = currentLine;
             ice.programLength = tempProgSize;
-        } else {
-            res = E_PROG_NOT_FOUND;
-        }
-#elif defined(__EMSCRIPTEN__)
-        if ((ice.inPrgm = _open(outputPrgm->prog))) {
-            ice.currentLine = 0;
-            if ((res = parseProgram()) != VALID) {
-                return res;
-            }
-            _close(ice.inPrgm);
-            ice.currentLine = currentLine;
         } else {
             res = E_PROG_NOT_FOUND;
         }

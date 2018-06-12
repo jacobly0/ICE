@@ -1,7 +1,7 @@
 #include "defines.h"
 #include "main.h"
 
-#if !defined(COMPUTER_ICE) && !defined(__EMSCRIPTEN__)
+#ifdef CALCULATOR
 
 #include "functions.h"
 #include "errors.h"

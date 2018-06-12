@@ -47,10 +47,8 @@ void displayLabelError(char *label) {
 #ifdef CALCULATOR
     gfx_SetTextFGColor(224);
     displayMessageLineScroll(buf);
-#elif defined(COMPUTER_ICE)
-    fprintf(stdout, "%s\n", buf);
 #else
-    ice_error(buf, 0);
+    fprintf(stdout, "%s\n", buf);
 #endif
 }
 
@@ -64,11 +62,8 @@ void displayError(uint8_t index) {
     gfx_SetTextFGColor(0);
     sprintf(buf, "Error at line %u", ice.currentLine);
     displayMessageLineScroll(buf);
-#elif defined(COMPUTER_ICE)
+#else
     fprintf(stdout, "%s\n", errors[index]);
     fprintf(stdout, "Error at line %u\n", ice.currentLine);
-#else
-    strcpy(buf, errors[index]);
-    ice_error(buf, ice.currentLine);
 #endif
 }

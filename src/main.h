@@ -214,7 +214,7 @@ extern prescan_t prescan;
 extern reg_t reg;
 extern variable_t variable;
 
-#if !defined(COMPUTER_ICE) && !defined(__EMSCRIPTEN__)
+#ifdef CALCULATOR
 void CheaderData(void);
 void GraphxHeader(void);
 void FileiocheaderData(void);

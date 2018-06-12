@@ -14,25 +14,7 @@
 extern const uint8_t AndData[];
 extern const uint8_t OrData[];
 extern const uint8_t XorData[];
-#endif
 
-extern void (*operatorFunctions[272])(void);
-extern void (*operatorChainPushChainAnsFunctions[17])(void);
-const char operators[]              = {tStore, tDotIcon, tCrossIcon, tBoxIcon, tAnd, tXor, tOr, tEQ, tLT, tGT, tLE, tGE, tNE, tMul, tDiv, tAdd, tSub};
-const uint8_t operatorPrecedence[]  = {0, 6, 8, 8, 2, 1, 1, 3, 3, 3, 3, 3, 3, 5, 5, 4, 4};
-const uint8_t operatorPrecedence2[] = {9, 6, 8, 8, 2, 1, 1, 3, 3, 3, 3, 3, 3, 5, 5, 4, 4};
-const uint8_t operatorCanSwap[]     = {0, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 1, 1, 0, 1, 0}; // Used for operators which can swap the operands, i.e. A*B = B*A
-
-static element_t *entry0;
-static element_t *entry1;
-static element_t *entry2;
-static uint24_t entry0_operand;
-static uint24_t entry1_operand;
-static uint24_t entry2_operand;
-static uint8_t oper;
-static bool canOptimizeConcatenateStrings;
-
-#ifndef CALCULATOR
 static uint8_t clz(uint24_t x) {
     uint8_t n = 0;
     if (!x) {
@@ -85,6 +67,22 @@ void MultWithNumber(uint24_t num, uint8_t *programPtr, bool ChangeRegisters) {
     }
 }
 #endif
+
+extern void (*operatorFunctions[272])(void);
+extern void (*operatorChainPushChainAnsFunctions[17])(void);
+const char operators[]              = {tStore, tDotIcon, tCrossIcon, tBoxIcon, tAnd, tXor, tOr, tEQ, tLT, tGT, tLE, tGE, tNE, tMul, tDiv, tAdd, tSub};
+const uint8_t operatorPrecedence[]  = {0, 6, 8, 8, 2, 1, 1, 3, 3, 3, 3, 3, 3, 5, 5, 4, 4};
+const uint8_t operatorPrecedence2[] = {9, 6, 8, 8, 2, 1, 1, 3, 3, 3, 3, 3, 3, 5, 5, 4, 4};
+const uint8_t operatorCanSwap[]     = {0, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 1, 1, 0, 1, 0}; // Used for operators which can swap the operands, i.e. A*B = B*A
+
+static element_t *entry0;
+static element_t *entry1;
+static element_t *entry2;
+static uint24_t entry0_operand;
+static uint24_t entry1_operand;
+static uint24_t entry2_operand;
+static uint8_t oper;
+static bool canOptimizeConcatenateStrings;
 
 bool comparePtrToTempStrings(uint24_t addr) {
     return (addr == prescan.tempStrings[TempString1] || addr == prescan.tempStrings[TempString2]);

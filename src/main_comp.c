@@ -1,7 +1,7 @@
 #include "defines.h"
 #include "main.h"
 
-#ifdef COMPUTER_ICE
+#ifndef CALCULATOR
 
 #include "functions.h"
 #include "errors.h"

@@ -1333,24 +1333,11 @@ int grabString(uint8_t **outputPtr, bool stopAtStoreAndString) {
     }
 }
 
-#ifdef COMPUTER_ICE
-
 int getNextToken(void) {
     if ((uint24_t)_tell(ice.inPrgm) < ice.programLength - 2) {
         return fgetc(ice.inPrgm);
     }
     return EOF;
 }
-
-#else
-
-int getNextToken(void) {
-    if (_tell(ice.inPrgm) < ice.programLength) {
-        return ice.progInputData[ice.progInputPtr++];
-    }
-    return EOF;
-}
-
-#endif
 
 #endif
