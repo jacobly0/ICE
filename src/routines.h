@@ -1,7 +1,7 @@
 #ifndef ROUTINES_H
 #define ROUTINES_H
 
-void preScanProgram(void);
+bool IsA2ByteTok(uint8_t);
 void ProgramPtrToOffsetStack(void);
 void displayLoadingBarFrame(void);
 prog_t *GetProgramName(void);

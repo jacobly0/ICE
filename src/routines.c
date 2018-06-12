@@ -14,129 +14,12 @@
 #define LB_W 160
 #define LB_H 10
 
-extern variable_t variableStack[85];
-prescan_t prescan;
+extern prescan_t prescan;
 
-void preScanProgram(void) {
-    bool inString = false, afterNewLine = true;
-    int token;
-
-    _rewind(ice.inPrgm);
-
-    // Scan the entire program
-    while ((token = _getc()) != EOF) {
-        uint8_t tok = (uint8_t)token;
-
-        if (afterNewLine) {
-            afterNewLine = false;
-            if (tok == tii) {
-                skipLine();
-            } else if (tok == tLbl) {
-                prescan.amountOfLbls++;
-            } else if (tok == tGoto) {
-                prescan.amountOfGotos++;
-            }
-        }
-
-        if (tok == tString) {
-            prescan.usedTempStrings = true;
-            inString = !inString;
-        } else if (tok == tStore) {
-            inString = false;
-        }
-        
-        if (tok == tEnter) {
-            inString = false;
-            afterNewLine = 2;
-        }
-
-        if (!inString) {
-            if (tok == tColon) {
-                inString = false;
-                afterNewLine = 2;
-            } else if (tok == tStore) {
-                inString = false;
-            } else if (tok == tRand) {
-                prescan.amountOfRandRoutines++;
-                prescan.modifiedIY = true;
-            } else if (tok == tSqrt) {
-                prescan.amountOfSqrtRoutines++;
-                prescan.modifiedIY = true;
-            } else if (tok == tMean) {
-                prescan.amountOfMeanRoutines++;
-            } else if (tok == tInput) {
-                prescan.amountOfInputRoutines++;
-            } else if (tok == tPause) {
-                prescan.amountOfPauseRoutines++;
-            } else if (tok == tSin || tok == tCos) {
-                prescan.amountOfSinCosRoutines++;
-            } else if (tok == tVarLst) {
-                if (!prescan.OSLists[token = _getc()]) {
-                    prescan.OSLists[token] = pixelShadow + 2000 * (prescan.amountOfOSVarsUsed++);
-                }
-            } else if (tok == tVarStrng) {
-                prescan.usedTempStrings = true;
-                if (!prescan.OSStrings[token = _getc()]) {
-                    prescan.OSStrings[token] = pixelShadow + 2000 * (prescan.amountOfOSVarsUsed++);
-                }
-            } else if (tok == t2ByteTok) {
-                // AsmComp(
-                if ((tok = (uint8_t)_getc()) == tAsmComp) {
-                    ti_var_t tempProg = ice.inPrgm;
-                    prog_t *newProg = GetProgramName();
-                    
-                    if ((ice.inPrgm = _open(newProg->prog))) {
-                        preScanProgram();
-                        _close(ice.inPrgm);
-                    }
-                    ice.inPrgm = tempProg;
-                } else if (tok == tRandInt) {
-                    prescan.amountOfRandRoutines++;
-                    prescan.modifiedIY = true;
-                }
-            } else if (tok == tDet || tok == tSum) {
-                uint8_t tok1 = _getc();
-                uint8_t tok2 = _getc();
-
-                prescan.modifiedIY = true;
-
-                // Invalid det( command
-                if (tok1 < t0 || tok1 > t9) {
-                    break;
-                }
-
-                // Get the det( command
-                if (tok2 < t0 || tok2 > t9) {
-                    token = tok1 - t0;
-                } else {
-                    token = (tok1 - t0) * 10 + (tok2 - t0);
-                }
-
-                if (tok == tDet) {
-                    prescan.hasGraphxFunctions = true;
-                    if (!token) {
-                        prescan.hasGraphxStart = true;
-                    }
-                    if (token == 1) {
-                        prescan.hasGraphxEnd = true;
-                    }
-                    if (!prescan.GraphxRoutinesStack[token]) {
-                        prescan.GraphxRoutinesStack[token] = 1;
-                    }
-                } else {
-                    prescan.hasFileiocFunctions = true;
-                    if (!token) {
-                        prescan.hasFileiocStart = true;
-                    }
-                    if (!prescan.FileiocRoutinesStack[token]) {
-                        prescan.FileiocRoutinesStack[token] = 1;
-                    }
-                }
-            }
-        }
-    }
-
-    _rewind(ice.inPrgm);
+bool IsA2ByteTok(uint8_t tok) {
+    uint8_t All2ByteTokens[9] = {tExtTok, tVarMat, tVarLst, tVarPict, tVarGDB, tVarOut, tVarSys, tVarStrng, t2ByteTok};
+    
+    return memchr(All2ByteTokens, tok, sizeof(All2ByteTokens)) || 0;
 }
 
 prog_t *GetProgramName(void) {
@@ -493,17 +376,17 @@ uint8_t GetVariableOffset(uint8_t tok) {
     }
 
     // This variable already exists
-    for (b = 0; b < ice.amountOfVariablesUsed; b++) {
-        if (!strcmp(variableName, (&variableStack[b])->name)) {
-            return (&variableStack[b])->offset;
+    for (b = 0; b < prescan.amountOfVariablesUsed; b++) {
+        if (!strcmp(variableName, (&prescan.variables[b])->name)) {
+            return (&prescan.variables[b])->offset;
         }
     }
 
     // Create new variable
-    variableNew = &variableStack[ice.amountOfVariablesUsed];
+    variableNew = &prescan.variables[prescan.amountOfVariablesUsed];
     memcpy(variableNew->name, variableName, a + 1);
 
-    return variableNew->offset = ice.amountOfVariablesUsed++ * 3 - 128;
+    return variableNew->offset = prescan.amountOfVariablesUsed++ * 3 - 128;
 }
 
 #ifdef CALCULATOR

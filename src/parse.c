@@ -8,29 +8,19 @@
 #include "stack.h"
 #include "output.h"
 #include "routines.h"
+#include "prescan.h"
 
-#ifdef COMPUTER_ICE
-#define INCBIN_PREFIX
-#include "incbin.h"
-INCBIN(Pause, "src/asm/pause.bin");
-INCBIN(Input, "src/asm/input.bin");
-INCBIN(Prgm, "src/asm/prgm.bin");
-INCBIN(Disp, "src/asm/disp.bin");
-
-extern char *str_dupcat(const char *s, const char *c);
-#endif
-
-#ifdef __EMSCRIPTEN__
+#ifndef CALCULATOR
 extern const uint8_t PauseData[];
 extern const uint8_t InputData[];
 extern const uint8_t PrgmData[];
 extern const uint8_t DispData[];
+extern const uint8_t SrandData[];
+
+extern char *str_dupcat(const char *s, const char *c);
 #endif
 
-#define AMOUNT_OF_FUNCTIONS 28
-
 extern uint8_t (*functions[256])(int token);
-const uint8_t All2ByteTokens[] = {0x5C, 0x5D, 0x5E, 0x60, 0x61, 0x62, 0x63, 0x7E, 0xAA, 0xBB, 0xEF};
 const uint8_t implementedFunctions[AMOUNT_OF_FUNCTIONS][4] = {
 // function / second byte / amount of arguments / allow arguments as numbers
     {tNot,      0,              1,   1},
@@ -64,37 +54,70 @@ const uint8_t implementedFunctions[AMOUNT_OF_FUNCTIONS][4] = {
 };
 element_t outputStack[400];
 element_t stack[200];
-label_t labelStack[150];
-label_t gotoStack[150];
-variable_t variableStack[85];
 
 uint8_t parseProgram(void) {
     int token;
-    uint8_t ret = VALID;
+    uint8_t ret, currentGoto, currentLbl;
     
-    if (!ti_GetSize(ice.inPrgm)) {
-        return VALID;
+    LD_IX_IMM(IX_VARIABLES);
+    
+    // Eventually seed the rand
+    if (prescan.amountOfRandRoutines) {
+        ice.programDataPtr -= SIZEOF_RAND_DATA;
+        ice.randAddr = (uint24_t)ice.programDataPtr;
+        memcpy(ice.programDataPtr, SrandData, SIZEOF_RAND_DATA);
+        ice.dataOffsetStack[ice.dataOffsetElements++] = (uint24_t*)(ice.randAddr + 2);
+        w24((uint8_t*)(ice.randAddr + 2), ice.randAddr + 102);
+        ice.dataOffsetStack[ice.dataOffsetElements++] = (uint24_t*)(ice.randAddr + 6);
+        w24((uint8_t*)(ice.randAddr + 6), ice.randAddr + 105);
+        ice.dataOffsetStack[ice.dataOffsetElements++] = (uint24_t*)(ice.randAddr + 19);
+        w24((uint8_t*)(ice.randAddr + 19), ice.randAddr + 102);
+
+        LD_HL_IND(0xF30044);
+        ProgramPtrToOffsetStack();
+        CALL((uint24_t)ice.programDataPtr);
     }
 
     // Do things based on the token
     while ((token = _getc()) != EOF) {
         ice.lastTokenIsReturn = false;
-        ice.inDispExpression = false;
         ice.currentLine++;
-        
+
         if ((ret = (*functions[token])(token)) != VALID) {
-            break;
+            return ret;
         }
 
-#if !defined(COMPUTER_ICE) && !defined(__EMSCRIPTEN__)
+#ifdef CALCULATOR
         displayLoadingBar();
 #endif
     }
     
-    return ret;
-}
+    if (!ice.lastTokenIsReturn) {
+        RET();
+    }
+    
+    // Find all the matching Goto's/Lbl's
+    for (currentGoto = 0; currentGoto < prescan.amountOfGotos; currentGoto++) {
+        label_t *curGoto = &ice.GotoStack[currentGoto];
 
-/* Static functions */
+        for (currentLbl = 0; currentLbl < prescan.amountOfLbls; currentLbl++) {
+            label_t *curLbl = &ice.LblStack[currentLbl];
+
+            if (!memcmp(curLbl->name, curGoto->name, 10)) {
+                w24((uint8_t*)(curGoto->addr + 1), curLbl->addr - (uint24_t)ice.programData + PRGM_START);
+                goto findNextLabel;
+            }
+        }
+
+        // Label not found
+        displayLabelError(curGoto->name);
+        _seek(curGoto->offset, SEEK_SET, ice.inPrgm);
+        return W_VALID;
+findNextLabel:;
+    }
+    
+    return VALID;
+}
 
 uint8_t parseExpression(int token) {
     uint24_t stackElements = 0, outputElements = 0;
@@ -423,6 +446,7 @@ stackToOutputReturn1:
             uint8_t *tempProgramPtr = ice.programPtr;
             uint24_t length;
 
+            outputCurr->isString = true;
             outputCurr->type = TYPE_STRING;
             outputElements++;
             mask = TYPE_MASK_U24;
@@ -430,7 +454,7 @@ stackToOutputReturn1:
             while ((token = _getc()) != EOF && (uint8_t)token != tEnter && (uint8_t)token != tStore && (uint8_t)token != tAPost) {
                 *ice.programPtr++ = token;
 
-                if (memchr(All2ByteTokens, token, 11)) {
+                if (IsA2ByteTok(token)) {
                     *ice.programPtr++ = _getc();
                 }
             }
@@ -456,6 +480,7 @@ stackToOutputReturn1:
             uint8_t amountOfHexadecimals = 0;
             bool needWarning = true;
 
+            outputCurr->isString = true;
             outputCurr->type = TYPE_STRING;
             outputElements++;
             mask = TYPE_MASK_U24;
@@ -507,7 +532,8 @@ noSquishing:
 
         // Parse an OS string
         else if (tok == tVarStrng) {
-            outputCurr->type = TYPE_OS_STRING;
+            outputCurr->isString = true;
+            outputCurr->type = TYPE_NUMBER;
             outputCurr->operand = prescan.OSStrings[_getc()];
             outputElements++;
             mask = TYPE_MASK_U24;
@@ -517,7 +543,7 @@ noSquishing:
         else {
             uint8_t a, tok2 = 0;
 
-            if (tok == tExtTok || tok == t2ByteTok || tok == tVarOut) {
+            if (IsA2ByteTok(tok)) {
                 tok2 = _getc();
             }
 
@@ -582,7 +608,7 @@ stackToOutputReturn2:
         index = outputCurr->operand >> 8;
 
         // Check if the types are number | number | operator
-        if (loopIndex > 1 && (outputPrevPrev->type & 0x7F) == TYPE_NUMBER && (outputPrev->type & 0x7F) == TYPE_NUMBER &&
+        if (loopIndex > 1 && outputPrevPrev->type == TYPE_NUMBER && outputPrev->type == TYPE_NUMBER &&
                outputCurr->type == TYPE_OPERATOR && (uint8_t)outputCurr->operand != tStore) {
             // If yes, execute the operator, and store it in the first entry, and remove the other 2
             outputPrevPrev->operand = executeOperator(outputPrevPrev->operand, outputPrev->operand, (uint8_t)outputCurr->operand);
@@ -601,7 +627,7 @@ stackToOutputReturn2:
                     uint24_t outputPrevOperand = outputPrev->operand, outputPrevPrevOperand = outputPrevPrev->operand;
 
                     for (a = 1; a <= index; a++) {
-                        if (((&outputPtr[loopIndex-a])->type & 0x7F) != TYPE_NUMBER) {
+                        if ((&outputPtr[loopIndex-a])->type != TYPE_NUMBER) {
                             goto DontDeleteFunction;
                         }
                     }
@@ -742,8 +768,14 @@ uint8_t parsePostFixFromIndexToIndex(uint24_t startIndex, uint24_t endIndex) {
 
     // It's a single entry
     if (amountOfStackElements == 1) {
+        // Expression is a string
+        if (outputCurr->isString) {
+            expr.outputIsString = true;
+            LD_HL_STRING(outputOperand, outputType);
+        }
+        
         // Expression is only a single number
-        if (outputType == TYPE_NUMBER) {
+         else if (outputType == TYPE_NUMBER) {
             // This boolean is set, because loops may be optimized when the condition is a number
             expr.outputIsNumber = true;
             expr.outputNumber = outputOperand;
@@ -758,12 +790,6 @@ uint8_t parsePostFixFromIndexToIndex(uint24_t startIndex, uint24_t endIndex) {
             reg.HLIsNumber = false;
             reg.HLIsVariable = true;
             reg.HLVariable = outputOperand;
-        }
-
-        // String
-        else if (outputType >= TYPE_STRING) {
-            expr.outputIsString = true;
-            LD_HL_STRING(outputOperand, outputType);
         }
 
         // Expression is an empty function or operator, i.e. not(, +
@@ -811,8 +837,8 @@ uint8_t parsePostFixFromIndexToIndex(uint24_t startIndex, uint24_t endIndex) {
             // Check if we can optimize StrX + "..." -> StrX
             canOptimizeConcatenateStrings = (
                 (uint8_t)(outputCurr->operand) == tAdd &&
-                outputPrevPrev->type == TYPE_OS_STRING &&
-                outputNext->type == TYPE_OS_STRING &&
+                outputPrevPrev->isString && outputPrevPrev->type == TYPE_NUMBER &&
+                outputNext->isString && outputNext->type == TYPE_NUMBER &&
                 outputNext->operand == outputPrevPrev->operand &&
                 outputNextNext->type == TYPE_OPERATOR &&
                 (uint8_t)(outputNextNext->operand) == tStore
@@ -834,12 +860,13 @@ uint8_t parsePostFixFromIndexToIndex(uint24_t startIndex, uint24_t endIndex) {
                 removeIndexFromStack(getCurrentIndex());
                 removeIndexFromStack(getCurrentIndex() + 1);
 
-                outputCurr->type = TYPE_OS_STRING;
+                outputCurr->isString = true;
+                outputCurr->type = TYPE_NUMBER;
                 outputCurr->operand = outputPrevPrev->operand;
                 expr.outputIsString = true;
             } else {
                 // Check if it was a command with 2 strings, then the output is a string, not Ans
-                if ((uint8_t)outputCurr->operand == tAdd && outputPrevPrev->type >= TYPE_STRING && outputPrev->type >= TYPE_STRING) {
+                if ((uint8_t)outputCurr->operand == tAdd && outputPrevPrev->isString && outputPrev->isString) {
                     outputCurr->type = TYPE_STRING;
                     if (outputPrevPrev->operand == prescan.tempStrings[TempString2] || outputPrev->operand == prescan.tempStrings[TempString1]) {
                         outputCurr->operand = prescan.tempStrings[TempString2];
@@ -892,6 +919,7 @@ uint8_t parsePostFixFromIndexToIndex(uint24_t startIndex, uint24_t endIndex) {
                 // I don't care that this will be ignored when it's a pointer, because I know there is a -> directly after
                 // If it's a sub(, the output should be a string, not Ans
                 if ((uint8_t)outputCurr->operand == t2ByteTok && function2 == tSubStrng) {
+                    outputCurr->isString = true;
                     outputCurr->type = TYPE_STRING;
                     if (outputPrevPrevPrev->operand == prescan.tempStrings[TempString1]) {
                         outputCurr->operand = prescan.tempStrings[TempString2];
@@ -927,8 +955,8 @@ static uint8_t functionI(int token) {
 
 static uint8_t functionIf(int token) {
     uint8_t *IfElseAddr = NULL;
-    uint8_t tempGotoElements = ice.amountOfGotos;
-    uint8_t tempLblElements = ice.amountOfLbls;
+    uint8_t tempGotoElements = prescan.amountOfGotos;
+    uint8_t tempLblElements = prescan.amountOfLbls;
 
     if ((token = _getc()) != EOF && token != tEnter) {
         uint8_t *IfStartAddr, res;
@@ -968,8 +996,8 @@ static uint8_t functionIf(int token) {
         // Check if we quit the program with an 'Else'
         if (res == E_ELSE) {
             bool shortElseCode;
-            uint8_t tempGotoElements2 = ice.amountOfGotos;
-            uint8_t tempLblElements2 = ice.amountOfLbls;
+            uint8_t tempGotoElements2 = prescan.amountOfGotos;
+            uint8_t tempLblElements2 = prescan.amountOfLbls;
             uint24_t tempDataOffsetElements2;;
 
             // Backup stuff
@@ -1024,8 +1052,8 @@ uint8_t JumpForward(uint8_t *startAddr, uint8_t *endAddr, uint24_t tempDataOffse
         uint8_t *tempPtr = startAddr;
         uint8_t opcode = *startAddr;
         uint24_t tempForLoopSMCElements = ice.ForLoopSMCElements;
-        label_t *labelPtr = labelStack;
-        label_t *gotoPtr = gotoStack;
+        label_t *labelPtr = ice.LblStack;
+        label_t *gotoPtr = ice.GotoStack;
 
         *startAddr++ = opcode - 0xA2 - (opcode == 0xC3 ? 9 : 0);
         *startAddr++ = endAddr - tempPtr - 4;
@@ -1042,11 +1070,11 @@ uint8_t JumpForward(uint8_t *startAddr, uint8_t *endAddr, uint24_t tempDataOffse
         }
 
         // Update Goto and Lbl addresses, decrease them all with 2
-        while (ice.amountOfGotos != tempGotoElements) {
+        while (prescan.amountOfGotos != tempGotoElements) {
             (&gotoPtr[tempGotoElements])->addr -= 2;
             tempGotoElements++;
         }
-        while (ice.amountOfLbls != tempLblElements) {
+        while (prescan.amountOfLbls != tempLblElements) {
             (&labelPtr[tempLblElements])->addr -= 2;
             tempLblElements++;
         }
@@ -1092,8 +1120,8 @@ bool WhileJumpBackwardsLarge;
 
 static uint8_t functionWhile(int token) {
     uint24_t tempDataOffsetElements = ice.dataOffsetElements;
-    uint8_t tempGotoElements = ice.amountOfGotos;
-    uint8_t tempLblElements = ice.amountOfLbls;
+    uint8_t tempGotoElements = prescan.amountOfGotos;
+    uint8_t tempLblElements = prescan.amountOfLbls;
     uint8_t *WhileStartAddr = ice.programPtr, res;
     uint8_t *WhileRepeatCondStartTemp = WhileRepeatCondStart;
     bool WhileJumpForwardSmall;
@@ -1115,7 +1143,7 @@ static uint8_t functionWhile(int token) {
 }
 
 uint8_t functionRepeat(int token) {
-    uint24_t tempCurrentLine, tempCurrentLine2, dataOffsetElementsBackup = ice.dataOffsetElements;
+    uint24_t tempCurrentLine, tempCurrentLine2;
     uint16_t RepeatCondStart, RepeatProgEnd;
     uint8_t *RepeatCodeStart, res;
 
@@ -1211,7 +1239,6 @@ static uint8_t functionReturn(int token) {
 }
 
 static uint8_t functionDisp(int token) {
-    ice.inDispExpression = true;
     do {
         uint8_t res;
 
@@ -1361,8 +1388,8 @@ static uint8_t functionClrHome(int token) {
 static uint8_t functionFor(int token) {
     bool endPointIsNumber = false, stepIsNumber = false, reversedCond = false, smallCode;
     uint24_t endPointNumber = 0, stepNumber = 0, tempDataOffsetElements;
-    uint8_t tempGotoElements = ice.amountOfGotos;
-    uint8_t tempLblElements = ice.amountOfLbls;
+    uint8_t tempGotoElements = prescan.amountOfGotos;
+    uint8_t tempLblElements = prescan.amountOfLbls;
     uint8_t *endPointExpressionValue = 0, *stepExpression = 0, *jumpToCond, *loopStart;
     uint8_t tok, variable, res;
 
@@ -1573,8 +1600,8 @@ static uint8_t functionCustom(int token) {
 
 static uint8_t functionLbl(int token) {
     // Add the label to the stack, and skip the line
-    label_t *labelPtr = labelStack;
-    label_t *labelCurr = &labelPtr[ice.amountOfLbls++];
+    label_t *labelPtr = ice.LblStack;
+    label_t *labelCurr = &labelPtr[prescan.amountOfLbls++];
     uint8_t a = 0;
 
     // Get the label name
@@ -1583,7 +1610,7 @@ static uint8_t functionLbl(int token) {
     }
     labelCurr->name[a] = 0;
     labelCurr->addr = (uint24_t)ice.programPtr;
-    labelCurr->LblGotoElements = ice.amountOfLbls;
+    labelCurr->LblGotoElements = prescan.amountOfLbls;
     ResetAllRegs();
 
     return VALID;
@@ -1598,8 +1625,8 @@ static uint8_t functionGoto(int token) {
 
 void insertGotoLabel(void) {
     // Add the label to the stack, and skip the line
-    label_t *gotoPtr = gotoStack;
-    label_t *gotoCurr = &gotoPtr[ice.amountOfGotos++];
+    label_t *gotoPtr = ice.GotoStack;
+    label_t *gotoCurr = &gotoPtr[prescan.amountOfGotos++];
     uint8_t a = 0;
     int token;
 
@@ -1610,7 +1637,7 @@ void insertGotoLabel(void) {
     gotoCurr->addr = (uint24_t)ice.programPtr;
     gotoCurr->offset = _tell(ice.inPrgm);
     gotoCurr->dataOffsetElements = ice.dataOffsetElements;
-    gotoCurr->LblGotoElements = ice.amountOfGotos;
+    gotoCurr->LblGotoElements = prescan.amountOfGotos;
     ResetAllRegs();
 }
 

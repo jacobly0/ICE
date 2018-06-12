@@ -7,7 +7,6 @@
 #define TYPE_CHAIN_ANS       2
 #define TYPE_CHAIN_PUSH      3
 #define TYPE_STRING          4
-#define TYPE_OS_STRING       TYPE_NUMBER + 128
 
 #define TYPE_C_START         124
 #define TYPE_ARG_DELIMITER   125
@@ -29,6 +28,7 @@ uint8_t functionRepeat(int);
 uint8_t parseProgram(void);
 
 typedef struct {
+    uint8_t  isString;
     uint8_t  type;
     uint8_t  mask;
     uint24_t operand;

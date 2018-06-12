@@ -8,16 +8,9 @@
 #include "stack.h"
 #include "output.h"
 #include "routines.h"
+#include "prescan.h"
 
-#ifdef COMPUTER_ICE
-#define INCBIN_PREFIX
-#include "incbin.h"
-INCBIN(And, "src/asm/and.bin");
-INCBIN(Or, "src/asm/or.bin");
-INCBIN(Xor, "src/asm/xor.bin");
-#endif
-
-#ifdef __EMSCRIPTEN__
+#ifndef CALCULATOR
 extern const uint8_t AndData[];
 extern const uint8_t OrData[];
 extern const uint8_t XorData[];
@@ -158,10 +151,9 @@ static void swapEntries() {
 }
 
 uint8_t parseOperator(element_t *outputPrevPrevPrev, element_t *outputPrevPrev, element_t *outputPrev, element_t *outputCurr, bool canOptimizeStrings) {
-    uint8_t type1Masked, type1, type2;
+    uint8_t type1, type2;
     
     type1 = outputPrevPrev->type;
-    type1Masked = type1 & 0x7F;
     type2 = outputPrev->type;
     canOptimizeConcatenateStrings = canOptimizeStrings;
 
@@ -175,37 +167,35 @@ uint8_t parseOperator(element_t *outputPrevPrevPrev, element_t *outputPrevPrev, 
 
     ClearAnsFlags();
 
-    if (type1 >= TYPE_STRING && type2 == TYPE_OS_STRING && oper == tStore) {
+    if (outputPrevPrev->isString && outputPrev->isString && type2 == TYPE_NUMBER && oper == tStore) {
         StoStringString();
-    } else if (type1 >= TYPE_STRING && type2 >= TYPE_STRING && oper == tAdd) {
+    } else if (outputPrevPrev->isString && outputPrev->isString && oper == tAdd) {
         AddStringString();
-    } else if (type1 == TYPE_STRING && type2 == TYPE_VARIABLE && oper == tStore) {
+    } else if (outputPrevPrev->isString && type1 == TYPE_NUMBER && type2 == TYPE_VARIABLE && oper == tStore) {
         StoStringVariable();
     } else {
         // Only call the function if both types are valid
-        if ((type1Masked == type2 && (type1Masked == TYPE_NUMBER || type1Masked == TYPE_CHAIN_ANS)) ||
+        if ((type1 == type2 && (type1 == TYPE_NUMBER || type1 == TYPE_CHAIN_ANS)) ||
             (oper == tStore && (type2 != TYPE_VARIABLE  && !(type2 == TYPE_FUNCTION && outputPrev->operand == 0x010108))) ||
             (type2 == TYPE_CHAIN_PUSH) ||
             (type1 == TYPE_STRING || type2 == TYPE_STRING)
         ) {
             return E_SYNTAX;
         }
-        
-        type2 = type2 & 0x7F;
 
         // Store to a pointer
         if (oper == tStore && type2 == TYPE_FUNCTION) {
             type2 = TYPE_CHAIN_ANS;
-            type1Masked = outputPrevPrevPrev->type & 0x7F;
+            type1 = outputPrevPrevPrev->type;
 
             // If string->pointer, do it immediately
-            if (type1Masked == TYPE_STRING) {
+            if (type1 == TYPE_STRING) {
                 StoStringChainAns();
                 return VALID;
             }
         }
 
-        if (type1Masked == TYPE_CHAIN_PUSH) {
+        if (type1 == TYPE_CHAIN_PUSH) {
             if (type2 != TYPE_CHAIN_ANS) {
                 return E_ICE_ERROR;
             }
@@ -218,10 +208,10 @@ uint8_t parseOperator(element_t *outputPrevPrevPrev, element_t *outputPrevPrev, 
             ice.dataOffsetElementsBackup = ice.dataOffsetElements;
 
             // Swap operands for compiler optimizations
-            if (oper == tLE || oper == tLT || (operatorCanSwap[getIndexOfOperator(oper) - 1] && (type1Masked == TYPE_NUMBER || type2 == TYPE_CHAIN_ANS))) {
-                uint8_t temp = type1Masked;
+            if (oper == tLE || oper == tLT || (operatorCanSwap[getIndexOfOperator(oper) - 1] && (type1 == TYPE_NUMBER || type2 == TYPE_CHAIN_ANS))) {
+                uint8_t temp = type1;
 
-                type1Masked = type2;
+                type1 = type2;
                 type2 = temp;
                 swapEntries();
                 if (oper == tLE) {
@@ -232,7 +222,7 @@ uint8_t parseOperator(element_t *outputPrevPrevPrev, element_t *outputPrevPrev, 
             }
 
             // Call the right function!
-            (*operatorFunctions[((getIndexOfOperator(oper) - 1) * 9) + (type1Masked * 3) + type2])();
+            (*operatorFunctions[((getIndexOfOperator(oper) - 1) * 9) + (type1 * 3) + type2])();
         }
 
         // If the operator is /, the routine always ends with call __idvrmu \ expr.outputReturnRegister == REGISTER_DE
@@ -247,7 +237,7 @@ uint8_t parseOperator(element_t *outputPrevPrevPrev, element_t *outputPrevPrev, 
         }
 
         // If the operator is *, and both operands not a number, it always ends with call __imuls
-        if (oper == tMul && type1Masked != TYPE_NUMBER && type2 != TYPE_NUMBER && !(expr.outputRegister == REGISTER_A && entry2_operand < 256)) {
+        if (oper == tMul && type1 != TYPE_NUMBER && type2 != TYPE_NUMBER && !(expr.outputRegister == REGISTER_A && entry2_operand < 256)) {
             CALL(__imuls);
             ResetReg(REGISTER_HL);
         }
@@ -276,7 +266,7 @@ uint8_t parseOperator(element_t *outputPrevPrevPrev, element_t *outputPrevPrev, 
 }
 
 void LD_HL_STRING(uint24_t stringPtr, uint8_t type) {
-    if ((type != TYPE_OS_STRING) && (stringPtr != prescan.tempStrings[TempString1] && stringPtr != prescan.tempStrings[TempString2])) {
+    if ((type == TYPE_STRING) && (stringPtr != prescan.tempStrings[TempString1] && stringPtr != prescan.tempStrings[TempString2])) {
         ProgramPtrToOffsetStack();
     }
     LD_HL_IMM(stringPtr);
@@ -303,7 +293,7 @@ void StoVariableVariable(void) {
     StoChainAnsVariable();
 }
 void StoNumberChainAns(void) {
-    uint8_t type = entry1->type & 0x7F;
+    uint8_t type = entry1->type;
     uint8_t mask = entry2->mask;
     
     if (type == TYPE_NUMBER) {
@@ -337,7 +327,7 @@ void StoNumberChainAns(void) {
     StoToChainAns();
 }
 void StoVariableChainAns(void) {
-    uint8_t type = entry1->type & 0x7F;
+    uint8_t type = entry1->type;
     uint8_t mask = entry2->mask;
 
     if (type == TYPE_NUMBER) {
@@ -385,7 +375,7 @@ void StoChainPushChainAns(void) {
     }
 }
 void StoChainAnsChainAns(void) {
-    uint8_t type = entry1->type & 0x7F;
+    uint8_t type = entry1->type;
     uint8_t mask = entry2->mask;
 
     if (type == TYPE_NUMBER) {
@@ -429,7 +419,7 @@ void StoChainAnsChainAns(void) {
     StoToChainAns();
 }
 void StoStringChainAns(void) {
-    uint8_t type = entry1->type & 0x7F;
+    uint8_t type = entry1->type;
     uint8_t mask = entry2->mask;
 
     if (type == TYPE_NUMBER) {
@@ -456,7 +446,7 @@ void StoStringChainAns(void) {
         }
     } else {
         AnsToHL();
-        if ((entry0->type != TYPE_OS_STRING) && (entry0_operand != prescan.tempStrings[TempString1] && entry0_operand != prescan.tempStrings[TempString2])) {
+        if ((entry0->type == TYPE_STRING) && (entry0_operand != prescan.tempStrings[TempString1] && entry0_operand != prescan.tempStrings[TempString2])) {
             ProgramPtrToOffsetStack();
         }
         LD_DE_IMM(entry0_operand);
@@ -1025,14 +1015,8 @@ void AddChainAnsNumber(void) {
     }
 }
 void AddVariableNumber(void) {
-    if (!ice.inDispExpression && entry2_operand < 128 && entry2_operand > 4) {
-        LD_IY_IND_IX_OFF(entry1_operand);
-        LEA_HL_IY_OFF(entry2_operand);
-        ice.modifiedIY = true;
-    } else {
-        LD_HL_IND_IX_OFF(entry1_operand);
-        AddChainAnsNumber();
-    }
+    LD_HL_IND_IX_OFF(entry1_operand);
+    AddChainAnsNumber();
 }
 void AddChainAnsVariable(void) {
     MaybeAToHL();
@@ -1173,14 +1157,8 @@ void SubNumberChainAns(void) {
     LD_HL_IMM(entry1_operand);
 }
 void SubVariableNumber(void) {
-    if (!ice.inDispExpression && entry2_operand < 129 && entry2_operand > 4) {
-        LD_IY_IND_IX_OFF(entry1_operand);
-        LEA_HL_IY_OFF(-entry2_operand);
-        ice.modifiedIY = true;
-    } else {
-        LD_HL_IND_IX_OFF(entry1_operand);
-        SubChainAnsNumber();
-    }
+    LD_HL_IND_IX_OFF(entry1_operand);
+    SubChainAnsNumber();
 }
 void SubVariableVariable(void) {
     LD_HL_IND_IX_OFF(entry1_operand);
