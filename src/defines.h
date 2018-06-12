@@ -18,6 +18,8 @@
 
 #if !defined(COMPUTER_ICE) && !defined(__EMSCRIPTEN__)
 
+#define CALCULATOR
+
 #include <fileioc.h>
 #include <graphx.h>
 #include <keypadc.h>

@@ -5,7 +5,7 @@
 #include <string.h>
 #include <stdlib.h>
 
-#if defined(COMPUTER_ICE) || defined(__EMSCRIPTEN__)
+#ifndef CALCULATOR
 
 #define m8(x)  ((x)&255)
 #define mr8(x) (((x)>>8)&255)

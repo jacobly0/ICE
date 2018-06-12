@@ -39,7 +39,7 @@ static uint24_t entry2_operand;
 static uint8_t oper;
 static bool canOptimizeConcatenateStrings;
 
-#if defined(COMPUTER_ICE) || defined(__EMSCRIPTEN__)
+#ifndef CALCULATOR
 static uint8_t clz(uint24_t x) {
     uint8_t n = 0;
     if (!x) {

@@ -399,7 +399,7 @@ void SeekMinus1(void) {
 }
 
 void displayMessageLineScroll(char *string) {
-#if !defined(COMPUTER_ICE) && !defined(__EMSCRIPTEN__)
+#ifdef CALCULATOR
     char buf[30];
     char c;
 
@@ -506,7 +506,7 @@ uint8_t GetVariableOffset(uint8_t tok) {
     return variableNew->offset = ice.amountOfVariablesUsed++ * 3 - 128;
 }
 
-#if !defined(COMPUTER_ICE) && !defined(__EMSCRIPTEN__)
+#ifdef CALCULATOR
 
 void displayLoadingBarFrame(void) {
     // Display a fancy loading bar during compiling ;)
