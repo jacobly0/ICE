@@ -59,7 +59,7 @@ void main(void) {
     asm("set 3, (iy+024h)");
 
     // Yay, GUI! :)
-    displayMainScreen:
+displayMainScreen:
     gfx_Begin();
 
     gfx_SetColor(189);
@@ -100,15 +100,19 @@ void main(void) {
     for (temp = 0; temp < amountOfPrograms; temp++) {
         gfx_PrintStringXY(inputPrograms[temp], 10, temp * 10 + 13);
     }
-
-    // Display quit button
+    
+    // Display buttons
+    gfx_PrintStringXY("Build", 4, 232);
+    printButton(1);
+    gfx_PrintStringXY("Debug", 66, 232);
+    printButton(65);
     gfx_PrintStringXY("Quit", 285, 232);
     printButton(279);
     gfx_SetColor(0);
 
     // Select a program
     selectedProgram = 1;
-    while ((key = os_GetCSC()) != sk_Enter && key != sk_2nd) {
+    while ((key = os_GetCSC()) != sk_Enter && key != sk_2nd && key != sk_Yequ && key != sk_Window) {
         uint8_t selectionOffset = selectedProgram * 10 + 3;
 
         gfx_PrintStringXY(">", 1, selectionOffset);
@@ -141,10 +145,16 @@ void main(void) {
             }
         }
     }
+    
+    // Output debug appvar
+    if (key == sk_Window) {
+        ice.debug = true;
+    }
 
     // Erase screen
     gfx_SetColor(255);
     gfx_FillRectangle_NoClip(0, 11, 320, 210);
+    gfx_FillRectangle_NoClip(0, 220, 270, 20);
 
     // Set some vars
     strcpy(var_name, inputPrograms[selectedProgram - 1]);
