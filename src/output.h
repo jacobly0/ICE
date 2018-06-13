@@ -190,13 +190,13 @@
 #define DEC_HL()              do { OutputWriteByte(OP_DEC_HL); reg.HLIsNumber = reg.HLIsVariable = false; } while (0)
 #define ADD_HL_DE()           do { OutputWriteByte(OP_ADD_HL_DE); reg.HLIsNumber = reg.HLIsVariable = false; } while (0)
 #define ADD_HL_HL()           do { OutputWriteByte(OP_ADD_HL_HL); reg.HLIsNumber = reg.HLIsVariable = false; } while (0)
-#define SBC_HL_BC()           do { OutputWriteWord(0x42ED); reg.HLIsNumber = reg.HLIsVariable = false; } while (0)
-#define SBC_HL_DE()           do { OutputWriteWord(0x52ED); reg.HLIsNumber = reg.HLIsVariable = false; } while (0)
-#define SBC_HL_HL()           do { OutputWriteWord(0x62ED); reg.HLIsNumber = reg.HLIsVariable = false; } while (0)
-#define MLT_HL()              do { OutputWriteWord(0x6CED); reg.HLIsNumber = reg.HLIsVariable = false; } while (0)
+#define SBC_HL_BC()           do { OutputWrite2Bytes(0xED, 0x42); reg.HLIsNumber = reg.HLIsVariable = false; } while (0)
+#define SBC_HL_DE()           do { OutputWrite2Bytes(0xED, 0x52); reg.HLIsNumber = reg.HLIsVariable = false; } while (0)
+#define SBC_HL_HL()           do { OutputWrite2Bytes(0xED, 0x62); reg.HLIsNumber = reg.HLIsVariable = false; } while (0)
+#define MLT_HL()              do { OutputWrite2Bytes(0xED, 0x6C); reg.HLIsNumber = reg.HLIsVariable = false; } while (0)
 
-#define OR_A_SBC_HL_DE()      do { OutputWriteLong(0x52EDB7); reg.HLIsNumber = reg.HLIsVariable = false; } while (0)
-#define SBC_HL_HL_INC_HL()    do { OutputWriteLong(0x2362ED); reg.HLIsNumber = reg.HLIsVariable = false; } while (0)
+#define OR_A_SBC_HL_DE()      do { OutputWrite3Bytes(OP_OR_A_A, 0xED, 0x52); reg.HLIsNumber = reg.HLIsVariable = false; } while (0)
+#define SBC_HL_HL_INC_HL()    do { OutputWrite3Bytes(0xED, 0x62, OP_INC_HL); reg.HLIsNumber = reg.HLIsVariable = false; } while (0)
 
 #define PUSH_BC()             do { OutputWriteByte(OP_PUSH_BC); } while (0)
 #define PUSH_DE()             do { OutputWriteByte(OP_PUSH_DE); } while (0)
@@ -206,7 +206,7 @@
 #define POP_HL()              do { OutputWriteByte(OP_POP_HL); reg.HLIsNumber = reg.HLIsVariable = false; } while (0)
 
 #define EX_DE_HL()            do { OutputWriteByte(OP_EX_DE_HL); RegChangeHLDE(); } while (0)
-#define EX_S_DE_HL()          do { OutputWriteWord(0xEB52); RegChangeHLDE(); } while (0)
+#define EX_S_DE_HL()          do { OutputWrite2Bytes(0x52, 0xEB); RegChangeHLDE(); } while (0)
 #define EX_SP_HL()            do { OutputWriteByte(OP_EX_SP_HL); reg.HLIsNumber = reg.HLIsVariable = false; } while (0)
 
 #define RET()                 do { OutputWriteByte(OP_RET); } while (0)
@@ -226,8 +226,8 @@
 #define JR_C(off)             do { OutputWriteByte(OP_JR_C); OutputWriteByte(off); } while (0)
 #define DJNZ(off)             do { OutputWriteByte(OP_DJNZ); OutputWriteByte(off); reg.BCIsNumber = reg.BCIsVariable = false; } while (0)
 
-#define LDIR()                do { OutputWriteWord(0xB0ED); reg.BCIsNumber = true; reg.BCIsVariable = false; reg.BCValue = 0; reg.HLIsNumber = reg.HLIsVariable = false; reg.DEIsNumber = reg.DEIsVariable = false; } while (0)
-#define LDDR()                do { OutputWriteWord(0xB8ED); reg.BCIsNumber = true; reg.BCIsVariable = false; reg.BCValue = 0; reg.HLIsNumber = reg.HLIsVariable = false; reg.DEIsNumber = reg.DEIsVariable = false; } while (0)
+#define LDIR()                do { OutputWrite2Bytes(0xED, 0xB0); reg.BCIsNumber = true; reg.BCIsVariable = false; reg.BCValue = 0; reg.HLIsNumber = reg.HLIsVariable = false; reg.DEIsNumber = reg.DEIsVariable = false; } while (0)
+#define LDDR()                do { OutputWrite2Bytes(0xED, 0xB8); reg.BCIsNumber = true; reg.BCIsVariable = false; reg.BCValue = 0; reg.HLIsNumber = reg.HLIsVariable = false; reg.DEIsNumber = reg.DEIsVariable = false; } while (0)
 
 #define OR_A_A()              do { OutputWriteByte(OP_OR_A_A); } while (0)
 #define OR_A_C()              do { OutputWriteByte(OP_OR_A_C); reg.AIsNumber = reg.AIsVariable = false; } while (0)
