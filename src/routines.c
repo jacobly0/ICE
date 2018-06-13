@@ -136,48 +136,48 @@ void ChangeRegValue(uint24_t inValue, uint24_t outValue, uint8_t opcodes[7]) {
     if (reg.allowedToOptimize) {
         if (outValue - inValue < 5) {
             for (a = 0; a < (uint8_t)(outValue - inValue); a++) {
-                output(uint8_t, opcodes[0]);
+                OutputWriteByte(opcodes[0]);
                 expr.SizeOfOutputNumber++;
             }
         } else if (inValue - outValue < 5) {
             for (a = 0; a < (uint8_t)(inValue - outValue); a++) {
-                output(uint8_t, opcodes[1]);
+                OutputWriteByte(opcodes[1]);
                 expr.SizeOfOutputNumber++;
             }
         } else if (inValue < 256 && outValue < 512) {
             if (outValue > 255) {
-                output(uint8_t, opcodes[2]);
+                OutputWriteByte(opcodes[2]);
                 expr.SizeOfOutputNumber = 1;
             }
             if (inValue != (outValue & 255)) {
-                output(uint8_t, opcodes[4]);
-                output(uint8_t, outValue);
+                OutputWriteByte(opcodes[4]);
+                OutputWriteByte(outValue);
                 expr.SizeOfOutputNumber += 2;
             }
         } else if (inValue < 512 && outValue < 256) {
-            output(uint8_t, opcodes[3]);
+            OutputWriteByte(opcodes[3]);
             expr.SizeOfOutputNumber = 1;
             if ((inValue & 255) != outValue) {
-                output(uint8_t, opcodes[4]);
-                output(uint8_t, outValue);
+                OutputWriteByte(opcodes[4]);
+                OutputWriteByte(outValue);
                 expr.SizeOfOutputNumber = 3;
             }
         } else if (inValue < 65536 && outValue < 65536 && (inValue & 255) == (outValue & 255)) {
-            output(uint8_t, opcodes[5]);
-            output(uint8_t, outValue >> 8);
+            OutputWriteByte(opcodes[5]);
+            OutputWriteByte(outValue >> 8);
             expr.SizeOfOutputNumber = 2;
         } else if (outValue >= IX_VARIABLES - 0x80 && outValue <= IX_VARIABLES + 0x7F) {
-            output(uint16_t, 0x22ED);
-            output(uint8_t, outValue - IX_VARIABLES);
+            OutputWriteWord(0x22ED);
+            OutputWriteByte(outValue - IX_VARIABLES);
             expr.SizeOfOutputNumber = 3;
         } else {
-            output(uint8_t, opcodes[6]);
-            output(uint24_t, outValue);
+            OutputWriteByte(opcodes[6]);
+            OutputWriteLong(outValue);
             expr.SizeOfOutputNumber = 4;
         }
     } else {
-        output(uint8_t, opcodes[6]);
-        output(uint24_t, outValue);
+        OutputWriteByte(opcodes[6]);
+        OutputWriteLong(outValue);
         expr.SizeOfOutputNumber = 4;
     }
     reg.allowedToOptimize = true;
@@ -190,8 +190,8 @@ void LoadRegValue(uint8_t reg2, uint24_t val) {
 
             ChangeRegValue(reg.HLValue, val, opcodes);
         } else if (val) {
-            output(uint8_t, OP_LD_HL);
-            output(uint24_t, val);
+            OutputWriteByte(OP_LD_HL);
+            OutputWriteLong(val);
             expr.SizeOfOutputNumber = 4;
         } else {
             OR_A_A();
@@ -207,8 +207,8 @@ void LoadRegValue(uint8_t reg2, uint24_t val) {
 
             ChangeRegValue(reg.DEValue, val, opcodes);
         } else {
-            output(uint8_t, OP_LD_DE);
-            output(uint24_t, val);
+            OutputWriteByte(OP_LD_DE);
+            OutputWriteLong(val);
             expr.SizeOfOutputNumber = 4;
         }
         reg.DEIsNumber = true;
@@ -218,8 +218,8 @@ void LoadRegValue(uint8_t reg2, uint24_t val) {
         reg.BCIsNumber = true;
         reg.BCIsVariable = false;
         reg.BCValue = val;
-        output(uint8_t, OP_LD_BC);
-        output(uint24_t, val);
+        OutputWriteByte(OP_LD_BC);
+        OutputWriteLong(val);
         expr.SizeOfOutputNumber = 4;
     }
 }
@@ -227,16 +227,16 @@ void LoadRegValue(uint8_t reg2, uint24_t val) {
 void LoadRegVariable(uint8_t reg2, uint8_t variable) {
     if (reg2 == REGISTER_HL) {
         if (!(reg.HLIsVariable && reg.HLVariable == variable)) {
-            output(uint16_t, 0x27DD);
-            output(uint8_t, variable);
+            OutputWriteWord(0x27DD);
+            OutputWriteByte(variable);
             reg.HLIsNumber = false;
             reg.HLIsVariable = true;
             reg.HLVariable = variable;
         }
     } else if (reg2 == REGISTER_DE) {
         if (!(reg.DEIsVariable && reg.DEVariable == variable)) {
-            output(uint16_t, 0x17DD);
-            output(uint8_t, variable);
+            OutputWriteWord(0x17DD);
+            OutputWriteByte(variable);
             reg.DEIsNumber = false;
             reg.DEIsVariable = true;
             reg.DEVariable = variable;
@@ -245,34 +245,19 @@ void LoadRegVariable(uint8_t reg2, uint8_t variable) {
         reg.BCIsNumber = false;
         reg.BCIsVariable = true;
         reg.BCVariable = variable;
-        output(uint16_t, 0x07DD);
-        output(uint8_t, variable);
+        OutputWriteWord(0x07DD);
+        OutputWriteByte(variable);
     } else {
         reg.AIsNumber = false;
         reg.AIsVariable = true;
         reg.AVariable = variable;
-        output(uint16_t, 0x7EDD);
-        output(uint8_t, variable);
+        OutputWriteWord(0x7EDD);
+        OutputWriteByte(variable);
     }
 }
 
 void ResetAllRegs(void) {
-    ResetReg(REGISTER_HL);
-    ResetReg(REGISTER_DE);
-    ResetReg(REGISTER_BC);
-    ResetReg(REGISTER_A);
-}
-
-void ResetReg(uint8_t reg2) {
-    if (reg2 == REGISTER_HL) {
-        reg.HLIsNumber = reg.HLIsVariable = false;
-    } else if (reg2 == REGISTER_DE) {
-        reg.DEIsNumber = reg.DEIsVariable = false;
-    } else if (reg2 == REGISTER_BC) {
-        reg.BCIsNumber = reg.BCIsVariable = false;
-    } else {
-        reg.AIsNumber = reg.AIsVariable = false;
-    }
+    reg.HLIsNumber = reg.HLIsVariable = reg.DEIsNumber = reg.DEIsVariable = reg.BCIsNumber = reg.BCIsVariable = reg.AIsNumber = reg.AIsVariable = false;
 }
 
 void RegChangeHLDE(void) {

@@ -800,8 +800,8 @@ uint8_t parsePostFixFromIndexToIndex(uint24_t startIndex, uint24_t endIndex) {
         // Expression is only a variable
         else if (outputType == TYPE_VARIABLE) {
             expr.outputIsVariable = true;
-            output(uint16_t, 0x27DD);
-            output(uint8_t, outputOperand);
+            OutputWriteWord(0x27DD);
+            OutputWriteByte(outputOperand);
             reg.HLIsNumber = false;
             reg.HLIsVariable = true;
             reg.HLVariable = outputOperand;
@@ -1125,7 +1125,7 @@ uint8_t JumpBackwards(uint8_t *startAddr, uint8_t whichOpcode) {
     } else {
         // JR cc to JP cc
         *ice.programPtr++ = whichOpcode + 0xA2 + (whichOpcode == 0x18 ? 9 : 0);
-        output(uint24_t, startAddr - ice.programData + PRGM_START);
+        OutputWriteLong(startAddr - ice.programData + PRGM_START);
 
         return false;
     }
@@ -1661,7 +1661,7 @@ static uint8_t functionPause(int token) {
         CALL(_GetCSC);
         CP_A(9);
         JR_NZ(-8);
-        ResetReg(REGISTER_HL);
+        reg.HLIsNumber = reg.HLIsVariable = false;
         reg.AIsNumber = true;
         reg.AIsVariable = false;
         reg.AValue = 9;
@@ -1678,7 +1678,7 @@ static uint8_t functionPause(int token) {
         reg.HLIsNumber = reg.DEIsNumber = true;
         reg.HLIsVariable = reg.DEIsVariable = false;
         reg.HLValue = reg.DEValue = -1;
-        ResetReg(REGISTER_BC);
+        reg.BCIsNumber = reg.BCIsVariable = false;
     }
 
     return VALID;

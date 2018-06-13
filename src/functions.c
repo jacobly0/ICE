@@ -266,12 +266,12 @@ uint8_t parseFunction(uint24_t index) {
             }
 
             CallRoutine(&ice.usedAlreadyGetKeyFast, &ice.getKeyFastAddr, (uint8_t*)KeypadData, SIZEOF_KEYPAD_DATA);
-            ResetReg(REGISTER_HL);
-            ResetReg(REGISTER_A);
+            reg.HLIsNumber = reg.HLIsVariable = false;
+            reg.AIsNumber = reg.AIsVariable = false;
         } else {
             CALL(_os_GetCSC);
-            ResetReg(REGISTER_HL);
-            ResetReg(REGISTER_A);
+            reg.HLIsNumber = reg.HLIsVariable = false;
+            reg.AIsNumber = reg.AIsVariable = false;
             ice.modifiedIY = false;
         }
     }
@@ -379,7 +379,7 @@ uint8_t parseFunction(uint24_t index) {
             JR_NC(1);
         }
         EX_DE_HL();
-        ResetReg(REGISTER_HL);                 // DE is already reset because of "add hl, de \ ex de, hl"
+        reg.HLIsNumber = reg.HLIsVariable = false;                 // DE is already reset because of "add hl, de \ ex de, hl"
     }
 
     // mean(
@@ -389,7 +389,7 @@ uint8_t parseFunction(uint24_t index) {
         }
 
         CallRoutine(&ice.usedAlreadyMean, &ice.MeanAddr, (uint8_t*)MeanData, SIZEOF_MEAN_DATA);
-        ResetReg(REGISTER_HL);
+        reg.HLIsNumber = reg.HLIsVariable = false;
     }
 
     // remainder(
@@ -422,8 +422,8 @@ uint8_t parseFunction(uint24_t index) {
                 return res;
             }
             CALL(__idvrmu);
-            ResetReg(REGISTER_HL);
-            ResetReg(REGISTER_DE);
+            reg.HLIsNumber = reg.HLIsVariable = false;
+            reg.DEIsNumber = reg.DEIsVariable = false;
             reg.AIsNumber = true;
             reg.AIsVariable = false;
             reg.AValue = 0;
@@ -496,8 +496,8 @@ uint8_t parseFunction(uint24_t index) {
         ADD_HL_DE();
 
         ice.modifiedIY = true;
-        ResetReg(REGISTER_HL);
-        ResetReg(REGISTER_DE);
+        reg.HLIsNumber = reg.HLIsVariable = false;
+        reg.DEIsNumber = reg.DEIsVariable = false;
         reg.AIsNumber = true;
         reg.AIsVariable = false;
         reg.AValue = 0;
@@ -563,7 +563,7 @@ uint8_t parseFunction(uint24_t index) {
             reg.BCValue = reg.DEValue;
             reg.BCVariable = reg.DEVariable;
         }
-        ResetReg(REGISTER_HL);
+        reg.HLIsNumber = reg.HLIsVariable = false;
     }
 
     // Alloc(
@@ -902,7 +902,7 @@ uint8_t parseFunction(uint24_t index) {
             ice.programDataPtr -= 2;
             ProgramPtrToOffsetStack();
             LD_HL_IMM((uint24_t)ice.programDataPtr);
-            ResetReg(REGISTER_HL);
+            reg.HLIsNumber = reg.HLIsVariable = false;
 
             *ice.programDataPtr = outputPrevPrevPrev->operand;
             *(ice.programDataPtr + 1) = outputPrevPrev->operand;
@@ -1061,10 +1061,10 @@ uint8_t parseFunction(uint24_t index) {
                         if (expr.outputIsNumber) {
                             ice.programPtr -= expr.SizeOfOutputNumber;
                             LD_L(expr.outputNumber);
-                            ResetReg(REGISTER_HL);
+                            reg.HLIsNumber = reg.HLIsVariable = false;
                         } else if (expr.outputIsVariable) {
                             *(ice.programPtr - 2) = 0x6E;
-                            ResetReg(REGISTER_HL);
+                            reg.HLIsNumber = reg.HLIsVariable = false;
                         }
                         if (expr.outputRegister == REGISTER_A) {
                             LD_L_A();
@@ -1372,8 +1372,8 @@ void InsertMallocRoutine(void) {
         w24(ice.MallocAddr + 6, ice.MallocAddr + 1);
     }
 
-    ResetReg(REGISTER_HL);
-    ResetReg(REGISTER_DE);
+    reg.HLIsNumber = reg.HLIsVariable = false;
+    reg.DEIsNumber = reg.DEIsVariable = false;
     reg.BCIsVariable = false;
     reg.BCIsNumber = true;
     reg.BCValue = 0xD13EC5;

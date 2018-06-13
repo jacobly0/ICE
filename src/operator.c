@@ -56,14 +56,14 @@ void MultWithNumber(uint24_t num, uint8_t *programPtr, bool ChangeRegisters) {
         }
         LD_A(num);
         CALL(__imul_b);
-        ResetReg(REGISTER_HL);
+        reg.HLIsNumber = reg.HLIsVariable = false;
     } else {
         if (ChangeRegisters) {
             EX_DE_HL();
         }
         LD_BC_IMM(num);
         CALL(__imuls);
-        ResetReg(REGISTER_HL);
+        reg.HLIsNumber = reg.HLIsVariable = false;
     }
 }
 #endif
@@ -226,8 +226,8 @@ uint8_t parseOperator(element_t *outputPrevPrevPrev, element_t *outputPrevPrev, 
         // If the operator is /, the routine always ends with call __idvrmu \ expr.outputReturnRegister == REGISTER_DE
         if (oper == tDiv && !(expr.outputRegister == REGISTER_A && entry2_operand == 1)) {
             CALL(__idvrmu);
-            ResetReg(REGISTER_HL);
-            ResetReg(REGISTER_DE);
+            reg.HLIsNumber = reg.HLIsVariable = false;
+            reg.DEIsNumber = reg.DEIsVariable = false;
             reg.AIsNumber = true;
             reg.AIsVariable = 0;
             reg.AValue = 0;
@@ -237,19 +237,19 @@ uint8_t parseOperator(element_t *outputPrevPrevPrev, element_t *outputPrevPrev, 
         // If the operator is *, and both operands not a number, it always ends with call __imuls
         if (oper == tMul && type1 != TYPE_NUMBER && type2 != TYPE_NUMBER && !(expr.outputRegister == REGISTER_A && entry2_operand < 256)) {
             CALL(__imuls);
-            ResetReg(REGISTER_HL);
+            reg.HLIsNumber = reg.HLIsVariable = false;
         }
 
         if (expr.outputRegister != REGISTER_A && !(type2 == TYPE_NUMBER && entry2_operand < 256)) {
             if (oper == tDotIcon) {
                 CALL(__iand);
-                ResetReg(REGISTER_HL);
+                reg.HLIsNumber = reg.HLIsVariable = false;
             } else if (oper == tBoxIcon) {
                 CALL(__ixor);
-                ResetReg(REGISTER_HL);
+                reg.HLIsNumber = reg.HLIsVariable = false;
             } else if (oper == tCrossIcon) {
                 CALL(__ior);
-                ResetReg(REGISTER_HL);
+                reg.HLIsNumber = reg.HLIsVariable = false;
             }
         }
 
@@ -682,8 +682,8 @@ void AndChainPushChainAns(void) {
 
 void EQInsert() {
     OR_A_SBC_HL_DE();
-    output(uint8_t, OP_LD_HL);
-    output(uint24_t, 0);
+    OutputWriteByte(OP_LD_HL);
+    OutputWriteLong(0);
     if (oper == tEQ) {
         JR_NZ(1);
         expr.AnsSetZeroFlagReversed = true;
