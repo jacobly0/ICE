@@ -16,6 +16,35 @@
 
 extern prescan_t prescan;
 
+void OutputWriteByte(uint8_t byte) {
+    *ice.programPtr++ = byte;
+}
+
+void OutputWriteWord(uint16_t val) {
+#ifdef CALCULATOR
+    *(uint16_t *)ice.programPtr = val;
+#else
+    w16(ice.programPtr, val);
+#endif
+    ice.programPtr += 2;
+}
+
+void OutputWriteLong(uint24_t val) {
+#ifdef CALCULATOR
+    *(uint24_t *)ice.programPtr = val;
+#else
+    w24(ice.programPtr, val);
+ #endif
+    ice.programPtr += 3;
+}
+
+void OutputWriteMem(uint8_t mem[]) {
+    uint24_t size = strlen((char*)mem);
+    
+    memcpy(ice.programPtr, mem, size);
+    ice.programPtr += size;
+}
+
 bool IsA2ByteTok(uint8_t tok) {
     uint8_t All2ByteTokens[9] = {tExtTok, tVarMat, tVarLst, tVarPict, tVarGDB, tVarOut, tVarSys, tVarStrng, t2ByteTok};
     

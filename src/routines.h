@@ -1,6 +1,10 @@
 #ifndef ROUTINES_H
 #define ROUTINES_H
 
+void OutputWriteByte(uint8_t);
+void OutputWriteWord(uint16_t);
+void OutputWriteLong(uint24_t);
+void OutputWriteMem(uint8_t mem[]);
 bool IsA2ByteTok(uint8_t);
 void ProgramPtrToOffsetStack(void);
 void displayLoadingBarFrame(void);

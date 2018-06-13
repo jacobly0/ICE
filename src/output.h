@@ -125,6 +125,9 @@
 #define OP_OR_A       0xF6
 #define OP_CP_A       0xFE
 
+#define OutputWrite2Bytes(x, y) OutputWriteWord((y << 8) + x)
+#define OutputWrite3Bytes(x, y, z) OutputWriteLong((z << 16) + (y << 8) + x)
+
 #ifdef CALCULATOR
 #define output(type, value) \
     do { \
