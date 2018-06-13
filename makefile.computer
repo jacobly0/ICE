@@ -3,10 +3,6 @@ CC := gcc
 CFLAGS := -Wall -Wextra -Wno-unknown-pragmas -Wno-unused-variable -Wno-unused-parameter -O3 -std=c99 -I. -Iinclude -DCOMPUTER_ICE
 LDFLAGS := -flto
 SOURCES := $(wildcard src/*.c)
-ASMSOURCES := $(wildcard src/asm/*.asm)
-ASMSOURCES := $(filter-out src/asm/editor.asm, $(ASMSOURCES))
-ASMSOURCES := $(filter-out src/asm/mult_with_number.asm, $(ASMSOURCES))
-ASMSOURCES := $(filter-out src/asm/runprogram.asm, $(ASMSOURCES))
 
 ifeq ($(OS),Windows_NT)
 NATIVEPATH = $(subst /,\,$(1))
@@ -18,22 +14,16 @@ RM = rm -f
 endif
 
 OBJECTS := $(SOURCES:.c=.o)
-BINOBJECTS := $(ASMSOURCES:.asm=.bin)
 
 all: $(TARGET)
 
-$(TARGET): .FORCE $(OBJECTS)
+$(TARGET): $(OBJECTS)
 	$(CC) $(LDFLAGS) $(OBJECTS) -o $@ -lm
-
-.FORCE: $(BINOBJECTS)
 
 .cpp.o:
 	$(CC) $(CFLAGS) $< -o $@
 
-%.bin: %.asm
-	spasm -E $< -D.def=\; -D.ref=\; -Ddata=\;
-
 clean:
-	$(RM) $(call NATIVEPATH,$(TARGET).exe $(OBJECTS) $(BINOBJECTS))
+	$(RM) $(call NATIVEPATH,$(TARGET).exe $(OBJECTS))
 
 .PHONY: clean all
