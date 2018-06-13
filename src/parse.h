@@ -26,6 +26,7 @@ void insertGotoLabel(void);
 uint8_t parsePostFixFromIndexToIndex(uint24_t, uint24_t);
 uint8_t functionRepeat(int);
 uint8_t parseProgram(void);
+uint8_t parseProgramUntilEnd(void);
 
 typedef struct {
     uint8_t  isString;

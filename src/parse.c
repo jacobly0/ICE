@@ -56,8 +56,7 @@ element_t outputStack[400];
 element_t stack[200];
 
 uint8_t parseProgram(void) {
-    int token;
-    uint8_t ret, currentGoto, currentLbl;
+    uint8_t currentGoto, currentLbl, ret;
     
     LD_IX_IMM(IX_VARIABLES);
     
@@ -78,18 +77,8 @@ uint8_t parseProgram(void) {
         CALL((uint24_t)ice.programDataPtr);
     }
 
-    // Do things based on the token
-    while ((token = _getc()) != EOF) {
-        ice.lastTokenIsReturn = false;
-        ice.currentLine++;
-
-        if ((ret = (*functions[token])(token)) != VALID) {
-            return ret;
-        }
-
-#ifdef CALCULATOR
-        displayLoadingBar();
-#endif
+    if ((ret = parseProgramUntilEnd()) != VALID) {
+        return ret;
     }
     
     if (!ice.lastTokenIsReturn) {
@@ -97,10 +86,10 @@ uint8_t parseProgram(void) {
     }
     
     // Find all the matching Goto's/Lbl's
-    for (currentGoto = 0; currentGoto < prescan.amountOfGotos; currentGoto++) {
+    for (currentGoto = 0; currentGoto < ice.curGoto; currentGoto++) {
         label_t *curGoto = &ice.GotoStack[currentGoto];
 
-        for (currentLbl = 0; currentLbl < prescan.amountOfLbls; currentLbl++) {
+        for (currentLbl = 0; currentLbl < ice.curLbl; currentLbl++) {
             label_t *curLbl = &ice.LblStack[currentLbl];
 
             if (!memcmp(curLbl->name, curGoto->name, 10)) {
@@ -119,6 +108,27 @@ findNextLabel:;
     return VALID;
 }
 
+uint8_t parseProgramUntilEnd(void) {
+    uint8_t ret;
+    int token;
+    
+    // Do things based on the token
+    while ((token = _getc()) != EOF) {
+        ice.lastTokenIsReturn = false;
+        ice.currentLine++;
+        
+        if ((ret = (*functions[token])(token)) != VALID) {
+            return ret;
+        }
+
+#ifdef CALCULATOR
+        displayLoadingBar();
+#endif
+    }
+    
+    return VALID;
+}
+
 uint8_t parseExpression(int token) {
     uint24_t stackElements = 0, outputElements = 0;
     uint24_t loopIndex, temp;
@@ -131,6 +141,9 @@ uint8_t parseExpression(int token) {
     element_t *stackPtr  = stack;
     element_t *outputCurr, *outputPrev, *outputPrevPrev;
     element_t *stackCurr, *stackPrev = NULL;
+    
+    memset(&outputStack, 0, sizeof(outputStack));
+    memset(&stack, 0, sizeof(stack));
 
     /*
         General explanation output stack and normal stack:
@@ -708,6 +721,7 @@ stackToOutput:
             continue;
         }
 
+        outputCurr->isString = stackPrev->isString;
         outputCurr->type = stackPrev->type;
         outputCurr->mask = stackPrev->mask;
         outputCurr->operand = temp;
@@ -957,9 +971,9 @@ static uint8_t functionI(int token) {
 
 static uint8_t functionIf(int token) {
     uint8_t *IfElseAddr = NULL;
-    uint8_t tempGotoElements = prescan.amountOfGotos;
-    uint8_t tempLblElements = prescan.amountOfLbls;
-
+    uint8_t tempGotoElements = ice.curGoto;
+    uint8_t tempLblElements = ice.curLbl;
+    
     if ((token = _getc()) != EOF && token != tEnter) {
         uint8_t *IfStartAddr, res;
         uint24_t tempDataOffsetElements;
@@ -993,13 +1007,13 @@ static uint8_t functionIf(int token) {
                 JP_Z(0);
             }
         }
-        res = parseProgram();
+        res = parseProgramUntilEnd();
 
         // Check if we quit the program with an 'Else'
         if (res == E_ELSE) {
             bool shortElseCode;
-            uint8_t tempGotoElements2 = prescan.amountOfGotos;
-            uint8_t tempLblElements2 = prescan.amountOfLbls;
+            uint8_t tempGotoElements2 = ice.curGoto;
+            uint8_t tempLblElements2 = ice.curLbl;
             uint24_t tempDataOffsetElements2;;
 
             // Backup stuff
@@ -1008,7 +1022,7 @@ static uint8_t functionIf(int token) {
             tempDataOffsetElements2 = ice.dataOffsetElements;
 
             JP(0);
-            if ((res = parseProgram()) != E_END && res != VALID) {
+            if ((res = parseProgramUntilEnd()) != E_END && res != VALID) {
                 return res;
             }
 
@@ -1072,11 +1086,11 @@ uint8_t JumpForward(uint8_t *startAddr, uint8_t *endAddr, uint24_t tempDataOffse
         }
 
         // Update Goto and Lbl addresses, decrease them all with 2
-        while (prescan.amountOfGotos != tempGotoElements) {
+        while (ice.curGoto != tempGotoElements) {
             (&gotoPtr[tempGotoElements])->addr -= 2;
             tempGotoElements++;
         }
-        while (prescan.amountOfLbls != tempLblElements) {
+        while (ice.curLbl != tempLblElements) {
             (&labelPtr[tempLblElements])->addr -= 2;
             tempLblElements++;
         }
@@ -1122,8 +1136,8 @@ bool WhileJumpBackwardsLarge;
 
 static uint8_t functionWhile(int token) {
     uint24_t tempDataOffsetElements = ice.dataOffsetElements;
-    uint8_t tempGotoElements = prescan.amountOfGotos;
-    uint8_t tempLblElements = prescan.amountOfLbls;
+    uint8_t tempGotoElements = ice.curGoto;
+    uint8_t tempLblElements = ice.curLbl;
     uint8_t *WhileStartAddr = ice.programPtr, res;
     uint8_t *WhileRepeatCondStartTemp = WhileRepeatCondStart;
     bool WhileJumpForwardSmall;
@@ -1158,7 +1172,7 @@ uint8_t functionRepeat(int token) {
     ResetAllRegs();
 
     // Parse the code inside the loop
-    if ((res = parseProgram()) != E_END && res != VALID) {
+    if ((res = parseProgramUntilEnd()) != E_END && res != VALID) {
         return res;
     }
 
@@ -1390,8 +1404,8 @@ static uint8_t functionClrHome(int token) {
 static uint8_t functionFor(int token) {
     bool endPointIsNumber = false, stepIsNumber = false, reversedCond = false, smallCode;
     uint24_t endPointNumber = 0, stepNumber = 0, tempDataOffsetElements;
-    uint8_t tempGotoElements = prescan.amountOfGotos;
-    uint8_t tempLblElements = prescan.amountOfLbls;
+    uint8_t tempGotoElements = ice.curGoto;
+    uint8_t tempLblElements = ice.curLbl;
     uint8_t *endPointExpressionValue = 0, *stepExpression = 0, *jumpToCond, *loopStart;
     uint8_t tok, variable, res;
 
@@ -1470,7 +1484,7 @@ static uint8_t functionFor(int token) {
     ResetAllRegs();
 
     // Parse the inner loop
-    if ((res = parseProgram()) != E_END && res != VALID) {
+    if ((res = parseProgramUntilEnd()) != E_END && res != VALID) {
         return res;
     }
 
@@ -1602,8 +1616,7 @@ static uint8_t functionCustom(int token) {
 
 static uint8_t functionLbl(int token) {
     // Add the label to the stack, and skip the line
-    label_t *labelPtr = ice.LblStack;
-    label_t *labelCurr = &labelPtr[prescan.amountOfLbls++];
+    label_t *labelCurr = &ice.LblStack[ice.curLbl++];
     uint8_t a = 0;
 
     // Get the label name
@@ -1612,7 +1625,7 @@ static uint8_t functionLbl(int token) {
     }
     labelCurr->name[a] = 0;
     labelCurr->addr = (uint24_t)ice.programPtr;
-    labelCurr->LblGotoElements = prescan.amountOfLbls;
+    labelCurr->LblGotoElements = ice.curLbl;
     ResetAllRegs();
 
     return VALID;
@@ -1627,8 +1640,7 @@ static uint8_t functionGoto(int token) {
 
 void insertGotoLabel(void) {
     // Add the label to the stack, and skip the line
-    label_t *gotoPtr = ice.GotoStack;
-    label_t *gotoCurr = &gotoPtr[prescan.amountOfGotos++];
+    label_t *gotoCurr = &ice.GotoStack[ice.curGoto++];
     uint8_t a = 0;
     int token;
 
@@ -1639,7 +1651,7 @@ void insertGotoLabel(void) {
     gotoCurr->addr = (uint24_t)ice.programPtr;
     gotoCurr->offset = _tell(ice.inPrgm);
     gotoCurr->dataOffsetElements = ice.dataOffsetElements;
-    gotoCurr->LblGotoElements = prescan.amountOfGotos;
+    gotoCurr->LblGotoElements = ice.curGoto;
     ResetAllRegs();
 }
 
@@ -1770,7 +1782,7 @@ static uint8_t functionBB(int token) {
 
             // Compile it, and close
             ice.currentLine = 0;
-            if ((res = parseProgram()) != VALID) {
+            if ((res = parseProgramUntilEnd()) != VALID) {
                 return res;
             }
             fclose(ice.inPrgm);
@@ -1790,7 +1802,7 @@ static uint8_t functionBB(int token) {
 
             // Compile it, and close
             ice.currentLine = 0;
-            if ((res = parseProgram()) != VALID) {
+            if ((res = parseProgramUntilEnd()) != VALID) {
                 return res;
             }
             ti_Close(ice.inPrgm);
