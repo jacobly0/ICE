@@ -2,27 +2,29 @@
 segment data
 .def _InputData
 
+include 'ti84pce.inc'
+
 _InputData:
-	ld	de, 0D00879h		; ioPrompt
+	ld	de, ioPrompt
 	ld	bc, 26
 	ldir
-	call	0020814h		; _ClrScrn
-	call	0020828h		; _HomeUp
+	call	_ClrScrn
+	call	_HomeUp
 	xor	a, a
-	ld	(0D00599h), a		; curUnder
+	ld	(curUnder), a
 	ld	b, (iy+9)
 	ld	c, (iy+28)
 	res	6, (iy+28)
 	set	7, (iy+9)
 	push	bc
-	call	0021320h		; _GetStringInput
+	call	_GetStringInput
 	pop	bc
 	res	4, b
 	ld	(iy+9), b
 	ld	(iy+28), c
-	ld	hl, (0D0244Eh)		; editSym
-	call	0020AE8h		; _VarNameToOP1HL
-	call	002050Ch		; _ChkFindSym
+	ld	hl, (editSym)
+	call	_VarNameToOP1HL
+	call	_ChkFindSym
 	ld	a, (de)
 	inc	de
 	inc	de
@@ -44,4 +46,4 @@ _loop:	push	bc
 	pop	bc
 	djnz	_loop
 	ld	(ix+0), hl
-	jp	0021578h		; _DeleteTempEditEqu
+	jp	_DeleteTempEditEqu
