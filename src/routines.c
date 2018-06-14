@@ -66,6 +66,10 @@ prog_t *GetProgramName(void) {
         }
         ret->prog[a++] = (uint8_t)token;
     }
+    if (!a) {
+        ret->errorCode = E_INVALID_PROG;
+    }
+    
     ret->prog[a] = 0;
 
     return ret;
