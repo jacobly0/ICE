@@ -167,7 +167,7 @@ void ChangeRegValue(uint24_t inValue, uint24_t outValue, uint8_t opcodes[7]) {
             OutputWriteByte(outValue >> 8);
             expr.SizeOfOutputNumber = 2;
         } else if (outValue >= IX_VARIABLES - 0x80 && outValue <= IX_VARIABLES + 0x7F) {
-            OutputWriteWord(0x22ED);
+            OutputWrite2Bytes(0xED, 0x22);
             OutputWriteByte(outValue - IX_VARIABLES);
             expr.SizeOfOutputNumber = 3;
         } else {
@@ -227,7 +227,7 @@ void LoadRegValue(uint8_t reg2, uint24_t val) {
 void LoadRegVariable(uint8_t reg2, uint8_t variable) {
     if (reg2 == REGISTER_HL) {
         if (!(reg.HLIsVariable && reg.HLVariable == variable)) {
-            OutputWriteWord(0x27DD);
+            OutputWrite2Bytes(0xDD, 0x27);
             OutputWriteByte(variable);
             reg.HLIsNumber = false;
             reg.HLIsVariable = true;
@@ -235,7 +235,7 @@ void LoadRegVariable(uint8_t reg2, uint8_t variable) {
         }
     } else if (reg2 == REGISTER_DE) {
         if (!(reg.DEIsVariable && reg.DEVariable == variable)) {
-            OutputWriteWord(0x17DD);
+            OutputWrite2Bytes(0xDD, 0x17);
             OutputWriteByte(variable);
             reg.DEIsNumber = false;
             reg.DEIsVariable = true;
@@ -245,19 +245,35 @@ void LoadRegVariable(uint8_t reg2, uint8_t variable) {
         reg.BCIsNumber = false;
         reg.BCIsVariable = true;
         reg.BCVariable = variable;
-        OutputWriteWord(0x07DD);
+        OutputWrite2Bytes(0xDD, 0x07);
         OutputWriteByte(variable);
     } else {
         reg.AIsNumber = false;
         reg.AIsVariable = true;
         reg.AVariable = variable;
-        OutputWriteWord(0x7EDD);
+        OutputWrite2Bytes(0xDD, 0x7E);
         OutputWriteByte(variable);
     }
 }
 
 void ResetAllRegs(void) {
     reg.HLIsNumber = reg.HLIsVariable = reg.DEIsNumber = reg.DEIsVariable = reg.BCIsNumber = reg.BCIsVariable = reg.AIsNumber = reg.AIsVariable = false;
+}
+
+void ResetHL(void) {
+    reg.HLIsNumber = reg.HLIsVariable = false;
+}
+
+void ResetDE(void) {
+    reg.DEIsNumber = reg.DEIsVariable = false;
+}
+
+void ResetBC(void) {
+    reg.BCIsNumber = reg.BCIsVariable = false;
+}
+
+void ResetA(void) {
+    reg.AIsNumber = reg.AIsVariable = false;
 }
 
 void RegChangeHLDE(void) {

@@ -1678,7 +1678,7 @@ static uint8_t functionPause(int token) {
         reg.HLIsNumber = reg.DEIsNumber = true;
         reg.HLIsVariable = reg.DEIsVariable = false;
         reg.HLValue = reg.DEValue = -1;
-        reg.BCIsNumber = reg.BCIsVariable = false;
+        ResetBC();
     }
 
     return VALID;
@@ -1838,8 +1838,7 @@ void optimizeZeroCarryFlagOutput(void) {
             OR_A_SBC_HL_DE();
             expr.AnsSetZeroFlag = true;
         } else if (expr.outputRegister == REGISTER_DE) {
-            SCF();
-            SBC_HL_HL();
+            OutputWrite3Bytes(OP_SCF, 0xED, 0x62);
             ADD_HL_DE();
             expr.AnsSetCarryFlagReversed = true;
         } else {
