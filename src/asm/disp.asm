@@ -2,10 +2,12 @@
 segment data
 .def _DispData
 
+include 'ti84pce.inc'
+
 _DispData:
-	ld	iy, 0D00080h
-	res	1, (iy + 00Dh)
-	jp	00207C0h
-	ld	iy, 0D00080h
-	res	1, (iy + 00Dh)
-	jp	0021EE0h
+	ld	iy, flags
+	res	appTextSave, (iy + appFlags)
+	jp	_PutS
+	ld	iy, flags
+	res	appTextSave, (iy + appFlags)
+	jp	_DispHL

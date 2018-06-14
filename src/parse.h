@@ -2,21 +2,26 @@
 #define PARSE_H
 
 // In case I want to add more types, be sure that TYPE_STRING will be the last one, otherwise operator.c will mess up
-#define TYPE_NUMBER          0
-#define TYPE_VARIABLE        1
-#define TYPE_CHAIN_ANS       2
-#define TYPE_CHAIN_PUSH      3
-#define TYPE_STRING          4
-#define TYPE_OS_STRING       TYPE_NUMBER + 128
+enum {
+    TYPE_NUMBER,
+    TYPE_VARIABLE,
+    TYPE_CHAIN_ANS,
+    TYPE_CHAIN_PUSH,
+    TYPE_STRING
+};
 
-#define TYPE_C_START         124
-#define TYPE_ARG_DELIMITER   125
-#define TYPE_OPERATOR        126
-#define TYPE_FUNCTION        127
+enum {
+    TYPE_C_START = 124,
+    TYPE_ARG_DELIMITER,
+    TYPE_OPERATOR,
+    TYPE_FUNCTION
+};
 
-#define TYPE_MASK_U8         0
-#define TYPE_MASK_U16        1
-#define TYPE_MASK_U24        2
+enum {
+    TYPE_MASK_U8,
+    TYPE_MASK_U16,
+    TYPE_MASK_U24
+};
 
 uint8_t JumpForward(uint8_t*, uint8_t*, uint24_t, uint8_t, uint8_t);
 uint8_t JumpBackwards(uint8_t*, uint8_t);
@@ -27,8 +32,10 @@ void insertGotoLabel(void);
 uint8_t parsePostFixFromIndexToIndex(uint24_t, uint24_t);
 uint8_t functionRepeat(int);
 uint8_t parseProgram(void);
+uint8_t parseProgramUntilEnd(void);
 
 typedef struct {
+    uint8_t  isString;
     uint8_t  type;
     uint8_t  mask;
     uint24_t operand;

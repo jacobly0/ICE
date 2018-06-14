@@ -8,22 +8,9 @@
 #include "output.h"
 #include "operator.h"
 #include "routines.h"
+#include "prescan.h"
 
-#ifdef COMPUTER_ICE
-#define INCBIN_PREFIX
-#include "incbin.h"
-INCBIN(Sqrt, "src/asm/sqrt.bin");
-INCBIN(Mean, "src/asm/mean.bin");
-INCBIN(Rand, "src/asm/rand.bin");
-INCBIN(Timer, "src/asm/timer.bin");
-INCBIN(Malloc, "src/asm/malloc.bin");
-INCBIN(Sincos, "src/asm/sincos.bin");
-INCBIN(Keypad, "src/asm/keypad.bin");
-INCBIN(Loadsprite, "src/asm/loadsprite.bin");
-INCBIN(Loadtilemap, "src/asm/loadtilemap.bin");
-#endif
-
-#ifdef __EMSCRIPTEN__
+#ifndef CALCULATOR
 extern const uint8_t SqrtData[];
 extern const uint8_t MeanData[];
 extern const uint8_t RandData[];
@@ -182,8 +169,8 @@ uint8_t parseFunction(uint24_t index) {
     amountOfArguments  = output >> 8;
 
     outputPrevOperand  = outputPrev->operand;
-    outputPrevType     = outputPrev->type & 0x7F;
-    outputPrevPrevType = outputPrevPrev->type & 0x7F;
+    outputPrevType     = outputPrev->type;
+    outputPrevPrevType = outputPrevPrev->type;
 
     if (function != tNot) {
         ClearAnsFlags();
@@ -233,6 +220,7 @@ uint8_t parseFunction(uint24_t index) {
             if (outputPrevType == TYPE_NUMBER) {
                 uint8_t key = outputPrevOperand;
                 uint8_t keyBit = 1;
+                
                 /* This is the same as
                     ((key-1)/8 & 7) * 2 =
                     (key-1)/4 & (7*2) =
@@ -258,8 +246,7 @@ uint8_t parseFunction(uint24_t index) {
 
             if (outputPrevType != TYPE_NUMBER) {
                 if (expr.outputRegister == REGISTER_A) {
-                    DEC_A();
-                    LD_D_A();
+                    OutputWrite2Bytes(OP_DEC_A, OP_LD_D_A);
                     loadGetKeyFastData1();
                     LD_A_D();
                 } else {
@@ -279,12 +266,12 @@ uint8_t parseFunction(uint24_t index) {
             }
 
             CallRoutine(&ice.usedAlreadyGetKeyFast, &ice.getKeyFastAddr, (uint8_t*)KeypadData, SIZEOF_KEYPAD_DATA);
-            ResetReg(REGISTER_HL);
-            ResetReg(REGISTER_A);
+            ResetHL();
+            ResetA();
         } else {
             CALL(_os_GetCSC);
-            ResetReg(REGISTER_HL);
-            ResetReg(REGISTER_A);
+            ResetHL();
+            ResetA();
             ice.modifiedIY = false;
         }
     }
@@ -296,9 +283,9 @@ uint8_t parseFunction(uint24_t index) {
         }
 
         if (expr.outputRegister == REGISTER_A) {
-            ADD_A(255);
-            SBC_A_A();
-            INC_A();
+            OutputWrite2Bytes(OP_ADD_A, 255);
+            OutputWrite2Bytes(OP_SBC_A_A, OP_INC_A);
+            ResetA();
             expr.outputReturnRegister = REGISTER_A;
             if (expr.AnsSetZeroFlag || expr.AnsSetCarryFlag || expr.AnsSetZeroFlagReversed || expr.AnsSetCarryFlagReversed) {
                 bool temp = expr.AnsSetZeroFlag;
@@ -317,8 +304,7 @@ uint8_t parseFunction(uint24_t index) {
             if (expr.outputRegister == REGISTER_HL) {
                 LD_DE_IMM(-1);
             } else {
-                SCF();
-                SBC_HL_HL();
+                OutputWrite3Bytes(OP_SCF, 0xED, 0x62);
             }
             ADD_HL_DE();
             SBC_HL_HL_INC_HL();
@@ -387,12 +373,12 @@ uint8_t parseFunction(uint24_t index) {
         OR_A_SBC_HL_DE();
         ADD_HL_DE();
         if (function == tMin) {
-            JR_C(1);
+            OutputWrite2Bytes(OP_JR_C, 1);
         } else {
-            JR_NC(1);
+            OutputWrite2Bytes(OP_JR_NC, 1);
         }
         EX_DE_HL();
-        ResetReg(REGISTER_HL);                 // DE is already reset because of "add hl, de \ ex de, hl"
+        ResetHL();                 // DE is already reset because of "add hl, de \ ex de, hl"
     }
 
     // mean(
@@ -402,7 +388,7 @@ uint8_t parseFunction(uint24_t index) {
         }
 
         CallRoutine(&ice.usedAlreadyMean, &ice.MeanAddr, (uint8_t*)MeanData, SIZEOF_MEAN_DATA);
-        ResetReg(REGISTER_HL);
+        ResetHL();
     }
 
     // remainder(
@@ -435,8 +421,8 @@ uint8_t parseFunction(uint24_t index) {
                 return res;
             }
             CALL(__idvrmu);
-            ResetReg(REGISTER_HL);
-            ResetReg(REGISTER_DE);
+            ResetHL();
+            ResetDE();
             reg.AIsNumber = true;
             reg.AIsVariable = false;
             reg.AValue = 0;
@@ -509,8 +495,8 @@ uint8_t parseFunction(uint24_t index) {
         ADD_HL_DE();
 
         ice.modifiedIY = true;
-        ResetReg(REGISTER_HL);
-        ResetReg(REGISTER_DE);
+        ResetHL();
+        ResetDE();
         reg.AIsNumber = true;
         reg.AIsVariable = false;
         reg.AValue = 0;
@@ -521,7 +507,7 @@ uint8_t parseFunction(uint24_t index) {
         uint24_t outputPrevPrevPrevOperand = outputPrevPrevPrev->operand;
 
         // First argument should be a string
-        if (outputPrevPrevPrev->type < TYPE_STRING) {
+        if (!outputPrevPrevPrev->isString) {
             return E_SYNTAX;
         }
 
@@ -546,9 +532,7 @@ uint8_t parseFunction(uint24_t index) {
         }
         PUSH_DE();
         LDIR();
-        EX_DE_HL();
-        LD_HL_C();
-        POP_HL();
+        OutputWrite3Bytes(OP_EX_DE_HL, OP_LD_HL_C, OP_POP_HL);
     }
 
     // length(
@@ -576,7 +560,7 @@ uint8_t parseFunction(uint24_t index) {
             reg.BCValue = reg.DEValue;
             reg.BCVariable = reg.DEVariable;
         }
-        ResetReg(REGISTER_HL);
+        ResetHL();
     }
 
     // Alloc(
@@ -707,7 +691,7 @@ uint8_t parseFunction(uint24_t index) {
             ProgramPtrToOffsetStack();
             LD_ADDR_HL(ice.LoadSpriteAddr + 27);
 
-            if (outputPrevPrevPrev->type < TYPE_STRING) {
+            if (!outputPrevPrevPrev->isString) {
                 return E_SYNTAX;
             }
             LD_HL_STRING(outputPrevPrevPrev->operand - 1, outputPrevPrevPrev->type);
@@ -745,7 +729,7 @@ uint8_t parseFunction(uint24_t index) {
             ProgramPtrToOffsetStack();
             LD_ADDR_A(ice.LoadTilemapAddr + 45);
 
-            if (outputPrevPrevPrev->type < TYPE_STRING) {
+            if (!outputPrevPrevPrev->isString) {
                 return E_SYNTAX;
             }
             LD_HL_STRING(outputPrevPrevPrev->operand - 1, outputPrevPrevPrev->type);
@@ -817,7 +801,7 @@ uint8_t parseFunction(uint24_t index) {
         *  arg3: size in bytes
         *****************************************************/
 
-        uint8_t outputPrevPrevPrevType = outputPrevPrevPrev->type & 0x7F;
+        uint8_t outputPrevPrevPrevType = outputPrevPrevPrev->type;
         uint24_t outputPrevPrevPrevOperand = outputPrevPrevPrev->operand;
         uint24_t outputPrevPrevOperand = outputPrevPrev->operand;
 
@@ -900,7 +884,7 @@ uint8_t parseFunction(uint24_t index) {
 
             LD_HL_IMM(width * height + 2);
             InsertMallocRoutine();
-            JR_NC(6);
+            OutputWrite2Bytes(OP_JR_NC, 6);
             LD_HL_VAL(width);
             INC_HL();
             LD_HL_VAL(height);
@@ -915,7 +899,7 @@ uint8_t parseFunction(uint24_t index) {
             ice.programDataPtr -= 2;
             ProgramPtrToOffsetStack();
             LD_HL_IMM((uint24_t)ice.programDataPtr);
-            ResetReg(REGISTER_HL);
+            ResetHL();
 
             *ice.programDataPtr = outputPrevPrevPrev->operand;
             *(ice.programDataPtr + 1) = outputPrevPrev->operand;
@@ -948,7 +932,7 @@ uint8_t parseFunction(uint24_t index) {
         * Returns: 1-, 2- or 3-byte value at address PTR
         *****************************************************/
 
-        if (outputPrevType == TYPE_NUMBER || outputPrevType == TYPE_STRING || outputPrev->type == TYPE_OS_STRING) {
+        if (outputPrevType == TYPE_NUMBER || outputPrev->isString) {
             if (outputPrevType == TYPE_STRING && outputPrevOperand != prescan.tempStrings[TempString1] && outputPrevOperand != prescan.tempStrings[TempString2]) {
                 ProgramPtrToOffsetStack();
             }
@@ -1074,10 +1058,10 @@ uint8_t parseFunction(uint24_t index) {
                         if (expr.outputIsNumber) {
                             ice.programPtr -= expr.SizeOfOutputNumber;
                             LD_L(expr.outputNumber);
-                            ResetReg(REGISTER_HL);
+                            ResetHL();
                         } else if (expr.outputIsVariable) {
                             *(ice.programPtr - 2) = 0x6E;
-                            ResetReg(REGISTER_HL);
+                            ResetHL();
                         }
                         if (expr.outputRegister == REGISTER_A) {
                             LD_L_A();
@@ -1142,31 +1126,6 @@ uint8_t parseFunction(uint24_t index) {
             expr.outputReturnRegister = REGISTER_DE;
         }
 
-        // Warn if C function used BEFORE starting GRAPHX
-        if (function == tDet) {
-            if (function2 == 1) {
-                ice.endedGRAPHX = true;
-            }
-            if (!function2) {
-                ice.startedGRAPHX = true;
-            }
-            if (!ice.startedGRAPHX) {
-                displayError(W_START_GRAPHX);
-            }
-            ice.startedGRAPHX = true;
-        }
-
-        // Warn if C function used BEFORE starting FILEIOC
-        else {
-            if (!function2) {
-                ice.startedFILEIOC = true;
-            }
-            if (!ice.startedFILEIOC) {
-                displayError(W_START_FILEIOC);
-            }
-            ice.startedFILEIOC = true;
-        }
-
         ResetAllRegs();
         expr.outputIsNumber = expr.outputIsVariable = expr.outputIsString = false;
         ice.modifiedIY = true;
@@ -1186,7 +1145,7 @@ uint8_t parseFunction1Arg(uint24_t index, uint8_t outputRegister1) {
     outputPrevType = outputPrev->type;
     outputOperand = outputPrev->operand;
 
-    if ((outputPrevType & 0x7F) == TYPE_NUMBER) {
+    if (outputPrevType == TYPE_NUMBER) {
         LD_HL_IMM(outputOperand);
     } else if (outputPrevType == TYPE_VARIABLE) {
         LD_HL_IND_IX_OFF(outputOperand);
@@ -1213,8 +1172,8 @@ uint8_t parseFunction2Args(uint24_t index, uint8_t outputReturnRegister, bool or
     outputPrevOperand     = outputPrev->operand;
     outputPrevPrevOperand = outputPrevPrev->operand;
 
-    if ((outputPrevPrevType & 0x7F) == TYPE_NUMBER) {
-        if ((outputPrevType & 0x7F) == TYPE_NUMBER) {
+    if (outputPrevPrevType == TYPE_NUMBER) {
+        if (outputPrevType == TYPE_NUMBER) {
             LD_HL_IMM(outputPrevPrevOperand);
             if (outputReturnRegister == REGISTER_BC) {
                 LD_BC_IMM(outputPrevOperand);
@@ -1248,7 +1207,7 @@ uint8_t parseFunction2Args(uint24_t index, uint8_t outputReturnRegister, bool or
             return E_SYNTAX;
         }
     } else if (outputPrevPrevType == TYPE_VARIABLE) {
-        if ((outputPrevType & 0x7F) == TYPE_NUMBER) {
+        if (outputPrevType == TYPE_NUMBER) {
             if (orderDoesMatter) {
                 LD_HL_IND_IX_OFF(outputPrevPrevOperand);
                 if (outputReturnRegister == REGISTER_DE) {
@@ -1287,7 +1246,7 @@ uint8_t parseFunction2Args(uint24_t index, uint8_t outputReturnRegister, bool or
             return E_SYNTAX;
         }
     } else if (outputPrevPrevType == TYPE_CHAIN_ANS) {
-        if ((outputPrevType & 0x7F) == TYPE_NUMBER) {
+        if (outputPrevType == TYPE_NUMBER) {
             AnsToHL();
             if (orderDoesMatter) {
                 if (outputReturnRegister == REGISTER_DE) {
@@ -1369,7 +1328,7 @@ uint8_t InsertDataElements(uint8_t amountOfArguments, uint24_t startIndex, uint8
         } else if (dataSize == 2) {
             *(uint16_t*)ice.programDataPtr = outputTemp->operand;
         } else {
-            *(uint24_t*)ice.programDataPtr = outputTemp->operand;
+            w24(ice.programDataPtr, outputTemp->operand);
         }
         ice.programDataPtr += dataSize;
     }
@@ -1380,38 +1339,33 @@ uint8_t InsertDataElements(uint8_t amountOfArguments, uint24_t startIndex, uint8
 }
 
 void loadGetKeyFastData1(void) {
-    AND_A(7);
-    LD_B_A();
-    LD_A(1);
-    JR_Z(3);
-    ADD_A_A();
-    DJNZ(-3);
-    LD_C_A();
+    uint8_t mem[] = {OP_AND_A, 7, OP_LD_B_A, OP_LD_A, 1, OP_JR_Z, 3, OP_ADD_A_A, OP_DJNZ, -3, OP_LD_C_A, 0};
+    
+    OutputWriteMem(mem);
+    ResetBC();
 }
 
 void loadGetKeyFastData2(void) {
-    SRL_A();
-    SRL_A();
-    AND_A(14);
-    LD_D_A();
-    LD_A(30);
-    SUB_A_D();
-    LD_B_A();
+    uint8_t mem[] = {0xCB, 0x3F, 0xCB, 0x3F, OP_AND_A, 14, OP_LD_D_A, OP_LD_A, 30, OP_SUB_A_D, OP_LD_B_A, 0};
+    
+    OutputWriteMem(mem);
+    ResetDE();
+    ResetBC();
 }
 
 void InsertMallocRoutine(void) {
     bool boolUsed = ice.usedAlreadyMalloc;
     
     CallRoutine(&ice.usedAlreadyMalloc, &ice.MallocAddr, (uint8_t*)MallocData, SIZEOF_MALLOC_DATA);
-    w24(ice.MallocAddr + 1, prescan.freeMemoryPtr);
+    w24((uint8_t*)ice.MallocAddr + 1, prescan.freeMemoryPtr);
 
     if (!boolUsed) {
         ice.dataOffsetStack[ice.dataOffsetElements++] = (uint24_t*)(ice.MallocAddr + 6);
-        w24(ice.MallocAddr + 6, ice.MallocAddr + 1);
+        w24((uint8_t*)ice.MallocAddr + 6, ice.MallocAddr + 1);
     }
 
-    ResetReg(REGISTER_HL);
-    ResetReg(REGISTER_DE);
+    ResetHL();
+    ResetDE();
     reg.BCIsVariable = false;
     reg.BCIsNumber = true;
     reg.BCValue = 0xD13EC5;

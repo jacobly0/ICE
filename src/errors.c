@@ -33,17 +33,11 @@ static const char *errors[] = {
     "Subprogram not found",
     "Compiling subprograms not supported",
     "Invalid program name",
+    "Not enough memory for Lbl and Goto",
+    "Error: not an ICE program\n",
+    "Error: not enough memory for variables",
     "Warning: Unknown char in the string!",
     "Warning: string has been automatically squish-ed!",
-#ifdef CALCULATOR
-    "Warning: you need det(0) before using any           other graphics function!",
-    "Warning: you need sum(0) before using any           other file i/o function!",
-    "Warning: you need det(1) before returning to    the OS!",
-#else
-    "Warning: you need det(0) before using any other graphics function!",
-    "Warning: you need sum(0) before using any other file i/o function!",
-    "Warning: you need det(1) before returning to the OS!",
-#endif
 };
 
 void displayLabelError(char *label) {
@@ -54,11 +48,7 @@ void displayLabelError(char *label) {
     gfx_SetTextFGColor(224);
     displayMessageLineScroll(buf);
 #else
-#ifdef COMPUTER_ICE
     fprintf(stdout, "%s\n", buf);
-#else
-    ice_error(buf, 0);
-#endif
 #endif
 }
 
@@ -73,12 +63,7 @@ void displayError(uint8_t index) {
     sprintf(buf, "Error at line %u", ice.currentLine);
     displayMessageLineScroll(buf);
 #else
-#ifdef COMPUTER_ICE
     fprintf(stdout, "%s\n", errors[index]);
     fprintf(stdout, "Error at line %u\n", ice.currentLine);
-#else
-    strcpy(buf, errors[index]);
-    ice_error(buf, ice.currentLine);
-#endif
 #endif
 }

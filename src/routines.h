@@ -1,7 +1,11 @@
 #ifndef ROUTINES_H
 #define ROUTINES_H
 
-void preScanProgram(void);
+void OutputWriteByte(uint8_t);
+void OutputWriteWord(uint16_t);
+void OutputWriteLong(uint24_t);
+void OutputWriteMem(uint8_t mem[]);
+bool IsA2ByteTok(uint8_t);
 void ProgramPtrToOffsetStack(void);
 void displayLoadingBarFrame(void);
 prog_t *GetProgramName(void);
@@ -12,7 +16,10 @@ void LoadRegValue(uint8_t, uint24_t);
 void LoadRegVariable(uint8_t, uint8_t);
 void ChangeRegValue(uint24_t, uint24_t, uint8_t opcodes[7]);
 void ResetAllRegs(void);
-void ResetReg(uint8_t);
+void ResetHL(void);
+void ResetDE(void);
+void ResetBC(void);
+void ResetA(void);
 void RegChangeHLDE(void);
 void SetRegHLToRegDE(void);
 void SetRegDEToRegHL(void);

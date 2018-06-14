@@ -83,8 +83,6 @@ void export_program(const char *name, uint8_t *data, size_t size) {
     output[offset++] = m8(checksum);
     output[offset++] = mr8(checksum);
 
-#ifdef COMPUTER_ICE
-
     // write the buffer to the file
     char *file_name = str_dupcat(name, ".8xp");
 
@@ -100,9 +98,6 @@ void export_program(const char *name, uint8_t *data, size_t size) {
 
     // free the memory
     free(file_name);
-#else
-    ice_export(output, offset);
-#endif
     free(output);
 }
 

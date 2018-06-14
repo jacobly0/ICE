@@ -8,38 +8,13 @@
 #include "stack.h"
 #include "output.h"
 #include "routines.h"
+#include "prescan.h"
 
-#ifdef COMPUTER_ICE
-#define INCBIN_PREFIX
-#include "incbin.h"
-INCBIN(And, "src/asm/and.bin");
-INCBIN(Or, "src/asm/or.bin");
-INCBIN(Xor, "src/asm/xor.bin");
-#endif
-
-#ifdef __EMSCRIPTEN__
+#ifndef CALCULATOR
 extern const uint8_t AndData[];
 extern const uint8_t OrData[];
 extern const uint8_t XorData[];
-#endif
 
-extern void (*operatorFunctions[272])(void);
-extern void (*operatorChainPushChainAnsFunctions[17])(void);
-const char operators[]              = {tStore, tDotIcon, tCrossIcon, tBoxIcon, tAnd, tXor, tOr, tEQ, tLT, tGT, tLE, tGE, tNE, tMul, tDiv, tAdd, tSub};
-const uint8_t operatorPrecedence[]  = {0, 6, 8, 8, 2, 1, 1, 3, 3, 3, 3, 3, 3, 5, 5, 4, 4};
-const uint8_t operatorPrecedence2[] = {9, 6, 8, 8, 2, 1, 1, 3, 3, 3, 3, 3, 3, 5, 5, 4, 4};
-const uint8_t operatorCanSwap[]     = {0, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 1, 1, 0, 1, 0}; // Used for operators which can swap the operands, i.e. A*B = B*A
-
-static element_t *entry0;
-static element_t *entry1;
-static element_t *entry2;
-static uint24_t entry0_operand;
-static uint24_t entry1_operand;
-static uint24_t entry2_operand;
-static uint8_t oper;
-static bool canOptimizeConcatenateStrings;
-
-#ifndef CALCULATOR
 static uint8_t clz(uint24_t x) {
     uint8_t n = 0;
     if (!x) {
@@ -81,17 +56,33 @@ void MultWithNumber(uint24_t num, uint8_t *programPtr, bool ChangeRegisters) {
         }
         LD_A(num);
         CALL(__imul_b);
-        ResetReg(REGISTER_HL);
+        ResetHL();
     } else {
         if (ChangeRegisters) {
             EX_DE_HL();
         }
         LD_BC_IMM(num);
         CALL(__imuls);
-        ResetReg(REGISTER_HL);
+        ResetHL();
     }
 }
 #endif
+
+extern void (*operatorFunctions[272])(void);
+extern void (*operatorChainPushChainAnsFunctions[17])(void);
+const char operators[]              = {tStore, tDotIcon, tCrossIcon, tBoxIcon, tAnd, tXor, tOr, tEQ, tLT, tGT, tLE, tGE, tNE, tMul, tDiv, tAdd, tSub};
+const uint8_t operatorPrecedence[]  = {0, 6, 8, 8, 2, 1, 1, 3, 3, 3, 3, 3, 3, 5, 5, 4, 4};
+const uint8_t operatorPrecedence2[] = {9, 6, 8, 8, 2, 1, 1, 3, 3, 3, 3, 3, 3, 5, 5, 4, 4};
+const uint8_t operatorCanSwap[]     = {0, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 1, 1, 0, 1, 0}; // Used for operators which can swap the operands, i.e. A*B = B*A
+
+static element_t *entry0;
+static element_t *entry1;
+static element_t *entry2;
+static uint24_t entry0_operand;
+static uint24_t entry1_operand;
+static uint24_t entry2_operand;
+static uint8_t oper;
+static bool canOptimizeConcatenateStrings;
 
 bool comparePtrToTempStrings(uint24_t addr) {
     return (addr == prescan.tempStrings[TempString1] || addr == prescan.tempStrings[TempString2]);
@@ -158,10 +149,9 @@ static void swapEntries() {
 }
 
 uint8_t parseOperator(element_t *outputPrevPrevPrev, element_t *outputPrevPrev, element_t *outputPrev, element_t *outputCurr, bool canOptimizeStrings) {
-    uint8_t type1Masked, type1, type2;
+    uint8_t type1, type2;
     
     type1 = outputPrevPrev->type;
-    type1Masked = type1 & 0x7F;
     type2 = outputPrev->type;
     canOptimizeConcatenateStrings = canOptimizeStrings;
 
@@ -175,37 +165,35 @@ uint8_t parseOperator(element_t *outputPrevPrevPrev, element_t *outputPrevPrev, 
 
     ClearAnsFlags();
 
-    if (type1 >= TYPE_STRING && type2 == TYPE_OS_STRING && oper == tStore) {
+    if (outputPrevPrev->isString && outputPrev->isString && type2 == TYPE_NUMBER && oper == tStore) {
         StoStringString();
-    } else if (type1 >= TYPE_STRING && type2 >= TYPE_STRING && oper == tAdd) {
+    } else if (outputPrevPrev->isString && outputPrev->isString && oper == tAdd) {
         AddStringString();
-    } else if (type1 == TYPE_STRING && type2 == TYPE_VARIABLE && oper == tStore) {
+    } else if (outputPrevPrev->isString && type1 == TYPE_NUMBER && type2 == TYPE_VARIABLE && oper == tStore) {
         StoStringVariable();
     } else {
         // Only call the function if both types are valid
-        if ((type1Masked == type2 && (type1Masked == TYPE_NUMBER || type1Masked == TYPE_CHAIN_ANS)) ||
+        if ((type1 == type2 && (type1 == TYPE_NUMBER || type1 == TYPE_CHAIN_ANS)) ||
             (oper == tStore && (type2 != TYPE_VARIABLE  && !(type2 == TYPE_FUNCTION && outputPrev->operand == 0x010108))) ||
             (type2 == TYPE_CHAIN_PUSH) ||
             (type1 == TYPE_STRING || type2 == TYPE_STRING)
         ) {
             return E_SYNTAX;
         }
-        
-        type2 = type2 & 0x7F;
 
         // Store to a pointer
         if (oper == tStore && type2 == TYPE_FUNCTION) {
             type2 = TYPE_CHAIN_ANS;
-            type1Masked = outputPrevPrevPrev->type & 0x7F;
+            type1 = outputPrevPrevPrev->type;
 
             // If string->pointer, do it immediately
-            if (type1Masked == TYPE_STRING) {
+            if (type1 == TYPE_STRING) {
                 StoStringChainAns();
                 return VALID;
             }
         }
 
-        if (type1Masked == TYPE_CHAIN_PUSH) {
+        if (type1 == TYPE_CHAIN_PUSH) {
             if (type2 != TYPE_CHAIN_ANS) {
                 return E_ICE_ERROR;
             }
@@ -218,10 +206,10 @@ uint8_t parseOperator(element_t *outputPrevPrevPrev, element_t *outputPrevPrev, 
             ice.dataOffsetElementsBackup = ice.dataOffsetElements;
 
             // Swap operands for compiler optimizations
-            if (oper == tLE || oper == tLT || (operatorCanSwap[getIndexOfOperator(oper) - 1] && (type1Masked == TYPE_NUMBER || type2 == TYPE_CHAIN_ANS))) {
-                uint8_t temp = type1Masked;
+            if (oper == tLE || oper == tLT || (operatorCanSwap[getIndexOfOperator(oper) - 1] && (type1 == TYPE_NUMBER || type2 == TYPE_CHAIN_ANS))) {
+                uint8_t temp = type1;
 
-                type1Masked = type2;
+                type1 = type2;
                 type2 = temp;
                 swapEntries();
                 if (oper == tLE) {
@@ -232,14 +220,14 @@ uint8_t parseOperator(element_t *outputPrevPrevPrev, element_t *outputPrevPrev, 
             }
 
             // Call the right function!
-            (*operatorFunctions[((getIndexOfOperator(oper) - 1) * 9) + (type1Masked * 3) + type2])();
+            (*operatorFunctions[((getIndexOfOperator(oper) - 1) * 9) + (type1 * 3) + type2])();
         }
 
         // If the operator is /, the routine always ends with call __idvrmu \ expr.outputReturnRegister == REGISTER_DE
         if (oper == tDiv && !(expr.outputRegister == REGISTER_A && entry2_operand == 1)) {
             CALL(__idvrmu);
-            ResetReg(REGISTER_HL);
-            ResetReg(REGISTER_DE);
+            ResetHL();
+            ResetDE();
             reg.AIsNumber = true;
             reg.AIsVariable = 0;
             reg.AValue = 0;
@@ -247,21 +235,21 @@ uint8_t parseOperator(element_t *outputPrevPrevPrev, element_t *outputPrevPrev, 
         }
 
         // If the operator is *, and both operands not a number, it always ends with call __imuls
-        if (oper == tMul && type1Masked != TYPE_NUMBER && type2 != TYPE_NUMBER && !(expr.outputRegister == REGISTER_A && entry2_operand < 256)) {
+        if (oper == tMul && type1 != TYPE_NUMBER && type2 != TYPE_NUMBER && !(expr.outputRegister == REGISTER_A && entry2_operand < 256)) {
             CALL(__imuls);
-            ResetReg(REGISTER_HL);
+            ResetHL();
         }
 
         if (expr.outputRegister != REGISTER_A && !(type2 == TYPE_NUMBER && entry2_operand < 256)) {
             if (oper == tDotIcon) {
                 CALL(__iand);
-                ResetReg(REGISTER_HL);
+                ResetHL();
             } else if (oper == tBoxIcon) {
                 CALL(__ixor);
-                ResetReg(REGISTER_HL);
+                ResetHL();
             } else if (oper == tCrossIcon) {
                 CALL(__ior);
-                ResetReg(REGISTER_HL);
+                ResetHL();
             }
         }
 
@@ -276,7 +264,7 @@ uint8_t parseOperator(element_t *outputPrevPrevPrev, element_t *outputPrevPrev, 
 }
 
 void LD_HL_STRING(uint24_t stringPtr, uint8_t type) {
-    if ((type != TYPE_OS_STRING) && (stringPtr != prescan.tempStrings[TempString1] && stringPtr != prescan.tempStrings[TempString2])) {
+    if ((type == TYPE_STRING) && (stringPtr != prescan.tempStrings[TempString1] && stringPtr != prescan.tempStrings[TempString2])) {
         ProgramPtrToOffsetStack();
     }
     LD_HL_IMM(stringPtr);
@@ -303,7 +291,7 @@ void StoVariableVariable(void) {
     StoChainAnsVariable();
 }
 void StoNumberChainAns(void) {
-    uint8_t type = entry1->type & 0x7F;
+    uint8_t type = entry1->type;
     uint8_t mask = entry2->mask;
     
     if (type == TYPE_NUMBER) {
@@ -337,7 +325,7 @@ void StoNumberChainAns(void) {
     StoToChainAns();
 }
 void StoVariableChainAns(void) {
-    uint8_t type = entry1->type & 0x7F;
+    uint8_t type = entry1->type;
     uint8_t mask = entry2->mask;
 
     if (type == TYPE_NUMBER) {
@@ -375,8 +363,7 @@ void StoChainPushChainAns(void) {
         AnsToHL();
         POP_DE();
         if (entry2->mask == TYPE_MASK_U8) {
-            LD_A_E();
-            LD_HL_A();
+            OutputWrite2Bytes(OP_LD_A_E, OP_LD_HL_A);
         } else if (entry2->mask == TYPE_MASK_U24) {
             LD_HL_DE();
             expr.outputReturnRegister = REGISTER_DE;
@@ -385,7 +372,7 @@ void StoChainPushChainAns(void) {
     }
 }
 void StoChainAnsChainAns(void) {
-    uint8_t type = entry1->type & 0x7F;
+    uint8_t type = entry1->type;
     uint8_t mask = entry2->mask;
 
     if (type == TYPE_NUMBER) {
@@ -429,7 +416,7 @@ void StoChainAnsChainAns(void) {
     StoToChainAns();
 }
 void StoStringChainAns(void) {
-    uint8_t type = entry1->type & 0x7F;
+    uint8_t type = entry1->type;
     uint8_t mask = entry2->mask;
 
     if (type == TYPE_NUMBER) {
@@ -456,7 +443,7 @@ void StoStringChainAns(void) {
         }
     } else {
         AnsToHL();
-        if ((entry0->type != TYPE_OS_STRING) && (entry0_operand != prescan.tempStrings[TempString1] && entry0_operand != prescan.tempStrings[TempString2])) {
+        if ((entry0->type == TYPE_STRING) && (entry0_operand != prescan.tempStrings[TempString1] && entry0_operand != prescan.tempStrings[TempString2])) {
             ProgramPtrToOffsetStack();
         }
         LD_DE_IMM(entry0_operand);
@@ -465,8 +452,8 @@ void StoStringChainAns(void) {
         } else {
             LD_HL_E();
             if (mask == TYPE_MASK_U16) {
-                INC_HL();
-                LD_HL_D();
+                OutputWrite2Bytes(OP_INC_HL, OP_LD_HL_D);
+                ResetHL();
             }
         }
     }
@@ -475,9 +462,8 @@ void StoToChainAns(void) {
     if (entry2->mask == TYPE_MASK_U8) {
         expr.outputReturnRegister = REGISTER_A;
     } else if (entry2->mask == TYPE_MASK_U16) {
-        LD_HL_E();
-        INC_HL();
-        LD_HL_D();
+        OutputWrite3Bytes(OP_LD_HL_E, OP_INC_HL, OP_LD_HL_D);
+        ResetHL();
         EX_S_DE_HL();
     }
 }
@@ -487,8 +473,8 @@ void StoStringString(void) {
     LD_HL_IMM(entry2_operand);
     PUSH_HL();
     CALL(__strcpy);
-    POP_BC();
-    POP_BC();
+    OutputWrite2Bytes(OP_POP_BC, OP_POP_BC);
+    ResetBC();
 }
 void StoStringVariable(void) {
     LD_HL_STRING(entry1_operand, entry1->type);
@@ -580,9 +566,9 @@ void AndChainAnsNumber(void) {
         expr.outputReturnRegister = REGISTER_A;
         if (oper == tXor) {
             if (entry2_operand) {
-                ADD_A(255);
-                SBC_A_A();
-                INC_A();
+                OutputWrite2Bytes(OP_ADD_A, 255);
+                OutputWrite2Bytes(OP_SBC_A_A, OP_INC_A);
+                ResetA();
             } else {
                 goto NumberNotZero1;
             }
@@ -596,9 +582,9 @@ void AndChainAnsNumber(void) {
         } else {
             if (!entry2_operand) {
 NumberNotZero1:
-                SUB_A(1);
-                SBC_A_A();
-                INC_A();
+                OutputWrite2Bytes(OP_SUB_A, 1);
+                OutputWrite2Bytes(OP_SBC_A_A, OP_INC_A);
+                ResetA();
             } else {
                 ice.programPtr = ice.programPtrBackup;
                 ice.dataOffsetElements = ice.dataOffsetElementsBackup;
@@ -640,8 +626,7 @@ numberNotZero2:
                 } else {
                     LD_HL_IMM(-1);
                 }
-                ADD_HL_DE();
-                CCF();
+                OutputWrite2Bytes(OP_ADD_HL_DE, OP_CCF);
                 SBC_HL_HL_INC_HL();
                 expr.ZeroCarryFlagRemoveAmountOfBytes = 4;
                 expr.AnsSetCarryFlagReversed = true;
@@ -694,13 +679,13 @@ void AndChainPushChainAns(void) {
 
 void EQInsert() {
     OR_A_SBC_HL_DE();
-    output(uint8_t, OP_LD_HL);
-    output(uint24_t, 0);
+    OutputWriteByte(OP_LD_HL);
+    OutputWriteLong(0);
     if (oper == tEQ) {
-        JR_NZ(1);
+        OutputWrite2Bytes(OP_JR_NZ, 1);
         expr.AnsSetZeroFlagReversed = true;
     } else {
-        JR_Z(1);
+        OutputWrite2Bytes(OP_JR_Z, 1);
         expr.AnsSetZeroFlag = true;
     }
     INC_HL();
@@ -712,17 +697,16 @@ void EQChainAnsNumber(void) {
     if (expr.outputRegister == REGISTER_A && entry2_operand < 256) {
         if (oper == tNE) {
             ADD_A(255 - entry2_operand);
-            ADD_A(1);
+            OutputWrite2Bytes(OP_ADD_A, 1);
             expr.AnsSetCarryFlag = true;
             expr.ZeroCarryFlagRemoveAmountOfBytes = 2;
         } else {
             SUB_A(entry2_operand);
-            ADD_A(255);
+            OutputWrite2Bytes(OP_ADD_A, 255);
             expr.AnsSetZeroFlagReversed = true;
             expr.ZeroCarryFlagRemoveAmountOfBytes = 4;
         }
-        SBC_A_A();
-        INC_A();
+        OutputWrite2Bytes(OP_SBC_A_A, OP_INC_A);
         expr.outputReturnRegister = REGISTER_A;
     } else {
         MaybeAToHL();
@@ -802,8 +786,7 @@ void GEInsert() {
 void GEChainAnsNumber(void) {
     if (expr.outputRegister == REGISTER_A && entry2_operand < 256) {
         SUB_A(entry2_operand + (oper == tGT || oper == tLT));
-        SBC_A_A();
-        INC_A();
+        OutputWrite2Bytes(OP_SBC_A_A, OP_INC_A);
         expr.AnsSetCarryFlag = true;
         expr.outputReturnRegister = REGISTER_A;
         expr.ZeroCarryFlagRemoveAmountOfBytes = 2;
@@ -825,8 +808,7 @@ void GENumberVariable(void) {
 void GENumberChainAns(void) {
     if (expr.outputRegister == REGISTER_A && entry1_operand < 256) {
         ADD_A(256 - entry1_operand - (oper == tGE || oper == tLE));
-        SBC_A_A();
-        INC_A();
+        OutputWrite2Bytes(OP_SBC_A_A, OP_INC_A);
         expr.AnsSetCarryFlag = true;
         expr.outputReturnRegister = REGISTER_A;
         expr.ZeroCarryFlagRemoveAmountOfBytes = 2;
@@ -990,18 +972,14 @@ void AddChainAnsNumber(void) {
             return;
         }
         LD_HL_IMM(number);
-        ADD_A_L();
-        LD_L_A();
+        OutputWrite2Bytes(OP_ADD_A_L, OP_LD_L_A);
         if ((number & 0x00FF00) != 0x00FF00) {
-            ADC_A_H();
-            SUB_A_L();
-            LD_H_A();
+            OutputWrite3Bytes(OP_ADC_A_H, OP_SUB_A_L, OP_LD_H_A);
         } else {
-            JR_NC(4);
-            LD_L(-1);
-            INC_HL();
-            LD_L_A();
+            OutputWrite3Bytes(OP_JR_NC, 4, OP_LD_L);
+            OutputWrite3Bytes(-1, OP_INC_HL, OP_LD_L_A);
         }
+        ResetHL();
     } else {
         if (number < 5) {
             uint8_t a;
@@ -1025,14 +1003,8 @@ void AddChainAnsNumber(void) {
     }
 }
 void AddVariableNumber(void) {
-    if (!ice.inDispExpression && entry2_operand < 128 && entry2_operand > 4) {
-        LD_IY_IND_IX_OFF(entry1_operand);
-        LEA_HL_IY_OFF(entry2_operand);
-        ice.modifiedIY = true;
-    } else {
-        LD_HL_IND_IX_OFF(entry1_operand);
-        AddChainAnsNumber();
-    }
+    LD_HL_IND_IX_OFF(entry1_operand);
+    AddChainAnsNumber();
 }
 void AddChainAnsVariable(void) {
     MaybeAToHL();
@@ -1085,8 +1057,8 @@ void AddStringString(void) {
         LD_HL_IMM(entry1_operand);
         PUSH_HL();
         CALL(__strcat);
-        POP_BC();
-        POP_BC();
+        OutputWrite2Bytes(OP_POP_BC, OP_POP_BC);
+        ResetBC();
     } else {
         // Optimize StrX + "..." -> StrX
         if (canOptimizeConcatenateStrings) {
@@ -1119,8 +1091,8 @@ void AddStringString(void) {
             PUSH_DE();
         }
         CALL(__strcat);
-        POP_BC();
-        POP_BC();
+        OutputWrite2Bytes(OP_POP_BC, OP_POP_BC);
+        ResetBC();
     }
 }
 void SubChainAnsNumber(void) {
@@ -1173,14 +1145,8 @@ void SubNumberChainAns(void) {
     LD_HL_IMM(entry1_operand);
 }
 void SubVariableNumber(void) {
-    if (!ice.inDispExpression && entry2_operand < 129 && entry2_operand > 4) {
-        LD_IY_IND_IX_OFF(entry1_operand);
-        LEA_HL_IY_OFF(-entry2_operand);
-        ice.modifiedIY = true;
-    } else {
-        LD_HL_IND_IX_OFF(entry1_operand);
-        SubChainAnsNumber();
-    }
+    LD_HL_IND_IX_OFF(entry1_operand);
+    SubChainAnsNumber();
 }
 void SubVariableVariable(void) {
     LD_HL_IND_IX_OFF(entry1_operand);

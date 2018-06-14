@@ -16,16 +16,16 @@
 #define E_PROG_NOT_FOUND   12
 #define E_NO_SUBPROG       13
 #define E_INVALID_PROG     14
-#define W_WRONG_CHAR       15
-#define W_SQUISHED         16
-#define W_START_GRAPHX     17
-#define W_START_FILEIOC    18
-#define W_CLOSE_GRAPHX     19
+#define E_MEM_LABEL        15
+#define E_NOT_ICE_PROG     16
+#define E_MEM_VARIABLES    17
+#define W_WRONG_CHAR       18
+#define W_SQUISHED         19
 
+#define W_VALID            254
 #define VALID              255
 
 void displayLabelError(char *label);
 void displayError(uint8_t);
-void PrintChar(char);
 
 #endif

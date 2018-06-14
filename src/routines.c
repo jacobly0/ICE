@@ -14,129 +14,41 @@
 #define LB_W 160
 #define LB_H 10
 
-extern variable_t variableStack[85];
-prescan_t prescan;
+extern prescan_t prescan;
 
-void preScanProgram(void) {
-    bool inString = false, afterNewLine = true;
-    int token;
+void OutputWriteByte(uint8_t byte) {
+    *ice.programPtr++ = byte;
+}
 
-    _rewind(ice.inPrgm);
+void OutputWriteWord(uint16_t val) {
+#ifdef CALCULATOR
+    *(uint16_t *)ice.programPtr = val;
+#else
+    w16(ice.programPtr, val);
+#endif
+    ice.programPtr += 2;
+}
 
-    // Scan the entire program
-    while ((token = _getc()) != EOF) {
-        uint8_t tok = (uint8_t)token;
+void OutputWriteLong(uint24_t val) {
+#ifdef CALCULATOR
+    *(uint24_t *)ice.programPtr = val;
+#else
+    w24(ice.programPtr, val);
+ #endif
+    ice.programPtr += 3;
+}
 
-        if (afterNewLine) {
-            afterNewLine = false;
-            if (tok == tii) {
-                skipLine();
-            } else if (tok == tLbl) {
-                prescan.amountOfLbls++;
-            } else if (tok == tGoto) {
-                prescan.amountOfGotos++;
-            }
-        }
+void OutputWriteMem(uint8_t mem[]) {
+    uint24_t size = strlen((char*)mem);
+    
+    memcpy(ice.programPtr, mem, size);
+    ice.programPtr += size;
+}
 
-        if (tok == tString) {
-            prescan.usedTempStrings = true;
-            inString = !inString;
-        } else if (tok == tStore) {
-            inString = false;
-        }
-        
-        if (tok == tEnter) {
-            inString = false;
-            afterNewLine = 2;
-        }
-
-        if (!inString) {
-            if (tok == tColon) {
-                inString = false;
-                afterNewLine = 2;
-            } else if (tok == tStore) {
-                inString = false;
-            } else if (tok == tRand) {
-                prescan.amountOfRandRoutines++;
-                prescan.modifiedIY = true;
-            } else if (tok == tSqrt) {
-                prescan.amountOfSqrtRoutines++;
-                prescan.modifiedIY = true;
-            } else if (tok == tMean) {
-                prescan.amountOfMeanRoutines++;
-            } else if (tok == tInput) {
-                prescan.amountOfInputRoutines++;
-            } else if (tok == tPause) {
-                prescan.amountOfPauseRoutines++;
-            } else if (tok == tSin || tok == tCos) {
-                prescan.amountOfSinCosRoutines++;
-            } else if (tok == tVarLst) {
-                if (!prescan.OSLists[token = _getc()]) {
-                    prescan.OSLists[token] = pixelShadow + 2000 * (prescan.amountOfOSVarsUsed++);
-                }
-            } else if (tok == tVarStrng) {
-                prescan.usedTempStrings = true;
-                if (!prescan.OSStrings[token = _getc()]) {
-                    prescan.OSStrings[token] = pixelShadow + 2000 * (prescan.amountOfOSVarsUsed++);
-                }
-            } else if (tok == t2ByteTok) {
-                // AsmComp(
-                if ((tok = (uint8_t)_getc()) == tAsmComp) {
-                    ti_var_t tempProg = ice.inPrgm;
-                    prog_t *newProg = GetProgramName();
-                    
-                    if ((ice.inPrgm = _open(newProg->prog))) {
-                        preScanProgram();
-                        _close(ice.inPrgm);
-                    }
-                    ice.inPrgm = tempProg;
-                } else if (tok == tRandInt) {
-                    prescan.amountOfRandRoutines++;
-                    prescan.modifiedIY = true;
-                }
-            } else if (tok == tDet || tok == tSum) {
-                uint8_t tok1 = _getc();
-                uint8_t tok2 = _getc();
-
-                prescan.modifiedIY = true;
-
-                // Invalid det( command
-                if (tok1 < t0 || tok1 > t9) {
-                    break;
-                }
-
-                // Get the det( command
-                if (tok2 < t0 || tok2 > t9) {
-                    token = tok1 - t0;
-                } else {
-                    token = (tok1 - t0) * 10 + (tok2 - t0);
-                }
-
-                if (tok == tDet) {
-                    prescan.hasGraphxFunctions = true;
-                    if (!token) {
-                        prescan.hasGraphxStart = true;
-                    }
-                    if (token == 1) {
-                        prescan.hasGraphxEnd = true;
-                    }
-                    if (!prescan.GraphxRoutinesStack[token]) {
-                        prescan.GraphxRoutinesStack[token] = 1;
-                    }
-                } else {
-                    prescan.hasFileiocFunctions = true;
-                    if (!token) {
-                        prescan.hasFileiocStart = true;
-                    }
-                    if (!prescan.FileiocRoutinesStack[token]) {
-                        prescan.FileiocRoutinesStack[token] = 1;
-                    }
-                }
-            }
-        }
-    }
-
-    _rewind(ice.inPrgm);
+bool IsA2ByteTok(uint8_t tok) {
+    uint8_t All2ByteTokens[9] = {tExtTok, tVarMat, tVarLst, tVarPict, tVarGDB, tVarOut, tVarSys, tVarStrng, t2ByteTok};
+    
+    return memchr(All2ByteTokens, tok, sizeof(All2ByteTokens)) || 0;
 }
 
 prog_t *GetProgramName(void) {
@@ -224,48 +136,48 @@ void ChangeRegValue(uint24_t inValue, uint24_t outValue, uint8_t opcodes[7]) {
     if (reg.allowedToOptimize) {
         if (outValue - inValue < 5) {
             for (a = 0; a < (uint8_t)(outValue - inValue); a++) {
-                output(uint8_t, opcodes[0]);
+                OutputWriteByte(opcodes[0]);
                 expr.SizeOfOutputNumber++;
             }
         } else if (inValue - outValue < 5) {
             for (a = 0; a < (uint8_t)(inValue - outValue); a++) {
-                output(uint8_t, opcodes[1]);
+                OutputWriteByte(opcodes[1]);
                 expr.SizeOfOutputNumber++;
             }
         } else if (inValue < 256 && outValue < 512) {
             if (outValue > 255) {
-                output(uint8_t, opcodes[2]);
+                OutputWriteByte(opcodes[2]);
                 expr.SizeOfOutputNumber = 1;
             }
             if (inValue != (outValue & 255)) {
-                output(uint8_t, opcodes[4]);
-                output(uint8_t, outValue);
+                OutputWriteByte(opcodes[4]);
+                OutputWriteByte(outValue);
                 expr.SizeOfOutputNumber += 2;
             }
         } else if (inValue < 512 && outValue < 256) {
-            output(uint8_t, opcodes[3]);
+            OutputWriteByte(opcodes[3]);
             expr.SizeOfOutputNumber = 1;
             if ((inValue & 255) != outValue) {
-                output(uint8_t, opcodes[4]);
-                output(uint8_t, outValue);
+                OutputWriteByte(opcodes[4]);
+                OutputWriteByte(outValue);
                 expr.SizeOfOutputNumber = 3;
             }
         } else if (inValue < 65536 && outValue < 65536 && (inValue & 255) == (outValue & 255)) {
-            output(uint8_t, opcodes[5]);
-            output(uint8_t, outValue >> 8);
+            OutputWriteByte(opcodes[5]);
+            OutputWriteByte(outValue >> 8);
             expr.SizeOfOutputNumber = 2;
         } else if (outValue >= IX_VARIABLES - 0x80 && outValue <= IX_VARIABLES + 0x7F) {
-            output(uint16_t, 0x22ED);
-            output(uint8_t, outValue - IX_VARIABLES);
+            OutputWrite2Bytes(0xED, 0x22);
+            OutputWriteByte(outValue - IX_VARIABLES);
             expr.SizeOfOutputNumber = 3;
         } else {
-            output(uint8_t, opcodes[6]);
-            output(uint24_t, outValue);
+            OutputWriteByte(opcodes[6]);
+            OutputWriteLong(outValue);
             expr.SizeOfOutputNumber = 4;
         }
     } else {
-        output(uint8_t, opcodes[6]);
-        output(uint24_t, outValue);
+        OutputWriteByte(opcodes[6]);
+        OutputWriteLong(outValue);
         expr.SizeOfOutputNumber = 4;
     }
     reg.allowedToOptimize = true;
@@ -278,8 +190,8 @@ void LoadRegValue(uint8_t reg2, uint24_t val) {
 
             ChangeRegValue(reg.HLValue, val, opcodes);
         } else if (val) {
-            output(uint8_t, OP_LD_HL);
-            output(uint24_t, val);
+            OutputWriteByte(OP_LD_HL);
+            OutputWriteLong(val);
             expr.SizeOfOutputNumber = 4;
         } else {
             OR_A_A();
@@ -295,8 +207,8 @@ void LoadRegValue(uint8_t reg2, uint24_t val) {
 
             ChangeRegValue(reg.DEValue, val, opcodes);
         } else {
-            output(uint8_t, OP_LD_DE);
-            output(uint24_t, val);
+            OutputWriteByte(OP_LD_DE);
+            OutputWriteLong(val);
             expr.SizeOfOutputNumber = 4;
         }
         reg.DEIsNumber = true;
@@ -306,8 +218,8 @@ void LoadRegValue(uint8_t reg2, uint24_t val) {
         reg.BCIsNumber = true;
         reg.BCIsVariable = false;
         reg.BCValue = val;
-        output(uint8_t, OP_LD_BC);
-        output(uint24_t, val);
+        OutputWriteByte(OP_LD_BC);
+        OutputWriteLong(val);
         expr.SizeOfOutputNumber = 4;
     }
 }
@@ -315,16 +227,16 @@ void LoadRegValue(uint8_t reg2, uint24_t val) {
 void LoadRegVariable(uint8_t reg2, uint8_t variable) {
     if (reg2 == REGISTER_HL) {
         if (!(reg.HLIsVariable && reg.HLVariable == variable)) {
-            output(uint16_t, 0x27DD);
-            output(uint8_t, variable);
+            OutputWrite2Bytes(0xDD, 0x27);
+            OutputWriteByte(variable);
             reg.HLIsNumber = false;
             reg.HLIsVariable = true;
             reg.HLVariable = variable;
         }
     } else if (reg2 == REGISTER_DE) {
         if (!(reg.DEIsVariable && reg.DEVariable == variable)) {
-            output(uint16_t, 0x17DD);
-            output(uint8_t, variable);
+            OutputWrite2Bytes(0xDD, 0x17);
+            OutputWriteByte(variable);
             reg.DEIsNumber = false;
             reg.DEIsVariable = true;
             reg.DEVariable = variable;
@@ -333,34 +245,35 @@ void LoadRegVariable(uint8_t reg2, uint8_t variable) {
         reg.BCIsNumber = false;
         reg.BCIsVariable = true;
         reg.BCVariable = variable;
-        output(uint16_t, 0x07DD);
-        output(uint8_t, variable);
+        OutputWrite2Bytes(0xDD, 0x07);
+        OutputWriteByte(variable);
     } else {
         reg.AIsNumber = false;
         reg.AIsVariable = true;
         reg.AVariable = variable;
-        output(uint16_t, 0x7EDD);
-        output(uint8_t, variable);
+        OutputWrite2Bytes(0xDD, 0x7E);
+        OutputWriteByte(variable);
     }
 }
 
 void ResetAllRegs(void) {
-    ResetReg(REGISTER_HL);
-    ResetReg(REGISTER_DE);
-    ResetReg(REGISTER_BC);
-    ResetReg(REGISTER_A);
+    reg.HLIsNumber = reg.HLIsVariable = reg.DEIsNumber = reg.DEIsVariable = reg.BCIsNumber = reg.BCIsVariable = reg.AIsNumber = reg.AIsVariable = false;
 }
 
-void ResetReg(uint8_t reg2) {
-    if (reg2 == REGISTER_HL) {
-        reg.HLIsNumber = reg.HLIsVariable = false;
-    } else if (reg2 == REGISTER_DE) {
-        reg.DEIsNumber = reg.DEIsVariable = false;
-    } else if (reg2 == REGISTER_BC) {
-        reg.BCIsNumber = reg.BCIsVariable = false;
-    } else {
-        reg.AIsNumber = reg.AIsVariable = false;
-    }
+void ResetHL(void) {
+    reg.HLIsNumber = reg.HLIsVariable = false;
+}
+
+void ResetDE(void) {
+    reg.DEIsNumber = reg.DEIsVariable = false;
+}
+
+void ResetBC(void) {
+    reg.BCIsNumber = reg.BCIsVariable = false;
+}
+
+void ResetA(void) {
+    reg.AIsNumber = reg.AIsVariable = false;
 }
 
 void RegChangeHLDE(void) {
@@ -493,17 +406,17 @@ uint8_t GetVariableOffset(uint8_t tok) {
     }
 
     // This variable already exists
-    for (b = 0; b < ice.amountOfVariablesUsed; b++) {
-        if (!strcmp(variableName, (&variableStack[b])->name)) {
-            return (&variableStack[b])->offset;
+    for (b = 0; b < prescan.amountOfVariablesUsed; b++) {
+        if (!strcmp(variableName, (&prescan.variables[b])->name)) {
+            return (&prescan.variables[b])->offset;
         }
     }
 
     // Create new variable
-    variableNew = &variableStack[ice.amountOfVariablesUsed];
+    variableNew = &prescan.variables[prescan.amountOfVariablesUsed];
     memcpy(variableNew->name, variableName, a + 1);
 
-    return variableNew->offset = ice.amountOfVariablesUsed++ * 3 - 128;
+    return variableNew->offset = prescan.amountOfVariablesUsed++ * 3 - 128;
 }
 
 #ifdef CALCULATOR
@@ -1450,24 +1363,11 @@ int grabString(uint8_t **outputPtr, bool stopAtStoreAndString) {
     }
 }
 
-#ifdef COMPUTER_ICE
-
 int getNextToken(void) {
     if ((uint24_t)_tell(ice.inPrgm) < ice.programLength - 2) {
         return fgetc(ice.inPrgm);
     }
     return EOF;
 }
-
-#else
-
-int getNextToken(void) {
-    if (_tell(ice.inPrgm) < ice.programLength) {
-        return ice.progInputData[ice.progInputPtr++];
-    }
-    return EOF;
-}
-
-#endif
 
 #endif

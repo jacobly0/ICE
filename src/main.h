@@ -3,6 +3,8 @@
 
 #define AMOUNT_OF_GRAPHX_FUNCTIONS 92
 #define AMOUNT_OF_FILEIOC_FUNCTIONS 21
+#define AMOUNT_OF_FUNCTIONS 28
+
 #define STACK_SIZE 500
 #define SIZEOF_DISP_DATA   26
 #define SIZEOF_KEYPAD_DATA 18
@@ -33,23 +35,32 @@
 #define IX_VARIABLES       0xD13F47
 
 typedef struct {
+    char     name[20];
+    uint24_t addr;
+    uint24_t offset;
+    uint24_t dataOffsetElements;
+    uint8_t  LblGotoElements;
+} label_t;
+
+typedef struct {
+    uint8_t offset;
+    char    name[21];
+} variable_t;
+
+typedef struct {
     char     outName[9];                                    // Output variable name
     char     currProgName[5][9];                            // Current program compiling
 
-    uint8_t  nestedBlocks;                                  // Amount of nested If/Repeat/While
     uint8_t  *programData;                                  // Address of the program
     uint8_t  *programDataData;                              // Address of the end of the program data
     uint8_t  *programPtr;                                   // Pointer to the program
     uint8_t  *programPtrBackup;                             // Same as above
     uint8_t  *programDataPtr;                               // Pointer to the program data
-    uint8_t  amountOfGraphxRoutinesUsed;                    // Used for the relocation of C functions at the beginning of the program - GRAPHX
-    uint8_t  amountOfFileiocRoutinesUsed;                   // Used for the relocation of C functions at the beginning of the program - FILEIOC
     uint8_t  tempToken;                                     // Used for functions, i.e. For(, where an argument can stop with either a comma or a parentheses
     uint8_t  stackDepth;                                    // Used for compiling arguments of C functions
-    uint8_t  amountOfOSLocationsUsed;                       // Used for the amount of OS lists and strings that are used
-    uint8_t  amountOfLbls;                                  // Amount of Lbl's
-    uint8_t  amountOfGotos;                                 // Amount of Goto's
-    uint8_t  amountOfVariablesUsed;                         // Amount of used variables (max 85)
+    
+    label_t  *LblStack;                                     // Pointer to label stack
+    label_t  *GotoStack;                                    // Pointer to goto stack
 
     uint24_t *dataOffsetStack[1000];                        // Stack of the address to point to the data, which needs to be changed after compiling
     uint24_t dataOffsetElements;                            // Amount of stack elements of above
@@ -60,12 +71,8 @@ typedef struct {
     uint24_t programSize;                                   // Size of the output program
     uint24_t *stack[STACK_SIZE*5];                          // Stacks for compiling arguments
     uint24_t *stackStart;                                   // Start of the stack
-    uint24_t LblStack[1000];                                // Label stack
-    uint24_t *LblPtr;                                       // Pointer to the label stack
-    uint24_t GotoStack[2000];                               // Goto stack
-    uint24_t *GotoPtr;                                      // Pointer to the goto stack
-    uint24_t GraphxRoutinesStack[AMOUNT_OF_GRAPHX_FUNCTIONS];   // The address of the relocation jumps of the GRAPHX lib
-    uint24_t FileiocRoutinesStack[AMOUNT_OF_FILEIOC_FUNCTIONS]; // The address of the relocation jumps of the FILEIOC lib
+    uint24_t curLbl;                                        // Current label
+    uint24_t curGoto;                                       // Current goto
     uint24_t programLength;                                 // Size of input program
 
     ti_var_t inPrgm;                                        // Used for getting tokens
@@ -73,11 +80,6 @@ typedef struct {
 
     bool     lastTokenIsReturn;                             // Last token is a "Return", so we can omit our "ret" :)
     bool     modifiedIY;                                    // Some routines modify IY, and some routines needs it
-    bool     inDispExpression;                              // Used for optimizing <variable>+<number> that it doesn't overwrite IY
-    bool     startedGRAPHX;
-    bool     startedFILEIOC;
-    bool     endedGRAPHX;
-    bool     usesRandRoutine;                               // Used to seed the rand routine when it's used
     bool     debug;                                         // Used to export an appvar when debugging
 
     bool     usedAlreadyRand;                               // Only once the "rand" routine in the program data
@@ -115,12 +117,6 @@ typedef struct {
     
     bool     usedAlreadyDisp;                               // Only once the Disp routine in the program data
     uint24_t DispAddr;                                      // Address of the Disp routine in the program data
-
-#ifdef __EMSCRIPTEN__
-    uint24_t progInputPtr;
-    uint8_t  progInputData[0xFFFF];
-    uint8_t  errorCode;
-#endif
 } ice_t;
 
 typedef struct {
@@ -143,34 +139,37 @@ typedef struct {
 } expr_t;
 
 typedef struct {
-    bool     modifiedIY;
-    bool     usedTempStrings;
-    bool     hasGraphxStart;
-    bool     hasGraphxEnd;
-    bool     hasFileiocStart;
-    bool     hasGraphxFunctions;
-    bool     hasFileiocFunctions;
+    bool       modifiedIY;
+    bool       usedTempStrings;
+    bool       hasGraphxStart;
+    bool       hasGraphxEnd;
+    bool       hasFileiocStart;
+    bool       hasGraphxFunctions;
+    bool       hasFileiocFunctions;
 
-    uint8_t  amountOfRandRoutines;
-    uint8_t  amountOfSqrtRoutines;
-    uint8_t  amountOfMeanRoutines;
-    uint8_t  amountOfInputRoutines;
-    uint8_t  amountOfPauseRoutines;
-    uint8_t  amountOfSinCosRoutines;
-    uint8_t  amountOfLoadSpriteRoutines;
-    uint8_t  amountOfLoadTilemapRoutines;
-    uint8_t  amountOfMallocRoutines;
-    uint8_t  amountOfTimerRoutines;
-    uint8_t  amountOfOSVarsUsed;
+    uint8_t    amountOfRandRoutines;
+    uint8_t    amountOfSqrtRoutines;
+    uint8_t    amountOfMeanRoutines;
+    uint8_t    amountOfInputRoutines;
+    uint8_t    amountOfPauseRoutines;
+    uint8_t    amountOfSinCosRoutines;
+    uint8_t    amountOfLoadSpriteRoutines;
+    uint8_t    amountOfLoadTilemapRoutines;
+    uint8_t    amountOfMallocRoutines;
+    uint8_t    amountOfTimerRoutines;
+    uint8_t    amountOfOSVarsUsed;
+    uint8_t    amountOfVariablesUsed;
 
-    uint24_t amountOfLbls;
-    uint24_t amountOfGotos;
-    uint24_t GraphxRoutinesStack[AMOUNT_OF_GRAPHX_FUNCTIONS];
-    uint24_t FileiocRoutinesStack[AMOUNT_OF_FILEIOC_FUNCTIONS];
-    uint24_t OSStrings[10];
-    uint24_t OSLists[10];
-    uint24_t freeMemoryPtr;
-    uint24_t tempStrings[2];
+    uint24_t   amountOfLbls;
+    uint24_t   amountOfGotos;
+    uint24_t   GraphxRoutinesStack[AMOUNT_OF_GRAPHX_FUNCTIONS];
+    uint24_t   FileiocRoutinesStack[AMOUNT_OF_FILEIOC_FUNCTIONS];
+    uint24_t   OSStrings[10];
+    uint24_t   OSLists[10];
+    uint24_t   freeMemoryPtr;
+    uint24_t   tempStrings[2];
+    
+    variable_t variables[255];
 } prescan_t;
 
 typedef struct {
@@ -199,19 +198,6 @@ typedef struct {
 } reg_t;
 
 typedef struct {
-    char     name[20];
-    uint24_t addr;
-    uint24_t offset;
-    uint24_t dataOffsetElements;
-    uint8_t  LblGotoElements;
-} label_t;
-
-typedef struct {
-    uint8_t offset;
-    char    name[20];
-} variable_t;
-
-typedef struct {
     uint8_t errorCode;
     char    prog[9];
 } prog_t;
@@ -222,7 +208,7 @@ extern prescan_t prescan;
 extern reg_t reg;
 extern variable_t variable;
 
-#if !defined(COMPUTER_ICE) && !defined(__EMSCRIPTEN__)
+#ifdef CALCULATOR
 void CheaderData(void);
 void GraphxHeader(void);
 void FileiocheaderData(void);
@@ -230,7 +216,7 @@ void CProgramHeaderData(void);
 void OrData(void);
 void AndData(void);
 void XorData(void);
-void SRandData(void);
+void SrandData(void);
 void RandData(void);
 void KeypadData(void);
 void GetKeyFastData(void);

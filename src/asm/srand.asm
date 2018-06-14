@@ -1,8 +1,8 @@
 .assume adl = 1
 segment data
-.def _SRandData
+.def _SrandData
 
-_SRandData:
+_SrandData:
 	xor	a, a
 	ld	(0), hl
 	ld	hl, 0

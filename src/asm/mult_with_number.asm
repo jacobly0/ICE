@@ -3,7 +3,7 @@ segment data
 .def _MultWithNumber
 .ref _SetRegHLToRegDE
 .ref _SetRegDEToRegHL
-.ref _ResetReg
+.ref _reg
 
 _MultWithNumber:
 	ld	iy, 0
@@ -34,10 +34,9 @@ MultiplySmall:
 	or	a, a
 	ld	a, 0EBh
 	call	nz, InsertA
-	ld	c, 0
-	push	bc
-	call	_ResetReg
-	pop	bc
+	xor	a, a
+	ld	(_reg), a
+	ld	(_reg + 10), a
 	ld	hl, 0CD003Eh
 	ld	h, e
 	ld	de, 0000150h
@@ -55,10 +54,9 @@ MultiplyLarge:
 	ex	de, hl
 	ld	a, 001h
 	call	InsertAHL
-	ld	c, 0
-	push	bc
-	call	_ResetReg
-	pop	bc
+	xor	a, a
+	ld	(_reg), a
+	ld	(_reg + 10), a
 	ld	hl, 0000154h
 	ld	a, 0CDh		; instead of "jp InsertCallHL"
 	jr	InsertAHL

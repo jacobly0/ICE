@@ -1,17 +1,21 @@
 #ifndef OPERATOR_H
 #define OPERATOR_H
 
-#define REGISTER_HL    0
-#define REGISTER_DE    1
-#define REGISTER_BC    2
-#define REGISTER_HL_DE 3
-#define REGISTER_A     4
+enum {
+    REGISTER_HL,
+    REGISTER_DE,
+    REGISTER_BC,
+    REGISTER_HL_DE,
+    REGISTER_A
+};
+
+enum {
+    TempString1,
+    TempString2
+};
 
 #define NO_PUSH   false
 #define NEED_PUSH true
-
-#define TempString1 0
-#define TempString2 1
 
 bool comparePtrToTempStrings(uint24_t);
 uint8_t getIndexOfOperator(uint8_t);

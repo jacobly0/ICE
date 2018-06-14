@@ -5952,3 +5952,354 @@ AppObj			equ 14h	;application, only used in menus/link
 AppVarObj		equ 15h	;application variable
 TempProgObj		equ 16h ;program, home deletes when finished
 GroupObj		equ 17h ;group.
+
+;System Flags
+;----------------------------------------------------------------------
+ioDelFlag		equ 0h
+inDelete		equ 0		;1 = DELETE SCREEN 
+
+trigFlags		equ 0h		;Trigonometry mode settings
+trigDeg			equ 2		;1 = degrees, 0=radians
+
+kbdFlags		equ 0h		;Keyboard scan
+kbdSCR			equ 3		;1=scan code ready
+kbdKeyPress		equ 4		;1=key has been pressed
+
+doneFlags		equ 0h		;display "Done"
+donePrgm		equ 5		;1=display "Done" after prgm
+;----------------------------------------------------------------------
+editFlags		equ 1h
+editOpen		equ 2		;1=edit buffer is open
+
+ansFlags		equ 1
+AnsScroll		equ 3		;1=answer can scroll, seems must be reset in order to move about edit buffer
+
+monFlags		equ 1h	 	;monitor flags
+monAbandon		equ 4		;1=don't start any long process in put away (#715)
+;----------------------------------------------------------------------
+plotFlags		equ 2h		;plot generation flags
+plotLoc 		equ 1		;0=bkup & display, 1=display only
+plotDisp		equ 2		;1=plot is in display, 0=text in display, this also indicates whether graph is being shown or not
+
+grfModeFlags		equ 2h		;graph mode settings
+grfFuncM		equ 4		;1=function graph
+grfPolarM		equ 5		;1=polar graph
+grfParamM		equ 6		;1=parametric graph
+grfRecurM		equ 7		;1=RECURSION graph
+;----------------------------------------------------------------------
+graphFlags		equ 3h
+graphDraw		equ 0		;0=graph is valid, 1=redraw graph(dirty)
+graphCursor		equ 2
+;----------------------------------------------------------------------
+grfDBFlags		equ 4h
+grfDot			equ 0		;0=line, 1=dot
+grfSimul		equ 1		;0=sequential, 1=simultaneous
+grfGrid 		equ 2		;0=no grid, 1=grid
+grfPolar		equ 3		;0=rectangular, 1=polar coordinates
+grfNoCoord		equ 4		;0=display coordinates, 1=off
+grfNoAxis		equ 5		;0=axis, 1=no axis
+grfLabel		equ 6		;0=off, 1=axis label
+;----------------------------------------------------------------------
+textFlags		equ 5h		;Text output flags
+textEraseBelow		equ 1		;1=erase line below small char
+textScrolled		equ 2		;1=screen scrolled
+textInverse		equ 3		;1=display inverse bit-map
+textInsMode		equ 4		;0=overstrike, 1=insert mode
+;----------------------------------------------------------------------
+ParsFlag		equ 6h		;PARSER flags
+listOpen		equ 5		; {...}
+matrixOpen1		equ 6		; [[...]]
+matrixOpen2		equ 7		; [...]
+;----------------------------------------------------------------------
+ParsFlag2		equ 7h		;PARSER flags
+numOP1			equ 0		;1=RESULT IN OP1, 0=NO RESULT
+;----------------------------------------------------------------------
+newDispF		equ 8h		;Derivative mode flags
+preClrForMode		equ 0		;1=HELP BLINK ON MODE SCREEN
+allowProgTokens		equ 1		;1=allow programming tokens to be parsed in BASIC programs
+progExecuting		equ 1
+
+apdFlags		equ 8h		;Automatic power-down
+apdAble 		equ 2		;1=APD enabled
+apdRunning		equ 3		;1=APD clock running
+apdWarmStart		equ 4		;1=calculator is turning on from APD or power loss
+;----------------------------------------------------------------------
+web_err_mask		equ 60h
+;----------------------------------------------------------------------
+onFlags 		equ 9h		;on key flags
+parseInput		equ 1		;1=parse input when done
+onRunning		equ 3		;1=calculator is running
+onInterrupt		equ 4		;1=on key interrupt request
+
+statFlags		equ 9h		;statistics flags
+;unknown		equ 5		;unknown
+statsValid		equ 6		;1=stats are valid
+;unknown		equ 7		;unknown
+;----------------------------------------------------------------------
+fmtFlags		equ 0Ah		;numeric format flags
+fmtExponent		equ 0	 	;1=show exponent, 0=no exponent
+fmtEng			equ 1	 	;1=engineering notion, 0=scientific
+
+numMode			equ 0Ah
+fmtReal			equ 5
+fmtRect			equ 6
+fmtPolar		equ 7
+
+realMode		equ 5
+rectMode		equ 6
+polarMode		equ 7
+
+fmtBaseMask		equ  00011100b	; mask to base flags
+fmtBaseShift		equ  2		; offset to base flags
+;----------------------------------------------------------------------
+fmtOverride		equ 0Bh		;copy of fmtFlags with conversion override
+;----------------------------------------------------------------------
+fmtEditFlags		equ 0Ch		;numeric editing flags
+fmtEdit			equ 0		;1=format number for editing
+
+curFlags		equ 0Ch		;Cursor
+curAble 		equ 2		;1=cursor flash is enabled
+curOn			equ 3		;1=cursor is showing
+curLock 		equ 4		;1=cursor is locked off
+
+cmdFlags		equ 0Ch		;command editor flags
+cmdVirgin		equ 5		;1=nothing has been typed in cmd bfr
+cmdExec			equ 6           ;1=need to execute a command
+;----------------------------------------------------------------------
+appFlags		equ 0Dh		;application flags
+appWantIntrpt		equ 0		;1=want ON key interrupts
+appTextSave		equ 1		;1=save characters in textShadow
+appAutoScroll		equ 2		;1=auto-scroll text on last line
+appMenus		equ 3		;1=process keys that bring up menus, 0=check Lock menu flag
+appLockMenus		equ 4		;1=ignore menu keys, 0=switch to home screen and bring up menu
+appCurGraphic		equ 5		;1=graphic cursor
+appCurWord		equ 6		;1=text cursor covers entire word
+appExit 		equ 7		;1=application handles [EXIT] key itself
+
+appWantIntrptF		equ 1 shl appWantIntrpt
+appTextSaveF		equ 1 shl appTextSave
+appAutoScrollF		equ 1 shl appAutoScroll
+appMenusF		equ 1 shl appMenus
+appLockMenusF		equ 1 shl appLockMenus
+appCurGraphicF		equ 1 shl appCurGraphic
+appCurWordF		equ 1 shl appCurWord
+appExitF		equ 1 shl appExit
+;----------------------------------------------------------------------
+rclFlag			equ 0Eh		;OS recall queue flags
+enableQueue		equ 7		;1 = enable recall queue
+;----------------------------------------------------------------------
+seqFlags		equ 0Fh		;Sequential Graph flags
+webMode			equ 0		;0 = NORMAL SEQ MODE, 1 = WEB MODE
+webVert			equ 1
+sequv			equ 2		;U vs V
+seqvw			equ 3		;V vs W
+sequw			equ 4		;U vs W
+;----------------------------------------------------------------------
+promptFlags		equ 11h		;prompt line flags
+promptEdit		equ 0		;1=editing in prompt buffer
+;unknown		equ 7		;unknown
+;----------------------------------------------------------------------
+indicFlags		equ 12h		;Indicator flags
+indicRun		equ 0		;1=run indicator ON
+indicInUse		equ 1		;indicator save area in use=1, free=0 ;resetting will disable 2nd while in _getkey
+
+shiftFlags		equ 12h		;[2nd] and [ALPHA] flags
+shift2nd		equ 3		;1=[2nd] has been pressed
+shiftAlpha		equ 4		;1=[ALPHA] has been pressed
+shiftLwrAlph		equ 5		;1=lower case, 0=upper case
+shiftALock		equ 6		;1=alpha lock has been pressed
+shiftKeepAlph		equ 7		;1=cannot cancel alpha shift
+;----------------------------------------------------------------------
+tblFlags		equ 13h		;table flags.
+autoFill		equ 4		;1=prompt, 0=fillAuto
+autoCalc		equ 5		;1=prompt, 0=CalcAuto
+reTable			equ 6		;0=table is okay, 1=must recompute table.
+;----------------------------------------------------------------------
+sGrFlags		equ 14h
+grfSplit		equ 0		;1=Split Graph, 0=Normal
+vertSplit		equ 1		;1=Vertical (left-right) Split
+grfSChanged		equ 2		;1=Graph just changed Split <-> normal
+grfSplitOverride	equ 3		;1 = ignore graph split flag if set
+write_on_graph		equ 4		;1 = TEXT OR EQU WRITING TO GRAPH SCREEN
+g_style_active		equ 5		;1 = GRAPH STYLES ARE ENABLED, USE THEM
+cmp_mod_box		equ 6		;1 = DOING MOD BOX PLOT COMPUTATION
+textWrite		equ 7
+;----------------------------------------------------------------------
+newIndicFlags		equ 15h
+extraIndic		equ 0
+saIndic			equ 1
+;3 has something to do with stat/list editor
+;----------------------------------------------------------------------
+interruptFlags		equ 16h
+secondTimerEnabled	equ 0		;1 = second hardware timer enabled
+;----------------------------------------------------------------------
+smartFlags		equ 17h
+smarter_mask		equ 3
+smarter_test		equ 1
+smartGraph		equ 0
+smartGraph_inv		equ 1
+;----------------------------------------------------------------------
+traceFlags		equ 18h
+grfExpr			equ 0		;set to hide expression while tracing
+;----------------------------------------------------------------------
+;There is a flag 19h.
+;----------------------------------------------------------------------
+statFlags2		equ 1Ah
+statDiagnosticsOn	equ 0		;1 = stat diagnostics on
+noDelStat		equ 2		;1 = don't delete stats
+;----------------------------------------------------------------------
+apdFlags2		equ 1Bh
+warmStartInt		equ 6           ;1 = a warm start is occurning before the next interrupt
+;----------------------------------------------------------------------
+;There is a flag 1Ch (stats-related).
+;----------------------------------------------------------------------
+;There is a flag 1Dh.
+;----------------------------------------------------------------------
+;There is a flag 1Eh.
+;----------------------------------------------------------------------
+varTypeMask		equ 1Fh		;is this a flag byte? yes
+varGraphRef		equ 6
+;----------------------------------------------------------------------
+graphFlags2		equ 1Fh
+splitOverride		equ 3		;0 = force full screen with ParseInp, or something
+;----------------------------------------------------------------------
+asm_Flag1		equ 21h		;ASM CODING
+asm_Flag2		equ 22h		;ASM CODING
+asm_Flag3		equ 23h		;NO LONGER AVAILABLE
+;----------------------------------------------------------------------
+arcFlag			equ 24h
+checkBatteryLevelFirst	equ 0		;1 = check battery levels in Arc_Unarc first and throw error if low
+
+getSendFlg		equ 24h
+comFailed		equ 1		;1 = Get/Send Communication Failed
+
+selfTestFlag		equ 24h
+resetOnPowerOn		equ 2		;1 = Force RAM reset when APD disabled on next power on
+
+appLwrCaseFlag		equ 24h
+lwrCaseActive		equ 3
+;----------------------------------------------------------------------
+contextFlags		equ 25h
+nocxPutAway		equ 5		;1 = do not call cxPutAway routine
+;----------------------------------------------------------------------
+groupFlags		equ 26h		;used temporarily in Arc_Unarc
+inGroup			equ 1		;1 = IN GROUP CONTEXT
+noCompletionByte	equ 2		;1 = do not write 0FCh when calling Arc_Unarc, leave as 0FEh
+noDataWrite		equ 3		;1 = do not write data when calling Arc_Unarc, nor size bytes
+writeSizeBytesOnly	equ 5		;1 = only write size bytes when calling Arc_Unarc
+;----------------------------------------------------------------------
+statusBarFlags		equ 27h
+noStatusBarMode		equ 7		; 1 = abort drawing of statusbar mode, like "TEST MODE ENABLED"
+;----------------------------------------------------------------------
+APIFlg			equ 28h
+appAllowContext		equ 0           ;app wants context changes to happen
+
+appRunning		equ 4		;app is currently running
+appRetKeyOff		equ 7		;1 = GetKey returns kOff when [2nd]+[ON] pressed
+;----------------------------------------------------------------------
+apiFlg2			equ 29h
+;----------------------------------------------------------------------
+apiFlg3			equ 2Ah
+;----------------------------------------------------------------------
+apiFlg4			equ 2Bh
+cellOverride		equ 1		;use cell override
+fullScrnDraw		equ 2		;DRAW INTO LAST ROW/COL OF SCREEN
+;----------------------------------------------------------------------
+xapFlag0		equ 2Eh		;external app flags, do not use 0,(iy+2Eh) (used by mouse routines)
+xapFlag1		equ 2Fh
+xapFlag2		equ 30h
+xapFlag3		equ 31h
+;----------------------------------------------------------------------
+fontFlags		equ 32h
+fracDrawLFont		equ 2
+fracTallLFont		equ 3
+customFont		equ 7
+;----------------------------------------------------------------------
+hookflags1		equ 33h		;also scriptFlag, rclFlag2, backGroundLink
+alt_On			equ 0		;run ONSCRPT at startup
+alt_Off			equ 1		;run OFFSCRPT at shutdown
+useRclQueueEnd		equ 2		;1 = external mode
+ignoreBPLink		equ 3		;1 = override flag for link activity hook
+bPLinkOn		equ 4		;1 = link activity hook active
+enableKeyEcho		equ 5		;1 = sends keypresses back to connected calc as remote control packets (with GetCSC vs. GetKey codes...really dumb, TI)
+noTempDelete		equ 6		;1 = do not delete temporary programs at homescreen
+;----------------------------------------------------------------------
+hookflags2		equ 34h		;also sysHookFlg
+getCSCHookActive	equ 0		;1 = GetCSC hook active
+libraryHookActive	equ 1		;1 = library hook active
+noHookActive		equ 2		;1 = same as 0; never used by OS
+homescreenHookActive	equ 4		;1 = homescreen hook active
+rawKeyHookActive	equ 5		;1 = raw key hook active
+catalog2HookActive	equ 6		;1 = catalog 2 hook active
+cursorHookActive	equ 7		;1 = cursor hook active
+;----------------------------------------------------------------------
+hookflags3		equ 35h		;also sysHookFlg1
+tokenHookActive		equ 0		;1 = token hook active
+localizeHookActive	equ 1		;1 = localize hook active
+windowHookActive	equ 2		;1 = window hook active
+graphHookActive		equ 3		;1 = graph hook active
+yEquHookActive		equ 4		;1 = Y= hook active
+fontHookActive		equ 5		;1 = font hook active
+regraphHookActive	equ 6		;1 = regraph hook active
+drawingHookActive	equ 7		;1 = drawing hook active
+;----------------------------------------------------------------------
+hookflags4		equ 36h		;also sysHookFlag2
+traceHookActive		equ 0		;1 = trace hook active
+parserHookActive	equ 1		;1 = parser hook active
+appChangeHookActive	equ 2		;1 = app change hook active
+catalog1HookActive	equ 3		;1 = catalog 1 hook active
+helpHookActive		equ 4		;1 = help hook active
+cxRedispHookActive	equ 5		;1 = cxRedisp hook active
+menuHookActive		equ 6		;1 = menu hook active
+silentLinkHookActive	equ 7		;1 = silent link hook active
+;----------------------------------------------------------------------
+;hookflags2Override	equ 37h		;set corresponding bit to kill iy+35h hook when executing app
+;----------------------------------------------------------------------
+;hookflags3Override	equ 38h		;set corresponding bit to kill iy+36h hook when executing app
+;----------------------------------------------------------------------
+;hookflags4Override	equ 39h		;set corresponding bit to kill iy+37h hook when executing app
+;----------------------------------------------------------------------
+hookflags5		equ 3Ah
+usbActivityHookActive	equ 0		;1 = USB activity hook active
+;----------------------------------------------------------------------
+plotFlag3		equ 3Ch  
+bufferOnly		equ 0
+useFastCirc		equ 4
+;----------------------------------------------------------------------
+dBKeyFlags		equ 3Dh
+keyDefaultsF		equ 6		;1 = GetKey returns extended keycodes with TI-Keyboard
+;----------------------------------------------------------------------
+silentLinkFlags		equ 3Eh
+silentLinkActive	equ 0		;1 = SE/84+ silent link is active
+
+extraHookFlags		equ 3Eh
+checkCatalog2HookVer	equ 3		;1 = check catalog 2 hook's version before executing it (and error or take other action if so)
+openLibActive		equ 4		;1 = OpenLib( was successfully called on a Flash application (ExecLib will error if zero)
+;----------------------------------------------------------------------
+clockFlags		equ 3Fh
+notMDYMode		equ 0		;0 = M/D/Y format
+isYMDMode		equ 1		;1 = Y/M/D format
+is24Hour		equ 2		;1 = clock in 24 hour mode
+inAfternoon		equ 3		;1 = current time is in afternoon (PM) (I think)
+useTokensInString	equ 4		;1 = use tokens instead of characters when displaying clock as string (for getTmStr and getDtStr vs. MODE screen) (keep this reset)
+displayClock		equ 5		;1 = display clock (this is set every second, reset otherwise)
+clockOn			equ 6		;1 = clock on
+;----------------------------------------------------------------------
+mathprintFlags		equ 44h
+mathprintEnabled	equ 5		;1 = use mathprint styling
+;----------------------------------------------------------------------
+InitialBootMenuFlags	equ 45h
+dispinitialBootMenu	equ 4		; 1 = don't display the initial boot menu
+;----------------------------------------------------------------------
+backlightFlags		equ 46h
+restoreBrightness	equ 0		;1 = restore lcd brightness when needed
+;----------------------------------------------------------------------
+grFlags			equ 4Ah
+drawGrLbls		equ 0		;1 = don't draw Graph Labels (this is usually reset anyway)
+
+putMapFlags		equ 4Ah
+usePixelShadow2		equ 3		;1 = use pixelshadow2, not pixelshadow
+putMapUseColor		equ 4		;1 = use custom color
+;----------------------------------------------------------------------
+graphDispFlags		equ 4Bh
+backgroundValid		equ 4		;1 = items in graph background are still valid
