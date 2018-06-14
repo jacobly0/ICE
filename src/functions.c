@@ -267,11 +267,11 @@ uint8_t parseFunction(uint24_t index) {
 
             CallRoutine(&ice.usedAlreadyGetKeyFast, &ice.getKeyFastAddr, (uint8_t*)KeypadData, SIZEOF_KEYPAD_DATA);
             ResetHL();
-            reg.AIsNumber = reg.AIsVariable = false;
+            ResetA();
         } else {
             CALL(_os_GetCSC);
             ResetHL();
-            reg.AIsNumber = reg.AIsVariable = false;
+            ResetA();
             ice.modifiedIY = false;
         }
     }
@@ -422,7 +422,7 @@ uint8_t parseFunction(uint24_t index) {
             }
             CALL(__idvrmu);
             ResetHL();
-            reg.DEIsNumber = reg.DEIsVariable = false;
+            ResetDE();
             reg.AIsNumber = true;
             reg.AIsVariable = false;
             reg.AValue = 0;
@@ -496,7 +496,7 @@ uint8_t parseFunction(uint24_t index) {
 
         ice.modifiedIY = true;
         ResetHL();
-        reg.DEIsNumber = reg.DEIsVariable = false;
+        ResetDE();
         reg.AIsNumber = true;
         reg.AIsVariable = false;
         reg.AValue = 0;
@@ -1365,7 +1365,7 @@ void InsertMallocRoutine(void) {
     }
 
     ResetHL();
-    reg.DEIsNumber = reg.DEIsVariable = false;
+    ResetDE();
     reg.BCIsVariable = false;
     reg.BCIsNumber = true;
     reg.BCValue = 0xD13EC5;
