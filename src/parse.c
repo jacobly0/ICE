@@ -59,6 +59,11 @@ uint8_t parseProgram(void) {
     uint8_t currentGoto, currentLbl, ret;
     
     LD_IX_IMM(IX_VARIABLES);
+  
+    _seek(0, SEEK_END, ice.inPrgm);
+    if (!_tell(ice.inPrgm)) {
+      return VALID;
+    }
     
     // Eventually seed the rand
     if (prescan.amountOfRandRoutines) {
