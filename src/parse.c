@@ -72,7 +72,8 @@ uint8_t parseProgram(void) {
     int token;
     uint8_t ret = VALID;
     
-    if (!ti_GetSize(ice.inPrgm)) {
+    _seek(0, SEEK_END, ice.inPrgm);
+    if (!_tell(ice.inPrgm)) {
         return VALID;
     }
 
