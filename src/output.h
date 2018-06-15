@@ -31,6 +31,7 @@
 #define __strcmp          0x0000C8
 #define __strcpy          0x0000CC
 #define __strlen          0x0000D4
+#define __strstr          0x0000F0
 #define __iand            0x000134
 #define __idvrmu          0x000144
 #define __imul_b          0x000150

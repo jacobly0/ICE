@@ -15,6 +15,23 @@
 #define LB_H 10
 
 extern prescan_t prescan;
+extern const uint8_t implementedFunctions[AMOUNT_OF_FUNCTIONS][5];
+
+uint8_t GetIndexOfFunction(uint8_t tok1, uint8_t tok2) {
+    uint8_t a;
+    
+    if (tok1 == tDet || tok2 == tSum) {
+        tok2 = 0;
+    }
+    
+    for (a = 0; a < AMOUNT_OF_FUNCTIONS; a++) {
+        if (implementedFunctions[a][0] == tok1 && implementedFunctions[a][1] == tok2) {
+            return a;
+        }
+    }
+    
+    return -1;
+}
 
 void OutputWriteByte(uint8_t byte) {
     *ice.programPtr++ = byte;

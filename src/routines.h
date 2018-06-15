@@ -1,6 +1,7 @@
 #ifndef ROUTINES_H
 #define ROUTINES_H
 
+uint8_t GetIndexOfFunction(uint8_t, uint8_t);
 void OutputWriteByte(uint8_t);
 void OutputWriteWord(uint16_t);
 void OutputWriteLong(uint24_t);

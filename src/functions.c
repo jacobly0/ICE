@@ -153,6 +153,7 @@ const uint8_t FileiocArgs[] = {
 };
 
 extern uint8_t outputStack[4096];
+extern const uint8_t implementedFunctions[AMOUNT_OF_FUNCTIONS][5];
 
 uint8_t parseFunction(uint24_t index) {
     element_t *outputPtr = (element_t*)outputStack, *outputPrev, *outputCurr, *outputPrevPrev, *outputPrevPrevPrev;
@@ -979,8 +980,8 @@ uint8_t parseFunction(uint24_t index) {
         }
     }
 
-    // det(, sum(, Compare(
-    else if (function == tDet || function == tSum || (function == tVarOut && function2 == tCompare)) {
+    // det(, sum(, Compare(, inString(
+    else {
         /*****************************************************
         * Inputs:
         *  arg1: which det( or sum( function
@@ -992,7 +993,7 @@ uint8_t parseFunction(uint24_t index) {
         uint8_t smallArguments;
         uint8_t whichSmallArgument = 1 << (9 - amountOfArguments);
         uint8_t *startProgramPtr = 0;
-
+        
         if (function == tDet) {
             smallArguments = GraphxArgs[function2 * 2 + 1];
         } else if (function == tSum) {
@@ -1011,11 +1012,11 @@ uint8_t parseFunction(uint24_t index) {
             a--;
             temp = 0;
             while (1) {
-                uint8_t temp2;
+                uint8_t index;
                 
                 outputPrev = &outputPtr[--startIndex];
                 outputPrevType = outputPrev->type;
-                temp2 = outputPrevOperand = outputPrev->operand;
+                index = GetIndexOfFunction(outputPrev->operand, outputPrev->operand >> 16);
 
                 if (outputPrevType == TYPE_C_START) {
                     if (!temp) {
@@ -1024,7 +1025,7 @@ uint8_t parseFunction(uint24_t index) {
                     temp--;
                 }
 
-                if (outputPrevType == TYPE_FUNCTION && (temp2 == tDet || temp2 == tSum || (temp2 == tVarOut && (uint8_t)(outputPrevOperand >> 16) == tCompare))) {
+                if (outputPrevType == TYPE_FUNCTION && index != -1 && implementedFunctions[index][4]) {
                     temp++;
                 }
 
@@ -1090,7 +1091,7 @@ uint8_t parseFunction(uint24_t index) {
             a++;
         }
 
-        if (function != tVarOut) {
+        if (function == tDet || function == tSum) {
             ice.programPtr = startProgramPtr;
             
             // Wow, unknown C function?
@@ -1108,12 +1109,16 @@ uint8_t parseFunction(uint24_t index) {
             CALL(prescan.FileiocRoutinesStack[function2] - (uint24_t)ice.programData + PRGM_START);
         } else {
             temp = 0;
-            amountOfArguments = 3;
-            CALL(__strcmp);
+            amountOfArguments++;
+            if (function == tVarOut) {
+                CALL(__strcmp);
+            } else {
+                CALL(__strstr);
+            }
         }
 
         // Check if unimplemented function
-        if (function != tVarOut) {
+        if (function == tDet || function == tSum) {
             if (temp & UN) {
                 return E_UNKNOWN_C;
             }
@@ -1130,7 +1135,7 @@ uint8_t parseFunction(uint24_t index) {
         }
 
         // Check if the output is 16-bits OR in A
-        if (function != tVarOut) {
+        if (function == tDet || function == tSum) {
             if (temp & RET_A) {
                 expr.outputReturnRegister = REGISTER_A;
             } else if (temp & RET_HLs) {

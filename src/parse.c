@@ -21,37 +21,38 @@ extern char *str_dupcat(const char *s, const char *c);
 #endif
 
 extern uint8_t (*functions[256])(int token);
-const uint8_t implementedFunctions[AMOUNT_OF_FUNCTIONS][4] = {
-// function / second byte / amount of arguments / allow arguments as numbers
-    {tNot,      0,              1,   1},
-    {tMin,      0,              2,   1},
-    {tMax,      0,              2,   1},
-    {tMean,     0,              2,   1},
-    {tSqrt,     0,              1,   1},
-    {tDet,      0,              255, 0},
-    {tSum,      0,              255, 0},
-    {tSin,      0,              1,   1},
-    {tCos,      0,              1,   1},
-    {tRand,     0,              0,   0},
-    {tAns,      0,              0,   0},
-    {tLParen,   0,              1,   0},
-    {tLBrace,   0,              1,   0},
-    {tLBrack,   0,              1,   0},
-    {tExtTok,   tRemainder,     2,   1},
-    {tExtTok,   tCheckTmr,      2,   0},
-    {tExtTok,   tStartTmr,      0,   0},
-    {t2ByteTok, tSubStrng,      3,   0},
-    {t2ByteTok, tLength,        1,   0},
-    {t2ByteTok, tRandInt,       2,   0},
-    {tVarOut,   tDefineSprite,  255, 0},
-    {tVarOut,   tData,          255, 0},
-    {tVarOut,   tCopy,          255, 0},
-    {tVarOut,   tAlloc,         1,   0},
-    {tVarOut,   tDefineTilemap, 255, 0},
-    {tVarOut,   tCopyData,      255, 0},
-    {tVarOut,   tLoadData,      3,   0},
-    {tVarOut,   tSetBrightness, 1,   0},
-    {tVarOut,   tCompare,       2,   0}
+const uint8_t implementedFunctions[AMOUNT_OF_FUNCTIONS][5] = {
+// function / second byte / amount of args / allow args as numbers / args backwards pushed
+    {tNot,      0,              1,   1, 0},
+    {tMin,      0,              2,   1, 0},
+    {tMax,      0,              2,   1, 0},
+    {tMean,     0,              2,   1, 0},
+    {tSqrt,     0,              1,   1, 0},
+    {tDet,      0,              255, 0, 1},
+    {tSum,      0,              255, 0, 1},
+    {tSin,      0,              1,   1, 0},
+    {tCos,      0,              1,   1, 0},
+    {tRand,     0,              0,   0, 0},
+    {tAns,      0,              0,   0, 0},
+    {tLParen,   0,              1,   0, 0},
+    {tLBrace,   0,              1,   0, 0},
+    {tLBrack,   0,              1,   0, 0},
+    {tExtTok,   tRemainder,     2,   1, 0},
+    {tExtTok,   tCheckTmr,      2,   0, 0},
+    {tExtTok,   tStartTmr,      0,   0, 0},
+    {t2ByteTok, tSubStrng,      3,   0, 0},
+    {t2ByteTok, tLength,        1,   0, 0},
+    {t2ByteTok, tRandInt,       2,   0, 0},
+    {t2ByteTok, tInStrng,       2,   0, 1},
+    {tVarOut,   tDefineSprite,  255, 0, 0},
+    {tVarOut,   tData,          255, 0, 0},
+    {tVarOut,   tCopy,          255, 0, 0},
+    {tVarOut,   tAlloc,         1,   0, 0},
+    {tVarOut,   tDefineTilemap, 255, 0, 0},
+    {tVarOut,   tCopyData,      255, 0, 0},
+    {tVarOut,   tLoadData,      3,   0, 0},
+    {tVarOut,   tSetBrightness, 1,   0, 0},
+    {tVarOut,   tCompare,       2,   0, 1}
 };
 element_t outputStack[400];
 element_t stack[200];
@@ -141,7 +142,7 @@ uint8_t parseExpression(int token) {
     uint24_t loopIndex, temp;
     uint8_t amountOfArgumentsStack[20];
     uint8_t index = 0, a, stackToOutputReturn, mask = TYPE_MASK_U24, tok, storeDepth = 0;
-    uint8_t *amountOfArgumentsStackPtr = amountOfArgumentsStack, canUseMask = 2, prevTokenWasDetOrSum = 0;
+    uint8_t *amountOfArgumentsStackPtr = amountOfArgumentsStack, canUseMask = 2, prevTokenWasCFunction = 0;
 
     // Setup pointers
     element_t *outputPtr = outputStack;
@@ -181,8 +182,8 @@ fetchNoNewToken:
         }
 
         // If the previous token was a det( or a sum(, we need to store the next number in the stack entry too, to catch 'small arguments'
-        if (prevTokenWasDetOrSum) {
-            prevTokenWasDetOrSum--;
+        if (prevTokenWasCFunction) {
+            prevTokenWasCFunction--;
         }
         
         // Process a number
@@ -197,7 +198,7 @@ fetchNoNewToken:
             outputElements++;
             mask = TYPE_MASK_U24;
 
-            if (prevTokenWasDetOrSum) {
+            if (prevTokenWasCFunction) {
                 stackCurr = &stackPtr[stackElements - 1];
                 stackCurr->operand = stackCurr->operand + ((uint8_t)output << 16);
             }
@@ -381,7 +382,7 @@ stackToOutputReturn1:
         // Pop a ) } ] ,
         else if (tok == tRParen || tok == tComma || tok == tRBrace || tok == tRBrack) {
             uint24_t temp;
-            uint8_t tempTok;
+            uint8_t tempTok, index;
 
             // Move until stack is empty or a function is encountered
             while (stackElements) {
@@ -415,9 +416,11 @@ stackToOutputReturn1:
                 }
                 return E_EXTRA_RPAREN;
             }
+            
+            index = GetIndexOfFunction(tempTok, stackPrev->operand >> 16); 
 
             // If it's a det, add an argument delimiter as well
-            if (tok == tComma && (tempTok == tDet || tempTok == tSum || (tempTok == tVarOut && (uint8_t)(stackPrev->operand >> 16) == tCompare))) {
+            if (tok == tComma && index != -1 && implementedFunctions[index][4]) {
                 outputCurr->type = TYPE_ARG_DELIMITER;
                 outputElements++;
             }
@@ -562,47 +565,45 @@ noSquishing:
 
         // Parse a function
         else {
-            uint8_t a, tok2 = 0;
+            uint8_t index, tok2 = 0;
 
             if (IsA2ByteTok(tok)) {
                 tok2 = _getc();
             }
+            
+            if ((index = GetIndexOfFunction(tok, tok2)) != -1) {
+                if (implementedFunctions[index][2]) {
+                    // We always have at least 1 argument
+                    *++amountOfArgumentsStackPtr = 1;
+                    stackCurr->type = TYPE_FUNCTION;
+                    stackCurr->mask = mask;
+                    stackCurr->operand = tok + (((tok == tLBrace && storeDepth) + tok2) << 16);
+                    stackElements++;
+                    mask = TYPE_MASK_U24;
+                    canUseMask = 2;
 
-            for (a = 0; a < AMOUNT_OF_FUNCTIONS; a ++) {
-                if (tok == implementedFunctions[a][0] && tok2 == implementedFunctions[a][1]) {
-                    if (implementedFunctions[a][2]) {
-                        // We always have at least 1 argument
-                        *++amountOfArgumentsStackPtr = 1;
-                        stackCurr->type = TYPE_FUNCTION;
-                        stackCurr->mask = mask;
-                        stackCurr->operand = tok + (((tok == tLBrace && storeDepth) + tok2) << 16);
-                        stackElements++;
-                        mask = TYPE_MASK_U24;
-                        canUseMask = 2;
-
-                        // Check if it's a C function
-                        if (tok == tDet || tok == tSum || (tok == tVarOut && tok2 == tCompare)) {
-                            outputCurr->type = TYPE_C_START;
-                            outputElements++;
-                            
-                            tok = (uint8_t)(token = _getc());
-
-                            if (tok2 != tCompare && (tok < t0 || tok > t9)) {
-                                return E_SYNTAX;
-                            }
-                            prevTokenWasDetOrSum = 2;
-
-                            goto fetchNoNewToken;
-                        }
-                    } else {
-                        outputCurr->type = TYPE_FUNCTION;
-                        outputCurr->operand = (tok2 << 16) + tok;
+                    // Check if it's a C function
+                    if (implementedFunctions[index][4]) {
+                        outputCurr->type = TYPE_C_START;
                         outputElements++;
-                        mask = TYPE_MASK_U24;
-                    }
+                        
+                        tok = (uint8_t)(token = _getc());
 
-                    goto fetchNewToken;
+                        if ((tok == tDet || tok == tSum) && (tok < t0 || tok > t9)) {
+                            return E_SYNTAX;
+                        }
+                        prevTokenWasCFunction = 2;
+
+                        goto fetchNoNewToken;
+                    }
+                } else {
+                    outputCurr->type = TYPE_FUNCTION;
+                    outputCurr->operand = (tok2 << 16) + tok;
+                    outputElements++;
+                    mask = TYPE_MASK_U24;
                 }
+                
+                goto fetchNewToken;
             }
 
             // Oops, unknown token...
@@ -767,17 +768,17 @@ uint8_t parsePostFixFromIndexToIndex(uint24_t startIndex, uint24_t endIndex) {
     amountOfStackElements = 0;
     
     for (loopIndex = startIndex; loopIndex <= endIndex; loopIndex++) {
-        uint8_t temp2;
+        uint8_t index;
         
         outputCurr = &outputPtr[loopIndex];
-        temp2 = outputCurr->operand;
+        index = GetIndexOfFunction(outputCurr->operand, outputCurr->operand >> 16);
 
         // If it's the start of a det( or sum(, increment the amount of nested det(/sum(
         if (outputCurr->type == TYPE_C_START) {
             temp++;
         }
         // If it's a det( or sum(, decrement the amount of nested dets
-        if (outputCurr->type == TYPE_FUNCTION && (temp2 == tDet || temp2 == tSum || (temp2 == tVarOut && (uint8_t)(outputCurr->operand >> 16) == tCompare))) {
+        if (outputCurr->type == TYPE_FUNCTION && index != -1 && implementedFunctions[index][4]) {
             temp--;
             amountOfStackElements++;
         }
@@ -915,26 +916,21 @@ uint8_t parsePostFixFromIndexToIndex(uint24_t startIndex, uint24_t endIndex) {
             // Use this to cleanup the function after parsing
             uint8_t amountOfArguments = outputCurr->operand >> 8;
             uint8_t function2 = outputCurr->operand >> 16;
-
+            
             // Only execute when it's not a pointer directly after a ->
             if (outputCurr->operand != 0x010108) {
-                uint8_t temp2 = outputCurr->operand;
-                uint8_t temp3 = outputCurr->operand >> 16;
+                uint8_t index = GetIndexOfFunction(outputCurr->operand, function2);
                 
                 // Check if we need to push Ans
-                if (AnsDepth > 1 + amountOfArguments || (AnsDepth && (temp2 == tDet || temp2 == tSum || (temp2 == tVarOut && temp3 == tCompare)))) {
+                if (AnsDepth > 1 + amountOfArguments || (AnsDepth && implementedFunctions[index][4])) {
                     // We need to push HL since it isn't used in the next operator/function
                     (&outputPtr[tempIndex])->type = TYPE_CHAIN_PUSH;
                     PushHLDE();
                     expr.outputRegister = REGISTER_HL;
                 }
-
-                for (temp = 0; temp < AMOUNT_OF_FUNCTIONS; temp++) {
-                    if (implementedFunctions[temp][0] == (uint8_t)outputCurr->operand && implementedFunctions[temp][1] == function2) {
-                        if (amountOfArguments != implementedFunctions[temp][2] && implementedFunctions[temp][2] != 255) {
-                            return E_ARGUMENTS;
-                        }
-                    }
+                
+                if (amountOfArguments != implementedFunctions[index][2] && implementedFunctions[index][2] != 255) {
+                    return E_ARGUMENTS;
                 }
 
                 if ((temp = parseFunction(loopIndex)) != VALID) {
@@ -942,7 +938,7 @@ uint8_t parsePostFixFromIndexToIndex(uint24_t startIndex, uint24_t endIndex) {
                 }
 
                 // Cleanup, if it's not a det(
-                if (temp2 != tDet && temp2 != tSum && !(temp2 == tVarOut && temp3 == tCompare)) {
+                if (index == -1 || !implementedFunctions[index][4]) {
                     for (temp = 0; temp < amountOfArguments; temp++) {
                         removeIndexFromStack(getCurrentIndex() - 2);
                     }
