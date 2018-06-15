@@ -32,6 +32,7 @@ const uint8_t implementedFunctions[AMOUNT_OF_FUNCTIONS][5] = {
     {tSum,      0,              255, 0, 1},
     {tSin,      0,              1,   1, 0},
     {tCos,      0,              1,   1, 0},
+    {tGetKey,   0,              255, 0, 0},
     {tRand,     0,              0,   0, 0},
     {tAns,      0,              0,   0, 0},
     {tLParen,   0,              1,   0, 0},
@@ -778,7 +779,7 @@ uint8_t parsePostFixFromIndexToIndex(uint24_t startIndex, uint24_t endIndex) {
             temp++;
         }
         // If it's a det( or sum(, decrement the amount of nested dets
-        if (outputCurr->type == TYPE_FUNCTION && index != -1 && implementedFunctions[index][4]) {
+        if (outputCurr->type == TYPE_FUNCTION && index != 255 && implementedFunctions[index][4]) {
             temp--;
             amountOfStackElements++;
         }
@@ -836,7 +837,7 @@ uint8_t parsePostFixFromIndexToIndex(uint24_t startIndex, uint24_t endIndex) {
         outputCurr = &outputPtr[loopIndex = getNextIndex()];
         outputPrevPrevPrev = &outputPtr[getIndexOffset(-4)];
         outputType = outputCurr->type;
-
+        
         // Set some vars
         expr.outputReturnRegister = REGISTER_HL;
         expr.outputIsString = false;

@@ -164,12 +164,12 @@ uint8_t parseOperator(element_t *outputPrevPrevPrev, element_t *outputPrevPrev, 
     getEntryOperands();
 
     ClearAnsFlags();
-
+    
     if (outputPrevPrev->isString && outputPrev->isString && type2 == TYPE_NUMBER && oper == tStore) {
         StoStringString();
     } else if (outputPrevPrev->isString && outputPrev->isString && oper == tAdd) {
         AddStringString();
-    } else if (outputPrevPrev->isString && type1 == TYPE_NUMBER && type2 == TYPE_VARIABLE && oper == tStore) {
+    } else if (outputPrevPrev->isString && type2 == TYPE_VARIABLE && oper == tStore) {
         StoStringVariable();
     } else {
         // Only call the function if both types are valid

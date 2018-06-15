@@ -262,7 +262,7 @@ stop:
         if (res == VALID) {
             gfx_PrintStringXY("Run", 9, 232);
             printButton(1);
-        } else {
+        } else if (!ti_IsArchived(ice.inPrgm)) {
             gfx_PrintStringXY("Goto", 222, 232);
             printButton(217);
         }

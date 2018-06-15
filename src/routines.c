@@ -20,7 +20,7 @@ extern const uint8_t implementedFunctions[AMOUNT_OF_FUNCTIONS][5];
 uint8_t GetIndexOfFunction(uint8_t tok1, uint8_t tok2) {
     uint8_t a;
     
-    if (tok1 == tDet || tok2 == tSum) {
+    if (!IsA2ByteTok(tok1)) {
         tok2 = 0;
     }
     
