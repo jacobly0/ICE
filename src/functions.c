@@ -517,8 +517,7 @@ uint8_t parseFunction(uint24_t index) {
         }
 
         // Get the string into DE
-        if (outputPrevPrevPrev->type == TYPE_STRING &&
-              outputPrevPrevPrevOperand != prescan.tempStrings[TempString1] && outputPrevPrevPrevOperand != prescan.tempStrings[TempString2]) {
+        if (outputPrevPrevPrev->type == TYPE_STRING && !comparePtrToTempStrings(outputPrevPrevPrevOperand)) {
             ProgramPtrToOffsetStack();
         }
         LD_DE_IMM(outputPrevPrevPrevOperand);
@@ -933,7 +932,7 @@ uint8_t parseFunction(uint24_t index) {
         *****************************************************/
 
         if (outputPrevType == TYPE_NUMBER || outputPrev->isString) {
-            if (outputPrevType == TYPE_STRING && outputPrevOperand != prescan.tempStrings[TempString1] && outputPrevOperand != prescan.tempStrings[TempString2]) {
+            if (outputPrevType == TYPE_STRING && !comparePtrToTempStrings(outputPrevOperand)) {
                 ProgramPtrToOffsetStack();
             }
             if (outputCurr->mask == TYPE_MASK_U8) {
@@ -980,8 +979,8 @@ uint8_t parseFunction(uint24_t index) {
         }
     }
 
-    // det(, sum(
-    else if (function == tDet || function == tSum) {
+    // det(, sum(, Compare(
+    else if (function == tDet || function == tSum || (function == tVarOut && function2 == tCompare)) {
         /*****************************************************
         * Inputs:
         *  arg1: which det( or sum( function
@@ -996,8 +995,10 @@ uint8_t parseFunction(uint24_t index) {
 
         if (function == tDet) {
             smallArguments = GraphxArgs[function2 * 2 + 1];
-        } else {
+        } else if (function == tSum) {
             smallArguments = FileiocArgs[function2 * 2 + 1];
+        } else {
+            smallArguments = 0;
         }
 
         endIndex = index;
@@ -1010,9 +1011,11 @@ uint8_t parseFunction(uint24_t index) {
             a--;
             temp = 0;
             while (1) {
+                uint8_t temp2;
+                
                 outputPrev = &outputPtr[--startIndex];
                 outputPrevType = outputPrev->type;
-                outputPrevOperand = outputPrev->operand;
+                temp2 = outputPrevOperand = outputPrev->operand;
 
                 if (outputPrevType == TYPE_C_START) {
                     if (!temp) {
@@ -1021,7 +1024,7 @@ uint8_t parseFunction(uint24_t index) {
                     temp--;
                 }
 
-                if (outputPrevType == TYPE_FUNCTION && ((uint8_t)outputPrevOperand == tDet || (uint8_t)outputPrevOperand == tSum)) {
+                if (outputPrevType == TYPE_FUNCTION && (temp2 == tDet || temp2 == tSum || (temp2 == tVarOut && (uint8_t)(outputPrevOperand >> 16) == tCompare))) {
                     temp++;
                 }
 
@@ -1087,30 +1090,38 @@ uint8_t parseFunction(uint24_t index) {
             a++;
         }
 
-        ice.programPtr = startProgramPtr;
-
-        // Wow, unknown C function?
-        if (function2 >= (function == tDet ? AMOUNT_OF_GRAPHX_FUNCTIONS : AMOUNT_OF_FILEIOC_FUNCTIONS)) {
-            return E_UNKNOWN_C;
+        if (function != tVarOut) {
+            ice.programPtr = startProgramPtr;
+            
+            // Wow, unknown C function?
+            if (function2 >= (function == tDet ? AMOUNT_OF_GRAPHX_FUNCTIONS : AMOUNT_OF_FILEIOC_FUNCTIONS)) {
+                return E_UNKNOWN_C;
+            }
         }
 
         // Get the amount of arguments, and call the function
         if (function == tDet) {
             temp = GraphxArgs[function2 * 2];
             CALL(prescan.GraphxRoutinesStack[function2] - (uint24_t)ice.programData + PRGM_START);
-        } else {
+        } else if (function == tSum) {
             temp = FileiocArgs[function2 * 2];
             CALL(prescan.FileiocRoutinesStack[function2] - (uint24_t)ice.programData + PRGM_START);
+        } else {
+            temp = 0;
+            amountOfArguments = 3;
+            CALL(__strcmp);
         }
 
         // Check if unimplemented function
-        if (temp & UN) {
-            return E_UNKNOWN_C;
-        }
+        if (function != tVarOut) {
+            if (temp & UN) {
+                return E_UNKNOWN_C;
+            }
 
-        // Check the right amount of arguments
-        if ((temp & 7) != amountOfArguments - 1) {
-            return E_ARGUMENTS;
+            // Check the right amount of arguments
+            if ((temp & 7) != amountOfArguments - 1) {
+                return E_ARGUMENTS;
+            }
         }
 
         // And pop the arguments
@@ -1119,11 +1130,13 @@ uint8_t parseFunction(uint24_t index) {
         }
 
         // Check if the output is 16-bits OR in A
-        if (temp & RET_A) {
-            expr.outputReturnRegister = REGISTER_A;
-        } else if (temp & RET_HLs) {
-            EX_S_DE_HL();
-            expr.outputReturnRegister = REGISTER_DE;
+        if (function != tVarOut) {
+            if (temp & RET_A) {
+                expr.outputReturnRegister = REGISTER_A;
+            } else if (temp & RET_HLs) {
+                EX_S_DE_HL();
+                expr.outputReturnRegister = REGISTER_DE;
+            }
         }
 
         ResetAllRegs();

@@ -50,7 +50,8 @@ const uint8_t implementedFunctions[AMOUNT_OF_FUNCTIONS][4] = {
     {tVarOut,   tDefineTilemap, 255, 0},
     {tVarOut,   tCopyData,      255, 0},
     {tVarOut,   tLoadData,      3,   0},
-    {tVarOut,   tSetBrightness, 1,   0}
+    {tVarOut,   tSetBrightness, 1,   0},
+    {tVarOut,   tCompare,       2,   0}
 };
 element_t outputStack[400];
 element_t stack[200];
@@ -59,11 +60,12 @@ uint8_t parseProgram(void) {
     uint8_t currentGoto, currentLbl, ret;
     
     LD_IX_IMM(IX_VARIABLES);
-  
+    
     _seek(0, SEEK_END, ice.inPrgm);
     if (!_tell(ice.inPrgm)) {
-      return VALID;
+        return VALID;
     }
+    _rewind(ice.inPrgm);
     
     // Eventually seed the rand
     if (prescan.amountOfRandRoutines) {
@@ -379,6 +381,7 @@ stackToOutputReturn1:
         // Pop a ) } ] ,
         else if (tok == tRParen || tok == tComma || tok == tRBrace || tok == tRBrack) {
             uint24_t temp;
+            uint8_t tempTok;
 
             // Move until stack is empty or a function is encountered
             while (stackElements) {
@@ -396,11 +399,11 @@ stackToOutputReturn1:
             }
 
             stackPrev = &stackPtr[stackElements - 1];
+            tempTok = stackPrev->operand;
 
             // Closing tag should match it's open tag
-            if (((tok == tRBrace || tok == tRBrack) && ((uint8_t)stackPrev->operand != token - 1)) ||
-                 (tok == tRParen && (uint8_t)stackPrev->operand != 0x0F &&
-                   ((uint8_t)stackPrev->operand == tLBrace || (uint8_t)stackPrev->operand == tLBrack))) {
+            if (((tok == tRBrace || tok == tRBrack) && (tempTok != token - 1)) ||
+                 (tok == tRParen && tempTok != 0x0F && (tempTok == tLBrace || tempTok == tLBrack))) {
                 return E_SYNTAX;
             }
 
@@ -414,7 +417,7 @@ stackToOutputReturn1:
             }
 
             // If it's a det, add an argument delimiter as well
-            if (tok == tComma && ((uint8_t)stackPrev->operand == tDet || (uint8_t)stackPrev->operand == tSum)) {
+            if (tok == tComma && (tempTok == tDet || tempTok == tSum || (tempTok == tVarOut && (uint8_t)(stackPrev->operand >> 16) == tCompare))) {
                 outputCurr->type = TYPE_ARG_DELIMITER;
                 outputElements++;
             }
@@ -578,11 +581,13 @@ noSquishing:
                         canUseMask = 2;
 
                         // Check if it's a C function
-                        if (tok == tDet || tok == tSum) {
+                        if (tok == tDet || tok == tSum || (tok == tVarOut && tok2 == tCompare)) {
                             outputCurr->type = TYPE_C_START;
                             outputElements++;
+                            
+                            tok = (uint8_t)(token = _getc());
 
-                            if ((tok = (uint8_t)(token = _getc())) < t0 || tok > t9) {
+                            if (tok2 != tCompare && (tok < t0 || tok > t9)) {
                                 return E_SYNTAX;
                             }
                             prevTokenWasDetOrSum = 2;
@@ -762,14 +767,17 @@ uint8_t parsePostFixFromIndexToIndex(uint24_t startIndex, uint24_t endIndex) {
     amountOfStackElements = 0;
     
     for (loopIndex = startIndex; loopIndex <= endIndex; loopIndex++) {
+        uint8_t temp2;
+        
         outputCurr = &outputPtr[loopIndex];
+        temp2 = outputCurr->operand;
 
         // If it's the start of a det( or sum(, increment the amount of nested det(/sum(
         if (outputCurr->type == TYPE_C_START) {
             temp++;
         }
         // If it's a det( or sum(, decrement the amount of nested dets
-        if (outputCurr->type == TYPE_FUNCTION && ((uint8_t)outputCurr->operand == tDet || (uint8_t)outputCurr->operand == tSum)) {
+        if (outputCurr->type == TYPE_FUNCTION && (temp2 == tDet || temp2 == tSum || (temp2 == tVarOut && (uint8_t)(outputCurr->operand >> 16) == tCompare))) {
             temp--;
             amountOfStackElements++;
         }
@@ -910,8 +918,11 @@ uint8_t parsePostFixFromIndexToIndex(uint24_t startIndex, uint24_t endIndex) {
 
             // Only execute when it's not a pointer directly after a ->
             if (outputCurr->operand != 0x010108) {
+                uint8_t temp2 = outputCurr->operand;
+                uint8_t temp3 = outputCurr->operand >> 16;
+                
                 // Check if we need to push Ans
-                if (AnsDepth > 1 + amountOfArguments || (AnsDepth && ((uint8_t)outputCurr->operand == tDet || (uint8_t)outputCurr->operand == tSum))) {
+                if (AnsDepth > 1 + amountOfArguments || (AnsDepth && (temp2 == tDet || temp2 == tSum || (temp2 == tVarOut && temp3 == tCompare)))) {
                     // We need to push HL since it isn't used in the next operator/function
                     (&outputPtr[tempIndex])->type = TYPE_CHAIN_PUSH;
                     PushHLDE();
@@ -931,7 +942,7 @@ uint8_t parsePostFixFromIndexToIndex(uint24_t startIndex, uint24_t endIndex) {
                 }
 
                 // Cleanup, if it's not a det(
-                if ((uint8_t)outputCurr->operand != tDet && (uint8_t)outputCurr->operand != tSum) {
+                if (temp2 != tDet && temp2 != tSum && !(temp2 == tVarOut && temp3 == tCompare)) {
                     for (temp = 0; temp < amountOfArguments; temp++) {
                         removeIndexFromStack(getCurrentIndex() - 2);
                     }
@@ -1602,7 +1613,7 @@ static uint8_t functionPrgm(int token) {
 static uint8_t functionCustom(int token) {
     uint8_t tok = _getc();
 
-    if (tok >= tDefineSprite && tok <= tSetBrightness) {
+    if (tok >= tDefineSprite && tok <= tCompare) {
         // Call
         if (tok == tCall) {
             insertGotoLabel();

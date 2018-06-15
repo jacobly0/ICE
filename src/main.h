@@ -3,7 +3,7 @@
 
 #define AMOUNT_OF_GRAPHX_FUNCTIONS 92
 #define AMOUNT_OF_FILEIOC_FUNCTIONS 21
-#define AMOUNT_OF_FUNCTIONS 28
+#define AMOUNT_OF_FUNCTIONS 29
 
 #define STACK_SIZE 500
 #define SIZEOF_DISP_DATA   26
@@ -31,6 +31,7 @@
 #define tCopyData          0x10
 #define tLoadData          0x11
 #define tSetBrightness     0x12
+#define tCompare           0x13
 
 #define IX_VARIABLES       0xD13F47
 

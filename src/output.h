@@ -28,6 +28,7 @@
 #define _DispHL           0x021EE0
 
 #define __strcat          0x0000C0
+#define __strcmp          0x0000C8
 #define __strcpy          0x0000CC
 #define __strlen          0x0000D4
 #define __iand            0x000134
