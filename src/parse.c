@@ -1631,7 +1631,7 @@ static uint8_t functionLbl(int token) {
     // Add the label to the stack, and skip the line
     label_t *labelCurr = &ice.LblStack[ice.curLbl++];
     uint8_t a = 0;
-
+    
     // Get the label name
     while ((token = _getc()) != EOF && (uint8_t)token != tEnter && a < 20) {
         labelCurr->name[a++] = token;
@@ -1656,7 +1656,7 @@ void insertGotoLabel(void) {
     label_t *gotoCurr = &ice.GotoStack[ice.curGoto++];
     uint8_t a = 0;
     int token;
-
+    
     while ((token = _getc()) != EOF && (uint8_t)token != tEnter && a < 20) {
         gotoCurr->name[a++] = token;
     }

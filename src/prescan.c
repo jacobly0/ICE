@@ -27,18 +27,25 @@ void preScanProgram(void) {
 
     // Scan the entire program
     while ((token = _getc()) != EOF) {
-        uint8_t tok = token;
+        uint8_t tok = token, tok2 = 0;
+        
+        if (IsA2ByteTok(tok)) {
+            tok2 = _getc();
+        }
 
         if (afterNewLine) {
             afterNewLine = false;
             if (tok == tii) {
                 skipLine();
+                afterNewLine = true;
             } else if (tok == tLbl) {
                 prescan.amountOfLbls++;
                 skipLine();
-            } else if (tok == tGoto) {
+                afterNewLine = true;
+            } else if (tok == tGoto || (tok == tVarOut && tok2 == tCall)) {
                 prescan.amountOfGotos++;
                 skipLine();
+                afterNewLine = true;
             }
         }
 
@@ -67,17 +74,17 @@ void preScanProgram(void) {
                 } else if (tok == tPause) {
                     prescan.amountOfPauseRoutines++;
                 } else if (tok == tVarLst) {
-                    if (!prescan.OSLists[token = _getc()]) {
-                        prescan.OSLists[token] = pixelShadow + 2000 * (prescan.amountOfOSVarsUsed++);
+                    if (!prescan.OSLists[tok2]) {
+                        prescan.OSLists[tok2] = pixelShadow + 2000 * (prescan.amountOfOSVarsUsed++);
                     }
                 } else if (tok == tVarStrng) {
                     prescan.usedTempStrings = true;
-                    if (!prescan.OSStrings[token = _getc()]) {
-                        prescan.OSStrings[token] = pixelShadow + 2000 * (prescan.amountOfOSVarsUsed++);
+                    if (!prescan.OSStrings[tok2]) {
+                        prescan.OSStrings[tok2] = pixelShadow + 2000 * (prescan.amountOfOSVarsUsed++);
                     }
                 } else if (tok == t2ByteTok) {
                     // AsmComp(
-                    if ((tok = (uint8_t)_getc()) == tAsmComp) {
+                    if (tok2 == tAsmComp) {
                         ti_var_t tempProg = ice.inPrgm;
                         prog_t *newProg = GetProgramName();
 
@@ -86,17 +93,18 @@ void preScanProgram(void) {
                             _close(ice.inPrgm);
                         }
                         ice.inPrgm = tempProg;
-                    } else if (tok == tRandInt) {
+                        afterNewLine = true;
+                    } else if (tok2 == tRandInt) {
                         prescan.amountOfRandRoutines++;
                         prescan.modifiedIY = true;
                     }
                 } else if (tok == tExtTok) {
-                    if ((tok = (uint8_t)_getc()) == tStartTmr) {
+                    if (tok2 == tStartTmr) {
                         prescan.amountOfTimerRoutines++;
                     }
                 } else if (tok == tDet || tok == tSum) {
                     uint8_t tok1 = _getc();
-                    uint8_t tok2 = _getc();
+                    tok2 = _getc();
 
                     prescan.modifiedIY = true;
 
@@ -108,6 +116,9 @@ void preScanProgram(void) {
                     // Get the det( command
                     if (tok2 < t0 || tok2 > t9) {
                         token = tok1 - t0;
+                        if (tok2 == tEnter) {
+                            afterNewLine = true;
+                        }
                     } else {
                         token = (tok1 - t0) * 10 + (tok2 - t0);
                     }
