@@ -562,6 +562,11 @@ uint8_t parseFunction(uint24_t index) {
         }
         ResetHL();
     }
+    
+    // dbg(
+    else if (function == t2ByteTok && function2 == tFinDBD) {
+        // Debug things!
+    }
 
     // Alloc(
     else if (function == tVarOut && function2 == tAlloc) {

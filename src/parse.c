@@ -43,6 +43,7 @@ const uint8_t implementedFunctions[AMOUNT_OF_FUNCTIONS][5] = {
     {tExtTok,   tStartTmr,      0,   0, 0},
     {t2ByteTok, tSubStrng,      3,   0, 0},
     {t2ByteTok, tLength,        1,   0, 0},
+    {t2ByteTok, tFinDBD,        255, 0, 0},
     {t2ByteTok, tRandInt,       2,   0, 0},
     {t2ByteTok, tInStrng,       2,   0, 1},
     {tVarOut,   tDefineSprite,  255, 0, 0},
