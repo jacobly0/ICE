@@ -39,8 +39,6 @@ typedef struct {
     char     name[20];
     uint24_t addr;
     uint24_t offset;
-    uint24_t dataOffsetElements;
-    uint8_t  LblGotoElements;
 } label_t;
 
 typedef struct {

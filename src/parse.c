@@ -1639,7 +1639,6 @@ static uint8_t functionLbl(int token) {
     }
     labelCurr->name[a] = 0;
     labelCurr->addr = (uint24_t)ice.programPtr;
-    labelCurr->LblGotoElements = ice.curLbl;
     ResetAllRegs();
 
     return VALID;
@@ -1664,8 +1663,6 @@ void insertGotoLabel(void) {
     gotoCurr->name[a] = 0;
     gotoCurr->addr = (uint24_t)ice.programPtr;
     gotoCurr->offset = _tell(ice.inPrgm);
-    gotoCurr->dataOffsetElements = ice.dataOffsetElements;
-    gotoCurr->LblGotoElements = ice.curGoto;
     ResetAllRegs();
 }
 
