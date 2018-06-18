@@ -34,7 +34,7 @@ void main(void) {
 
     // Install hooks
     ti_CloseAll();
-    ice.inPrgm = ti_Open("ICEAPPV", "r");
+    ice.inPrgm = ti_Open("ICEHOOKS", "r");
     
     asm("ld iy, 0D00080h");
     asm("set 3, (iy+024h)");

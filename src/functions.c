@@ -1025,7 +1025,7 @@ uint8_t parseFunction(uint24_t index) {
                     temp--;
                 }
 
-                if (outputPrevType == TYPE_FUNCTION && index != -1 && implementedFunctions[index][4]) {
+                if (outputPrevType == TYPE_FUNCTION && index != 255 && implementedFunctions[index][4]) {
                     temp++;
                 }
 

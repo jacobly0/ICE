@@ -421,7 +421,7 @@ stackToOutputReturn1:
             index = GetIndexOfFunction(tempTok, stackPrev->operand >> 16); 
 
             // If it's a det, add an argument delimiter as well
-            if (tok == tComma && index != -1 && implementedFunctions[index][4]) {
+            if (tok == tComma && index != 255 && implementedFunctions[index][4]) {
                 outputCurr->type = TYPE_ARG_DELIMITER;
                 outputElements++;
             }
@@ -572,7 +572,7 @@ noSquishing:
                 tok2 = _getc();
             }
             
-            if ((index = GetIndexOfFunction(tok, tok2)) != -1) {
+            if ((index = GetIndexOfFunction(tok, tok2)) != 255) {
                 if (implementedFunctions[index][2]) {
                     // We always have at least 1 argument
                     *++amountOfArgumentsStackPtr = 1;
@@ -939,7 +939,7 @@ uint8_t parsePostFixFromIndexToIndex(uint24_t startIndex, uint24_t endIndex) {
                 }
 
                 // Cleanup, if it's not a det(
-                if (index == -1 || !implementedFunctions[index][4]) {
+                if (index == 255 || !implementedFunctions[index][4]) {
                     for (temp = 0; temp < amountOfArguments; temp++) {
                         removeIndexFromStack(getCurrentIndex() - 2);
                     }
