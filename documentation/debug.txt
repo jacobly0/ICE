@@ -1,0 +1,13 @@
+Jump line by line: line length in assembly
+Jump to label: all labels + addresses
+Variable viewer: names + offsets
+Set breakpoint on label: names + offsets
+Memory editor
+Stack view?
+Open on reset?
+
+Debug appvar:
+- program name
+- labels + addresses
+- variables + offsets
+- line lengths in assembly
