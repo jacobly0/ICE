@@ -44,7 +44,7 @@ void main(void) {
         ti_GetDataPtr(ice.inPrgm);
 
         // Manually set the hooks
-        asm("ld de, 17");
+        asm("ld de, 18");
         asm("add hl, de");
         asm("call 00213CCh");
         asm("ld de, 688");
