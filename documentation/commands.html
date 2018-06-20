@@ -143,6 +143,14 @@
                                 <td><code><span class="bl">SetBrightness(</span><span class="red">LEVEL</span><span class="bl">)</span></code></td>
                                 <td>Sets the brightness of the screen. 0=high (light), 255=low (dark).</td>
                             </tr>
+                            <tr>
+                                <td><code><span class="bl">startTmr</span></code></td>
+                                <td>Returns the current timestamp of the 32KHz timer. This value can be used in <code><span class="bl">checkTmr(</span></code>.</td>
+                            </tr>
+                            <tr>
+                                <td><code><span class="bl">checkTmr(</span><span class="red">TIMESTAMP</span><span class="bl">)</span></code></td>
+                                <td>Subtracts <code><span class="red">TIMESTAMP</span></code> from the current timestamp of the 32KHz timer.</td>
+                            </tr>
                         </table>
                         <h3 id="math">Math</h3>
                         <table>
