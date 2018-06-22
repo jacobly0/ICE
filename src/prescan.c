@@ -13,6 +13,8 @@
 #ifndef CALCULATOR
 extern const uint8_t CheaderData[];
 extern const uint8_t FileiocheaderData[];
+
+extern char *str_dupcat(const char *s, const char *c);
 #endif
 
 extern const uint8_t implementedFunctions[AMOUNT_OF_FUNCTIONS][4];
@@ -88,7 +90,8 @@ void preScanProgram(void) {
                         ti_var_t tempProg = ice.inPrgm;
                         prog_t *newProg = GetProgramName();
 
-                        if ((ice.inPrgm = _open(newProg->prog))) {
+                        if ((ice.inPrgm = _open(str_dupcat(newProg->prog, ".8xp")))) {
+                            fprintf(stdout, "Prescanning subprogram...\n");
                             preScanProgram();
                             _close(ice.inPrgm);
                         }

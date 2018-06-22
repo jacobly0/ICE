@@ -95,6 +95,15 @@ uint8_t parseProgram(void) {
         RET();
     }
     
+    uint24_t curGoto, curLbl;
+        
+    for (curGoto = 0; curGoto < ice.curGoto; curGoto++) {
+        fprintf(stdout, "Goto: %s\n", ice.GotoStack[curGoto].name);
+    }
+    for (curLbl = 0; curLbl < ice.curLbl; curLbl++) {
+        fprintf(stdout, "Label: %s\n", ice.LblStack[curLbl].name);
+    }
+    
     // Find all the matching Goto's/Lbl's
     for (currentGoto = 0; currentGoto < ice.curGoto; currentGoto++) {
         label_t *curGoto = &ice.GotoStack[currentGoto];
@@ -102,7 +111,7 @@ uint8_t parseProgram(void) {
         for (currentLbl = 0; currentLbl < ice.curLbl; currentLbl++) {
             label_t *curLbl = &ice.LblStack[currentLbl];
 
-            if (!memcmp(curLbl->name, curGoto->name, 10)) {
+            if (!memcmp(curLbl->name, curGoto->name, 20)) {
                 w24((uint8_t*)(curGoto->addr + 1), curLbl->addr - (uint24_t)ice.programData + PRGM_START);
                 goto findNextLabel;
             }
@@ -126,6 +135,8 @@ uint8_t parseProgramUntilEnd(void) {
     while ((token = _getc()) != EOF) {
         ice.lastTokenIsReturn = false;
         ice.currentLine++;
+        
+        fprintf(stdout, "%d\n", token);
         
         if ((ret = (*functions[token])(token)) != VALID) {
             return ret;
@@ -1747,8 +1758,11 @@ static uint8_t functionInput(int token) {
 }
 
 static uint8_t functionBB(int token) {
+    token = _getc();
+    
+    fprintf(stdout, "BB: %d\n", token);
     // Asm(
-    if ((uint8_t)(token = _getc()) == tAsm) {
+    if ((uint8_t)token == tAsm) {
         while ((token = _getc()) != EOF && (uint8_t)token != tEnter && (uint8_t)token != tRParen) {
             uint8_t tok1, tok2;
 
@@ -1777,32 +1791,43 @@ static uint8_t functionBB(int token) {
         ti_var_t tempProg = ice.inPrgm;
         prog_t *outputPrgm;
         
+        fprintf(stdout, "AsmComp\n");
+        
         outputPrgm = GetProgramName();
+        fprintf(stdout, "AsmComp\n");
         if (outputPrgm->errorCode != VALID) {
+            fprintf(stdout, "Can't open input file: %s\n", outputPrgm->prog);
             return outputPrgm->errorCode;
         }
 
 #ifndef CALCULATOR
+        fprintf(stdout, "Go for it!\n");
         if ((ice.inPrgm = _open(str_dupcat(outputPrgm->prog, ".8xp")))) {
             int tempProgSize = ice.programLength;
+            
+            fprintf(stdout, "Yes\n");
 
             fseek(ice.inPrgm, 0, SEEK_END);
             ice.programLength = ftell(ice.inPrgm);
             _rewind(ice.inPrgm);
             fprintf(stdout, "Compiling subprogram %s\n", str_dupcat(outputPrgm->prog, ".8xp"));
+            fprintf(stdout, "Program size: %d\n", ice.programLength);
 
             // Compile it, and close
             ice.currentLine = 0;
             if ((res = parseProgramUntilEnd()) != VALID) {
                 return res;
             }
+            fprintf(stdout, "Return from subprogram...\n");
             fclose(ice.inPrgm);
             ice.currentLine = currentLine;
             ice.programLength = tempProgSize;
         } else {
             res = E_PROG_NOT_FOUND;
+            fprintf(stdout, "Can't open input file: %s\n", outputPrgm->prog);
         }
 #else
+        fprintf(stdout, "Wait, what???\n");
         if ((ice.inPrgm = _open(outputPrgm->prog))) {
             char buf[35];
 

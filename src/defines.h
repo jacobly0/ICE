@@ -16,6 +16,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+#define _getc()      getNextToken()
+
 #if !defined(COMPUTER_ICE) && !defined(__EMSCRIPTEN__)
 
 #define CALCULATOR
@@ -32,11 +34,9 @@
 #define _new(x)      ti_OpenVar(x, "w", TI_PPRGM_TYPE)
 #define _tell(x)     ti_Tell(x)
 #define _seek(x,y,z) ti_Seek(x,y,z)
-#define _getc(x)     getNextToken(x)
 
 #else
 
-#define _getc(x)     getNextToken(x)
 #define TI_PRGM_TYPE 5
 #define M_PI         3.14159265358979323846
 
