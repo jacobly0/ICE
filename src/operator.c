@@ -68,8 +68,8 @@ void MultWithNumber(uint24_t num, uint8_t *programPtr, bool ChangeRegisters) {
 }
 #endif
 
-extern void (*operatorFunctions[272])(void);
-extern void (*operatorChainPushChainAnsFunctions[17])(void);
+static void (*operatorFunctions[272])(void);
+static void (*operatorChainPushChainAnsFunctions[17])(void);
 const char operators[]              = {tStore, tDotIcon, tCrossIcon, tBoxIcon, tAnd, tXor, tOr, tEQ, tLT, tGT, tLE, tGE, tNE, tMul, tDiv, tAdd, tSub};
 const uint8_t operatorPrecedence[]  = {0, 6, 8, 8, 2, 1, 1, 3, 3, 3, 3, 3, 3, 5, 5, 4, 4};
 const uint8_t operatorPrecedence2[] = {9, 6, 8, 8, 2, 1, 1, 3, 3, 3, 3, 3, 3, 5, 5, 4, 4};
@@ -1161,7 +1161,7 @@ void SubChainPushChainAns(void) {
     POP_HL();
 }
 
-void (*operatorChainPushChainAnsFunctions[17])(void) = {
+static void (*operatorChainPushChainAnsFunctions[17])(void) = {
     StoChainPushChainAns,
     BitAndChainPushChainAns,
     BitOrChainPushChainAns,
@@ -1181,7 +1181,7 @@ void (*operatorChainPushChainAnsFunctions[17])(void) = {
     SubChainPushChainAns
 };
 
-void (*operatorFunctions[272])(void) = {
+static void (*operatorFunctions[272])(void) = {
     OperatorError,
     StoNumberVariable,
     StoNumberChainAns,

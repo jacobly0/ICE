@@ -20,7 +20,7 @@ extern const uint8_t SrandData[];
 extern char *str_dupcat(const char *s, const char *c);
 #endif
 
-extern uint8_t (*functions[256])(int token);
+static uint8_t (*functions[256])(int token);
 const uint8_t implementedFunctions[AMOUNT_OF_FUNCTIONS][5] = {
 // function / second byte / amount of args / allow args as numbers / args backwards pushed
     {tNot,      0,              1,   1, 0},
@@ -43,7 +43,7 @@ const uint8_t implementedFunctions[AMOUNT_OF_FUNCTIONS][5] = {
     {tExtTok,   tStartTmr,      0,   0, 0},
     {t2ByteTok, tSubStrng,      3,   0, 0},
     {t2ByteTok, tLength,        1,   0, 0},
-    {t2ByteTok, tFinDBD,        255, 0, 0},
+    {t2ByteTok, tFinDBD,        1,   0, 0},
     {t2ByteTok, tRandInt,       2,   0, 0},
     {t2ByteTok, tInStrng,       2,   0, 1},
     {tVarOut,   tDefineSprite,  255, 0, 0},
@@ -1867,7 +1867,7 @@ void skipLine(void) {
     while (!CheckEOL());
 }
 
-uint8_t (*functions[256])(int) = {
+static uint8_t (*functions[256])(int) = {
     tokenUnimplemented, //0
     tokenUnimplemented, //1
     tokenUnimplemented, //2

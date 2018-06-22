@@ -101,6 +101,7 @@
 #define OP_OR_A_C     0xB1
 #define OP_OR_A_D     0xB2
 #define OP_OR_A_A     0xB7
+#define OP_CP_A_A     0xBF
 #define OP_RET_NZ     0xC0
 #define OP_POP_BC     0xC1
 #define OP_JP_NZ      0xC2
@@ -122,6 +123,7 @@
 #define OP_EX_SP_HL   0xE3
 #define OP_PUSH_HL    0xE5
 #define OP_AND_A      0xE6
+#define OP_JP_HL      0xE9
 #define OP_EX_DE_HL   0xEB
 #define OP_XOR_A      0xEE
 #define OP_OR_A       0xF6

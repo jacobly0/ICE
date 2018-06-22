@@ -33,7 +33,7 @@ extern const uint8_t LoadtilemapData[];
                 ...
 */
 
-const uint8_t GraphxArgs[] = {
+static const uint8_t GraphxArgs[] = {
     RET_NONE | 0, ARG_NORM,    // Begin
     RET_NONE | 0, ARG_NORM,    // End
     RET_A    | 1, SMALL_1,     // SetColor
@@ -128,7 +128,7 @@ const uint8_t GraphxArgs[] = {
     RET_HL   | 5, SMALL_345,   // RotatedScaledSprite_NoClip
 };
 
-const uint8_t FileiocArgs[] = {
+static const uint8_t FileiocArgs[] = {
     RET_NONE | 0, ARG_NORM,    // CloseAll
     RET_A    | 2, ARG_NORM,    // Open
     RET_A    | 3, SMALL_3,     // OpenVar
@@ -302,6 +302,8 @@ uint8_t parseFunction(uint24_t index) {
                 expr.AnsSetCarryFlag = true;
             }
         } else {
+            bool DEIsAlreadyMinus1 = (reg.DEIsNumber == true && reg.DEValue == -1);
+            
             if (expr.outputRegister == REGISTER_HL) {
                 LD_DE_IMM(-1);
             } else {
@@ -312,7 +314,7 @@ uint8_t parseFunction(uint24_t index) {
             if (expr.ZeroCarryFlagRemoveAmountOfBytes) {
                 bool temp = expr.AnsSetZeroFlag;
 
-                expr.ZeroCarryFlagRemoveAmountOfBytes += 8 - (expr.outputRegister != REGISTER_HL);
+                expr.ZeroCarryFlagRemoveAmountOfBytes += 8 - (expr.outputRegister != REGISTER_HL) - 4 * DEIsAlreadyMinus1;
                 expr.AnsSetZeroFlag = expr.AnsSetZeroFlagReversed;
                 expr.AnsSetZeroFlagReversed = temp;
                 temp = expr.AnsSetCarryFlag;
@@ -563,9 +565,37 @@ uint8_t parseFunction(uint24_t index) {
         ResetHL();
     }
     
-    // dbg(
+    // dbd(
     else if (function == t2ByteTok && function2 == tFinDBD) {
-        // Debug things!
+        if (outputPrevType != TYPE_NUMBER) {
+            return E_SYNTAX;
+        }
+        if (!outputPrevOperand) {
+            // ld hl, (windowHookPtr) \ ld hl, (hl) \ ld de, FIRST_3_BYTES_OF_APPVAR \ or a, a \ sbc hl, de \ ld de, -1 \ add hl, de \ sbc hl, hl \ inc hl
+            const uint8_t mem[] = {OP_LD_HL_IND, 0xE4, 0x25, 0xD0, 0xED, 0x27, OP_LD_DE, 0x83, OP_CP_A_A, OP_RET,
+                                   OP_OR_A_A, 0xED, 0x52, OP_LD_DE, 0xFF, 0xFF, 0xFF, OP_ADD_HL_DE, 0xED, 0x62, OP_INC_HL, 0};
+            
+            OutputWriteMem(mem);
+            
+            ResetHL();
+            reg.DEIsNumber = true;
+            reg.DEIsVariable = false;
+            reg.DEValue = -1;
+            
+            expr.AnsSetZeroFlagReversed = true;
+            expr.ZeroCarryFlagRemoveAmountOfBytes = 8;
+        } else if (outputPrevOperand == 1) {
+            const uint8_t mem[] = {OP_LD_HL_IND, 0xE4, 0x25, 0xD0, OP_INC_HL, OP_INC_HL, OP_INC_HL, 0};
+            
+            OutputWriteMem(mem);
+            *--ice.programDataPtr = OP_JP_HL;
+            ProgramPtrToOffsetStack();
+            CALL((uint24_t)ice.programDataPtr);
+            
+            ResetHL();
+        } else {
+            return E_SYNTAX;
+        }
     }
 
     // Alloc(

@@ -28,7 +28,7 @@ static const char *errors[] = {
 #ifdef CALCULATOR
     "Unknown C function. If you are sure this              function exists, please contact me!",
 #else
-    "Unknown C function",
+    "Unknown C function. If you are sure this function exists, please contact me!",
 #endif
     "Subprogram not found",
     "Compiling subprograms not supported",

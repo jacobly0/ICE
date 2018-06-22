@@ -17,7 +17,7 @@ expr_t expr;
 reg_t reg;
 
 const char *infoStr = "ICE Compiler v2.2.0.0 - By Peter \"PT_\" Tillema";
-char *inputPrograms[23];
+static char *inputPrograms[23];
 
 static int myCompare(const void * a, const void * b) {
     return strcmp(*(const char **)a, *(const char **)b);
@@ -39,11 +39,12 @@ void main(void) {
     asm("ld iy, 0D00080h");
     asm("set 3, (iy+024h)");
 
-    if (ice.inPrgm) {
+    if ((ice.inPrgm = ti_Open("ICEHOOKS", "r"))) {
         ti_SetArchiveStatus(true, ice.inPrgm);
         ti_GetDataPtr(ice.inPrgm);
 
         // Manually set the hooks
+        asm("ld iy, 0D00080h");
         asm("ld de, 18");
         asm("add hl, de");
         asm("call 00213CCh");
@@ -53,6 +54,17 @@ void main(void) {
         asm("ld de, 32");
         asm("add hl, de");
         asm("call 00213C4h");
+    }
+    
+    if ((ice.inPrgm = ti_Open("ICEDEBUG", "r"))) {
+        ti_SetArchiveStatus(true, ice.inPrgm);
+        ti_GetDataPtr(ice.inPrgm);
+        
+        // Manually set the hooks
+        asm("ld iy, 0D00080h");
+        asm("ld de, 18");
+        asm("add hl, de");
+        asm("call 0021418h");
     }
 
     // Yay, GUI! :)
