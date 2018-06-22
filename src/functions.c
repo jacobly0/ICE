@@ -302,7 +302,7 @@ uint8_t parseFunction(uint24_t index) {
                 expr.AnsSetCarryFlag = true;
             }
         } else {
-            bool DEIsAlreadyMinus1 = (reg.DEIsNumber == true && reg.DEValue == -1);
+            uint8_t *tempProgPtr = ice.programPtr;
             
             if (expr.outputRegister == REGISTER_HL) {
                 LD_DE_IMM(-1);
@@ -314,7 +314,7 @@ uint8_t parseFunction(uint24_t index) {
             if (expr.ZeroCarryFlagRemoveAmountOfBytes) {
                 bool temp = expr.AnsSetZeroFlag;
 
-                expr.ZeroCarryFlagRemoveAmountOfBytes += 8 - (expr.outputRegister != REGISTER_HL) - 4 * DEIsAlreadyMinus1;
+                expr.ZeroCarryFlagRemoveAmountOfBytes += ice.programPtr - tempProgPtr;
                 expr.AnsSetZeroFlag = expr.AnsSetZeroFlagReversed;
                 expr.AnsSetZeroFlagReversed = temp;
                 temp = expr.AnsSetCarryFlag;

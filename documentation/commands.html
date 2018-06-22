@@ -95,7 +95,7 @@
             <main>
                 <div id="content">
                     <div class="innertube">
-                        <h1>ICE Compiler Commands List v2.0</h1>
+                        <h1>ICE Compiler Commands List v2.2</h1>
                         All the custom tokens and C functions are available by pressing [TRACE] in the program editor. Press the arrow keys to select one or switch menu's.
                         <h3 id="system">System</h3>
                         <table>
@@ -1031,24 +1031,24 @@
                                 <td>Adds a string to the program data and returns a pointer to it.</td>
                             </tr>
                             <tr>
-                                <td><code><span class="or">OS_STRING</span></code></td>
-                                <td>Returns a pointer to <code><span class="or">OS_STRING</span></code>.</td>
+                                <td><code><span class="or">STRING_VAR</span></code></td>
+                                <td>Returns a pointer to <code><span class="or">STRING_VAR</span></code>. The 10 BASIC tokens are available for string variables, <code>Str0-Str9</code>.</td>
                             </tr>
                             <tr>
                                 <td><code><span class="grey">"STRING1"</span>+<span class="grey">"STRING2"</span></code></td>
-                                <td>Concatenates two strings. OS strings are valid as well. Returns a pointer to the data.</td>
+                                <td>Concatenates two strings. String variables are valid as well. Returns a pointer to the data.</td>
                             </tr>
                             <tr>
-                                <td><code><span class="grey">"STRING1"</span>→<span class="or">OS_STRING</span></code></td>
-                                <td>Stores <code><span class="grey">"STRING1"</span></code> into one of the 10 available OS strings, <code>Str0-Str9</code>. Storing one OS string into another one is valid as well.</td>
+                                <td><code><span class="grey">"STRING1"</span>→<span class="or">STRING_VAR</span></code></td>
+                                <td>Stores <code><span class="grey">"STRING1"</span></code> into one of the 10 available string variables, <code>Str0-Str9</code>. Storing one string variable into another one is valid as well.</td>
                             </tr>
                             <tr>
                                 <td><code><span class="bl">sub(</span><span class="grey">"STRING"</span>,<span class="red">OFFSET</span>,<span class="red">SIZE</span><span class="bl">)</span></code></td>
-                                <td>Copies <code><span class="red">SIZE</span></code> bytes starting at offset <code><span class="red">OFFSET</span></code> from <code><span class="grey">STRING</span></code> to a temporary location and returns a pointer to it. OS strings are valid as well.</td>
+                                <td>Copies <code><span class="red">SIZE</span></code> bytes starting at offset <code><span class="red">OFFSET</span></code> from <code><span class="grey">STRING</span></code> to a temporary location and returns a pointer to it. String variables are valid as well.</td>
                             </tr>
                             <tr>
                                 <td><code><span class="bl">length(</span><span class="grey">"STRING"</span><span class="bl">)</span></code></td>
-                                <td>Returns the length of <code><span class="grey">STRING</span></code>. OS strings are valid as well.</td>
+                                <td>Returns the length of <code><span class="grey">STRING</span></code>. String variables are valid as well.</td>
                             </tr>
                         </table>
                         <h3 id="text">Text</h3>
