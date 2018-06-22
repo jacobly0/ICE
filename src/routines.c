@@ -73,11 +73,8 @@ prog_t *GetProgramName(void) {
     uint8_t a = 0;
     int token;
     
-    fprintf(stdout, "test0\n");
     ret = (prog_t*)malloc(sizeof(prog_t));
-    fprintf(stdout, "test1\n");
     ret->errorCode = VALID;
-    fprintf(stdout, "test2\n");
 
     while ((token = _getc()) != EOF && (uint8_t)token != tEnter && (uint8_t)token != tRParen) {
         if (a == 8) {

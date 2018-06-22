@@ -90,8 +90,11 @@ void preScanProgram(void) {
                         ti_var_t tempProg = ice.inPrgm;
                         prog_t *newProg = GetProgramName();
 
+#ifdef CALCULATOR
+                        if ((ice.inPrgm = _open(newProg->prog))) {
+#else
                         if ((ice.inPrgm = _open(str_dupcat(newProg->prog, ".8xp")))) {
-                            fprintf(stdout, "Prescanning subprogram...\n");
+#endif
                             preScanProgram();
                             _close(ice.inPrgm);
                         }
