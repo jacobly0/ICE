@@ -86,6 +86,28 @@ uint8_t parseProgram(void) {
         ProgramPtrToOffsetStack();
         CALL((uint24_t)ice.programDataPtr);
     }
+    
+    // Open debug appvar to store things to
+#ifdef CALCULATOR
+    if (ice.debug) {
+        char buf[21];
+        uint8_t curVar;
+        
+        sprintf(buf, "%.5sDBG", ice.outName);
+        if (!(ice.dbgPrgm = ti_Open(buf, "w"))) {
+            return E_NO_DBG_FILE;
+        }
+        
+        // Write all variables to debug appvar
+        sprintf(buf, "%s\x00", ice.currProgName[ice.inPrgm]);
+        ti_Write(buf, strlen(buf) + 1, 1, ice.dbgPrgm);
+        ti_PutC(prescan.amountOfVariablesUsed, ice.dbgPrgm);
+        for (curVar = 0; curVar < prescan.amountOfVariablesUsed; curVar++) {
+            sprintf(buf, "%s\x00", prescan.variables[curVar].name);
+            ti_Write(buf, strlen(buf) + 1, 1, ice.dbgPrgm);
+        }
+    }
+#endif
 
     if ((ret = parseProgramUntilEnd()) != VALID) {
         return ret;
@@ -1832,6 +1854,7 @@ static uint8_t functionBB(int token) {
         return res;
     } else {
         SeekMinus1();
+        
         return parseExpression(t2ByteTok);
     }
 }

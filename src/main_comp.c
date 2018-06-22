@@ -55,14 +55,6 @@ int main(int argc, char **argv) {
         exit(0);
     } else if (argc == 2) {
         var_name = argv[1];
-    } else if (argc == 3) {
-        if (!strcmp(argv[1], "-debug")) {
-            ice.debug = true;
-        } else {
-            fprintf(stderr, "Error: unknown option %s", argv[1]);
-            exit(1);
-        }
-        var_name = argv[2];
     } else {
         fprintf(stderr, "Error: invalid amount of arguments\n");
         exit(1);

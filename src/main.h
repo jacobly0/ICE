@@ -42,7 +42,6 @@ typedef struct {
 } label_t;
 
 typedef struct {
-    uint8_t offset;
     char    name[21];
 } variable_t;
 
@@ -76,6 +75,7 @@ typedef struct {
 
     ti_var_t inPrgm;                                        // Used for getting tokens
     ti_var_t outPrgm;                                       // Used for writing bytes
+    ti_var_t dbgPrgm;                                       // Used for writing debug things
 
     bool     lastTokenIsReturn;                             // Last token is a "Return", so we can omit our "ret" :)
     bool     modifiedIY;                                    // Some routines modify IY, and some routines needs it

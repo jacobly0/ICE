@@ -429,7 +429,7 @@ uint8_t GetVariableOffset(uint8_t tok) {
     // This variable already exists
     for (b = 0; b < prescan.amountOfVariablesUsed; b++) {
         if (!strcmp(variableName, (&prescan.variables[b])->name)) {
-            return (&prescan.variables[b])->offset;
+            return b * 3 - 128;
         }
     }
 
@@ -437,7 +437,7 @@ uint8_t GetVariableOffset(uint8_t tok) {
     variableNew = &prescan.variables[prescan.amountOfVariablesUsed];
     memcpy(variableNew->name, variableName, a + 1);
 
-    return variableNew->offset = prescan.amountOfVariablesUsed++ * 3 - 128;
+    return prescan.amountOfVariablesUsed++ * 3 - 128;
 }
 
 #ifdef CALCULATOR

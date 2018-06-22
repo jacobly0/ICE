@@ -34,6 +34,7 @@ static const char *errors[] = {
     "Compiling subprograms not supported",
     "Invalid program name",
     "Not enough memory for Lbl and Goto",
+    "Unable to open debug file",
     "Error: not an ICE program\n",
     "Error: not enough memory for variables",
     "Warning: Unknown char in the string!",

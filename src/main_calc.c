@@ -154,11 +154,6 @@ displayMainScreen:
             }
         }
     }
-    
-    // Output debug appvar
-    if (key == sk_Window) {
-        ice.debug = true;
-    }
 
     // Erase screen
     gfx_SetColor(255);
@@ -169,6 +164,11 @@ displayMainScreen:
     strcpy(var_name, inputPrograms[selectedProgram - 1]);
     didCompile = true;
     memset(&ice, 0, sizeof ice);
+    
+    // Output debug appvar
+    if (key == sk_Window) {
+        ice.debug = true;
+    }
 
     gfx_SetTextXY(1, 12);
     displayMessageLineScroll("Prescanning...");
