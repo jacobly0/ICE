@@ -17,4 +17,4 @@ Run `Asm(prgmICE` from the homescreen. This will show a list of compilable progr
 From the command line, run `ice <input program>` to compile the input programs. Note that if you want to compile subprograms too, put them in the same folder as `ice.exe`, so preferable put `ice.exe` in the same folder as all your input programs.
 
 ## Bugs
-If you find a bug, or if you see the message `ICE ERROR: please report it!`, be sure to make an issue here, or post it on the relevant [Cemetech topic](https://www.cemetech.net/forum/viewtopic.php?t=12616).
+If you find a bug, or if you see the message `ICE ERROR: please report it!`, be sure to make an issue here, or post it on the relevant [Cemetech topic](https://www.cemetech.net/forum/viewtopic.php?t=12616). **Note:** please providing necessary code as well, that is quite useful for debugging.
