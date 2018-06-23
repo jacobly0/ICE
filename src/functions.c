@@ -567,7 +567,7 @@ uint8_t parseFunction(uint24_t index) {
     
     // dbd(
     else if (function == t2ByteTok && function2 == tFinDBD) {
-        if (outputPrevType != TYPE_NUMBER) {
+        if (outputPrevType != TYPE_NUMBER || outputPrevOperand > 2) {
             return E_SYNTAX;
         }
         if (!outputPrevOperand) {
@@ -585,16 +585,26 @@ uint8_t parseFunction(uint24_t index) {
             expr.AnsSetZeroFlagReversed = true;
             expr.ZeroCarryFlagRemoveAmountOfBytes = 8;
         } else if (outputPrevOperand == 1) {
+            const uint8_t mem[] = {OP_LD_HL_IND, 0xE4, 0x25, 0xD0, OP_INC_HL, OP_INC_HL, OP_INC_HL, OP_INC_HL, OP_INC_HL, 0};
+            
+            ice.programDataPtr -= strlen(ice.outName);
+            strcpy((char*)ice.programDataPtr, ice.outName);
+            ProgramPtrToOffsetStack();
+            LD_DE_IMM((uint24_t)ice.programDataPtr);
+            OutputWriteMem(mem);
+        } else if (outputPrevOperand == 2) {
             const uint8_t mem[] = {OP_LD_HL_IND, 0xE4, 0x25, 0xD0, OP_INC_HL, OP_INC_HL, OP_INC_HL, 0};
             
+            LD_DE_IMM(ice.currentLine);
             OutputWriteMem(mem);
+        }
+        
+        if (outputPrevOperand) {
             *--ice.programDataPtr = OP_JP_HL;
             ProgramPtrToOffsetStack();
             CALL((uint24_t)ice.programDataPtr);
             
             ResetHL();
-        } else {
-            return E_SYNTAX;
         }
     }
 
