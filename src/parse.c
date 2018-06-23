@@ -93,8 +93,8 @@ uint8_t parseProgram(void) {
         char buf[21];
         uint8_t curVar;
         
-        sprintf(ice.dbgName, "%.5sDBG", ice.outName);
-        if (!(ice.dbgPrgm = ti_Open(ice.dbgName, "w"))) {
+        sprintf(buf, "%.5sDBG", ice.outName);
+        if (!(ice.dbgPrgm = ti_Open(buf, "w"))) {
             return E_NO_DBG_FILE;
         }
         

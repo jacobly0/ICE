@@ -48,7 +48,6 @@ typedef struct {
 typedef struct {
     char     outName[9];                                    // Output variable name
     char     currProgName[5][9];                            // Current program compiling
-    char     dbgName[9];                                    // Debug variable name
 
     uint8_t  *programData;                                  // Address of the program
     uint8_t  *programDataData;                              // Address of the end of the program data
