@@ -587,11 +587,15 @@ uint8_t parseFunction(uint24_t index) {
         } else if (outputPrevOperand == 1) {
             const uint8_t mem[] = {OP_LD_HL_IND, 0xE4, 0x25, 0xD0, OP_INC_HL, OP_INC_HL, OP_INC_HL, OP_INC_HL, OP_INC_HL, 0};
             
+            *--ice.programDataPtr = 0;
             ice.programDataPtr -= strlen(ice.outName);
             strcpy((char*)ice.programDataPtr, ice.outName);
             ProgramPtrToOffsetStack();
             LD_DE_IMM((uint24_t)ice.programDataPtr);
             OutputWriteMem(mem);
+            
+            expr.AnsSetCarryFlag = true;
+            expr.ZeroCarryFlagRemoveAmountOfBytes = 0;
         } else if (outputPrevOperand == 2) {
             const uint8_t mem[] = {OP_LD_HL_IND, 0xE4, 0x25, 0xD0, OP_INC_HL, OP_INC_HL, OP_INC_HL, 0};
             

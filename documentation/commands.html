@@ -25,6 +25,7 @@
             td {
                 border: 1px solid black;
                 padding: 3px;
+                vertical-align: top;
             }
             table.special td:nth-child(3) {
                 width: 100%;
@@ -41,7 +42,7 @@
             }
             #nav {
                 float: left;
-                width: 200px;
+                width: 120px;
                 padding-bottom: 10010px;
                 margin-bottom: -10000px;
                 background: #eee;
@@ -51,7 +52,7 @@
                 overflow: hidden;
             }
             #content {
-                margin-left: 200px; /* Same as 'nav' width */
+                margin-left: 120px; /* Same as 'nav' width */
             }
             .innertube{
                 margin: 15px; /* Padding for content */
@@ -88,6 +89,13 @@
             .pu {
                 color: #551A8B;
             }
+            .preprocess {
+                display: inline-block;
+                color: #B05800;
+                float: right;
+                font-size: 0.7em;
+                font-style: italic;
+            }
         </style>
     </head>
     <body>
@@ -96,7 +104,7 @@
                 <div id="content">
                     <div class="innertube">
                         <h1>ICE Compiler Commands List v2.2</h1>
-                        All the custom tokens and C functions are available by pressing [TRACE] in the program editor. Press the arrow keys to select one or switch menu's.
+                        All the custom tokens and C functions are available by pressing [TRACE] in the program editor. Press the arrow keys to select one or switch menu's. Press [ENTER] to select the function or [CLEAR] to return.
                         <h3 id="system">System</h3>
                         <table>
                             <tr>
@@ -120,7 +128,7 @@
                                 <td>Assembly code written in hexadecimal is inserted into the program.</td>
                             </tr>
                             <tr>
-                                <td><code><span class="bl">AsmComp(</span><span class="grey">PROGRAM</span><span class="bl">)</span></code></td>
+                                <td><code><span class="bl">AsmComp(</span><span class="grey">PROGRAM</span><span class="bl">)</span></code><span class="preprocess">Preprocessor command</span></td>
                                 <td>Compiles the BASIC program <code><span class="grey">PROGRAM</span></code>. When it's done, ICE continues with compiling the previous program.</td>
                             </tr>
                             <tr>
@@ -136,7 +144,7 @@
                                 <td>Executes the BASIC program <code><span class="grey">PROGRAM</span></code>. Any error will be ignored and it will return normally.</td>
                             </tr>
                             <tr>
-                                <td><code><span class="bl"><i>i</i></span></code></td>
+                                <td><code><span class="bl"><i>i</i></span></code><span class="preprocess">Preprocessor command</span></td>
                                 <td>If the imaginary <code><i>i</i></code> (not the lowercase i) is the first token of a line, this line will be ignored during compiling.</td>
                             </tr>
                             <tr>
@@ -171,11 +179,11 @@
                                 <td>Returns <code><span class="or">CONST</span></code>.</td>
                             </tr>
                             <tr>
-                                <td><code><small>E</small><span class="grey">HEX</span></code></td>
+                                <td><code><small>E</small><span class="grey">HEX</span></code><span class="preprocess">Preprocessor command</span></td>
                                 <td>Returns the hexadecimal number <code><span class="grey">HEX</span></code> as an integer. The prefix is the scientific E.</td>
                             </tr>
                             <tr>
-                                <td><code><small>π</small><span class="grey">BIN</span></code></td>
+                                <td><code><small>π</small><span class="grey">BIN</span></code><span class="preprocess">Preprocessor command</span></td>
                                 <td>Returns the binary number <code><span class="grey">BIN</span></code> as an integer.</td>
                             </tr>
                             <tr>
@@ -325,7 +333,7 @@
                                 <td><i>Labels are limited to 20 characters.</i></td>
                             </tr>
                             <tr>
-                                <td><code><span class="bl">Lbl</span></code> <code><span class="grey">LABEL</span></code></td>
+                                <td><code><span class="bl">Lbl</span></code> <code><span class="grey">LABEL</span></code><span class="preprocess">Preprocessor command</span></td>
                                 <td>Creates a label at the current position.</td>
                             </tr>
                             <tr>
@@ -351,211 +359,256 @@
                                 <th>Command</th>
                                 <th>Name</th>
                                 <th>Description</th>
+                                <th>Returns</th>
                             </tr>
                             <tr>
                                 <td><code><span class="bl">det(</span>0<span class="bl">)</span></code></td>
                                 <td>Begin</td>
-                                <td>Sets up the graphics canvas (8bpp, default palette).</td>
+                                <td>Initializes the graphics library setup (8bpp, default palette, clear screen).</td>
+                                <td>-</td>
                             </tr>
                             <tr>
                                 <td><code><span class="bl">det(</span>1<span class="bl">)</span></code></td>
                                 <td>End</td>
-                                <td>Closes the graphics library and sets up for the TI-OS.</td>
+                                <td>Closes the graphics setup. Restores the LCD to 16bpp prefered by the OS and clears the screen.</td>
+                                <td>-</td>
                             </tr>
                             <tr>
                                 <td><code><span class="bl">det(</span>2,<span class="red">COLOR</span><span class="bl">)</span></code></td>
                                 <td>SetColor</td>
-                                <td>Sets the global color index for all routines.</td>
+                                <td>Sets the color index that drawing routines will use. This applies to lines, rectangles, circles, etc.</td>
+                                <td>Previous set color index.</td>
                             </tr>
                             <tr>
                                 <td><code><span class="bl">det(</span>3<span class="bl">)</span></code></td>
                                 <td>SetDefaultPalette</td>
                                 <td>Sets up the default palette where H=L (xLIBC palette).</td>
+                                <td>-</td>
                             </tr>
                             <tr>
                                 <td><code><span class="bl">det(</span>4,<span class="grey">"DATA"</span>,<span class="red">SIZE</span>,<span class="red">OFFSET</span><span class="bl">)</span></code></td>
                                 <td>SetPalette</td>
                                 <td>Sets entries in the palette. Each entry is 2 bytes, so <code><span class="red">SIZE</span></code> should be the amount of entries you want to set times 2.</td>
+                                <td>-</td>
                             </tr>
                             <tr>
                                 <td><code><span class="bl">det(</span>5,<span class="red">COLOR</span><span class="bl">)</span></code></td>
                                 <td>FillScreen</td>
-                                <td>Fills the screen with the specified color index.</td>
+                                <td>Fills the screen with a given palette index.</td>
+                                <td>-</td>
                             </tr>
                             <tr>
                                 <td><code><span class="bl">det(</span>6,<span class="red">X</span>,<span class="red">Y</span><span class="bl">)</span></code></td>
                                 <td>SetPixel</td>
-                                <td>Sets the color pixel to the global color index.</td>
+                                <td>Sets a pixel to the global color index. This is measured from the top left origin of the screen. Pixels are only clipped within the screen boundaries.</td>
+                                <td>-</td>
                             </tr>
                             <tr>
                                 <td><code><span class="bl">det(</span>7,<span class="red">X</span>,<span class="red">Y</span><span class="bl">)</span></code></td>
                                 <td>GetPixel</td>
-                                <td>Gets a pixel's color index.</td>
+                                <td>Gets a pixel's color index. This is measured from the top left origin of the screen. Pixels are only clipped within the screen boundaries.</td>
+                                <td>Pixel color index.</td>
                             </tr>
                             <tr>
                                 <td><code><span class="bl">det(</span>8<span class="bl">)</span></code></td>
                                 <td>GetDraw</td>
-                                <td>Gets the current draw location. 0 = screen, 1 = buffer.</td>
+                                <td>Gets current draw location. 0 = screen, 1 = buffer.</td>
+                                <td>Current draw location.</td>
                             </tr>
                             <tr>
                                 <td><code><span class="bl">det(</span>9,<span class="red">BUFFER</span><span class="bl">)</span></code></td>
                                 <td>SetDraw</td>
-                                <td>Forces drawing routines to operate on the offscreen buffer or to operate on the visible screen. 0 = draw at screen, 1 = draw at buffer.</td>
+                                <td>Forces all graphics routines draw location. 0 = draw at screen, 1 = draw at buffer.</td>
+                                <td>-</td>
                             </tr>
                             <tr>
                                 <td><code><span class="bl">det(</span>10<span class="bl">)</span></code></td>
                                 <td>SwapDraw</td>
-                                <td>Safely swap the vram buffer pointers for double buffered output.</td>
+                                <td>Swaps the roles of the screen and drawing buffers. Does not wait for the old screen buffer to finish being displayed. Instead, the next invocation of a graphx drawing function will block, waiting for this event. To block and wait explicitly, use <code><span class="bl">Wait</span></code>.<br><i>In practice, this function should be invoked immediately after finishing drawing a frame to the drawing buffer, and invocation of the first graphx drawing function for the next frame should be scheduled as late as possible relative to non-drawing logic. Non-drawing logic can execute during time when a drawing function may otherwise block.</i></td>
+                                <td>-</td>
                             </tr>
                             <tr>
                                 <td><code><span class="bl">det(</span>11,<span class="red">BUFFER</span><span class="bl">)</span></code></td>
                                 <td>Blit</td>
-                                <td>Copies the buffer image to the screen and vice versa. 0 = copy screen to buffer, 1 = copy buffer to screen.</td>
+                                <td>Copies the input buffer to the opposite buffer. No clipping is performed; as it is a copy not a draw. 0 = copy screen to buffer, 1 = copy buffer to screen.</td>
+                                <td>-</td>
                             </tr>
                             <tr>
                                 <td><code><span class="bl">det(</span>12,<span class="red">BUFFER</span>,<span class="red">Y</span>,<span class="red">LINES</span><span class="bl">)</span></code></td>
                                 <td>BlitLines</td>
-                                <td>Copies <code><span class="red">LINES</span></code> lines starting at position <code><span class="red">Y</span></code> from the buffer to the screen or vice versa. 0 = copy screen to buffer, 1 = copy buffer to screen.</td>
+                                <td>Copies lines from the input buffer to the opposite buffer. No clipping is performed; as it is a copy not a draw. 0 = copy screen to buffer, 1 = copy buffer to screen.</td>
+                                <td>-</td>
                             </tr>
                             <tr>
                                 <td><code><span class="bl">det(</span>13,<span class="red">BUFFER</span>,<span class="red">X</span>,<span class="red">Y</span>,<span class="red">WIDTH</span>,<span class="red">HEIGHT</span><span class="bl">)</span></code></td>
-                                <td>BlitArea</td>
-                                <td>Copies a specific rectangle starting at (<code><span class="red">X</span>,<span class="red">Y</span></code>) and dimensions (<code><span class="red">WIDTH</span>,<span class="red">HEIGHT</span></code>) from the buffer to the screen or vice versa. 0 = copy screen to buffer, 1 = copy buffer to screen.</td>
+                                <td>BlitRectangle</td>
+                                <td>Copies a rectangle from the input buffer to the opposite buffer. No clipping is performed; as it is a copy not a draw. 0 = copy screen to buffer, 1 = copy buffer to screen.</td>
+                                <td>-</td>
                             </tr>
                             <tr>
                                 <td><code><span class="bl">det(</span>14,<span class="red">CHAR</span><span class="bl">)</span></code></td>
                                 <td>PrintChar</td>
-                                <td>Places a character at the current cursor position. (Should be a number, you can find them <a href="http://tibasicdev.wikidot.com/83lgfont">here</a>). Default coordinates are (0,0).</td>
+                                <td>Outputs a character at the current cursor position. (Should be a number, you can find them <a href="http://tibasicdev.wikidot.com/83lgfont">here</a>).</td>
+                                <td>-</td>
                             </tr>
                             <tr>
                                 <td><code><span class="bl">det(</span>15,<span class="red">EXP</span>,<span class="red">CHARS</span><span class="bl">)</span></code></td>
                                 <td>PrintInt</td>
-                                <td>Places signed <code><span class="red">EXP</span></code> at the current cursor position with <code><span class="red">CHARS</span></code> characters. Default coordinates are (0,0).</td>
+                                <td>Prints a signed integer at the current cursor position using <code><span class="red">CHARS</span></code> characters. <i>By default, no text clipping is performed (configurable with <code><span class="bl">SetTextConfig</span></code>)</i>.</td>
+                                <td>-</td>
                             </tr>
                             <tr>
                                 <td><code><span class="bl">det(</span>16,<span class="red">EXP</span>,<span class="red">CHARS</span><span class="bl">)</span></code></td>
                                 <td>PrintUInt</td>
-                                <td>Places unsigned <code><span class="red">EXP</span></code> at the current cursor position with <code><span class="red">CHARS</span></code> characters. Default coordinates are (0,0).</td>
+                                <td>Prints an unsigned integer at the current cursor position using <code><span class="red">CHARS</span></code> characters. <i>By default, no text clipping is performed (configurable with <code><span class="bl">SetTextConfig</span></code>)</i>.</td>
+                                <td>-</td>
                             </tr>
                             <tr>
                                 <td><code><span class="bl">det(</span>17,<span class="grey">"STRING"</span><span class="bl">)</span></code></td>
                                 <td>PrintString</td>
-                                <td>Places a string at the current cursor position. Default coordinates are (0,0).</td>
+                                <td>Prints a string at the current cursor position. <i>By default, no text clipping is performed (configurable with <code><span class="bl">SetTextConfig</span></code>)</i>.</td>
+                                <td>-</td>
                             </tr>
                             <tr>
                                 <td><code><span class="bl">det(</span>18,<span class="grey">"STRING"</span>,<span class="red">X</span>,<span class="red">Y</span><span class="bl">)</span></code></td>
                                 <td>PrintStringXY</td>
-                                <td>Places a string at the given coordinates.</td>
+                                <td>Outputs a string at the supplied coordinates. Posistion is measured from top left origin of screen. <i>By default, no text clipping is performed (configurable with <code><span class="bl">SetTextConfig</span></code>)</i>.</td>
+                                <td>-</td>
                             </tr>
                             <tr>
                                 <td><code><span class="bl">det(</span>19,<span class="red">X</span>,<span class="red">Y</span><span class="bl">)</span></code></td>
                                 <td>SetTextXY</td>
-                                <td>Sets the coordinates for text routines.</td>
+                                <td>Sets the text cursor XY position.</td>
+                                <td>-</td>
                             </tr>
                             <tr>
                                 <td><code><span class="bl">det(</span>20,<span class="red">COLOR</span><span class="bl">)</span></code></td>
                                 <td>SetTextBGColor</td>
-                                <td>Sets the background text color for text routines. Default color is 255.</td>
+                                <td>Sets text background color. <i>Default text background color index: 255.</i></td>
+                                <td>Previous text background color index.</td>
                             </tr>
                             <tr>
                                 <td><code><span class="bl">det(</span>21,<span class="red">COLOR</span><span class="bl">)</span></code></td>
                                 <td>SetTextFGColor</td>
-                                <td>Sets the foreground text color for text routines. Default color is 0.</td>
+                                <td>Sets text foreground color. <i>Default text foreground color index: 0.</i></td>
+                                <td>Previous text foreground color index.</td>
                             </tr>
                             <tr>
                                 <td><code><span class="bl">det(</span>22,<span class="red">COLOR</span><span class="bl">)</span></code></td>
                                 <td>SetTextTransparentColor</td>
-                                <td>Sets the transparency text color for text routines. Default color is 255.</td>
+                                <td>Sets text transparency color. <i>Default text transparency color index: 255.</i></td>
+                                <td>Previous text transparency color index.</td>
                             </tr>
                             <tr>
                                 <td><code><span class="bl">det(</span>23,<span class="grey">"DATA"</span><span class="bl">)</span></code></td>
-                                <td>SetCustomFontData</td>
-                                <td>Sets the font for all text commands. <code><span class="grey">"DATA"</span></code> should either be a string with the data, or a pointer to the data of the formated 8x8 pixel font.</td>
+                                <td>SetFontData</td>
+                                <td>Sets the font's character data. <i>Format of font data is 8 bytes horizontally aligned.</i></td>
+                                <td>Pointer to previous font data</td>
                             </tr>
                             <tr>
                                 <td><code><span class="bl">det(</span>24,<span class="grey">"DATA"</span><span class="bl">)</span></code></td>
-                                <td>SetCustomFontSpacing</td>
-                                <td>Sets the custom font spacing for all text commands. <code><span class="grey">"DATA"</span></code> can also be a pointer to the data.</td>
+                                <td>SetFontSpacing</td>
+                                <td>Sets the font spacing. <code><span class="grey">"DATA"</span></code> can also be a pointer to the data.</td>
+                                <td>-</td>
                             </tr>
                             <tr>
                                 <td><code><span class="bl">det(</span>25,<span class="red">SPACE</span><span class="bl">)</span></code></td>
-                                <td>SetMonoSpaceFont</td>
-                                <td>Sets the font to be monospace.</td>
+                                <td>SetMonospaceFont</td>
+                                <td>Sets monospaced font. <i>To disable monospaced font, set to 0</i></td>
+                                <td>-</td>
                             </tr>
                             <tr>
                                 <td><code><span class="bl">det(</span>26,<span class="grey">"STRING"</span><span class="bl">)</span></code></td>
                                 <td>GetStringWidth</td>
-                                <td>Gets the pixel width of <code><span class="grey">"STRING"</span></code>.</td>
+                                <td>Gets the pixel width of the given string. <i>Takes into account monospacing flag.</i></td>
+                                <td>Width in pixels of string.</td>
                             </tr>
                             <tr>
                                 <td><code><span class="bl">det(</span>27,<span class="red">CHAR</span><span class="bl">)</span></code></td>
                                 <td>GetCharWidth</td>
-                                <td>Gets the pixel width of the char <code><span class="red">CHAR</span></code>.</td>
+                                <td>Gets the pixel width of the given character. <i>Takes into account monospacing flag.</i></td>
+                                <td>Width in pixels of character.</td>
                             </tr>
                             <tr>
                                 <td><code><span class="bl">det(</span>28<span class="bl">)</span></code></td>
                                 <td>GetTextX</td>
                                 <td>Returns the current text cursor X position.</td>
+                                <td>The current text cursor X position.</td>
                             </tr>
                             <tr>
                                 <td><code><span class="bl">det(</span>29<span class="bl">)</span></code></td>
                                 <td>GetTextY</td>
                                 <td>Returns the current text cursor Y position.</td>
+                                <td>The current text cursor Y position.</td>
                             </tr>
+                            <tr>
+                                <td></td>
+                                <td colspan="3"><i>For all routines below, the coordinates are measure from the top left origin of the screen.</td>
                             <tr>
                                 <td><code><span class="bl">det(</span>30,<span class="red">X1</span>,<span class="red">Y1</span>,<span class="red">X2</span>,<span class="red">Y2</span><span class="bl">)</span></code></td>
                                 <td>Line</td>
-                                <td>Draws an arbitrarily clipped line.</td>
+                                <td>Draws a line.</td>
+                                <td>-</td>
                             </tr>
                             <tr>
                                 <td><code><span class="bl">det(</span>31,<span class="red">X</span>,<span class="red">Y</span>,<span class="red">LENGTH</span><span class="bl">)</span></code></td>
                                 <td>HorizLine</td>
-                                <td>Draws an clipped horizontal line with the global color index.</td>
+                                <td>Draws a horizontal line. Performs faster than using <code><span class="bl">Line(</span></code>.</td>
+                                <td>-</td>
                             </tr>
                             <tr>
                                 <td><code><span class="bl">det(</span>32,<span class="red">X</span>,<span class="red">Y</span>,<span class="red">LENGTH</span><span class="bl">)</span></code></td>
                                 <td>VertLine</td>
-                                <td>Draws an clipped vertical line with the global color index.</td>
+                                <td>Draws a vertical line. Performs faster than using <code><span class="bl">Line(</span></code>.</td>
+                                <td>-</td>
                             </tr>
                             <tr>
                                 <td><code><span class="bl">det(</span>33,<span class="red">X</span>,<span class="red">Y</span>,<span class="red">RADIUS</span><span class="bl">)</span></code></td>
                                 <td>Circle</td>
-                                <td>Draws a clipped circle outline.</td>
+                                <td>Draws a circle outline.</td>
+                                <td>-</td>
                             </tr>
                             <tr>
                                 <td><code><span class="bl">det(</span>34,<span class="red">X</span>,<span class="red">Y</span>,<span class="red">RADIUS</span><span class="bl">)</span></code></td>
                                 <td>FillCircle</td>
-                                <td>Draws an clipped filled circle.</td>
+                                <td>Draws a filled circle.</td>
+                                <td>-</td>
                             </tr>
                             <tr>
                                 <td><code><span class="bl">det(</span>35,<span class="red">X</span>,<span class="red">Y</span>,<span class="red">WIDTH</span>,<span class="red">HEIGHT</span><span class="bl">)</span></code></td>
                                 <td>Rectangle</td>
-                                <td>Draws an clipped rectangle outline with the global color index.</td>
+                                <td>Draws a rectangle outline.</td>
+                                <td>-</td>
                             </tr>
                             <tr>
                                 <td><code><span class="bl">det(</span>36,<span class="red">X</span>,<span class="red">Y</span>,<span class="red">WIDTH</span>,<span class="red">HEIGHT</span><span class="bl">)</span></code></td>
                                 <td>FillRectangle</td>
-                                <td>Draws an clipped rectangle with the global color index.</td>
+                                <td>Draws a filled rectangle.</td>
+                                <td>-</td>
                             </tr>
                             <tr>
                                 <td><code><span class="bl">det(</span>37,<span class="red">X1</span>,<span class="red">Y1</span>,<span class="red">X2</span>,<span class="red">Y2</span><span class="bl">)</span></code></td>
                                 <td>Line_NoClip</td>
-                                <td>Draws an arbitrarily unclipped line.</td>
+                                <td>Draws an unclipped line.</td>
+                                <td>-</td>
                             </tr>
                             <tr>
                                 <td><code><span class="bl">det(</span>38,<span class="red">X</span>,<span class="red">Y</span>,<span class="red">LENGTH</span><span class="bl">)</span></code></td>
                                 <td>HorizLine_NoClip</td>
-                                <td>Draws an unclipped horizontal line with the global color index.</td>
+                                <td>Draws an unclipped horizontal line. Performs faster than using <code><span class="bl">Line(</span></code>.</td>
+                                <td>-</td>
                             </tr>
                             <tr>
                                 <td><code><span class="bl">det(</span>39,<span class="red">X</span>,<span class="red">Y</span>,<span class="red">LENGTH</span><span class="bl">)</span></code></td>
                                 <td>VertLine_NoClip</td>
-                                <td>Draws an unclipped vertical line with the global color index.</td>
+                                <td>Draws an unclipped vertical line. Performs faster than using <code><span class="bl">Line(</span></code>.</td>
+                                <td>-</td>
                             </tr>
                             <tr>
                                 <td><code><span class="bl">det(</span>40,<span class="red">X</span>,<span class="red">Y</span>,<span class="red">RADIUS</span><span class="bl">)</span></code></td>
                                 <td>FillCircle_NoClip</td>
                                 <td>Draws an unclipped filled circle.</td>
+                                <td>-</td>
                             </tr>
                             <tr>
                                 <td><code><span class="bl">det(</span>41,<span class="red">X</span>,<span class="red">Y</span>,<span class="red">WIDTH</span>,<span class="red">HEIGHT</span><span class="bl">)</span></code></td>
@@ -943,15 +996,15 @@
                                 <th>Description</th>
                             </tr>
                             <tr>
-                                <td><code><span class="bl">DefineSprite(</span><span class="or">WIDTH</span>,<span class="or">HEIGHT</span><span class="bl">)</span></code></td>
+                                <td><code><span class="bl">DefineSprite(</span><span class="or">WIDTH</span>,<span class="or">HEIGHT</span><span class="bl">)</span></code><span class="preprocess">Preprocessor command</span></td>
                                 <td>Allocates <code><span class="or">WIDTH</span>*<span class="or">HEIGHT</span>+2</code> bytes for an empty sprite. This is recommend for duplicating, rotating or enlarging sprites. Returns a pointer to the allocated memory.</td>
                             </tr>
                             <tr>
-                                <td><code><span class="bl">DefineSprite(</span><span class="or">WIDTH</span>,<span class="or">HEIGHT</span>,<span class="grey">"DATA"</span><span class="bl">)</span></code></td>
+                                <td><code><span class="bl">DefineSprite(</span><span class="or">WIDTH</span>,<span class="or">HEIGHT</span>,<span class="grey">"DATA"</span><span class="bl">)</span></code><span class="preprocess">Preprocessor command</span></td>
                                 <td>Defines a sprite with data <code><span class="grey">DATA</span></code>, width <code><span class="or">WIDTH</span></code> and height <code><span class="or">HEIGHT</span></code>. Returns a pointer to the start of the sprite.</td>
                             </tr>
                             <tr>
-                                <td style="word-wrap:break-word; max-width: 200px;"><code><span class="bl">DefineTilemap(</span><span class="or">TILE_HEIGHT</span>,<span class="or">TILE_WIDTH</span>,<span class="or">DRAW_HEIGHT</span>,<span class="or">DRAW_WIDTH</span>,<span class="or">TYPE_WIDTH</span>,<span class="or">TYPE_HEIGHT</span>,<span class="or">TILEMAP_HEIGHT</span>,<span class="or">TILEMAP_WIDTH</span>,<span class="or">Y</span>,<span class="or">X</span>,<span class="gr">VAR</span>,<span class="grey">"MAP_DATA"</span><span class="bl">)</span></code></td>
+                                <td style="word-wrap:break-word; max-width: 200px;"><code><span class="bl">DefineTilemap(</span><span class="or">TILE_HEIGHT</span>,<span class="or">TILE_WIDTH</span>,<span class="or">DRAW_HEIGHT</span>,<span class="or">DRAW_WIDTH</span>,<span class="or">TYPE_WIDTH</span>,<span class="or">TYPE_HEIGHT</span>,<span class="or">TILEMAP_HEIGHT</span>,<span class="or">TILEMAP_WIDTH</span>,<span class="or">Y</span>,<span class="or">X</span>,<span class="gr">VAR</span>,<span class="grey">"MAP_DATA"</span><span class="bl">)</span></code><span class="preprocess">Preprocessor command</span></td>
                                 <td>Defines a tilemap. <code><span class="gr">VAR</span></code> should be a variable, which holds a pointer to the table with pointers to the sprites, which returns from <code><span class="bl">LoadData(</span></code>. See <code>tilemaps.docx</code> how to get the map data. Returns a pointer to the tilemap struct, which can be used in <code><span class="bl">det(</span>50</code>. <code><span class="or">TYPE_HEIGHT</span></code>, <code><span class="or">TYPE_WIDTH</span></code> options:<br>
                                     - <code>0</code> - Not a power of 2<br>
                                     - <code>1</code> - Tile width/height of 2<br>
@@ -964,7 +1017,7 @@
                                 </td>
                             </tr>
                             <tr>
-                                <td><code><span class="bl">Data(</span><span class="or">SIZE</span>,<span class="or">CONST1</span>,<span class="or">CONST2</span>...<span class="bl">)</span></code></td>
+                                <td><code><span class="bl">Data(</span><span class="or">SIZE</span>,<span class="or">CONST1</span>,<span class="or">CONST2</span>...<span class="bl">)</span></code><span class="preprocess">Preprocessor command</span></td>
                                 <td>Places constant data in program memory with each element size of <code><span class="or">SIZE</span></code> bytes. Returns a pointer to the data.</td>
                             </tr>
                             <tr>
@@ -1039,8 +1092,8 @@
                                 <td>Concatenates two strings. String variables are valid as well. Returns a pointer to the data.</td>
                             </tr>
                             <tr>
-                                <td><code><span class="grey">"STRING1"</span>→<span class="or">STRING_VAR</span></code></td>
-                                <td>Stores <code><span class="grey">"STRING1"</span></code> into one of the 10 available string variables, <code>Str0-Str9</code>. Storing one string variable into another one is valid as well.</td>
+                                <td><code><span class="grey">"STRING"</span>→<span class="or">STRING_VAR</span></code></td>
+                                <td>Stores <code><span class="grey">"STRING"</span></code> into one of the 10 available string variables, <code>Str0-Str9</code>. Storing one string variable into another one is valid as well.</td>
                             </tr>
                             <tr>
                                 <td><code><span class="bl">sub(</span><span class="grey">"STRING"</span>,<span class="red">OFFSET</span>,<span class="red">SIZE</span><span class="bl">)</span></code></td>
@@ -1074,8 +1127,12 @@
                                 <td>Clears the homescreen full. It is recommend to call this function before using <code><span class="bl">Disp</span></code>. The cursor moves to the upper-left corner.</td>
                             </tr>
                             <tr>
-                                <td><code><span class="bl">Input</span></code> <code><span class="gr">VAR</span></code></td>
+                                <td><code><span class="bl">Input</span> <span class="gr">VAR</span></code></td>
                                 <td>Asks for a user input, and stores the value in <code><span class="gr">VAR</span></code>.</td>
+                            </tr>
+                            <tr>
+                                <td><code><span class="bl">Input</span> <span class="grey">"STRING"</span>,<span class="gr">VAR</span></code></td>
+                                <td>Asks for a user input while displaying <code><span class="grey">"STRING"</span></code>, and stores the value in <code><span class="gr">VAR</span></code>.</td>
                             </tr>
                         </table>
                     </div>
@@ -1085,15 +1142,15 @@
                 <div class="innertube">
                     <h3>Category</h3>
                     <ul>
-                        <li><a href="#system">System</a></li>
-                        <li><a href="#math">Math</a></li>
-                        <li><a href="#controls">Controls</a></li>
-                        <li><a href="#labels">Labels</a></li>
-                        <li><a href="#graphics">Graphics</a></li>
-                        <li><a href="#fileioc">File I/O</a></li>
-                        <li><a href="#memory">Memory</a></li>
-                        <li><a href="#strings">Strings</a></li>
-                        <li><a href="#text">Text</a></li>
+                        <li><a href="#system">» System</a></li>
+                        <li><a href="#math">» Math</a></li>
+                        <li><a href="#controls">» Controls</a></li>
+                        <li><a href="#labels">» Labels</a></li>
+                        <li><a href="#graphics">» Graphics</a></li>
+                        <li><a href="#fileioc">» File I/O</a></li>
+                        <li><a href="#memory">» Memory</a></li>
+                        <li><a href="#strings">» Strings</a></li>
+                        <li><a href="#text">» Text</a></li>
                     </ul>
                 </div>
             </nav>
