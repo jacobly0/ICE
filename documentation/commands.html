@@ -362,6 +362,10 @@
                                 <th>Returns</th>
                             </tr>
                             <tr>
+                                <td></td>
+                                <td colspan="3"><i>For all routines that uses coordinates, they are measured from the top left origin of the screen.</td>
+                            </tr>
+                            <tr>
                                 <td><code><span class="bl">det(</span>0<span class="bl">)</span></code></td>
                                 <td>Begin</td>
                                 <td>Initializes the graphics library setup (8bpp, default palette, clear screen).</td>
@@ -542,9 +546,6 @@
                                 <td>The current text cursor Y position.</td>
                             </tr>
                             <tr>
-                                <td></td>
-                                <td colspan="3"><i>For all routines below, the coordinates are measure from the top left origin of the screen.</td>
-                            <tr>
                                 <td><code><span class="bl">det(</span>30,<span class="red">X1</span>,<span class="red">Y1</span>,<span class="red">X2</span>,<span class="red">Y2</span><span class="bl">)</span></code></td>
                                 <td>Line</td>
                                 <td>Draws a line.</td>
@@ -613,241 +614,288 @@
                             <tr>
                                 <td><code><span class="bl">det(</span>41,<span class="red">X</span>,<span class="red">Y</span>,<span class="red">WIDTH</span>,<span class="red">HEIGHT</span><span class="bl">)</span></code></td>
                                 <td>Rectangle_NoClip</td>
-                                <td>Draws an unclipped rectangle outline with the global color index.</td>
+                                <td>Draws an unclipped rectangle outline.</td>
+                                <td>-</td>
                             </tr>
                             <tr>
                                 <td><code><span class="bl">det(</span>42,<span class="red">X</span>,<span class="red">Y</span>,<span class="red">WIDTH</span>,<span class="red">HEIGHT</span><span class="bl">)</span></code></td>
                                 <td>FillRectangle_NoClip</td>
-                                <td>Draws an unclipped rectangle with the global color index.</td>
+                                <td>Draws an unclipped filled rectangle.</td>
+                                <td>-</td>
                             </tr>
                             <tr>
                                 <td><code><span class="bl">det(</span>43,<span class="red">XMIN</span>,<span class="red">YMIN</span>,<span class="red">XMAX</span>,<span class="red">YMAX</span><span class="bl">)</span></code></td>
                                 <td>SetClipRegion</td>
-                                <td>Sets the clipping  for clipped routines.</td>
+                                <td>Sets the clipping window. This window is used across all clipped routines.</td>
+                                <td>-</td>
                             </tr>
                             <tr>
                                 <td><code><span class="bl">det(</span>44,<span class="red">CLIP_REGION</span><span class="bl">)</span></code></td>
                                 <td>GetClipRegion</td>
-                                <td><code><span class="red">CLIP_REGION</span></code> is a pointer to the region bounds. Returns 0 if offscreen, 1 if onscreen.</td>
+                                <td>Clips a region to fit within the window. 0 = offscreen, 1 = onscreen.</td>
+                                <td>0 if offscreen, 1 if onscreen.</td>
                             </tr>
                             <tr>
                                 <td><code><span class="bl">det(</span>45,<span class="red">PIXELS</span><span class="bl">)</span></code></td>
                                 <td>ShiftDown</td>
-                                <td>Shifts whatever is in the clip down by some pixels.</td>
+                                <td>Shifts the drawing window down.</td>
+                                <td>-</td>
                             </tr>
                             <tr>
                                 <td><code><span class="bl">det(</span>46,<span class="red">PIXELS</span><span class="bl">)</span></code></td>
                                 <td>ShiftUp</td>
-                                <td>Shifts whatever is in the clip up by some pixels.</td>
+                                <td>Shifts the drawing window up.</td>
+                                <td>-</td>
                             </tr>
                             <tr>
                                 <td><code><span class="bl">det(</span>47,<span class="red">PIXELS</span><span class="bl">)</span></code></td>
                                 <td>ShiftLeft</td>
-                                <td>Shifts whatever is in the clip left by some pixels.</td>
+                                <td>Shifts the drawing window left.</td>
+                                <td>-</td>
                             </tr>
                             <tr>
                                 <td><code><span class="bl">det(</span>48,<span class="red">PIXELS</span><span class="bl">)</span></code></td>
                                 <td>ShiftRight</td>
-                                <td>Shifts whatever is in the clip right by some pixels.</td>
+                                <td>Shifts the drawing window right.</td>
+                                <td>-</td>
                             </tr>
                             <tr>
                                 <td><code><span class="bl">det(</span>49,<span class="gr">VAR</span>,<span class="red">X_OFFSET</span>,<span class="red">Y_OFFSET</span><span class="bl">)</span></code></td>
                                 <td>Tilemap</td>
-                                <td>Displays a clipped tilemap. <code><span class="gr">VAR</span></code> should point to the tilemap structure, which you can get with <code><span class="bl">DefineTilemap(</span></code>.</td>
+                                <td>Draws a tilemap given an initialized tilemap structure. <code><span class="gr">VAR</span></code> should point to the tilemap structure, which you can get with <code><span class="bl">DefineTilemap(</span></code>.</td>
+                                <td>-</td>
                             </tr>
                             <tr>
                                 <td><code><span class="bl">det(</span>50,<span class="gr">VAR</span>,<span class="red">X_OFFSET</span>,<span class="red">Y_OFFSET</span><span class="bl">)</span></code></td>
                                 <td>Tilemap_NoClip</td>
-                                <td>Displays a tilemap. <code><span class="gr">VAR</span></code> should point to the tilemap structure, which you can get with <code><span class="bl">DefineTilemap(</span></code>.</td>
+                                <td>Draws an unclipped tilemap given an initialized tilemap structure. <code><span class="gr">VAR</span></code> should point to the tilemap structure, which you can get with <code><span class="bl">DefineTilemap(</span></code>.</td>
+                                <td>-</td>
                             </tr>
                             <tr>
                                 <td><code><span class="bl">det(</span>51,<span class="gr">VAR</span>,<span class="red">X_OFFSET</span>,<span class="red">Y_OFFSET</span><span class="bl">)</span></code></td>
                                 <td>TransparentTilemap</td>
-                                <td>Displays a transparent, clipped tilemap. <code><span class="gr">VAR</span></code> should point to the tilemap structure, which you can get with <code><span class="bl">DefineTilemap(</span></code>.</td>
+                                <td>Draws a transparent tilemap given an initialized tilemap structure. <code><span class="gr">VAR</span></code> should point to the tilemap structure, which you can get with <code><span class="bl">DefineTilemap(</span></code>.</td>
+                                <td>-</td>
                             </tr>
                             <tr>
                                 <td><code><span class="bl">det(</span>52,<span class="gr">VAR</span>,<span class="red">X_OFFSET</span>,<span class="red">Y_OFFSET</span><span class="bl">)</span></code></td>
                                 <td>TransparentTilemap_NoClip</td>
-                                <td>Displays a transparent tilemap. <code><span class="gr">VAR</span></code> should point to the tilemap structure, which you can get with <code><span class="bl">DefineTilemap(</span></code>.</td>
+                                <td>Draws an unclipped transparent tilemap given an initialized tilemap structure. <code><span class="gr">VAR</span></code> should point to the tilemap structure, which you can get with <code><span class="bl">DefineTilemap(</span></code>.</td>
+                                <td>-</td>
                             </tr>
                             <tr>
                                 <td><code><span class="bl">det(</span>53,<span class="gr">VAR</span>,<span class="red">X_OFFSET</span>,<span class="red">Y_OFFSET</span><span class="bl">)</span></code></td>
                                 <td>TilePtr</td>
-                                <td>Gets a pointer to a particular tile given a tilemap and pixel offsets. <code><span class="gr">VAR</span></code> should point to the tilemap structure, which you can get with <code><span class="bl">DefineTilemap(</span></code>.</td>
+                                <td>Gets a pointer to a particular tile given an initialized tilemap structure and pixel offsets. <code><span class="gr">VAR</span></code> should point to the tilemap structure, which you can get with <code><span class="bl">DefineTilemap(</span></code>.</td>
+                                <td>-</td>
                             </tr>
                             <tr>
                                 <td><code><span class="bl">det(</span>54,<span class="gr">VAR</span>,<span class="red">ROW</span>,<span class="red">COL</span><span class="bl">)</span></code></td>
                                 <td>TilePtrMapped</td>
-                                <td>Gets a pointer to a particular tile given a tilemap and offsets. <code><span class="gr">VAR</span></code> should point to the tilemap structure, which you can get with <code><span class="bl">DefineTilemap(</span></code>.</td>
+                                <td>Gets a pointer to a particular tile given an initialized tilemap structure and mapped offsets. <code><span class="gr">VAR</span></code> should point to the tilemap structure, which you can get with <code><span class="bl">DefineTilemap(</span></code>.</td>
+                                <td>-</td>
                             </tr>
                             <tr>
                                 <td></td>
-                                <td colspan="2"><i>For all sprite commands: <code><span class="red">PTR</span></code> should be a pointer to the sprite data done with <code><span class="bl">DefineSprite(</span></code>. Check sprites.txt how to define sprites.</i></td>
+                                <td colspan="3"><i>For all sprite commands: <code><span class="red">PTR</span></code> should be a pointer to the sprite data done with <code><span class="bl">DefineSprite(</span></code>. Check sprites.txt how to define sprites.</i></td>
                             </tr>
                             <tr>
                                 <td><code><span class="bl">det(</span>57,<span class="red">PTR</span>,<span class="red">X</span>,<span class="red">Y</span><span class="bl">)</span></code></td>
                                 <td>Sprite</td>
-                                <td>Draws a clipped sprite.</td>
+                                <td>Draws a sprite.</td>
+                                <td>-</td>
                             </tr>
                             <tr>
                                 <td><code><span class="bl">det(</span>58,<span class="red">PTR</span>,<span class="red">X</span>,<span class="red">Y</span><span class="bl">)</span></code></td>
                                 <td>TransparentSprite</td>
-                                <td>Draws a clipped transparent sprite to the current buffer. The transparent color is 0.</td>
+                                <td>Draws a transparent sprite.</td>
+                                <td>-</td>
                             </tr>
                             <tr>
                                 <td><code><span class="bl">det(</span>59,<span class="red">PTR</span>,<span class="red">X</span>,<span class="red">Y</span><span class="bl">)</span></code></td>
                                 <td>Sprite_NoClip</td>
-                                <td>Places an sprite on the screen as fast as possible.</td>
+                                <td>Draws an unclipped sprite.</td>
+                                <td>-</td>
                             </tr>
                             <tr>
                                 <td><code><span class="bl">det(</span>60,<span class="red">PTR</span>,<span class="red">X</span>,<span class="red">Y</span><span class="bl">)</span></code></td>
                                 <td>TransparentSprite_NoClip</td>
-                                <td>Draws a transparent sprite to the current buffer. Default transparent color is 0.</td>
+                                <td>Draws an unclipped transparent sprite.</td>
+                                <td>-</td>
                             </tr>
                             <tr>
                                 <td><code><span class="bl">det(</span>61,<span class="red">PTR</span>,<span class="red">X</span>,<span class="red">Y</span>,<span class="red">WSCALE</span>,<span class="red">HSCALE</span><span class="bl">)</span></code></td>
                                 <td>GetSprite</td>
-                                <td>Gets a sprite off the buffer, and stores it to the memory pointed to by <code><span class="red">PTR</span></code>. Note: you need to store the width and the height (both 1-byte values) to the memory first.</td>
+                                <td>Grabs the background behind a sprite, and stores it to the memory pointed to by <code><span class="red">PTR</span></code>. <i>Note: you need to store the width and the height (both 1-byte values) to the memory first.</i></td>
+                                <td>-</td>
                             </tr>
                             <tr>
                                 <td><code><span class="bl">det(</span>62,<span class="red">PTR</span>,<span class="red">X</span>,<span class="red">Y</span>,<span class="red">WSCALE</span>,<span class="red">HSCALE</span><span class="bl">)</span></code></td>
                                 <td>ScaledSprite_NoClip</td>
-                                <td>Draws a scaled sprite to the screen.</td>
+                                <td>Scales an unclipped sprite. Scaling factors must be greater than or equal to 1, and an integer factor.</td>
+                                <td>-</td>
                             </tr>
                             <tr>
                                 <td><code><span class="bl">det(</span>63,<span class="red">PTR</span>,<span class="red">X</span>,<span class="red">Y</span>,<span class="red">WSCALE</span>,<span class="red">HSCALE</span><span class="bl">)</span></code></td>
                                 <td>ScaledTransparentSprite_NoClip</td>
-                                <td>Draws a scaled sprite to the screen with transparency. Default transparent color is 0.</td>
+                                <td>Scales an unclipped transparent sprite. Scaling factors must be greater than or equal to 1, and an integer factor.</td>
+                                <td>-</td>
                             </tr>
                             <tr>
                                 <td><code><span class="bl">det(</span>64,<span class="red">PTR_IN</span>,<span class="red">PTR_OUT</span><span class="bl">)</span></code></td>
                                 <td>FlipSpriteY</td>
-                                <td>Flips a sprite along the Y-axis.</td>
+                                <td>Flips a sprite along the Y axis. <i>Note: <code><span class="red">PTR_IN</span></code> and <code><span class="red">PTR_OUT</span></code> cannot be the same.</i></td>
+                                <td><code><span class="red">PTR_OUT</span></code> pointer.</td>
                             </tr>
                             <tr>
                                 <td><code><span class="bl">det(</span>65,<span class="red">PTR_IN</span>,<span class="red">PTR_OUT</span><span class="bl">)</span></code></td>
                                 <td>FlipSpriteX</td>
-                                <td>Flips a sprite along the X-axis.</td>
+                                <td>Flips a sprite along the X axis. <i>Note: <code><span class="red">PTR_IN</span></code> and <code><span class="red">PTR_OUT</span></code> cannot be the same.</i></td>
+                                <td><code><span class="red">PTR_OUT</span></code> pointer.</td>
                             </tr>
                             <tr>
                                 <td><code><span class="bl">det(</span>66,<span class="red">PTR_IN</span>,<span class="red">PTR_OUT</span><span class="bl">)</span></code></td>
                                 <td>RotateSpriteC</td>
-                                <td>Rotates a sprite 90 degrees clockwise.</td>
+                                <td>Rotates a sprite 90 degrees clockwise. <i>Note: <code><span class="red">PTR_IN</span></code> and <code><span class="red">PTR_OUT</span></code> cannot be the same.</i></td>
+                                <td><code><span class="red">PTR_OUT</span></code> pointer.</td>
                             </tr>
                             <tr>
                                 <td><code><span class="bl">det(</span>67,<span class="red">PTR_IN</span>,<span class="red">PTR_OUT</span><span class="bl">)</span></code></td>
                                 <td>RotateSpriteCC</td>
-                                <td>Rotates a sprite 90 degrees counter clockwise.</td>
+                                <td>Rotates a sprite 90 degrees counter clockwise. <i>Note: <code><span class="red">PTR_IN</span></code> and <code><span class="red">PTR_OUT</span></code> cannot be the same.</i></td>
+                                <td><code><span class="red">PTR_OUT</span></code> pointer.</td>
                             </tr>
                             <tr>
                                 <td><code><span class="bl">det(</span>68,<span class="red">PTR_IN</span>,<span class="red">PTR_OUT</span><span class="bl">)</span></code></td>
                                 <td>RotateSpriteHalf</td>
-                                <td>Rotates a sprite 180 degrees.</td>
+                                <td>Rotates a sprite 180 degrees. <i>Note: <code><span class="red">PTR_IN</span></code> and <code><span class="red">PTR_OUT</span></code> cannot be the same.</i></td>
+                                <td><code><span class="red">PTR_OUT</span></code> pointer.</td>
                             </tr>
                             <tr>
                                 <td><code><span class="bl">det(</span>69,<span class="red">PTS</span>,<span class="red">NUM_PTS</span><span class="bl">)</span></code></td>
                                 <td>Polygon</td>
-                                <td>Draws a clipped polygon outline with <code><span class="red">NUM_PTS</span></code> points. <code><span class="red">PTS</span></code> should point to a 3-byte list, with all the X- and Y-coordinates of the points, so <code>{<span class="red">X1</span>,<span class="red">Y1</span>,<span class="red">X2</span>,<span class="red">Y2</span>,...}</code></td>
+                                <td>Draws a polygon outline with <code><span class="red">NUM_PTS</span></code> points. <code><span class="red">PTS</span></code> should point to a 3-byte list, with all the X- and Y-coordinates of the points, so <code>{<span class="red">X1</span>,<span class="red">Y1</span>,<span class="red">X2</span>,<span class="red">Y2</span>,...}</code></td>
+                                <td>-</td>
                             </tr>
                             <tr>
                                 <td><code><span class="bl">det(</span>70,<span class="red">PTS</span>,<span class="red">NUM_PTS</span><span class="bl">)</span></code></td>
                                 <td>Polygon_NoClip</td>
-                                <td>Draws a polygon outline with <code><span class="red">NUM_PTS</span></code> points. <code><span class="red">PTS</span></code> should point to a 3-byte list, with all the X- and Y-coordinates of the points, so <code>{<span class="red">X1</span>,<span class="red">Y1</span>,<span class="red">X2</span>,<span class="red">Y2</span>,...}</code></td>
+                                <td>Draws an unclipped polygon outline with <code><span class="red">NUM_PTS</span></code> points. <code><span class="red">PTS</span></code> should point to a 3-byte list, with all the X- and Y-coordinates of the points, so <code>{<span class="red">X1</span>,<span class="red">Y1</span>,<span class="red">X2</span>,<span class="red">Y2</span>,...}</code></td>
+                                <td>-</td>
                             </tr>
                             <tr>
                                 <td><code><span class="bl">det(</span>71,<span class="red">X1</span>,<span class="red">Y1</span>,<span class="red">X2</span>,<span class="red">Y2</span>,<span class="red">X3</span>,<span class="red">Y3</span><span class="bl">)</span></code></td>
                                 <td>FillTriangle</td>
-                                <td>Draws a filled triangle with clipping.</td>
+                                <td>Draws a filled triangle.</td>
+                                <td>-</td>
                             </tr>
                             <tr>
                                 <td><code><span class="bl">det(</span>72,<span class="red">X1</span>,<span class="red">Y1</span>,<span class="red">X2</span>,<span class="red">Y2</span>,<span class="red">X3</span>,<span class="red">Y3</span><span class="bl">)</span></code></td>
                                 <td>FillTriangle_NoClip</td>
-                                <td>Draws a filled triangle without clipping.</td>
+                                <td>Draws an unclipped, filled triangle.</td>
+                                <td>-</td>
                             </tr>
                             <tr>
                                 <td><code><span class="bl">det(</span>74,<span class="red">XSCALE</span>,<span class="red">YSCALE</span><span class="bl">)</span></code></td>
                                 <td>SetTextScale</td>
-                                <td>Changes the amount of text scaling (note that height and width are independent).</td>
+                                <td>Sets the scaling for text. Values in the range from 1-5 are preferred.</td>
+                                <td>-</td>
                             </tr>
                             <tr>
                                 <td><code><span class="bl">det(</span>75,<span class="red">COLOR</span><span class="bl">)</span></code></td>
                                 <td>SetTransparentColor</td>
-                                <td>Sets the global transparent color index for all routines.</td>
+                                <td>Sets the transparent index that drawing routines will use. This currently applies to transparent sprites, both scaled and unscaled.</td>
+                                <td>Previous transparent color index.</td>
                             </tr>
                             <tr>
                                 <td><code><span class="bl">det(</span>76<span class="bl">)</span></code></td>
                                 <td>ZeroScreen</td>
-                                <td>Fills the current screen with a bunch of zeros. Same as <code>det(5,0)</code> but faster.</td>
+                                <td>Implements a faster version of <code><span class="bl">gfx_FillScreen(</span>0<span class="bl">)</span></code>.</td>
+                                <td>-</td>
                             </tr>
                             <tr>
                                 <td><code><span class="bl">det(</span>77,<span class="red">CONFIG</span><span class="bl">)</span></code></td>
                                 <td>SetTextConfig</td>
-                                <td>Configures text depending on the arguments. 1 = clipping, 2 = no clipping.</td>
+                                <td>Sets the configuration for the text routines. 1 = clipping, 2 = no clipping.</td>
+                                <td>-</td>
                             </tr>
                             <tr>
                                 <td><code><span class="bl">det(</span>78,<span class="red">CHAR</span><span class="bl">)</span></code></td>
                                 <td>GetSpriteChar</td>
-                                <td>Creates a temporary sprite of char <code><span class="red">CHAR</span></code>. Returns a pointer to the sprite data. <i>Note: you need to set the right colors first with SetTextBGColor, SetTextFGColor, SetTextTransparentColor and SetTransparentColor!</i></td>
+                                <td>Creates a temporary character sprite. This may be useful for performing rotations and other.</td>
+                                <td>Pointer to temp sprite.</td>
                             </tr>
                             <tr>
                                 <td><code><span class="bl">det(</span>79,<span class="red">COLOR</span>,<span class="red">AMOUNT</span><span class="bl">)</span></code></td>
                                 <td>Lighten</td>
                                 <td>Lightens a given 1555 color; useful for palette color conversions. <code><span class="red">AMOUNT</span></code> is the amount to lighten by.</td>
+                                <td>Lightened color.</td>
                             </tr>
                             <tr>
                                 <td><code><span class="bl">det(</span>80,<span class="red">COLOR</span>,<span class="red">AMOUNT</span><span class="bl">)</span></code></td>
                                 <td>Darken</td>
                                 <td>Darkens a given 1555 color; useful for palette color conversions. <code><span class="red">AMOUNT</span></code> is the amount to darken by.</td>
+                                <td>Darkened color.</td>
                             </tr>
                             <tr>
                                 <td><code><span class="bl">det(</span>81,<span class="red">HEIGHT</span><span class="bl">)</span></code></td>
                                 <td>SetFontHeight</td>
-                                <td>Sets the height of the font in pixels.</td>
+                                <td>Sets the height in pixels of each character.</td>
+                                <td>Previous height of font in pixels.</td>
                             </tr>
                             <tr>
                                 <td><code><span class="bl">det(</span>82,<span class="red">PTR_IN</span>,<span class="red">PTR_OUT</span><span class="bl">)</span></code></td>
                                 <td>ScaleSprite</td>
                                 <td>Resizes a sprite to new dimensions.</td>
+                                <td><code><span class="red">PTR_OUT</span></code> pointer.</td>
                             </tr>
                             <tr>
                                 <td><code><span class="bl">det(</span>83,<span class="red">X</span>,<span class="red">Y</span>,<span class="red">COLOR</span><span class="bl">)</span></code></td>
                                 <td>FloodFill</td>
-                                <td>Fills an area with a color.</td>
+                                <td>Fills an area with a color. <i>This routine performs clipping to stay within the window, but you must ensure it starts in the window.</i></td>
+                                <td>-</td>
                             </tr>
                             <tr>
                                 <td><code><span class="bl">det(</span>84,<span class="red">PTR</span>,<span class="red">X</span>,<span class="red">Y</span><span class="bl">)</span></code></td>
                                 <td>RLETSprite</td>
                                 <td>Draws a sprite with RLE transparency.</td>
+                                <td>-</td>
                             </tr>
                             <tr>
                                 <td><code><span class="bl">det(</span>85,<span class="red">PTR</span>,<span class="red">X</span>,<span class="red">Y</span><span class="bl">)</span></code></td>
                                 <td>RLETSprite_NoClip</td>
                                 <td>Draws an unclipped sprite with RLE transparency.</td>
+                                <td>-</td>
                             </tr>
                             <tr>
                                 <td><code><span class="bl">det(</span>86,<span class="red">PTR_IN</span>,<span class="red">PTR_OUT</span><span class="bl">)</span></code></td>
                                 <td>ConvertFromRLETSprite</td>
-                                <td>Converts a sprite with RLE transpareny to a sprite with normal transparency.</td>
+                                <td>Converts a sprite with RLE transpareny to a sprite with normal transparency. Width and height will be set in the converted sprite. The transparent color index in the converted sprite is controlled by <code><span class="bl">SetTransparentColor</span></code>. <i>The output sprite must have been allocated with a large enough data field to hold the converted sprite data, which will be <code>width * height</code> bytes large.</td>
+                                <td><code><span class="red">PTR_OUT</span></code> pointer.</td>
                             </tr>
                             <tr>
                                 <td><code><span class="bl">det(</span>87,<span class="red">PTR_IN</span>,<span class="red">PTR_OUT</span><span class="bl">)</span></code></td>
                                 <td>ConvertToRLETSprite</td>
-                                <td>Converts a sprite with normal transpareny to a sprite with RLE transparency.</td>
+                                <td>Converts a sprite with normal transpareny to a sprite with RLE transparency. Width and height will be set in the converted sprite. The transparent color index in the converted sprite is controlled by <code><span class="bl">SetTransparentColor</span></code>. <i>The output sprite must have been allocated with a large enough data field to hold the converted sprite data.</i></td>
+                                <td><code><span class="red">PTR_OUT</span></code> pointer.</td>
                             </tr>
                             <tr>
                                 <td><code><span class="bl">det(</span>89,<span class="red">PTR_IN</span>,<span class="red">PTR_OUT</span>,<span class="red">ANGLE</span>,<span class="red">SCALE</span><span class="bl">)</span></code></td>
                                 <td>RotateScaleSprite</td>
-                                <td>Fixed rotation with scaling factor for sprites. <i>A scale factor of 64 represents 100% scaling. This routine only accepts square input sprites.</i> <code><span class="red">ANGLE</span></code> should be in <code>[0,255]</code>.</td>
+                                <td>Fixed Rotation with scaling factor for sprites. The output sprite is updated with the dimensions required for the implemented scaling factor. You must make sure that <code><span class="red">PTR_OUT</span></code> has enough memory to store the needed output sprite. This can be found with the following formula: <code>size = (max_scale / 64) * width * height + 2</code>. <i>A scale factor of 64 represents 100% scaling. This routine only accepts square input sprites.</i></td>
+                                <td><code><span class="red">PTR_OUT</span></code> pointer.</td>
                             </tr>
                             <tr>
                                 <td><code><span class="bl">det(</span>90,<span class="red">PTR</span>,<span class="red">X</span>,<span class="red">Y</span>,<span class="red">ANGLE</span>,<span class="red">SCALE</span><span class="bl">)</span></code></td>
                                 <td>RotatedScaledTransparentSprite_NoClip</td>
-                                <td>Fixed rotation with scaling factor for sprites with transparency. <i>A scale factor of 64 represents 100% scaling. This routine only accepts square input sprites.</i> <code><span class="red">ANGLE</span></code> should be in <code>[0,255]</code>.</td>
+                                <td>Fixed Rotation with scaling fator for sprites. <i>A scale factor of 64 represents 100% scaling. This routine only accepts square input sprites.</i></td>
+                                <td>The size of the sprite after scaling.</td>
                             </tr>
                             <tr>
                                 <td><code><span class="bl">det(</span>91,<span class="red">PTR</span>,<span class="red">X</span>,<span class="red">Y</span>,<span class="red">ANGLE</span>,<span class="red">SCALE</span><span class="bl">)</span></code></td>
                                 <td>RotatedScaledSprite_NoClip</td>
-                                <td>Fixed rotation with scaling factor for sprites without transparency. <i>A scale factor of 64 represents 100% scaling. This routine only accepts square input sprites.</i> <code><span class="red">ANGLE</span></code> should be in <code>[0,255]</code>.</td>
+                                <td>Fixed Rotation with scaling fator for sprites without transparency. <i>A scale factor of 64 represents 100% scaling. This routine only accepts square input sprites.</i></td>
+                                <td>The size of the sprite after scaling.</td>
                             </tr>
                         </table>
                         <h3 id="fileioc">File I/O</h3>
