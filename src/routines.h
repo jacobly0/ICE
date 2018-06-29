@@ -28,6 +28,7 @@ void PushHLDE(void);
 void AnsToHL(void);
 void AnsToDE(void);
 void AnsToBC(void);
+void AnsToA(void);
 void displayMessageLineScroll(char*);
 void MaybeAToHL(void);
 void MaybeLDIYFlags(void);

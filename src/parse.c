@@ -41,6 +41,8 @@ const uint8_t implementedFunctions[AMOUNT_OF_FUNCTIONS][5] = {
     {tExtTok,   tRemainder,     2,   1, 0},
     {tExtTok,   tCheckTmr,      1,   0, 0},
     {tExtTok,   tStartTmr,      0,   0, 0},
+    {tExtTok,   tLEFT,          2,   1, 0},
+    {tExtTok,   tRIGHT,         2,   1, 0},
     {t2ByteTok, tSubStrng,      3,   0, 0},
     {t2ByteTok, tLength,        1,   0, 0},
     {t2ByteTok, tFinDBD,        1,   0, 0},
@@ -596,6 +598,13 @@ noSquishing:
             }
             
             if ((index = GetIndexOfFunction(tok, tok2)) != 255) {
+                // LEFT and RIGHT should have a left paren with it
+                if (tok == tExtTok && (tok2 == tLEFT || tok2 == tRIGHT)) {
+                    if ((uint8_t)_getc() != tLParen) {
+                        return E_SYNTAX;
+                    }
+                }
+                
                 if (implementedFunctions[index][2]) {
                     // We always have at least 1 argument
                     *++amountOfArgumentsStackPtr = 1;
@@ -669,57 +678,60 @@ stackToOutputReturn2:
 
         // Check if the types are number | number | ... | function (specific function or pointer)
         if (loopIndex >= index && outputCurr->type == TYPE_FUNCTION) {
-            uint8_t a, function = (uint8_t)outputCurr->operand, function2 = (uint8_t)(outputCurr->operand >> 16);
+            uint8_t a, index2, function = outputCurr->operand, function2 = outputCurr->operand >> 16;
+            
+            if ((index2 = GetIndexOfFunction(function, function2)) != 255 && implementedFunctions[index2][3]) {
+                uint24_t outputPrevOperand = outputPrev->operand, outputPrevPrevOperand = outputPrevPrev->operand;
 
-            for (a = 0; a < AMOUNT_OF_FUNCTIONS; a++) {
-                if (function == implementedFunctions[a][0] && function2 == implementedFunctions[a][1] && implementedFunctions[a][3]) {
-                    uint24_t outputPrevOperand = outputPrev->operand, outputPrevPrevOperand = outputPrevPrev->operand;
-
-                    for (a = 1; a <= index; a++) {
-                        if ((&outputPtr[loopIndex-a])->type != TYPE_NUMBER) {
-                            goto DontDeleteFunction;
-                        }
+                for (a = 1; a <= index; a++) {
+                    if ((&outputPtr[loopIndex-a])->type != TYPE_NUMBER) {
+                        goto DontDeleteFunction;
                     }
-
-                    switch (function) {
-                        case tNot:
-                            temp = !outputPrevOperand;
-                            break;
-                        case tMin:
-                            temp = (outputPrevOperand < outputPrevPrevOperand) ? outputPrevOperand : outputPrevPrevOperand;
-                            break;
-                        case tMax:
-                            temp = (outputPrevOperand > outputPrevPrevOperand) ? outputPrevOperand : outputPrevPrevOperand;
-                            break;
-                        case tMean:
-                            // I can't simply add, and divide by 2, because then it *might* overflow in case that A + B > 0xFFFFFF
-                            temp = ((long)outputPrevOperand + (long)outputPrevPrevOperand) / 2;
-                            break;
-                        case tSqrt:
-                            temp = sqrt(outputPrevOperand);
-                            break;
-                        case tExtTok:
-                            if ((uint8_t)(outputCurr->operand >> 16) != tRemainder) {
-                                return E_ICE_ERROR;
-                            }
-                            temp = outputPrevOperand % outputPrevPrevOperand;
-                            break;
-                        case tSin:
-                            temp = 255*sin((double)outputPrevOperand * (2 * M_PI / 256));
-                            break;
-                        case tCos:
-                            temp = 255*cos((double)outputPrevOperand * (2 * M_PI / 256));
-                            break;
-                        default:
-                            return E_ICE_ERROR;
-                    }
-
-                    // And remove everything
-                    (&outputPtr[loopIndex - index])->operand = temp;
-                    memcpy(&outputPtr[loopIndex - index + 1], &outputPtr[loopIndex + 1], (outputElements - 1) * sizeof(element_t));
-                    outputElements -= index;
-                    loopIndex -= index - 1;
                 }
+
+                switch (function) {
+                    case tNot:
+                        temp = !outputPrevOperand;
+                        break;
+                    case tMin:
+                        temp = (outputPrevOperand < outputPrevPrevOperand) ? outputPrevOperand : outputPrevPrevOperand;
+                        break;
+                    case tMax:
+                        temp = (outputPrevOperand > outputPrevPrevOperand) ? outputPrevOperand : outputPrevPrevOperand;
+                        break;
+                    case tMean:
+                        // I can't simply add, and divide by 2, because then it *might* overflow in case that A + B > 0xFFFFFF
+                        temp = ((long)outputPrevOperand + (long)outputPrevPrevOperand) / 2;
+                        break;
+                    case tSqrt:
+                        temp = sqrt(outputPrevOperand);
+                        break;
+                    case tExtTok:
+                        if (function2 == tRemainder) {
+                            temp = outputPrevOperand % outputPrevPrevOperand;
+                        } else if (function2 == tLEFT) {
+                            temp = outputPrevPrevOperand << outputPrevOperand;
+                        } else if (function2 == tRIGHT) {
+                            temp = outputPrevPrevOperand >> outputPrevOperand;
+                        } else {
+                            return E_ICE_ERROR;
+                        }
+                        break;
+                    case tSin:
+                        temp = 255*sin((double)outputPrevOperand * (2 * M_PI / 256));
+                        break;
+                    case tCos:
+                        temp = 255*cos((double)outputPrevOperand * (2 * M_PI / 256));
+                        break;
+                    default:
+                        return E_ICE_ERROR;
+                }
+
+                // And remove everything
+                (&outputPtr[loopIndex - index])->operand = temp;
+                memcpy(&outputPtr[loopIndex - index + 1], &outputPtr[loopIndex + 1], (outputElements - 1) * sizeof(element_t));
+                outputElements -= index;
+                loopIndex -= index - 1;
             }
         }
 DontDeleteFunction:;

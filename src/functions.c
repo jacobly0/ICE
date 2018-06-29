@@ -392,6 +392,61 @@ uint8_t parseFunction(uint24_t index) {
 
         CallRoutine(&ice.usedAlreadyMean, &ice.MeanAddr, (uint8_t*)MeanData, SIZEOF_MEAN_DATA);
         ResetHL();
+        ResetBC();
+        ResetA();
+    }
+    
+    // LEFT(
+    else if (function == tExtTok && function2 == tLEFT) {
+    }
+    
+    // RIGHT(
+    else if (function == tExtTok && function2 == tRIGHT) {
+        bool shouldParseArguments = true;
+        bool shouldCallRoutine = true;
+        
+        if (outputPrevType == TYPE_NUMBER) {
+            if (outputPrevPrevType == TYPE_VARIABLE) {
+                LD_HL_IND_IX_OFF(outputPrevPrev->operand);
+                shouldParseArguments = false;
+                if (outputPrevOperand & 0xFF) {
+                    LD_A(outputPrevOperand);
+                } else {
+                    shouldCallRoutine = false;
+                }
+            } else if (outputPrevPrevType == TYPE_CHAIN_ANS) {
+                if (!outputPrevOperand) {
+                    shouldParseArguments = false;
+                    shouldCallRoutine = false;
+                    expr.outputReturnRegister = expr.outputRegister;
+                }
+            } else {
+                return E_SYNTAX;
+            }
+        }
+        
+        if (shouldParseArguments) {
+            if ((res = parseFunction2Args(index, REGISTER_A, true)) != VALID) {
+                return res;
+            }
+        }
+        
+        if (shouldCallRoutine) {
+            OR_A_A();
+            
+            ProgramPtrToOffsetStack();
+            if (!ice.usedAlreadyMean) {
+                ice.programDataPtr -= SIZEOF_MEAN_DATA;
+                ice.MeanAddr = (uintptr_t)ice.programDataPtr;
+                memcpy(ice.programDataPtr, (uint8_t*)MeanData, SIZEOF_MEAN_DATA);
+                ice.usedAlreadyMean = true;
+            }
+            
+            CALL_NZ(ice.MeanAddr + 3);
+            ResetHL();
+            ResetBC();
+            ResetA();
+        }
     }
 
     // remainder(
@@ -1242,25 +1297,30 @@ uint8_t parseFunction2Args(uint24_t index, uint8_t outputReturnRegister, bool or
     if (outputPrevPrevType == TYPE_NUMBER) {
         if (outputPrevType == TYPE_NUMBER) {
             LD_HL_IMM(outputPrevPrevOperand);
-            if (outputReturnRegister == REGISTER_BC) {
+            if (outputReturnRegister == REGISTER_A) {
+                LD_A(outputPrevOperand);
+            } else if (outputReturnRegister == REGISTER_BC) {
                 LD_BC_IMM(outputPrevOperand);
             } else {
                 LD_DE_IMM(outputPrevOperand);
             }
         } else if (outputPrevType == TYPE_VARIABLE) {
             LD_HL_IMM(outputPrevPrevOperand);
-            if (outputReturnRegister == REGISTER_DE) {
+            if (outputReturnRegister == REGISTER_A) {
+                LD_A_IND_IX_OFF(outputPrevOperand);
+            } else if (outputReturnRegister == REGISTER_DE) {
                 LD_DE_IND_IX_OFF(outputPrevOperand);
             } else {
                 LD_BC_IND_IX_OFF(outputPrevOperand);
             }
         } else if (outputPrevType == TYPE_CHAIN_ANS) {
             if (orderDoesMatter) {
-                if (outputReturnRegister == REGISTER_DE) {
+                if (outputReturnRegister == REGISTER_A) {
+                    AnsToA();
+                } else if (outputReturnRegister == REGISTER_DE) {
                     AnsToDE();
                 } else {
-                    PushHLDE();
-                    POP_BC();
+                    AnsToBC();
                 }
                 LD_HL_IMM(outputPrevPrevOperand);
             } else {
@@ -1277,7 +1337,9 @@ uint8_t parseFunction2Args(uint24_t index, uint8_t outputReturnRegister, bool or
         if (outputPrevType == TYPE_NUMBER) {
             if (orderDoesMatter) {
                 LD_HL_IND_IX_OFF(outputPrevPrevOperand);
-                if (outputReturnRegister == REGISTER_DE) {
+                if (outputReturnRegister == REGISTER_A) {
+                    LD_A(outputPrevOperand);
+                } else if (outputReturnRegister == REGISTER_DE) {
                     LD_DE_IMM(outputPrevOperand);
                 } else {
                     LD_BC_IMM(outputPrevOperand);
@@ -1288,18 +1350,21 @@ uint8_t parseFunction2Args(uint24_t index, uint8_t outputReturnRegister, bool or
             }
         } else if (outputPrevType == TYPE_VARIABLE) {
             LD_HL_IND_IX_OFF(outputPrevPrevOperand);
-            if (outputReturnRegister == REGISTER_DE) {
+            if (outputReturnRegister == REGISTER_A) {
+                LD_A_IND_IX_OFF(outputPrevOperand);
+            } else if (outputReturnRegister == REGISTER_DE) {
                 LD_DE_IND_IX_OFF(outputPrevOperand);
             } else {
                 LD_BC_IND_IX_OFF(outputPrevOperand);
             }
         } else if (outputPrevType == TYPE_CHAIN_ANS) {
             if (orderDoesMatter) {
-                if (outputReturnRegister == REGISTER_DE) {
+                if (outputReturnRegister == REGISTER_A) {
+                    AnsToA();
+                } else if (outputReturnRegister == REGISTER_DE) {
                     AnsToDE();
                 } else {
-                    PushHLDE();
-                    POP_BC();
+                    AnsToBC();
                 }
                 LD_HL_IND_IX_OFF(outputPrevPrevOperand);
             } else {
@@ -1316,7 +1381,9 @@ uint8_t parseFunction2Args(uint24_t index, uint8_t outputReturnRegister, bool or
         if (outputPrevType == TYPE_NUMBER) {
             AnsToHL();
             if (orderDoesMatter) {
-                if (outputReturnRegister == REGISTER_DE) {
+                if (outputReturnRegister == REGISTER_A) {
+                    LD_A(outputPrevOperand);
+                } else if (outputReturnRegister == REGISTER_DE) {
                     LD_DE_IMM(outputPrevOperand);
                 } else {
                     LD_BC_IMM(outputPrevOperand);
@@ -1331,7 +1398,9 @@ uint8_t parseFunction2Args(uint24_t index, uint8_t outputReturnRegister, bool or
         } else if (outputPrevType == TYPE_VARIABLE) {
             AnsToHL();
             if (orderDoesMatter) {
-                if (outputReturnRegister == REGISTER_DE) {
+                if (outputReturnRegister == REGISTER_A) {
+                    LD_A_IND_IX_OFF(outputPrevOperand);
+                } else if (outputReturnRegister == REGISTER_DE) {
                     LD_DE_IND_IX_OFF(outputPrevOperand);
                 } else {
                     LD_BC_IND_IX_OFF(outputPrevOperand);
@@ -1351,11 +1420,12 @@ uint8_t parseFunction2Args(uint24_t index, uint8_t outputReturnRegister, bool or
             return E_ICE_ERROR;
         }
         if (orderDoesMatter) {
-            if (outputReturnRegister == REGISTER_DE) {
+            if (outputReturnRegister == REGISTER_A) {
+                AnsToA();
+            } else if (outputReturnRegister == REGISTER_DE) {
                 AnsToDE();
             } else {
-                PushHLDE();
-                POP_BC();
+                AnsToBC();
             }
             POP_HL();
         } else {

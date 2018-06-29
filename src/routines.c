@@ -131,6 +131,15 @@ void AnsToBC(void) {
     }
 }
 
+void AnsToA(void) {
+    if (expr.outputRegister == REGISTER_HL) {
+        LD_A_L();
+    } else if (expr.outputRegister == REGISTER_DE) {
+        LD_A_E();
+    }
+    expr.outputRegister = REGISTER_A;
+}
+
 void SetRegHLToRegDE(void) {
     reg.DEIsNumber = reg.HLIsNumber;
     reg.DEIsVariable = reg.HLIsVariable;

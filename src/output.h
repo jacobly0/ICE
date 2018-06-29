@@ -106,6 +106,7 @@
 #define OP_POP_BC     0xC1
 #define OP_JP_NZ      0xC2
 #define OP_JP         0xC3
+#define OP_CALL_NZ    0xC4
 #define OP_PUSH_BC    0xC5
 #define OP_ADD_A      0xC6
 #define OP_RET_Z      0xC8
@@ -224,6 +225,7 @@
 #define JP_C(addr)            do { OutputWriteByte(OP_JP_C); OutputWriteLong(addr); } while (0)
 #define JP_NC(addr)           do { OutputWriteByte(OP_JP_NC); OutputWriteLong(addr); } while (0)
 #define CALL(addr)            do { OutputWriteByte(OP_CALL); OutputWriteLong(addr); } while (0)
+#define CALL_NZ(addr)         do { OutputWriteByte(OP_CALL_NZ); OutputWriteLong(addr); } while (0)
 #define JR_NZ(off)            do { OutputWriteByte(OP_JR_NZ); OutputWriteByte(off); } while (0)
 #define JR_Z(off)             do { OutputWriteByte(OP_JR_Z); OutputWriteByte(off); } while (0)
 #define JR_NC(off)            do { OutputWriteByte(OP_JR_NC); OutputWriteByte(off); } while (0)
