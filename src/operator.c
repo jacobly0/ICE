@@ -134,9 +134,9 @@ uint24_t executeOperator(uint24_t operand1, uint24_t operand2, uint8_t operator)
 }
 
 static void getEntryOperands() {
-    entry0_operand = entry0->operand;
-    entry1_operand = entry1->operand;
-    entry2_operand = entry2->operand;
+    entry0_operand = entry0->operand.num;
+    entry1_operand = entry1->operand.num;
+    entry2_operand = entry2->operand.num;
 }
 
 static void swapEntries() {
@@ -155,7 +155,7 @@ uint8_t parseOperator(element_t *outputPrevPrevPrev, element_t *outputPrevPrev, 
     type2 = outputPrev->type;
     canOptimizeConcatenateStrings = canOptimizeStrings;
 
-    oper = outputCurr->operand;
+    oper = outputCurr->operand.num;
 
     // Get the right arguments
     entry0 = outputPrevPrevPrev;
@@ -174,7 +174,7 @@ uint8_t parseOperator(element_t *outputPrevPrevPrev, element_t *outputPrevPrev, 
     } else {
         // Only call the function if both types are valid
         if ((type1 == type2 && (type1 == TYPE_NUMBER || type1 == TYPE_CHAIN_ANS)) ||
-            (oper == tStore && (type2 != TYPE_VARIABLE  && !(type2 == TYPE_FUNCTION && outputPrev->operand == 0x010108))) ||
+            (oper == tStore && (type2 != TYPE_VARIABLE  && !(type2 == TYPE_FUNCTION && outputPrev->operand.num == 0x010108))) ||
             (type2 == TYPE_CHAIN_PUSH) ||
             (type1 == TYPE_STRING || type2 == TYPE_STRING)
         ) {
@@ -437,7 +437,7 @@ void StoStringChainAns(void) {
             LD_IX_OFF_IND_HL(entry1_operand);
         } else {
             LD_IX_OFF_IND_L(entry1_operand);
-            if (type == TYPE_MASK_U16) {
+            if (mask == TYPE_MASK_U16) {
                 LD_IX_OFF_IND_H(entry1_operand + 1);
             }
         }

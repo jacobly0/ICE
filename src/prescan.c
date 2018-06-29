@@ -208,8 +208,6 @@ uint8_t getNameIconDescription(void) {
 }
 
 uint8_t parsePrescan(void) {
-    uint8_t a, amountOfChangedVariables, offset;
-    
     // Insert C functions
     if (prescan.hasGraphxFunctions) {
         uint8_t a;

@@ -159,11 +159,10 @@ void ClearAnsFlags(void) {
 }
 
 void ChangeRegValue(uint24_t inValue, uint24_t outValue, uint8_t opcodes[7]) {
-    uint8_t a = 0;
-
     expr.SizeOfOutputNumber = 0;
 
     if (reg.allowedToOptimize) {
+        uint8_t a;
         if (outValue - inValue < 5) {
             for (a = 0; a < (uint8_t)(outValue - inValue); a++) {
                 OutputWriteByte(opcodes[0]);
@@ -343,7 +342,6 @@ void SeekMinus1(void) {
 
 void displayMessageLineScroll(char *string) {
 #ifdef CALCULATOR
-    char buf[30];
     char c;
 
     gfx_SetTextXY(1, gfx_GetTextY());

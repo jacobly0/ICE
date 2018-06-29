@@ -143,11 +143,12 @@ findNextLabel:;
 }
 
 uint8_t parseProgramUntilEnd(void) {
-    uint8_t ret;
     int token;
     
     // Do things based on the token
     while ((token = _getc()) != EOF) {
+        uint8_t ret;
+        
         ice.lastTokenIsReturn = false;
         ice.currentLine++;
         
@@ -220,13 +221,13 @@ fetchNoNewToken:
                 output = output * 10 + token - t0;
             }
             outputCurr->type = TYPE_NUMBER;
-            outputCurr->operand = output;
+            outputCurr->operand.num = output;
             outputElements++;
             mask = TYPE_MASK_U24;
 
             if (prevTokenWasCFunction) {
                 stackCurr = &stackPtr[stackElements - 1];
-                stackCurr->operand = stackCurr->operand + ((uint8_t)output << 16);
+                stackCurr->operand.num = stackCurr->operand.num + ((uint8_t)output << 16);
             }
 
             // Don't grab a new token
@@ -241,7 +242,7 @@ fetchNoNewToken:
                 output = (output << 4) + tok;
             }
             outputCurr->type = TYPE_NUMBER;
-            outputCurr->operand = output;
+            outputCurr->operand.num = output;
             outputElements++;
             mask = TYPE_MASK_U24;
 
@@ -257,7 +258,7 @@ fetchNoNewToken:
                 output = (output << 1) + tok - t0;
             }
             outputCurr->type = TYPE_NUMBER;
-            outputCurr->operand = output;
+            outputCurr->operand.num = output;
             outputElements++;
             mask = TYPE_MASK_U24;
 
@@ -274,7 +275,7 @@ fetchNoNewToken:
                     output = output * 10 + token - t0;
                 }
                 outputCurr->type = TYPE_NUMBER;
-                outputCurr->operand = 0-output;
+                outputCurr->operand.num = 0-output;
                 outputElements++;
                 mask = TYPE_MASK_U24;
 
@@ -283,10 +284,10 @@ fetchNoNewToken:
             } else {
                 // Pretend as if it's a -1*
                 outputCurr->type = TYPE_NUMBER;
-                outputCurr->operand = -1;
+                outputCurr->operand.num = -1;
                 outputElements++;
                 SeekMinus1();
-                token = tMul;
+                tok = tMul;
                 goto tokenIsOperator;
             }
         }
@@ -294,7 +295,7 @@ fetchNoNewToken:
         // Process an OS list (number or list element)
         else if (tok == tVarLst) {
             outputCurr->type = TYPE_NUMBER;
-            outputCurr->operand = prescan.OSLists[_getc()];
+            outputCurr->operand.num = prescan.OSLists[_getc()];
             outputElements++;
             mask = TYPE_MASK_U24;
 
@@ -307,7 +308,7 @@ fetchNoNewToken:
 
                 // I have to create a non-existent token, because L1(...) the right parenthesis should pretend it's a },
                 // but that is impossible if I just push { or (. Then when a ) appears and it hits the 0x0F, just replace it with a }
-                stackCurr->operand = 0x0F + ((storeDepth && 1) << 16);
+                stackCurr->operand.num = 0x0F + ((storeDepth && 1) << 16);
                 stackElements++;
                 mask = TYPE_MASK_U24;
                 canUseMask = 2;
@@ -323,7 +324,7 @@ fetchNoNewToken:
         // Process a variable
         else if (tok >= tA && tok <= tTheta) {
             outputCurr->type = TYPE_VARIABLE;
-            outputCurr->operand = GetVariableOffset(tok);
+            outputCurr->operand.var = GetVariableOffset(tok);
             outputElements++;
             mask = TYPE_MASK_U24;
         }
@@ -364,10 +365,10 @@ tokenIsOperator:
                 outputCurr = &outputPtr[outputElements];
 
                 // Move the last entry of the stack to the ouput if it's precedence is greater than the precedence of the current token
-                if (stackPrev->type == TYPE_OPERATOR && operatorPrecedence[index - 1] <= operatorPrecedence2[getIndexOfOperator(stackPrev->operand) - 1]) {
+                if (stackPrev->type == TYPE_OPERATOR && operatorPrecedence[index - 1] <= operatorPrecedence2[getIndexOfOperator(stackPrev->operand.op) - 1]) {
                     outputCurr->type = stackPrev->type;
                     outputCurr->mask = stackPrev->mask;
-                    outputCurr->operand = stackPrev->operand;
+                    outputCurr->operand.num = stackPrev->operand.num;
                     stackElements--;
                     outputElements++;
                 } else {
@@ -379,7 +380,7 @@ stackToOutputReturn1:
             // Push the operator to the stack
             stackCurr = &stackPtr[stackElements++];
             stackCurr->type = TYPE_OPERATOR;
-            stackCurr->operand = token;
+            stackCurr->operand.op = token;
             mask = TYPE_MASK_U24;
             canUseMask = 2;
         }
@@ -395,11 +396,11 @@ stackToOutputReturn1:
             if (tok >= tA && tok <= tTheta) {
                 char offset = GetVariableOffset(tok);
 
-                outputCurr->operand = IX_VARIABLES + offset;
+                outputCurr->operand.num = IX_VARIABLES + offset;
             } else if (tok == tVarLst) {
-                outputCurr->operand = prescan.OSLists[_getc()];
+                outputCurr->operand.num = prescan.OSLists[_getc()];
             } else if (tok == tVarStrng) {
-                outputCurr->operand = prescan.OSStrings[_getc()];
+                outputCurr->operand.num = prescan.OSStrings[_getc()];
             } else {
                 return E_SYNTAX;
             }
@@ -417,7 +418,7 @@ stackToOutputReturn1:
                 if (stackPrev->type != TYPE_FUNCTION) {
                     outputCurr->type = stackPrev->type;
                     outputCurr->mask = stackPrev->mask;
-                    outputCurr->operand = stackPrev->operand;
+                    outputCurr->operand.num = stackPrev->operand.num;
                     stackElements--;
                     outputElements++;
                 } else {
@@ -426,7 +427,7 @@ stackToOutputReturn1:
             }
 
             stackPrev = &stackPtr[stackElements - 1];
-            tempTok = stackPrev->operand;
+            tempTok = stackPrev->operand.num;
 
             // Closing tag should match it's open tag
             if (((tok == tRBrace || tok == tRBrack) && (tempTok != token - 1)) ||
@@ -443,7 +444,7 @@ stackToOutputReturn1:
                 return E_EXTRA_RPAREN;
             }
             
-            index = GetIndexOfFunction(tempTok, stackPrev->operand >> 16); 
+            index = GetIndexOfFunction(tempTok, stackPrev->operand.num >> 16); 
 
             // If it's a det, add an argument delimiter as well
             if (tok == tComma && index != 255 && implementedFunctions[index][4]) {
@@ -454,10 +455,10 @@ stackToOutputReturn1:
             // If the right parenthesis belongs to a function, move the function as well
             if (tok != tComma) {
                 temp = (*amountOfArgumentsStackPtr--) << 8;
-                if ((uint8_t)stackPrev->operand != tLParen) {
+                if ((uint8_t)stackPrev->operand.num != tLParen) {
                     outputCurr->type = stackPrev->type;
                     outputCurr->mask = stackPrev->mask;
-                    outputCurr->operand = stackPrev->operand + temp - ((uint8_t)stackPrev->operand == 0x0F ? 0x0F - tLBrace : 0);
+                    outputCurr->operand.num = stackPrev->operand.num + temp - ((uint8_t)stackPrev->operand.num == 0x0F ? 0x0F - tLBrace : 0);
                     outputElements++;
                 }
 
@@ -480,12 +481,12 @@ stackToOutputReturn1:
             if ((uint8_t)(token = _getc()) == tLParen) {
                 *++amountOfArgumentsStackPtr = 1;
                 stackCurr->type = TYPE_FUNCTION;
-                stackCurr->operand = 0xAD;
+                stackCurr->operand.num = 0xAD;
                 stackElements++;
                 canUseMask = 2;
             } else {
                 outputCurr->type = TYPE_FUNCTION;
-                outputCurr->operand = 0x0000AD;
+                outputCurr->operand.num = 0x0000AD;
                 outputElements++;
                 continue;
             }
@@ -516,7 +517,7 @@ stackToOutputReturn1:
             memcpy(ice.programDataPtr, tempProgramPtr, length);
             ice.programPtr = tempProgramPtr;
 
-            outputCurr->operand = (uint24_t)ice.programDataPtr;
+            outputCurr->operand.num = (uint24_t)ice.programDataPtr;
 
             if ((uint8_t)token == tStore || (uint8_t)token == tEnter) {
                 continue;
@@ -537,7 +538,7 @@ stackToOutputReturn1:
             stackPrev = &stackPtr[stackElements-1];
 
             token = grabString(&ice.programPtr, true);
-            if ((uint8_t)stackPrev->operand == tVarOut && (uint8_t)(stackPrev->operand >> 16) == tDefineSprite) {
+            if ((uint8_t)stackPrev->operand.num == tVarOut && (uint8_t)(stackPrev->operand.num >> 16) == tDefineSprite) {
                 needWarning = false;
             }
             
@@ -573,7 +574,7 @@ noSquishing:
             memcpy(ice.programDataPtr, tempDataPtr, length);
             ice.programPtr = tempDataPtr;
             
-            outputCurr->operand = (uint24_t)ice.programDataPtr;
+            outputCurr->operand.num = (uint24_t)ice.programDataPtr;
 
             if ((uint8_t)token == tStore || (uint8_t)token == tEnter) {
                 continue;
@@ -584,7 +585,7 @@ noSquishing:
         else if (tok == tVarStrng) {
             outputCurr->isString = true;
             outputCurr->type = TYPE_NUMBER;
-            outputCurr->operand = prescan.OSStrings[_getc()];
+            outputCurr->operand.num = prescan.OSStrings[_getc()];
             outputElements++;
             mask = TYPE_MASK_U24;
         }
@@ -610,7 +611,7 @@ noSquishing:
                     *++amountOfArgumentsStackPtr = 1;
                     stackCurr->type = TYPE_FUNCTION;
                     stackCurr->mask = mask;
-                    stackCurr->operand = tok + (((tok == tLBrace && storeDepth) + tok2) << 16);
+                    stackCurr->operand.num = tok + (((tok == tLBrace && storeDepth) + tok2) << 16);
                     stackElements++;
                     mask = TYPE_MASK_U24;
                     canUseMask = 2;
@@ -631,7 +632,7 @@ noSquishing:
                     }
                 } else {
                     outputCurr->type = TYPE_FUNCTION;
-                    outputCurr->operand = (tok2 << 16) + tok;
+                    outputCurr->operand.num = (tok2 << 16) + tok;
                     outputElements++;
                     mask = TYPE_MASK_U24;
                 }
@@ -662,14 +663,14 @@ stackToOutputReturn2:
         outputPrevPrev = &outputPtr[loopIndex - 2];
         outputPrev = &outputPtr[loopIndex - 1];
         outputCurr = &outputPtr[loopIndex];
-        index = outputCurr->operand >> 8;
+        index = outputCurr->operand.num >> 8;
 
         // Check if the types are number | number | operator (not both OS strings though)
         if (loopIndex > 1 && outputPrevPrev->type == TYPE_NUMBER && outputPrev->type == TYPE_NUMBER &&
                !(outputPrevPrev->isString && outputPrev->isString) && 
-               outputCurr->type == TYPE_OPERATOR && (uint8_t)outputCurr->operand != tStore) {
+               outputCurr->type == TYPE_OPERATOR && (uint8_t)outputCurr->operand.num != tStore) {
             // If yes, execute the operator, and store it in the first entry, and remove the other 2
-            outputPrevPrev->operand = executeOperator(outputPrevPrev->operand, outputPrev->operand, (uint8_t)outputCurr->operand);
+            outputPrevPrev->operand.num = executeOperator(outputPrevPrev->operand.num, outputPrev->operand.num, (uint8_t)outputCurr->operand.num);
             memcpy(outputPrev, &outputPtr[loopIndex + 1], (outputElements - 1) * sizeof(element_t));
             outputElements -= 2;
             loopIndex -= 2;
@@ -678,10 +679,10 @@ stackToOutputReturn2:
 
         // Check if the types are number | number | ... | function (specific function or pointer)
         if (loopIndex >= index && outputCurr->type == TYPE_FUNCTION) {
-            uint8_t a, index2, function = outputCurr->operand, function2 = outputCurr->operand >> 16;
+            uint8_t a, index2, function = outputCurr->operand.num, function2 = outputCurr->operand.num >> 16;
             
             if ((index2 = GetIndexOfFunction(function, function2)) != 255 && implementedFunctions[index2][3]) {
-                uint24_t outputPrevOperand = outputPrev->operand, outputPrevPrevOperand = outputPrevPrev->operand;
+                uint24_t outputPrevOperand = outputPrev->operand.num, outputPrevPrevOperand = outputPrevPrev->operand.num;
 
                 for (a = 1; a <= index; a++) {
                     if ((&outputPtr[loopIndex-a])->type != TYPE_NUMBER) {
@@ -728,7 +729,7 @@ stackToOutputReturn2:
                 }
 
                 // And remove everything
-                (&outputPtr[loopIndex - index])->operand = temp;
+                (&outputPtr[loopIndex - index])->operand.num = temp;
                 memcpy(&outputPtr[loopIndex - index + 1], &outputPtr[loopIndex + 1], (outputElements - 1) * sizeof(element_t));
                 outputElements -= index;
                 loopIndex -= index - 1;
@@ -751,7 +752,7 @@ stackToOutput:
         outputCurr = &outputPtr[outputElements++];
         stackPrev = &stackPtr[--stackElements];
 
-        temp = stackPrev->operand;
+        temp = stackPrev->operand.num;
         if ((uint8_t)temp == 0x0F) {
             // :D
             temp = (temp & 0xFF0000) + tLBrace;
@@ -763,7 +764,7 @@ stackToOutput:
         }
 
         // Don't move the left paren...
-        if (stackPrev->type == TYPE_FUNCTION && (uint8_t)stackPrev->operand == tLParen) {
+        if (stackPrev->type == TYPE_FUNCTION && (uint8_t)stackPrev->operand.num == tLParen) {
             outputElements--;
             continue;
         }
@@ -771,7 +772,7 @@ stackToOutput:
         outputCurr->isString = stackPrev->isString;
         outputCurr->type = stackPrev->type;
         outputCurr->mask = stackPrev->mask;
-        outputCurr->operand = temp;
+        outputCurr->operand.num = temp;
     }
 
     // Select correct return location
@@ -791,7 +792,7 @@ uint8_t parsePostFixFromIndexToIndex(uint24_t startIndex, uint24_t endIndex) {
     // Set some variables
     outputCurr = &outputPtr[startIndex];
     outputType = outputCurr->type;
-    outputOperand = outputCurr->operand;
+    outputOperand = outputCurr->operand.num;
     ice.stackStart = (uint24_t*)(ice.stackDepth * STACK_SIZE + ice.stack);
     setStackValues(ice.stackStart, ice.stackStart);
     reg.allowedToOptimize = true;
@@ -807,7 +808,7 @@ uint8_t parsePostFixFromIndexToIndex(uint24_t startIndex, uint24_t endIndex) {
         uint8_t index;
         
         outputCurr = &outputPtr[loopIndex];
-        index = GetIndexOfFunction(outputCurr->operand, outputCurr->operand >> 16);
+        index = GetIndexOfFunction(outputCurr->operand.num, outputCurr->operand.num >> 16);
 
         // If it's the start of a det( or sum(, increment the amount of nested det(/sum(
         if (outputCurr->type == TYPE_C_START) {
@@ -886,7 +887,7 @@ uint8_t parsePostFixFromIndexToIndex(uint24_t startIndex, uint24_t endIndex) {
                 return E_SYNTAX;
             }
 
-            if (AnsDepth > 3 && (uint8_t)outputCurr->operand != tStore) {
+            if (AnsDepth > 3 && (uint8_t)outputCurr->operand.num != tStore) {
                 // We need to push HL since it isn't used in the next operator/function
                 (&outputPtr[tempIndex])->type = TYPE_CHAIN_PUSH;
                 PushHLDE();
@@ -901,12 +902,12 @@ uint8_t parsePostFixFromIndexToIndex(uint24_t startIndex, uint24_t endIndex) {
             
             // Check if we can optimize StrX + "..." -> StrX
             canOptimizeConcatenateStrings = (
-                (uint8_t)(outputCurr->operand) == tAdd &&
+                (uint8_t)(outputCurr->operand.num) == tAdd &&
                 outputPrevPrev->isString && outputPrevPrev->type == TYPE_NUMBER &&
                 outputNext->isString && outputNext->type == TYPE_NUMBER &&
-                outputNext->operand == outputPrevPrev->operand &&
+                outputNext->operand.num == outputPrevPrev->operand.num &&
                 outputNextNext->type == TYPE_OPERATOR &&
-                (uint8_t)(outputNextNext->operand) == tStore
+                (uint8_t)(outputNextNext->operand.num) == tStore
             );
 
             // Parse the operator with the 2 latest operands of the stack!
@@ -927,17 +928,17 @@ uint8_t parsePostFixFromIndexToIndex(uint24_t startIndex, uint24_t endIndex) {
 
                 outputCurr->isString = true;
                 outputCurr->type = TYPE_NUMBER;
-                outputCurr->operand = outputPrevPrev->operand;
+                outputCurr->operand.num = outputPrevPrev->operand.num;
                 expr.outputIsString = true;
             } else {
                 // Check if it was a command with 2 strings, then the output is a string, not Ans
-                if ((uint8_t)outputCurr->operand == tAdd && outputPrevPrev->isString && outputPrev->isString) {
+                if ((uint8_t)outputCurr->operand.num == tAdd && outputPrevPrev->isString && outputPrev->isString) {
                     outputCurr->isString = true;
                     outputCurr->type = TYPE_STRING;
-                    if (outputPrevPrev->operand == prescan.tempStrings[TempString2] || outputPrev->operand == prescan.tempStrings[TempString1]) {
-                        outputCurr->operand = prescan.tempStrings[TempString2];
+                    if (outputPrevPrev->operand.num == prescan.tempStrings[TempString2] || outputPrev->operand.num == prescan.tempStrings[TempString1]) {
+                        outputCurr->operand.num = prescan.tempStrings[TempString2];
                     } else {
-                        outputCurr->operand = prescan.tempStrings[TempString1];
+                        outputCurr->operand.num = prescan.tempStrings[TempString1];
                     }
                     expr.outputIsString = true;
                 } else {
@@ -950,12 +951,12 @@ uint8_t parsePostFixFromIndexToIndex(uint24_t startIndex, uint24_t endIndex) {
 
         else if (outputType == TYPE_FUNCTION) {
             // Use this to cleanup the function after parsing
-            uint8_t amountOfArguments = outputCurr->operand >> 8;
-            uint8_t function2 = outputCurr->operand >> 16;
+            uint8_t amountOfArguments = outputCurr->operand.num >> 8;
+            uint8_t function2 = outputCurr->operand.num >> 16;
             
             // Only execute when it's not a pointer directly after a ->
-            if (outputCurr->operand != 0x010108) {
-                uint8_t index = GetIndexOfFunction(outputCurr->operand, function2);
+            if (outputCurr->operand.num != 0x010108) {
+                uint8_t index = GetIndexOfFunction(outputCurr->operand.num, function2);
                 
                 // Check if we need to push Ans
                 if (AnsDepth > 1 + amountOfArguments || (AnsDepth && implementedFunctions[index][4])) {
@@ -982,13 +983,13 @@ uint8_t parsePostFixFromIndexToIndex(uint24_t startIndex, uint24_t endIndex) {
 
                 // I don't care that this will be ignored when it's a pointer, because I know there is a -> directly after
                 // If it's a sub(, the output should be a string, not Ans
-                if ((uint8_t)outputCurr->operand == t2ByteTok && function2 == tSubStrng) {
+                if ((uint8_t)outputCurr->operand.num == t2ByteTok && function2 == tSubStrng) {
                     outputCurr->isString = true;
                     outputCurr->type = TYPE_STRING;
-                    if (outputPrevPrevPrev->operand == prescan.tempStrings[TempString1]) {
-                        outputCurr->operand = prescan.tempStrings[TempString2];
+                    if (outputPrevPrevPrev->operand.num == prescan.tempStrings[TempString1]) {
+                        outputCurr->operand.num = prescan.tempStrings[TempString2];
                     } else {
-                        outputCurr->operand = prescan.tempStrings[TempString1];
+                        outputCurr->operand.num = prescan.tempStrings[TempString1];
                     }
                     expr.outputIsString = true;
                     AnsDepth = 0;
@@ -1730,7 +1731,7 @@ static uint8_t functionPause(int token) {
 }
 
 static uint8_t functionInput(int token) {
-    uint8_t tok, res;
+    uint8_t res;
 
     expr.inFunction = true;
     if ((res = parseExpression(_getc())) != VALID) {
@@ -1824,7 +1825,7 @@ static uint8_t functionBB(int token) {
             ice.programLength = ftell(ice.inPrgm);
             _rewind(ice.inPrgm);
             fprintf(stdout, "Compiling subprogram %s\n", str_dupcat(outputPrgm->prog, ".8xp"));
-            fprintf(stdout, "Program size: %d\n", ice.programLength);
+            fprintf(stdout, "Program size: %u\n", ice.programLength);
 
             // Compile it, and close
             ice.currentLine = 0;

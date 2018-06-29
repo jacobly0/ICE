@@ -163,13 +163,13 @@ uint8_t parseFunction(uint24_t index) {
     outputPrevPrevPrev = &outputPtr[getIndexOffset(-4)];
     outputPrevPrev     = &outputPtr[getIndexOffset(-3)];
     outputPrev         = &outputPtr[getIndexOffset(-2)];
-    output             = (&outputPtr[index])->operand;
+    output             = (&outputPtr[index])->operand.num;
     outputCurr         = &outputPtr[getIndexOffset(-1)];
     function           = output;
     function2          = output >> 16;
     amountOfArguments  = output >> 8;
 
-    outputPrevOperand  = outputPrev->operand;
+    outputPrevOperand  = outputPrev->operand.num;
     outputPrevType     = outputPrev->type;
     outputPrevPrevType = outputPrevPrev->type;
 
@@ -407,7 +407,7 @@ uint8_t parseFunction(uint24_t index) {
         
         if (outputPrevType == TYPE_NUMBER) {
             if (outputPrevPrevType == TYPE_VARIABLE) {
-                LD_HL_IND_IX_OFF(outputPrevPrev->operand);
+                LD_HL_IND_IX_OFF(outputPrevPrev->operand.num);
                 shouldParseArguments = false;
                 if (outputPrevOperand & 0xFF) {
                     LD_A(outputPrevOperand);
@@ -453,7 +453,7 @@ uint8_t parseFunction(uint24_t index) {
     else if (function == tExtTok && function2 == tRemainder) {
         if (outputPrevType == TYPE_NUMBER && outputPrevOperand <= 256 && !((uint8_t)outputPrevOperand & (uint8_t)(outputPrevOperand - 1))) {
             if (outputPrevPrevType == TYPE_VARIABLE) {
-                LD_A_IND_IX_OFF(outputPrevPrev->operand);
+                LD_A_IND_IX_OFF(outputPrevPrev->operand.num);
             } else if (outputPrevPrevType == TYPE_CHAIN_ANS) {
                 if (expr.outputRegister == REGISTER_HL) {
                     LD_A_L();
@@ -463,10 +463,10 @@ uint8_t parseFunction(uint24_t index) {
             } else {
                 return E_SYNTAX;
             }
-            if (outputPrev->operand == 256) {
+            if (outputPrev->operand.num == 256) {
                 OR_A_A();
             } else {
-                AND_A(outputPrev->operand - 1);
+                AND_A(outputPrev->operand.num - 1);
             }
             SBC_HL_HL();
             LD_L_A();
@@ -500,7 +500,7 @@ uint8_t parseFunction(uint24_t index) {
             if (outputPrevPrevType == TYPE_CHAIN_PUSH) {
                 POP_DE();
             } else if (outputPrevPrevType == TYPE_NUMBER) {
-                LD_DE_IMM(outputPrevPrev->operand - 1);
+                LD_DE_IMM(outputPrevPrev->operand.num - 1);
             }
         }
         if (outputPrevPrevType == TYPE_CHAIN_ANS) {
@@ -510,13 +510,13 @@ uint8_t parseFunction(uint24_t index) {
             }
         }
         if (outputPrevPrevType == TYPE_VARIABLE) {
-            LD_DE_IND_IX_OFF(outputPrevPrev->operand);
+            LD_DE_IND_IX_OFF(outputPrevPrev->operand.num);
         }
         if (outputPrevType == TYPE_VARIABLE && outputPrevPrevType <= TYPE_VARIABLE) {
             LD_HL_IND_IX_OFF(outputPrevOperand);
         }
         if (outputPrevPrevType == TYPE_NUMBER && outputPrevType != TYPE_NUMBER) {
-            LD_DE_IMM(outputPrevPrev->operand - 1);
+            LD_DE_IMM(outputPrevPrev->operand.num - 1);
         }
         if (outputPrevType == TYPE_NUMBER && outputPrevPrevType != TYPE_NUMBER) {
             LD_HL_IMM(outputPrevOperand + 1);
@@ -539,13 +539,13 @@ uint8_t parseFunction(uint24_t index) {
         if (outputPrevPrevType != TYPE_NUMBER || outputPrevType != TYPE_NUMBER) {
             POP_BC();
         } else {
-            LD_BC_IMM(outputPrevOperand - outputPrevPrev->operand + 1);
+            LD_BC_IMM(outputPrevOperand - outputPrevPrev->operand.num + 1);
         }
         CALL(__idvrmu);
         if (outputPrevType != TYPE_NUMBER || outputPrevPrevType != TYPE_NUMBER) {
             POP_DE();
         } else {
-            LD_DE_IMM(outputPrevPrev->operand);
+            LD_DE_IMM(outputPrevPrev->operand.num);
         }
         if (outputPrevType == TYPE_NUMBER && outputPrevPrevType != TYPE_NUMBER) {
             INC_DE();
@@ -562,7 +562,7 @@ uint8_t parseFunction(uint24_t index) {
 
     // sub(
     else if (function == t2ByteTok && function2 == tSubStrng) {
-        uint24_t outputPrevPrevPrevOperand = outputPrevPrevPrev->operand;
+        uint24_t outputPrevPrevPrevOperand = outputPrevPrevPrev->operand.num;
 
         // First argument should be a string
         if (!outputPrevPrevPrev->isString) {
@@ -595,7 +595,7 @@ uint8_t parseFunction(uint24_t index) {
     // length(
     else if (function == t2ByteTok && function2 == tLength) {
         if (outputPrevType == TYPE_STRING) {
-            LD_HL_STRING(outputPrev->operand, TYPE_STRING);
+            LD_HL_STRING(outputPrev->operand.num, TYPE_STRING);
         } else {
             if ((res = parseFunction1Arg(index, REGISTER_HL_DE)) != VALID) {
                 return res;
@@ -731,7 +731,7 @@ uint8_t parseFunction(uint24_t index) {
             if (outputTemp->type != TYPE_NUMBER) {
                 return E_SYNTAX;
             }
-            *(tempDataPtr + a + 6) = outputTemp->operand;
+            *(tempDataPtr + a + 6) = outputTemp->operand.num;
         }
 
         // Fetch the only uint24_t variable (X_LOC)
@@ -739,7 +739,7 @@ uint8_t parseFunction(uint24_t index) {
         if (outputTemp->type != TYPE_NUMBER) {
             return E_SYNTAX;
         }
-        *(uint24_t*)(tempDataPtr + 15) = outputTemp->operand;
+        *(uint24_t*)(tempDataPtr + 15) = outputTemp->operand.num;
 
         // Fetch the tiles/sprites
         outputTemp = &outputPtr[getIndexOffset(startIndex + 10)];
@@ -747,7 +747,7 @@ uint8_t parseFunction(uint24_t index) {
             return E_SYNTAX;
         }
 
-        LD_HL_IND_IX_OFF(outputTemp->operand);
+        LD_HL_IND_IX_OFF(outputTemp->operand.num);
         ProgramPtrToOffsetStack();
         LD_ADDR_HL((uint24_t)tempDataPtr + 3);
 
@@ -781,7 +781,7 @@ uint8_t parseFunction(uint24_t index) {
         }
 
         // Check if it's a sprite or a tilemap
-        if (outputPrev->operand == 3) {
+        if (outputPrev->operand.num == 3) {
             // Copy the LoadData( routine to the data section
             if (!ice.usedAlreadyLoadSprite) {
                 ice.programDataPtr -= 32;
@@ -791,14 +791,14 @@ uint8_t parseFunction(uint24_t index) {
             }
 
             // Set which offset
-            LD_HL_IMM(outputPrevPrev->operand + 2);
+            LD_HL_IMM(outputPrevPrev->operand.num + 2);
             ProgramPtrToOffsetStack();
             LD_ADDR_HL(ice.LoadSpriteAddr + 27);
 
             if (!outputPrevPrevPrev->isString) {
                 return E_SYNTAX;
             }
-            LD_HL_STRING(outputPrevPrevPrev->operand - 1, outputPrevPrevPrev->type);
+            LD_HL_STRING(outputPrevPrevPrev->operand.num - 1, outputPrevPrevPrev->type);
 
             // Call the right routine
             ProgramPtrToOffsetStack();
@@ -818,25 +818,25 @@ uint8_t parseFunction(uint24_t index) {
             }
 
             // Set which offset
-            LD_HL_IMM(outputPrevPrev->operand + 2);
+            LD_HL_IMM(outputPrevPrev->operand.num + 2);
             ProgramPtrToOffsetStack();
             LD_ADDR_HL(ice.LoadTilemapAddr + 27);
 
             // Set table base
             LD_HL_IMM(prescan.freeMemoryPtr);
-            prescan.freeMemoryPtr += outputPrev->operand;
+            prescan.freeMemoryPtr += outputPrev->operand.num;
             ProgramPtrToOffsetStack();
             LD_ADDR_HL(ice.LoadTilemapAddr + 40);
 
             // Set amount of sprites
-            LD_A(outputPrev->operand / 3);
+            LD_A(outputPrev->operand.num / 3);
             ProgramPtrToOffsetStack();
             LD_ADDR_A(ice.LoadTilemapAddr + 45);
 
             if (!outputPrevPrevPrev->isString) {
                 return E_SYNTAX;
             }
-            LD_HL_STRING(outputPrevPrevPrev->operand - 1, outputPrevPrevPrev->type);
+            LD_HL_STRING(outputPrevPrevPrev->operand.num - 1, outputPrevPrevPrev->type);
 
             // Call the right routine
             ProgramPtrToOffsetStack();
@@ -860,7 +860,7 @@ uint8_t parseFunction(uint24_t index) {
 
         uint24_t startIndex = -1 - amountOfArguments;
 
-        if ((res = InsertDataElements(amountOfArguments, startIndex, (&outputPtr[getIndexOffset(startIndex)])->operand, 1)) != VALID) {
+        if ((res = InsertDataElements(amountOfArguments, startIndex, (&outputPtr[getIndexOffset(startIndex)])->operand.num, 1)) != VALID) {
             return res;
         }
     }
@@ -880,16 +880,16 @@ uint8_t parseFunction(uint24_t index) {
 
         outputTemp = &outputPtr[getIndexOffset(startIndex)];
         if (outputTemp->type == TYPE_NUMBER) {
-            LD_DE_IMM(outputTemp->operand);
+            LD_DE_IMM(outputTemp->operand.num);
         } else if (outputTemp->type == TYPE_VARIABLE) {
-            LD_DE_IND_IX_OFF(outputTemp->operand);
+            LD_DE_IND_IX_OFF(outputTemp->operand.num);
         } else if (outputTemp->type == TYPE_CHAIN_ANS) {
             AnsToDE();
         } else {
             return E_SYNTAX;
         }
 
-        if ((res = InsertDataElements(amountOfArguments, startIndex, (&outputPtr[getIndexOffset(startIndex + 1)])->operand, 2)) != VALID) {
+        if ((res = InsertDataElements(amountOfArguments, startIndex, (&outputPtr[getIndexOffset(startIndex + 1)])->operand.num, 2)) != VALID) {
             return res;
         }
         LD_BC_IMM(prevProgDataPtr - ice.programDataPtr);
@@ -906,8 +906,8 @@ uint8_t parseFunction(uint24_t index) {
         *****************************************************/
 
         uint8_t outputPrevPrevPrevType = outputPrevPrevPrev->type;
-        uint24_t outputPrevPrevPrevOperand = outputPrevPrevPrev->operand;
-        uint24_t outputPrevPrevOperand = outputPrevPrev->operand;
+        uint24_t outputPrevPrevPrevOperand = outputPrevPrevPrev->operand.num;
+        uint24_t outputPrevPrevOperand = outputPrevPrev->operand.num;
 
         if (amountOfArguments < 3 || amountOfArguments > 4) {
             return E_ARGUMENTS;
@@ -979,8 +979,8 @@ uint8_t parseFunction(uint24_t index) {
         *****************************************************/
 
         if (amountOfArguments == 2) {
-            uint8_t width = outputPrevPrev->operand;
-            uint8_t height = outputPrev->operand;
+            uint8_t width = outputPrevPrev->operand.num;
+            uint8_t height = outputPrev->operand.num;
 
             if (outputPrevPrevType != TYPE_NUMBER || outputPrevType != TYPE_NUMBER) {
                 return E_SYNTAX;
@@ -1005,8 +1005,8 @@ uint8_t parseFunction(uint24_t index) {
             LD_HL_IMM((uint24_t)ice.programDataPtr);
             ResetHL();
 
-            *ice.programDataPtr = outputPrevPrevPrev->operand;
-            *(ice.programDataPtr + 1) = outputPrevPrev->operand;
+            *ice.programDataPtr = outputPrevPrevPrev->operand.num;
+            *(ice.programDataPtr + 1) = outputPrevPrev->operand.num;
         } else {
             return E_ARGUMENTS;
         }
@@ -1120,7 +1120,7 @@ uint8_t parseFunction(uint24_t index) {
                 
                 outputPrev = &outputPtr[--startIndex];
                 outputPrevType = outputPrev->type;
-                index = GetIndexOfFunction(outputPrev->operand, outputPrev->operand >> 16);
+                index = GetIndexOfFunction(outputPrev->operand.num, outputPrev->operand.num >> 16);
 
                 if (outputPrevType == TYPE_C_START) {
                     if (!temp) {
@@ -1260,17 +1260,15 @@ uint8_t parseFunction(uint24_t index) {
 
 uint8_t parseFunction1Arg(uint24_t index, uint8_t outputRegister1) {
     element_t *outputPtr = (element_t*)outputStack, *outputPrev;
-    uint24_t outputOperand;
     uint8_t outputPrevType;
 
     outputPrev = &outputPtr[getIndexOffset(-2)];
     outputPrevType = outputPrev->type;
-    outputOperand = outputPrev->operand;
 
     if (outputPrevType == TYPE_NUMBER) {
-        LD_HL_IMM(outputOperand);
+        LD_HL_IMM(outputPrev->operand.num);
     } else if (outputPrevType == TYPE_VARIABLE) {
-        LD_HL_IND_IX_OFF(outputOperand);
+        LD_HL_IND_IX_OFF(outputPrev->operand.var);
     } else if (outputPrevType == TYPE_CHAIN_ANS) {
         if (outputRegister1 == REGISTER_HL) {
             AnsToHL();
@@ -1291,8 +1289,8 @@ uint8_t parseFunction2Args(uint24_t index, uint8_t outputReturnRegister, bool or
     outputPrevPrev        = &outputPtr[getIndexOffset(-3)];
     outputPrevType        = outputPrev->type;
     outputPrevPrevType    = outputPrevPrev->type;
-    outputPrevOperand     = outputPrev->operand;
-    outputPrevPrevOperand = outputPrevPrev->operand;
+    outputPrevOperand     = outputPrev->operand.num;
+    outputPrevPrevOperand = outputPrevPrev->operand.num;
 
     if (outputPrevPrevType == TYPE_NUMBER) {
         if (outputPrevType == TYPE_NUMBER) {
@@ -1461,11 +1459,11 @@ uint8_t InsertDataElements(uint8_t amountOfArguments, uint24_t startIndex, uint8
         }
         memset(ice.programDataPtr, 0, dataSize);
         if (dataSize == 1) {
-            *ice.programDataPtr = outputTemp->operand;
+            *ice.programDataPtr = outputTemp->operand.num;
         } else if (dataSize == 2) {
-            *(uint16_t*)ice.programDataPtr = outputTemp->operand;
+            *(uint16_t*)ice.programDataPtr = outputTemp->operand.num;
         } else {
-            w24(ice.programDataPtr, outputTemp->operand);
+            w24(ice.programDataPtr, outputTemp->operand.num);
         }
         ice.programDataPtr += dataSize;
     }

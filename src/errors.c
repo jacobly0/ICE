@@ -54,9 +54,9 @@ void displayLabelError(char *label) {
 }
 
 void displayError(uint8_t index) {
-    char buf[30];
-
 #ifdef CALCULATOR
+    char buf[30];
+    
     gfx_SetTextFGColor(index < W_WRONG_CHAR ? 224 : 227);
     displayMessageLineScroll(errors[index]);
 

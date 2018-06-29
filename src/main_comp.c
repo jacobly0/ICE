@@ -46,16 +46,14 @@ uint32_t r24(void *x) {
 int main(int argc, char **argv) {
     uint8_t amountOfPrograms, res = VALID, temp;
     uint24_t programDataSize, offset, totalSize;
-    char buf[30], *var_name;
+    char buf[30], *var_name = argv[1];
     prog_t *outputPrgm;
 
     if (argc == 1) {
         fprintf(stdout, "%s\n", infoStr);
         fprintf(stdout, "Usage: ice [-debug] INPUT.8xp");
         exit(0);
-    } else if (argc == 2) {
-        var_name = argv[1];
-    } else {
+    } else if (argc != 2) {
         fprintf(stderr, "Error: invalid amount of arguments\n");
         exit(1);
     }

@@ -34,11 +34,21 @@ uint8_t functionRepeat(int);
 uint8_t parseProgram(void);
 uint8_t parseProgramUntilEnd(void);
 
+typedef uint24_t num_t;
+typedef uint8_t vari_t;
+typedef uint8_t op_t;
+
+typedef union {
+    num_t num;
+    vari_t var;
+    op_t op;
+} operand_t;
+
 typedef struct {
     uint8_t  isString;
     uint8_t  type;
     uint8_t  mask;
-    uint24_t operand;
+    operand_t operand;
 } element_t;
 
 #endif
