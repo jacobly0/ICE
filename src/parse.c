@@ -193,7 +193,7 @@ uint8_t parseExpression(int token) {
             - If it's a pointer directly after the -> operator, the third byte is 1 to ignore the function
     */
 
-    while (token != EOF && (tok = (uint8_t)token) != tEnter) {
+    while (token != EOF && (tok = (uint8_t)token) != tEnter && tok != tColon) {
 fetchNoNewToken:
         outputCurr = &outputPtr[outputElements];
         stackCurr  = &stackPtr[stackElements];
@@ -493,7 +493,7 @@ stackToOutputReturn1:
             outputElements++;
             mask = TYPE_MASK_U24;
 
-            while ((token = _getc()) != EOF && (uint8_t)token != tEnter && (uint8_t)token != tStore && (uint8_t)token != tAPost) {
+            while ((token = _getc()) != EOF && (uint8_t)token != tEnter && (uint8_t)token != tColon && (uint8_t)token != tStore && (uint8_t)token != tAPost) {
                 *ice.programPtr++ = token;
 
                 if (IsA2ByteTok(token)) {
@@ -510,7 +510,7 @@ stackToOutputReturn1:
 
             outputCurr->operand.num = (uint24_t)ice.programDataPtr;
 
-            if ((uint8_t)token == tStore || (uint8_t)token == tEnter) {
+            if ((uint8_t)token == tStore || (uint8_t)token == tEnter || (uint8_t)token == tColon) {
                 continue;
             }
         }
@@ -567,7 +567,7 @@ noSquishing:
             
             outputCurr->operand.num = (uint24_t)ice.programDataPtr;
 
-            if ((uint8_t)token == tStore || (uint8_t)token == tEnter) {
+            if ((uint8_t)token == tStore || (uint8_t)token == tEnter || (uint8_t)token == tColon) {
                 continue;
             }
         }
@@ -1015,7 +1015,7 @@ static uint8_t functionIf(int token) {
     uint8_t tempGotoElements = ice.curGoto;
     uint8_t tempLblElements = ice.curLbl;
     
-    if ((token = _getc()) != EOF && token != tEnter) {
+    if ((token = _getc()) != EOF && token != tEnter && token != tColon) {
         uint8_t *IfStartAddr, res;
         uint24_t tempDataOffsetElements;
 
@@ -1272,7 +1272,7 @@ uint8_t functionRepeat(int token) {
 static uint8_t functionReturn(int token) {
     uint8_t res;
 
-    if ((token = _getc()) == EOF || (uint8_t)token == tEnter) {
+    if ((token = _getc()) == EOF || (uint8_t)token == tEnter || (uint8_t)token == tColon) {
         RET();
         ice.lastTokenIsReturn = true;
     } else if (token == tIf) {
@@ -1607,7 +1607,7 @@ static uint8_t functionPrgm(int token) {
     *ice.programPtr++ = TI_PRGM_TYPE;
 
     // Fetch the name
-    while ((token = _getc()) != EOF && (uint8_t)token != tEnter && ++a < 9) {
+    while ((token = _getc()) != EOF && (uint8_t)token != tEnter && (uint8_t)token != tColon && ++a < 9) {
         *ice.programPtr++ = token;
     }
     *ice.programPtr++ = 0;
@@ -1661,7 +1661,7 @@ static uint8_t functionLbl(int token) {
     uint8_t a = 0;
     
     // Get the label name
-    while ((token = _getc()) != EOF && (uint8_t)token != tEnter && a < 20) {
+    while ((token = _getc()) != EOF && (uint8_t)token != tEnter && (uint8_t)token != tColon && a < 20) {
         labelCurr->name[a++] = token;
     }
     labelCurr->name[a] = 0;
@@ -1684,7 +1684,7 @@ void insertGotoLabel(void) {
     uint8_t a = 0;
     int token;
     
-    while ((token = _getc()) != EOF && (uint8_t)token != tEnter && a < 20) {
+    while ((token = _getc()) != EOF && (uint8_t)token != tEnter && (uint8_t)token != tColon && a < 20) {
         gotoCurr->name[a++] = token;
     }
     gotoCurr->name[a] = 0;
@@ -1776,7 +1776,7 @@ static uint8_t functionInput(int token) {
 static uint8_t functionBB(int token) {
     // Asm(
     if ((uint8_t)(token = _getc()) == tAsm) {
-        while ((token = _getc()) != EOF && (uint8_t)token != tEnter && (uint8_t)token != tRParen) {
+        while ((token = _getc()) != EOF && (uint8_t)token != tEnter && (uint8_t)token != tColon && (uint8_t)token != tRParen) {
             uint8_t tok1, tok2;
 
             // Get hexadecimals
@@ -1958,7 +1958,7 @@ static uint8_t (*functions[256])(int) = {
     parseExpression,    //59
     tokenWrongPlace,    //60
     tokenWrongPlace,    //61
-    tokenUnimplemented, //62
+    dummyReturn,        //62
     dummyReturn,        //63
     tokenWrongPlace,    //64
     parseExpression,    //65

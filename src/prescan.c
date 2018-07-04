@@ -122,7 +122,7 @@ void preScanProgram(void) {
                     // Get the det( command
                     if (tok2 < t0 || tok2 > t9) {
                         token = tok1 - t0;
-                        if (tok2 == tEnter) {
+                        if (tok2 == tEnter || tok2 == tColon) {
                             afterNewLine = true;
                         }
                     } else {
