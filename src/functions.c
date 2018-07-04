@@ -152,13 +152,49 @@ static const uint8_t FileiocArgs[] = {
     RET_HL   | 3, SMALL_3,     // DetectVar
 };
 
+const uint8_t implementedFunctions[AMOUNT_OF_FUNCTIONS][5] = {
+// function / second byte / amount of args / allow args as numbers / args backwards pushed
+    {tNot,      0,              1,   1, 0},
+    {tMin,      0,              2,   1, 0},
+    {tMax,      0,              2,   1, 0},
+    {tMean,     0,              2,   1, 0},
+    {tSqrt,     0,              1,   1, 0},
+    {tDet,      0,              255, 0, 1},
+    {tSum,      0,              255, 0, 1},
+    {tSin,      0,              1,   1, 0},
+    {tCos,      0,              1,   1, 0},
+    {tGetKey,   0,              255, 0, 0},
+    {tRand,     0,              0,   0, 0},
+    {tAns,      0,              0,   0, 0},
+    {tLParen,   0,              1,   0, 0},
+    {tLBrack,   0,              1,   0, 0},
+    {tExtTok,   tRemainder,     2,   1, 0},
+    {tExtTok,   tCheckTmr,      1,   0, 0},
+    {tExtTok,   tStartTmr,      0,   0, 0},
+    {tExtTok,   tLEFT,          2,   1, 0},
+    {tExtTok,   tRIGHT,         2,   1, 0},
+    {t2ByteTok, tSubStrng,      3,   0, 0},
+    {t2ByteTok, tLength,        1,   0, 0},
+    {t2ByteTok, tFinDBD,        1,   0, 0},
+    {t2ByteTok, tRandInt,       2,   0, 0},
+    {t2ByteTok, tInStrng,       2,   0, 1},
+    {tVarOut,   tDefineSprite,  255, 0, 0},
+    {tVarOut,   tData,          255, 0, 0},
+    {tVarOut,   tCopy,          255, 0, 0},
+    {tVarOut,   tAlloc,         1,   0, 0},
+    {tVarOut,   tDefineTilemap, 255, 0, 0},
+    {tVarOut,   tCopyData,      255, 0, 0},
+    {tVarOut,   tLoadData,      3,   0, 0},
+    {tVarOut,   tSetBrightness, 1,   0, 0},
+    {tVarOut,   tCompare,       2,   0, 1}
+};
+
 extern uint8_t outputStack[400];
-extern const uint8_t implementedFunctions[AMOUNT_OF_FUNCTIONS][5];
 
 uint8_t parseFunction(uint24_t index) {
     element_t *outputPtr = (element_t*)outputStack, *outputPrev, *outputCurr, *outputPrevPrev, *outputPrevPrevPrev;
-    uint8_t function, function2, amountOfArguments, temp, a, outputPrevType, outputPrevPrevType, res;
-    uint24_t output, endIndex, startIndex, outputPrevOperand, outputPrevPrevOperand;
+    uint8_t function, function2, amountOfArguments, outputPrevType, outputPrevPrevType, res;
+    uint24_t output, outputPrevOperand, outputPrevPrevOperand;
 
     outputPrevPrevPrev = &outputPtr[getIndexOffset(-4)];
     outputPrevPrev     = &outputPtr[getIndexOffset(-3)];
@@ -174,8 +210,13 @@ uint8_t parseFunction(uint24_t index) {
     outputPrevPrevType    = outputPrevPrev->type;
     outputPrevPrevOperand = outputPrevPrev->operand.num;
     
+    // (
+    if (function == tLParen) {
+        expr.outputReturnRegister = expr.outputRegister;
+    }
+    
     // not(
-    if (function == tNot) {
+    else if (function == tNot) {
         if ((res = parseFunction1Arg(index, REGISTER_HL_DE)) != VALID) {
             return res;
         }
@@ -218,12 +259,15 @@ uint8_t parseFunction(uint24_t index) {
                 expr.AnsSetCarryFlag = expr.AnsSetCarryFlagReversed;
                 expr.AnsSetCarryFlagReversed = temp;
             } else {
-                expr.AnsSetZeroFlag = expr.AnsSetZeroFlagReversed = expr.AnsSetCarryFlagReversed = false;
+                ClearAnsFlags();
                 expr.ZeroCarryFlagRemoveAmountOfBytes = 3;
                 expr.AnsSetCarryFlag = true;
             }
         }
     } else {
+        uint8_t temp, a;
+        uint24_t startIndex, endIndex;
+        
         ClearAnsFlags();
         
         // rand
@@ -786,7 +830,7 @@ uint8_t parseFunction(uint24_t index) {
                 * Returns: PTR to data
                 ***********************************/
 
-                uint24_t startIndex = -1 - amountOfArguments;
+                startIndex = -1 - amountOfArguments;
 
                 if ((res = InsertDataElements(amountOfArguments, startIndex, (&outputPtr[getIndexOffset(startIndex)])->operand.num, 1)) != VALID) {
                     return res;
@@ -897,7 +941,6 @@ uint8_t parseFunction(uint24_t index) {
                 * Returns: PTR to tilemap struct
                 ****************************************************************/
 
-                uint24_t startIndex = -1 - amountOfArguments;
                 uint8_t *tempDataPtr = ice.programDataPtr - 18;                 // 18 = sizeof(tilemap_t)
                 element_t *outputTemp;
                 uint8_t a;
@@ -905,7 +948,8 @@ uint8_t parseFunction(uint24_t index) {
                 if (amountOfArguments < 11 || amountOfArguments > 12) {
                     return E_ARGUMENTS;
                 }
-
+                
+                startIndex = -1 - amountOfArguments;
                 ice.programDataPtr -= 18;
 
                 // Fetch the 8 uint8_t variables
@@ -957,9 +1001,9 @@ uint8_t parseFunction(uint24_t index) {
                 *****************************************************/
 
                 element_t *outputTemp;
-                uint24_t startIndex = -1 - amountOfArguments;
                 uint8_t *prevProgDataPtr = ice.programDataPtr;
-
+                
+                startIndex = -1 - amountOfArguments;
                 outputTemp = &outputPtr[getIndexOffset(startIndex)];
                 if (outputTemp->type == TYPE_NUMBER) {
                     LD_DE_IMM(outputTemp->operand.num);

@@ -21,43 +21,7 @@ extern char *str_dupcat(const char *s, const char *c);
 #endif
 
 static uint8_t (*functions[256])(int token);
-const uint8_t implementedFunctions[AMOUNT_OF_FUNCTIONS][5] = {
-// function / second byte / amount of args / allow args as numbers / args backwards pushed
-    {tNot,      0,              1,   1, 0},
-    {tMin,      0,              2,   1, 0},
-    {tMax,      0,              2,   1, 0},
-    {tMean,     0,              2,   1, 0},
-    {tSqrt,     0,              1,   1, 0},
-    {tDet,      0,              255, 0, 1},
-    {tSum,      0,              255, 0, 1},
-    {tSin,      0,              1,   1, 0},
-    {tCos,      0,              1,   1, 0},
-    {tGetKey,   0,              255, 0, 0},
-    {tRand,     0,              0,   0, 0},
-    {tAns,      0,              0,   0, 0},
-    {tLParen,   0,              1,   0, 0},
-    {tLBrace,   0,              1,   0, 0},
-    {tLBrack,   0,              1,   0, 0},
-    {tExtTok,   tRemainder,     2,   1, 0},
-    {tExtTok,   tCheckTmr,      1,   0, 0},
-    {tExtTok,   tStartTmr,      0,   0, 0},
-    {tExtTok,   tLEFT,          2,   1, 0},
-    {tExtTok,   tRIGHT,         2,   1, 0},
-    {t2ByteTok, tSubStrng,      3,   0, 0},
-    {t2ByteTok, tLength,        1,   0, 0},
-    {t2ByteTok, tFinDBD,        1,   0, 0},
-    {t2ByteTok, tRandInt,       2,   0, 0},
-    {t2ByteTok, tInStrng,       2,   0, 1},
-    {tVarOut,   tDefineSprite,  255, 0, 0},
-    {tVarOut,   tData,          255, 0, 0},
-    {tVarOut,   tCopy,          255, 0, 0},
-    {tVarOut,   tAlloc,         1,   0, 0},
-    {tVarOut,   tDefineTilemap, 255, 0, 0},
-    {tVarOut,   tCopyData,      255, 0, 0},
-    {tVarOut,   tLoadData,      3,   0, 0},
-    {tVarOut,   tSetBrightness, 1,   0, 0},
-    {tVarOut,   tCompare,       2,   0, 1}
-};
+extern const uint8_t implementedFunctions[AMOUNT_OF_FUNCTIONS][5];
 element_t outputStack[400];
 element_t stack[50];
 
@@ -446,12 +410,10 @@ stackToOutputReturn1:
 
             // If the right parenthesis belongs to a function, move the function as well
             if (tok != tComma) {
-                if (stackPrev->operand.func.function != tLParen) {
-                    memcpy(outputCurr, stackPrev, sizeof(element_t));
-                    outputCurr->operand.num += ((*amountOfArgumentsStackPtr--) << 8) 
-                                                - ((uint8_t)stackPrev->operand.num == 0x0F ? 0x0F - tLBrace : 0);
-                    outputElements++;
-                }
+                memcpy(outputCurr, stackPrev, sizeof(element_t));
+                outputCurr->operand.num += ((*amountOfArgumentsStackPtr--) << 8) 
+                                            - ((uint8_t)stackPrev->operand.num == 0x0F ? 0x0F - tLBrace : 0);
+                outputElements++;
 
                 // If you moved the function or not, it should always pop the last stack element
                 stackElements--;
@@ -753,12 +715,6 @@ stackToOutput:
         // If it's a function, add the amount of arguments as well
         if (stackPrev->type == TYPE_FUNCTION) {
             temp += (*amountOfArgumentsStackPtr--) << 8;
-        }
-
-        // Don't move the left paren...
-        if (stackPrev->type == TYPE_FUNCTION && (uint8_t)stackPrev->operand.num == tLParen) {
-            outputElements--;
-            continue;
         }
 
         outputCurr->isString = stackPrev->isString;
