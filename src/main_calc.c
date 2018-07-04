@@ -27,6 +27,7 @@ void main(void) {
     uint8_t selectedProgram, amountOfPrograms, res = VALID, temp;
     uint24_t programDataSize, offset, totalSize;
     const char ICEheader[] = {tii, 0};
+    ti_var_t tempProg;
     char buf[30], *temp_name = "", var_name[9];
     sk_key_t key;
     void *search_pos;
@@ -34,14 +35,9 @@ void main(void) {
 
     // Install hooks
     ti_CloseAll();
-    ice.inPrgm = ti_Open("ICEHOOKS", "r");
-    
-    asm("ld iy, 0D00080h");
-    asm("set 3, (iy+024h)");
-
-    if ((ice.inPrgm = ti_Open("ICEHOOKS", "r"))) {
-        ti_SetArchiveStatus(true, ice.inPrgm);
-        ti_GetDataPtr(ice.inPrgm);
+    if ((tempProg = ti_Open("ICEHOOKS", "r"))) {
+        ti_SetArchiveStatus(true, tempProg);
+        ti_GetDataPtr(tempProg);
 
         // Manually set the hooks
         asm("ld iy, 0D00080h");
@@ -56,9 +52,9 @@ void main(void) {
         asm("call 00213C4h");
     }
     
-    if ((ice.inPrgm = ti_Open("ICEDEBUG", "r"))) {
-        ti_SetArchiveStatus(true, ice.inPrgm);
-        ti_GetDataPtr(ice.inPrgm);
+    if ((tempProg = ti_Open("ICEDEBUG", "r"))) {
+        ti_SetArchiveStatus(true, tempProg);
+        ti_GetDataPtr(tempProg);
         
         // Manually set the hooks
         asm("ld iy, 0D00080h");
@@ -66,6 +62,10 @@ void main(void) {
         asm("add hl, de");
         asm("call 0021418h");
     }
+    
+    // Enable lowercase
+    asm("ld iy, 0D00080h");
+    asm("set 3, (iy+024h)");
 
     // Yay, GUI! :)
 displayMainScreen:

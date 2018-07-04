@@ -38,10 +38,17 @@ typedef uint24_t num_t;
 typedef uint8_t vari_t;
 typedef uint8_t op_t;
 
+typedef struct {
+    uint8_t function;
+    uint8_t amountOfArgs;
+    uint8_t function2;
+} func_t;
+
 typedef union {
     num_t num;
     vari_t var;
     op_t op;
+    func_t func;
 } operand_t;
 
 typedef struct {
