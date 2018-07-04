@@ -1,0 +1,49 @@
+dist: trusty
+sudo: required
+
+language: cpp
+
+addons:
+  apt:
+    packages:
+      - gcc-6
+      - g++-6
+      - wine
+    sources:
+      - ubuntu-toolchain-r-test
+
+branches:
+  only:
+    - master
+
+install:
+  - export CXX="g++-6" CC="gcc-6"; $CXX --version
+
+script:
+# Fetch toolchain, set variables
+  - export WINEDEBUG=-all
+  - export CEDEV=~/CEdev
+  - export PATH=$CEDEV/bin/:$PATH
+  - export AUTOTESTER_LIBS_DIR=$(pwd)/clibraries
+  - git clone --recursive https://github.com/CE-Programming/toolchain.git
+  - cd toolchain
+  - make
+  - make install
+  - make release
+  - make release-libs
+  - cd ..
+# Build ICE
+  - make
+# Build CEmu core and autotester_cli
+  - git clone --recursive -b latest-stable --depth 1 https://github.com/CE-Programming/CEmu.git
+  - make -C CEmu/core -j4 CC=gcc-6 CXX=g++-6 LINK=g++-6
+  - make -C CEmu/tests/autotester -j4 CC=gcc-6 CXX=g++-6 LINK=g++-6
+  - export PATH=$(pwd)/CEmu/tests/autotester:$PATH
+
+notifications:
+  irc:
+    channels:
+      - "irc.choopa.net#icedev"
+    on_success: change
+    on_failure: always
+    skip_join: true
