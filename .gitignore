@@ -7,3 +7,6 @@ ice
 *.exe
 *.lib
 *.8xv
+CMakeLists.txt
+.idea/
+cmake-build-debug/
