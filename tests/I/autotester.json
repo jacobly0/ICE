@@ -1,0 +1,29 @@
+{
+  "rom": "84pce_515.rom",
+  "transfer_files": [
+    "../bin/ICE.8xp",
+    "I1.8xp"
+  ],
+  "target": {
+    "name": "ICE",
+    "isASM": true
+  },
+  "sequence": [
+    "action|launch",
+    "delay|700",
+    "key|enter",
+    "delay|2000",
+	"hashWait|1",
+    "key|clear",
+    "delay|200",
+  ],
+  "hashes": {
+    "1": {
+      "description": "Output should be 'N is 12.'",
+      "start": "0xD42800",
+      "size": "2560",
+      "size_comment": "320x8 from 'Succesfully compiled!'",
+      "expected_CRCs": [ "A843E061" ]
+    }
+  }
+}
