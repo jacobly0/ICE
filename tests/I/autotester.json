@@ -12,18 +12,32 @@
     "action|launch",
     "delay|700",
     "key|enter",
-    "delay|2000",
 	"hashWait|1",
     "key|clear",
-    "delay|200"
+    "delay|700",
+    "key|prgm",
+    "delay|200",
+    "key|up",
+    "delay|200",
+    "key|enter",
+    "delay|500",
+    "key|enter",
+    "hashWait|2"
   ],
   "hashes": {
     "1": {
-      "description": "Output should be 'N is 12.'",
+      "description": "Compile program output",
       "start": "0xD42800",
       "size": "2560",
       "size_comment": "320x8 from 'Succesfully compiled!'",
       "expected_CRCs": [ "A843E061" ]
+    },
+    "2": {
+      "description": "Program should normally display text",
+      "start": "0xD44B00",
+      "size": "128000",
+      "size_comment": "offset + 320x200x2 because we don't want the busy indicator",
+      "expected_CRCs": [ "10EF79BA" ]
     }
   }
 }
