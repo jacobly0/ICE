@@ -1,7 +1,7 @@
 {
   "rom": "84pce_515.rom",
   "transfer_files": [
-    "../bin/ICE.8xp",
+    "../../bin/ICE.8xp",
     "I1.8xp"
   ],
   "target": {
