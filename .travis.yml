@@ -24,7 +24,7 @@ script:
   - export WINEDEBUG=-all
   - export CEDEV=~/CEdev
   - export PATH=$CEDEV/bin/:$PATH
-  - export AUTOTESTER_LIBS_DIR=$(pwd)/clibraries
+  - export AUTOTESTER_LIBS_DIR=$(pwd)/toolchain/clibraries
   - git clone --recursive https://github.com/CE-Programming/toolchain.git
   - cd toolchain
   - make
