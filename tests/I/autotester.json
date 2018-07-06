@@ -15,7 +15,7 @@
     "delay|2000",
 	"hashWait|1",
     "key|clear",
-    "delay|200",
+    "delay|200"
   ],
   "hashes": {
     "1": {
