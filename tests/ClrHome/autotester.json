@@ -2,7 +2,7 @@
   "rom": "84pce_515.rom",
   "transfer_files": [
     "../../bin/ICE.8xp",
-    "I1.8xp"
+    "CLRHOME1.8xp"
   ],
   "target": {
     "name": "ICE",
@@ -33,11 +33,11 @@
       "expected_CRCs": [ "A843E061" ]
     },
     "2": {
-      "description": "Program should normally display text",
+      "description": "Program should normally display the string",
       "start": "0xD44B00",
       "size": "128000",
       "size_comment": "offset + 320x200x2 because we don't want the busy indicator",
-      "expected_CRCs": [ "1AE07265" ]
+      "expected_CRCs": [ "08E38F85" ]
     }
   }
 }
