@@ -39,6 +39,12 @@ script:
   - make -C CEmu/core -j4 CC=gcc-6 CXX=g++-6 LINK=g++-6
   - make -C CEmu/tests/autotester -j4 CC=gcc-6 CXX=g++-6 LINK=g++-6
   - export PATH=$(pwd)/CEmu/tests/autotester:$PATH
+# Grab ROM for tests below
+  - export ROM_FILE_NAME=84pce_515_53.rom
+  - curl -s https://tiplanet.org/scripts/travis/$ROM_FILE_NAME 2>/dev/null > $ROM_FILE_NAME
+  - export AUTOTESTER_ROM=$(pwd)/$ROM_FILE_NAME
+# Test tests
+  - RESULT=0; for f in tests/*.json; do echo "Launching autotester on $f"; autotester "$f"; RESULT=`expr $RESULT + $?`; done; return $RESULT
 
 notifications:
   irc:
