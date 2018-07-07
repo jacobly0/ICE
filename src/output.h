@@ -152,7 +152,7 @@
 #define LD_HL_IND(val)        do { OutputWriteByte(OP_LD_HL_IND); OutputWriteLong(val); ResetHL(); } while (0)
 #define LD_IMM_A(val)         do { OutputWriteByte(OP_LD_IMM_A); OutputWriteLong(val); } while (0)
 #define LD_SIS_IMM_HL(val)    do { OutputWrite2Bytes(0x40, 0x22); OutputWriteWord(val); } while (0)
-#define LD_SIS_HL(val)        do { OutputWrite2Bytes(0x40, OP_LD_HL); OutputWriteWord(val); } while (0)
+#define LD_SIS_HL(val)        do { OutputWrite2Bytes(0x40, OP_LD_HL); OutputWriteWord(val); ResetHL(); } while (0)
 #define LD_HL_ADDR(val)       do { OutputWriteByte(OP_LD_HL_IND); OutputWriteLong(val); ResetHL(); } while (0)
 #define LD_ADDR_HL(val)       do { OutputWriteByte(0x22); OutputWriteLong(val); } while (0)
 #define LD_ADDR_DE(val)       do { OutputWrite2Bytes(0xED, 0x53); OutputWriteLong(val); } while (0)
