@@ -1369,6 +1369,7 @@ static uint8_t functionOutput(int token) {
 
     // Get the third argument = output thing
     if (ice.tempToken == tComma) {
+        expr.inFunction = true;
         if ((res = parseExpression(_getc())) != VALID) {
             return res;
         }
@@ -1379,7 +1380,9 @@ static uint8_t functionOutput(int token) {
             w24(ice.programPtr - 3, r24(ice.programPtr - 3) + 13);
         }
         ResetAllRegs();
-    } else if (ice.tempToken != tEnter) {
+    }
+    
+    if (ice.tempToken != tRParen && ice.tempToken != tEnter) {
         return E_SYNTAX;
     }
 
