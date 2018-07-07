@@ -1,0 +1,42 @@
+{
+  "rom": "84pce_515.rom",
+  "transfer_files": [
+    "../../bin/ICE.8xp",
+    "ICON.8xp"
+  ],
+  "target": {
+    "name": "ICE",
+    "isASM": true
+  },
+  "sequence": [
+    "action|launch",
+    "key|enter",
+    "hashWait|1",
+    "key|clear",
+    "delay|200",
+    "key|prgm",
+    "delay|200",
+    "key|up",
+    "delay|200",
+    "key|enter",
+    "delay|200",
+    "key|enter",
+    "hashWait|2"
+  ],
+  "hashes": {
+    "1": {
+      "description": "Compile program output",
+      "start": "0xD42800",
+      "size": "2560",
+      "size_comment": "320x8 from 'Succesfully compiled!'",
+      "expected_CRCs": [ "A843E061" ]
+    },
+    "2": {
+      "description": "Program should not quit after description",
+      "start": "0xD44B00",
+      "size": "128000",
+      "size_comment": "offset + 320x200x2 because we don't want the busy indicator",
+      "expected_CRCs": [ "6590D4FA" ]
+    }
+  }
+}

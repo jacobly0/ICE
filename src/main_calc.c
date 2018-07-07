@@ -159,7 +159,7 @@ displayMainScreen:
     gfx_SetColor(255);
     gfx_FillRectangle_NoClip(0, 11, 320, 210);
     gfx_FillRectangle_NoClip(0, 220, 270, 20);
-
+    
     // Set some vars
     strcpy(var_name, inputPrograms[selectedProgram - 1]);
     didCompile = true;

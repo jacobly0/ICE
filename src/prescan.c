@@ -57,13 +57,13 @@ void preScanProgram(void) {
         } else if (tok == tStore) {
             inString = false;
         } else {
-            if (tok >= tA && tok <= tTheta) {
-                GetVariableOffset(tok);
-            } else if (tok == tEnter || (tok == tColon && !inString)) {
+            if (tok == tEnter || (tok == tColon && !inString)) {
                 inString = false;
                 afterNewLine = true;
             } else if (!inString) {
-                if (tok == tRand) {
+                if (tok >= tA && tok <= tTheta) {
+                    GetVariableOffset(tok);
+                } else if (tok == tRand) {
                     prescan.amountOfRandRoutines++;
                     prescan.modifiedIY = true;
                 } else if (tok == tSqrt) {

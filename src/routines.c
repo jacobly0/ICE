@@ -428,7 +428,7 @@ uint8_t GetVariableOffset(uint8_t tok) {
     uint8_t a = 1, b;
 
     variableName[0] = tok;
-    while ((tok = _getc()) >= tA && tok <= tTheta) {
+    while ((tok = _getc()) >= tA && tok <= tTheta && a < 20) {
         variableName[a++] = tok;
     }
     variableName[a] = 0;
