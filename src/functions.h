@@ -32,4 +32,12 @@ void loadGetKeyFastData1(void);
 void loadGetKeyFastData2(void);
 void InsertMallocRoutine(void);
 
+typedef struct {
+    uint8_t  function;
+    uint8_t  function2;
+    uint8_t  amountOfArgs;
+    uint8_t  numbersArgs;
+    uint8_t  pushBackwards;
+} function_t;
+
 #endif

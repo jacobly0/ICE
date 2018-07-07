@@ -3,7 +3,7 @@
 
 #define AMOUNT_OF_GRAPHX_FUNCTIONS 92
 #define AMOUNT_OF_FILEIOC_FUNCTIONS 21
-#define AMOUNT_OF_FUNCTIONS 33
+#define AMOUNT_OF_FUNCTIONS 32
 
 #define STACK_SIZE 500
 #define SIZEOF_DISP_DATA   26
@@ -37,7 +37,7 @@
 
 typedef struct {
     char     name[20];
-    uint24_t addr;
+    uint8_t  *addr;
     uint24_t offset;
 } label_t;
 

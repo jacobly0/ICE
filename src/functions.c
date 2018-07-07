@@ -152,7 +152,7 @@ static const uint8_t FileiocArgs[] = {
     RET_HL   | 3, SMALL_3,     // DetectVar
 };
 
-const uint8_t implementedFunctions[AMOUNT_OF_FUNCTIONS][5] = {
+const function_t implementedFunctions[AMOUNT_OF_FUNCTIONS] = {
 // function / second byte / amount of args / allow args as numbers / args backwards pushed
     {tNot,      0,              1,   1, 0},
     {tMin,      0,              2,   1, 0},
@@ -167,7 +167,6 @@ const uint8_t implementedFunctions[AMOUNT_OF_FUNCTIONS][5] = {
     {tRand,     0,              0,   0, 0},
     {tAns,      0,              0,   0, 0},
     {tLParen,   0,              1,   0, 0},
-    {tLBrack,   0,              1,   0, 0},
     {tExtTok,   tRemainder,     2,   1, 0},
     {tExtTok,   tCheckTmr,      1,   0, 0},
     {tExtTok,   tStartTmr,      0,   0, 0},
@@ -194,16 +193,15 @@ extern uint8_t outputStack[400];
 uint8_t parseFunction(uint24_t index) {
     element_t *outputPtr = (element_t*)outputStack, *outputPrev, *outputCurr, *outputPrevPrev, *outputPrevPrevPrev;
     uint8_t function, function2, amountOfArguments, outputPrevType, outputPrevPrevType, res;
-    uint24_t output, outputPrevOperand, outputPrevPrevOperand;
+    uint24_t outputPrevOperand, outputPrevPrevOperand;
 
     outputPrevPrevPrev = &outputPtr[getIndexOffset(-4)];
     outputPrevPrev     = &outputPtr[getIndexOffset(-3)];
     outputPrev         = &outputPtr[getIndexOffset(-2)];
-    output             = outputPtr[index].operand.num;
     outputCurr         = &outputPtr[getIndexOffset(-1)];
-    function           = output;
-    function2          = output >> 16;
-    amountOfArguments  = output >> 8;
+    function           = outputPtr[index].operand.func.function;
+    function2          = outputPtr[index].operand.func.function2;
+    amountOfArguments  = outputPtr[index].operand.func.amountOfArgs;
 
     outputPrevOperand     = outputPrev->operand.num;
     outputPrevType        = outputPrev->type;
@@ -1167,7 +1165,7 @@ uint8_t parseFunction(uint24_t index) {
                         temp--;
                     }
 
-                    if (outputPrevType == TYPE_FUNCTION && index != 255 && implementedFunctions[index][4]) {
+                    if (outputPrevType == TYPE_FUNCTION && index != 255 && implementedFunctions[index].pushBackwards) {
                         temp++;
                     }
 

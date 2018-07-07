@@ -21,7 +21,7 @@ extern char *str_dupcat(const char *s, const char *c);
 #endif
 
 static uint8_t (*functions[256])(int token);
-extern const uint8_t implementedFunctions[AMOUNT_OF_FUNCTIONS][5];
+extern const function_t implementedFunctions[AMOUNT_OF_FUNCTIONS];
 element_t outputStack[400];
 element_t stack[50];
 
@@ -91,7 +91,7 @@ uint8_t parseProgram(void) {
             label_t *curLbl = &ice.LblStack[currentLbl];
 
             if (!memcmp(curLbl->name, curGoto->name, 20)) {
-                w24((uint8_t*)(curGoto->addr + 1), curLbl->addr - (uint24_t)ice.programData + PRGM_START);
+                w24(curGoto->addr + 1, (uint24_t)curLbl->addr - (uint24_t)ice.programData + PRGM_START);
                 goto findNextLabel;
             }
         }
@@ -99,6 +99,7 @@ uint8_t parseProgram(void) {
         // Label not found
         displayLabelError(curGoto->name);
         _seek(curGoto->offset, SEEK_SET, ice.inPrgm);
+        
         return W_VALID;
 findNextLabel:;
     }
@@ -143,19 +144,6 @@ uint8_t parseExpression(int token) {
     
     memset(&outputStack, 0, sizeof(outputStack));
     memset(&stack, 0, sizeof(stack));
-
-    /*
-        General explanation output stack and normal stack:
-        - Each entry consists of 5 bytes, the type (1), the mask (1) and the operand (3)
-        - Type: number, variable, function, operator etc
-        - Mask: 0 = 8 bits, 1 = 16 bits, 2 = 24 bits, only used for pointers
-        - The operand is either a 3-byte number or consists of these 3 bytes:
-            - The first byte = the operand: function/variable/operator token
-            - If it's a function then the second byte is the amount of arguments for that function
-            - If it's a getKeyFast, the second byte is the key
-            - If it's a 2-byte function, the third byte is the second byte of the function
-            - If it's a pointer directly after the -> operator, the third byte is 1 to ignore the function
-    */
 
     while (token != EOF && (tok = (uint8_t)token) != tEnter && tok != tColon) {
 fetchNoNewToken:
@@ -365,8 +353,8 @@ stackToOutputReturn1:
             }
         }
 
-        // Pop a ) } ] ,
-        else if (tok == tRParen || tok == tComma || tok == tRBrace || tok == tRBrack) {
+        // Pop a ) } ,
+        else if (tok == tRParen || tok == tComma || tok == tRBrace) {
             uint8_t tempTok, index;
 
             // Move until stack is empty or a function is encountered
@@ -386,8 +374,7 @@ stackToOutputReturn1:
             tempTok = stackPrev->operand.num;
 
             // Closing tag should match it's open tag
-            if (((tok == tRBrace || tok == tRBrack) && (tempTok != token - 1)) ||
-                 (tok == tRParen && tempTok != 0x0F && (tempTok == tLBrace || tempTok == tLBrack))) {
+            if ((tok == tRBrace && (tempTok != token - 1)) || (tok == tRParen && tempTok != 0x0F && tempTok == tLBrace)) {
                 return E_SYNTAX;
             }
 
@@ -395,15 +382,17 @@ stackToOutputReturn1:
             if (!stackElements) {
                 if (expr.inFunction) {
                     ice.tempToken = tok;
+                    
                     goto stopParsing;
                 }
+                
                 return E_EXTRA_RPAREN;
             }
             
             index = GetIndexOfFunction(tempTok, stackPrev->operand.func.function2);
 
             // If it's a det, add an argument delimiter as well
-            if (tok == tComma && index != 255 && implementedFunctions[index][4]) {
+            if (tok == tComma && index != 255 && implementedFunctions[index].pushBackwards) {
                 outputCurr->type = TYPE_ARG_DELIMITER;
                 outputElements++;
             }
@@ -411,8 +400,10 @@ stackToOutputReturn1:
             // If the right parenthesis belongs to a function, move the function as well
             if (tok != tComma) {
                 memcpy(outputCurr, stackPrev, sizeof(element_t));
-                outputCurr->operand.num += ((*amountOfArgumentsStackPtr--) << 8) 
-                                            - ((uint8_t)stackPrev->operand.num == 0x0F ? 0x0F - tLBrace : 0);
+                outputCurr->operand.func.amountOfArgs = *amountOfArgumentsStackPtr--;
+                if (stackPrev->operand.func.function == 0x0F) {
+                    outputCurr->operand.func.function = tLBrace;
+                }
                 outputElements++;
 
                 // If you moved the function or not, it should always pop the last stack element
@@ -434,13 +425,14 @@ stackToOutputReturn1:
             if ((uint8_t)(token = _getc()) == tLParen) {
                 *++amountOfArgumentsStackPtr = 1;
                 stackCurr->type = TYPE_FUNCTION;
-                stackCurr->operand.num = 0xAD;
+                stackCurr->operand.func.function = tGetKey;
                 stackElements++;
                 canUseMask = 2;
             } else {
                 outputCurr->type = TYPE_FUNCTION;
-                outputCurr->operand.num = 0x0000AD;
+                outputCurr->operand.func.function = tGetKey;
                 outputElements++;
+                
                 continue;
             }
         }
@@ -488,7 +480,7 @@ stackToOutputReturn1:
             outputCurr->type = TYPE_STRING;
             outputElements++;
             mask = TYPE_MASK_U24;
-            stackPrev = &stackPtr[stackElements-1];
+            stackPrev = &stackPtr[stackElements - 1];
 
             token = grabString(&ice.programPtr, true);
             if ((uint8_t)stackPrev->operand.num == tVarOut && stackPrev->operand.func.function2 == tDefineSprite) {
@@ -559,7 +551,7 @@ noSquishing:
                     }
                 }
                 
-                if (implementedFunctions[index][2]) {
+                if (implementedFunctions[index].amountOfArgs) {
                     // We always have at least 1 argument
                     *++amountOfArgumentsStackPtr = 1;
                     stackCurr->type = TYPE_FUNCTION;
@@ -570,7 +562,7 @@ noSquishing:
                     canUseMask = 2;
 
                     // Check if it's a function with pushed arguments
-                    if (implementedFunctions[index][4]) {
+                    if (implementedFunctions[index].pushBackwards) {
                         outputCurr->type = TYPE_C_START;
                         outputElements++;
                         
@@ -635,7 +627,7 @@ stackToOutputReturn2:
         if (loopIndex >= index && outputCurr->type == TYPE_FUNCTION) {
             uint8_t a, index2, function = outputCurr->operand.func.function, function2 = outputCurr->operand.func.function2;
             
-            if ((index2 = GetIndexOfFunction(function, function2)) != 255 && implementedFunctions[index2][3]) {
+            if ((index2 = GetIndexOfFunction(function, function2)) != 255 && implementedFunctions[index2].numbersArgs) {
                 uint24_t outputPrevOperand = outputPrev->operand.num, outputPrevPrevOperand = outputPrevPrev->operand.num;
 
                 for (a = 1; a <= index; a++) {
@@ -763,7 +755,7 @@ uint8_t parsePostFixFromIndexToIndex(uint24_t startIndex, uint24_t endIndex) {
             temp++;
         }
         // If it's a det( or sum(, decrement the amount of nested dets
-        if (outputCurr->type == TYPE_FUNCTION && index != 255 && implementedFunctions[index][4]) {
+        if (outputCurr->type == TYPE_FUNCTION && index != 255 && implementedFunctions[index].pushBackwards) {
             temp--;
             amountOfStackElements++;
         }
@@ -907,14 +899,14 @@ uint8_t parsePostFixFromIndexToIndex(uint24_t startIndex, uint24_t endIndex) {
                 uint8_t index = GetIndexOfFunction(outputCurr->operand.num, function2);
                 
                 // Check if we need to push Ans
-                if (AnsDepth > 1 + amountOfArguments || (AnsDepth && implementedFunctions[index][4])) {
+                if (AnsDepth > 1 + amountOfArguments || (AnsDepth && implementedFunctions[index].pushBackwards)) {
                     // We need to push HL since it isn't used in the next operator/function
                     outputPtr[tempIndex].type = TYPE_CHAIN_PUSH;
                     PushHLDE();
                     expr.outputRegister = REGISTER_HL;
                 }
                 
-                if (amountOfArguments != implementedFunctions[index][2] && implementedFunctions[index][2] != 255) {
+                if (amountOfArguments != implementedFunctions[index].amountOfArgs && implementedFunctions[index].amountOfArgs != 255) {
                     return E_ARGUMENTS;
                 }
 
@@ -923,7 +915,7 @@ uint8_t parsePostFixFromIndexToIndex(uint24_t startIndex, uint24_t endIndex) {
                 }
 
                 // Cleanup, if it's not a det(
-                if (index == 255 || !implementedFunctions[index][4]) {
+                if (index == 255 || !implementedFunctions[index].pushBackwards) {
                     for (temp = 0; temp < amountOfArguments; temp++) {
                         removeIndexFromStack(getCurrentIndex() - 2);
                     }
@@ -1624,7 +1616,7 @@ static uint8_t functionLbl(int token) {
         labelCurr->name[a++] = token;
     }
     labelCurr->name[a] = 0;
-    labelCurr->addr = (uint24_t)ice.programPtr;
+    labelCurr->addr = ice.programPtr;
     ResetAllRegs();
 
     return VALID;
@@ -1647,7 +1639,7 @@ void insertGotoLabel(void) {
         gotoCurr->name[a++] = token;
     }
     gotoCurr->name[a] = 0;
-    gotoCurr->addr = (uint24_t)ice.programPtr;
+    gotoCurr->addr = ice.programPtr;
     gotoCurr->offset = _tell(ice.inPrgm);
     ResetAllRegs();
 }
@@ -1861,8 +1853,8 @@ static uint8_t (*functions[256])(int) = {
     tokenUnimplemented, //3
     tokenWrongPlace,    //4
     tokenUnimplemented, //5
-    tokenWrongPlace,    //6
-    parseExpression,    //7
+    tokenUnimplemented, //6
+    tokenUnimplemented, //7
     parseExpression,    //8
     parseExpression,    //9
     tokenUnimplemented, //10
