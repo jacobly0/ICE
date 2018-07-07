@@ -36,7 +36,7 @@
       "start": "0xD44B00",
       "size": "128000",
       "size_comment": "offset + 320x200x2 because we don't want the busy indicator",
-      "expected_CRCs": [ "6590D4FA" ]
+      "expected_CRCs": [ "1AE07265" ]
     }
   }
 }
