@@ -356,6 +356,9 @@ void displayMessageLineScroll(char *string) {
             gfx_FillRectangle(0, LB_Y - 11, 320, 10);
             gfx_SetTextXY(1, gfx_GetTextY() - 10);
         }
+        if (c == tTheta) {
+            c = 0x40;
+        }
         gfx_PrintChar(c);
         if (gfx_GetTextX() > 312) {
             gfx_SetTextXY(1, gfx_GetTextY() + 10);
