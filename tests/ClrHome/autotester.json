@@ -12,7 +12,7 @@
     "action|launch",
     "delay|200",
     "key|enter",
-	"hashWait|1",
+    "hashWait|1",
     "key|clear",
     "delay|200",
     "key|prgm",
