@@ -185,7 +185,7 @@ uint8_t getNameIconDescription(void) {
             if ((temp = IsHexadecimal(_getc())) == 16) {
                 return E_INVALID_HEX;
             }
-            *ice.programPtr++ = colorTable[temp];
+            OutputWriteByte(colorTable[temp]);
         } while (++b);
 
         if ((uint8_t)_getc() != tString || (uint8_t)_getc() != tEnter) {
@@ -196,7 +196,7 @@ uint8_t getNameIconDescription(void) {
         if ((uint8_t)_getc() == tii) {
             grabString(&ice.programPtr, false);
         }
-        *ice.programPtr++ = 0;
+        OutputWriteByte(0);
 
         // Write the right jp offset
         w24(ice.programData + 1, ice.programPtr - ice.programData + PRGM_START);

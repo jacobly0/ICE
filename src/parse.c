@@ -456,14 +456,14 @@ stackToOutputReturn1:
             mask = TYPE_MASK_U24;
 
             while ((token = _getc()) != EOF && (uint8_t)token != tEnter && (uint8_t)token != tColon && (uint8_t)token != tStore && (uint8_t)token != tAPost) {
-                *ice.programPtr++ = token;
+                OutputWriteByte(token);
 
                 if (IsA2ByteTok(token)) {
-                    *ice.programPtr++ = _getc();
+                    OutputWriteByte(_getc());
                 }
             }
 
-            *ice.programPtr++ = 0;
+            OutputWriteByte(0);
 
             length = ice.programPtr - tempProgramPtr;
             ice.programDataPtr -= length;
@@ -520,7 +520,7 @@ stackToOutputReturn1:
             }
 
 noSquishing:
-            *ice.programPtr++ = 0;
+            OutputWriteByte(0);
             
             length = ice.programPtr - tempDataPtr;
             ice.programDataPtr -= length;
@@ -1115,13 +1115,13 @@ uint8_t JumpBackwards(uint8_t *startAddr, uint8_t whichOpcode) {
     if (ice.programPtr + 2 - startAddr <= 0x80) {
         uint8_t *tempPtr = ice.programPtr;
 
-        *ice.programPtr++ = whichOpcode;
-        *ice.programPtr++ = startAddr - 2 - tempPtr;
+        OutputWriteByte(whichOpcode);
+        OutputWriteByte(startAddr - 2 - tempPtr);
 
         return true;
     } else {
         // JR cc to JP cc
-        *ice.programPtr++ = whichOpcode + 0xA2 + (whichOpcode == 0x18 ? 9 : 0);
+        OutputWriteByte(whichOpcode + 0xA2 + (whichOpcode == 0x18 ? 9 : 0));
         OutputWriteLong(startAddr - ice.programData + PRGM_START);
 
         return false;
@@ -1242,9 +1242,9 @@ static uint8_t functionReturn(int token) {
         //Check if we can optimize stuff :D
         optimizeZeroCarryFlagOutput();
 
-        *ice.programPtr++ = (expr.AnsSetCarryFlag || expr.AnsSetCarryFlagReversed ?
+        OutputWriteByte((expr.AnsSetCarryFlag || expr.AnsSetCarryFlagReversed ?
             (expr.AnsSetCarryFlagReversed ? OP_RET_C : OP_RET_NC) :
-            (expr.AnsSetZeroFlagReversed ? OP_RET_Z : OP_RET_NZ));
+            (expr.AnsSetZeroFlagReversed ? OP_RET_Z : OP_RET_NZ)));
     } else {
         return E_SYNTAX;
     }
@@ -1563,13 +1563,13 @@ static uint8_t functionPrgm(int token) {
     MaybeLDIYFlags();
     tempProgramPtr = ice.programPtr;
 
-    *ice.programPtr++ = TI_PRGM_TYPE;
+    OutputWriteByte(TI_PRGM_TYPE);
 
     // Fetch the name
     while ((token = _getc()) != EOF && (uint8_t)token != tEnter && (uint8_t)token != tColon && ++a < 9) {
-        *ice.programPtr++ = token;
+        OutputWriteByte(token);
     }
-    *ice.programPtr++ = 0;
+    OutputWriteByte(0);
 
     // Check if valid program name
     if (!a || a == 9) {
@@ -1743,7 +1743,7 @@ static uint8_t functionBB(int token) {
                 return E_INVALID_HEX;
             }
 
-            *ice.programPtr++ = (tok1 << 4) + tok2;
+            OutputWriteByte((tok1 << 4) + tok2);
         }
         if ((uint8_t)token == tRParen) {
             if (!CheckEOL()) {
