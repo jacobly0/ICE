@@ -12,7 +12,7 @@
 #define SIZEOF_SRAND_DATA  17
 #define SIZEOF_SQRT_DATA   43
 #define SIZEOF_SINCOS_DATA 99
-#define SIZEOF_MEAN_DATA   22
+#define SIZEOF_MEAN_DATA   24
 #define SIZEOF_OR_DATA     10
 #define SIZEOF_AND_DATA    11
 #define SIZEOF_XOR_DATA    13
