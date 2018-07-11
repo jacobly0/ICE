@@ -167,6 +167,7 @@ const function_t implementedFunctions[AMOUNT_OF_FUNCTIONS] = {
     {tRand,     0,              0,   0, 0},
     {tAns,      0,              0,   0, 0},
     {tLParen,   0,              1,   0, 0},
+    {tLBrace,   0,              1,   0, 0},
     {tExtTok,   tRemainder,     2,   1, 0},
     {tExtTok,   tCheckTmr,      1,   0, 0},
     {tExtTok,   tStartTmr,      0,   0, 0},
