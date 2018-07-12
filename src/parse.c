@@ -15,6 +15,7 @@ extern const uint8_t PauseData[];
 extern const uint8_t InputData[];
 extern const uint8_t PrgmData[];
 extern const uint8_t DispData[];
+extern const uint8_t RandData[];
 
 extern char *str_dupcat(const char *s, const char *c);
 #endif
@@ -1005,7 +1006,7 @@ static uint8_t functionIf(int token) {
             bool shortElseCode;
             uint8_t tempGotoElements2 = ice.curGoto;
             uint8_t tempLblElements2 = ice.curLbl;
-            uint24_t tempDataOffsetElements2;;
+            uint24_t tempDataOffsetElements2;
 
             // Backup stuff
             ResetAllRegs();
@@ -1054,7 +1055,7 @@ static uint8_t dummyReturn(int token) {
     return VALID;
 }
 
-uint8_t JumpForward(uint8_t *startAddr, uint8_t *endAddr, uint24_t tempDataOffsetElements, uint8_t tempGotoElements, uint8_t tempLblElements) {
+bool JumpForward(uint8_t *startAddr, uint8_t *endAddr, uint24_t tempDataOffsetElements, uint8_t tempGotoElements, uint8_t tempLblElements) {
     if (endAddr - startAddr <= 0x80) {
         uint8_t *tempPtr = startAddr;
         uint8_t opcode = *startAddr;
@@ -1098,14 +1099,16 @@ uint8_t JumpForward(uint8_t *startAddr, uint8_t *endAddr, uint24_t tempDataOffse
             memcpy(startAddr, startAddr + 2, ice.programPtr - startAddr);
         }
         ice.programPtr -= 2;
+        
         return true;
     } else {
         w24(startAddr + 1, endAddr - ice.programData + PRGM_START);
+        
         return false;
     }
 }
 
-uint8_t JumpBackwards(uint8_t *startAddr, uint8_t whichOpcode) {
+bool JumpBackwards(uint8_t *startAddr, uint8_t whichOpcode) {
     if (ice.programPtr + 2 - startAddr <= 0x80) {
         uint8_t *tempPtr = ice.programPtr;
 

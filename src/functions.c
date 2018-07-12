@@ -831,7 +831,7 @@ uint8_t parseFunction(uint24_t index) {
 
                 startIndex = -1 - amountOfArguments;
 
-                if ((res = InsertDataElements(amountOfArguments, startIndex, (&outputPtr[getIndexOffset(startIndex)])->operand.num, 1)) != VALID) {
+                if ((res = InsertDataElements(amountOfArguments, startIndex, outputPtr[getIndexOffset(startIndex)].operand.num, 1)) != VALID) {
                     return res;
                 }
             }
@@ -872,8 +872,7 @@ uint8_t parseFunction(uint24_t index) {
                     if (outputPrevPrevType == TYPE_CHAIN_ANS) {
                         AnsToHL();
                     } else if (outputPrevType == TYPE_CHAIN_ANS) {
-                        PushHLDE();
-                        POP_BC();
+                        AnsToBC();
                     } else {
                         return E_SYNTAX;
                     }
@@ -973,7 +972,7 @@ uint8_t parseFunction(uint24_t index) {
                     return E_SYNTAX;
                 }
 
-                LD_HL_IND_IX_OFF(outputTemp->operand.num);
+                LD_HL_IND_IX_OFF(outputTemp->operand.var);
                 ProgramPtrToOffsetStack();
                 LD_ADDR_HL((uint24_t)tempDataPtr + 3);
 
@@ -1007,7 +1006,7 @@ uint8_t parseFunction(uint24_t index) {
                 if (outputTemp->type == TYPE_NUMBER) {
                     LD_DE_IMM(outputTemp->operand.num);
                 } else if (outputTemp->type == TYPE_VARIABLE) {
-                    LD_DE_IND_IX_OFF(outputTemp->operand.num);
+                    LD_DE_IND_IX_OFF(outputTemp->operand.var);
                 } else if (outputTemp->type == TYPE_CHAIN_ANS) {
                     AnsToDE();
                 } else {
@@ -1176,8 +1175,7 @@ uint8_t parseFunction(uint24_t index) {
                 }
 
                 // Check if it's the first argument or not
-                if ((outputPrevType == TYPE_ARG_DELIMITER && !a) ||
-                    (outputPrevType == TYPE_C_START && a)) {
+                if ((outputPrevType == TYPE_ARG_DELIMITER && !a) || (outputPrevType == TYPE_C_START && a)) {
                     return E_ARGUMENTS;
                 }
 
@@ -1196,6 +1194,7 @@ uint8_t parseFunction(uint24_t index) {
                 // If the last (first) argument is fetched, it's the det( function, so ignore all the optimizations
                 // Ignore them too if it's optimized, like fetching variable A if it's already in register HL
                 if (ice.programPtr != startProgramPtr && a) {
+                    // Write pea instead of lea
                     if (expr.outputIsNumber && expr.outputNumber >= IX_VARIABLES - 0x80 && expr.outputNumber <= IX_VARIABLES + 0x7F) {
                         *(ice.programPtr - 2) = 0x65;
                     } else {
@@ -1209,8 +1208,7 @@ uint8_t parseFunction(uint24_t index) {
                                 ResetHL();
                             }
                             if (expr.outputRegister == REGISTER_A) {
-                                LD_L_A();
-                                PUSH_HL();
+                                OutputWrite2Bytes(OP_LD_L_A, OP_PUSH_HL);
                             } else {
                                 PushHLDE();
                             }

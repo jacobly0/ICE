@@ -191,7 +191,7 @@ displayMainScreen:
         goto stop;
     }
 
-    // Do the stuff
+    // Allow hidden programs from Cesium
     if (*var_name < 64) {
         *var_name += 64;
     }

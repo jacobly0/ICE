@@ -401,7 +401,7 @@ uint8_t IsHexadecimal(int token) {
 bool CheckEOL(void) {
     int token;
 
-    if ((token = _getc()) == EOF || (uint8_t)token == tEnter) {
+    if ((token = _getc()) == EOF || (uint8_t)token == tEnter || (uint8_t)token == tColon) {
         return true;
     }
     return false;

@@ -23,8 +23,8 @@ enum {
     TYPE_MASK_U24
 };
 
-uint8_t JumpForward(uint8_t*, uint8_t*, uint24_t, uint8_t, uint8_t);
-uint8_t JumpBackwards(uint8_t*, uint8_t);
+bool JumpForward(uint8_t*, uint8_t*, uint24_t, uint8_t, uint8_t);
+bool JumpBackwards(uint8_t*, uint8_t);
 void optimizeZeroCarryFlagOutput(void);
 void skipLine(void);
 void insertGotoLabel(void);
@@ -52,9 +52,9 @@ typedef union {
 } operand_t;
 
 typedef struct {
-    uint8_t  isString;
-    uint8_t  type;
-    uint8_t  mask;
+    uint8_t   isString;
+    uint8_t   type;
+    uint8_t   mask;
     operand_t operand;
 } element_t;
 
