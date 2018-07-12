@@ -13,9 +13,13 @@
     "key|enter",
     "hashWait|1",
     "key|clear",
+    "delay|100",
     "key|prgm",
+    "delay|100",
     "key|up",
+    "delay|100",
     "key|enter",
+    "delay|100",
     "key|enter",
     "hashWait|2"
   ],
