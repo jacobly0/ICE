@@ -3,7 +3,17 @@ segment data
 .def _RandData
 
 _RandData:
-	ld	iy, 0
+	xor	a, a
+	ld	(0), hl			; __state
+	ld	hl, 0			; __state + 3
+	ld	(hl), a
+	ld	b, 12
+__setstateloop:
+	inc	hl
+	ld	(hl), b
+	djnz	__setstateloop
+	ret
+	ld	iy, 0			; __state
 	ld	hl, (iy+0*4+0)
 	push	hl
 	ld	hl, (iy+0*4+2)

@@ -8,7 +8,7 @@
 #define STACK_SIZE 500
 #define SIZEOF_DISP_DATA   26
 #define SIZEOF_KEYPAD_DATA 18
-#define SIZEOF_RAND_DATA   101
+#define SIZEOF_RAND_DATA   118
 #define SIZEOF_SRAND_DATA  17
 #define SIZEOF_SQRT_DATA   43
 #define SIZEOF_SINCOS_DATA 99
@@ -215,7 +215,6 @@ void CProgramHeaderData(void);
 void OrData(void);
 void AndData(void);
 void XorData(void);
-void SrandData(void);
 void RandData(void);
 void KeypadData(void);
 void GetKeyFastData(void);

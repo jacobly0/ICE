@@ -15,7 +15,6 @@ extern const uint8_t PauseData[];
 extern const uint8_t InputData[];
 extern const uint8_t PrgmData[];
 extern const uint8_t DispData[];
-extern const uint8_t SrandData[];
 
 extern char *str_dupcat(const char *s, const char *c);
 #endif
@@ -40,7 +39,9 @@ uint8_t parseProgram(void) {
     if (prescan.amountOfRandRoutines) {
         ice.programDataPtr -= SIZEOF_RAND_DATA;
         ice.randAddr = (uint24_t)ice.programDataPtr;
-        memcpy(ice.programDataPtr, SrandData, SIZEOF_RAND_DATA);
+        memcpy(ice.programDataPtr, RandData, SIZEOF_RAND_DATA);
+        
+        // Write internal pointers
         ice.dataOffsetStack[ice.dataOffsetElements++] = (uint24_t*)(ice.randAddr + 2);
         w24((uint8_t*)(ice.randAddr + 2), ice.randAddr + 102);
         ice.dataOffsetStack[ice.dataOffsetElements++] = (uint24_t*)(ice.randAddr + 6);
@@ -48,6 +49,7 @@ uint8_t parseProgram(void) {
         ice.dataOffsetStack[ice.dataOffsetElements++] = (uint24_t*)(ice.randAddr + 19);
         w24((uint8_t*)(ice.randAddr + 19), ice.randAddr + 102);
 
+        // Call seed rand
         LD_HL_IND(0xF30044);
         ProgramPtrToOffsetStack();
         CALL((uint24_t)ice.programDataPtr);

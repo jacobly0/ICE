@@ -516,7 +516,7 @@ uint8_t parseFunction(uint24_t index) {
                 }
 
                 ProgramPtrToOffsetStack();
-                CALL(ice.randAddr + 17);
+                CALL(ice.randAddr + SIZEOF_SRAND_DATA);
 
                 if (outputPrevPrevType != TYPE_NUMBER || outputPrevType != TYPE_NUMBER) {
                     POP_BC();
