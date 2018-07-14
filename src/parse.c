@@ -1,6 +1,7 @@
 #include "defines.h"
 #include "parse.h"
 
+#include "ast.h"
 #include "operator.h"
 #include "main.h"
 #include "functions.h"
@@ -181,8 +182,7 @@ fetchNoNewToken:
             mask = TYPE_MASK_U24;
 
             if (prevTokenWasCFunction) {
-                stackCurr = &stackPtr[stackElements - 1];
-                stackCurr->operand.num = stackCurr->operand.num + ((uint8_t)output << 16);
+                stackPtr[stackElements - 1].operand.func.function2 = output;
             }
 
             // Don't grab a new token
@@ -263,7 +263,8 @@ fetchNoNewToken:
 
                 // I have to create a non-existent token, because L1(...) the right parenthesis should pretend it's a },
                 // but that is impossible if I just push { or (. Then when a ) appears and it hits the 0x0F, just replace it with a }
-                stackCurr->operand.num = 0x0F + ((storeDepth && 1) << 16);
+                stackCurr->operand.func.function = 0x0F;
+                stackCurr->operand.func.function2 = storeDepth && 1;
                 stackElements++;
                 mask = TYPE_MASK_U24;
                 canUseMask = 2;
@@ -569,7 +570,7 @@ noSquishing:
                         outputCurr->type = TYPE_C_START;
                         outputElements++;
                         
-                        tok2 = (uint8_t)(token = _getc());
+                        tok2 = token = _getc();
 
                         if ((tok == tDet || tok == tSum) && (tok2 < t0 || tok2 > t9)) {
                             return E_SYNTAX;

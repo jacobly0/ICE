@@ -1,7 +1,9 @@
 #include "defines.h"
 #include "parse.h"
+#include "ast.h"
 #include "operator.h"
 
+#include "parse.h"
 #include "main.h"
 #include "functions.h"
 #include "errors.h"

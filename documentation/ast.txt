@@ -1,0 +1,164 @@
+Infix notation to AST
+
+B*det(30,sin(5/A),(A*2-6)/C,3,4)-3
+
+Token           Operator stack          Node stack
+B                                       B
+
+*               *                       B
+
+det(            * det(                  B
+
+30              * det(                  B---30
+
+,               * det(                  B---30
+
+sin(            * det( sin(             B---30
+
+5               * det( sin(             B---30---5
+
+/               * det( sin( /           B---30---5
+
+A               * det( sin( /           B---30---5---A
+
+)               * det( sin(             B---30---div
+                                                 |
+                                                 5---A
+
+                * det(                  B---30---sin
+                                                 |
+                                                 div
+                                                 |
+                                                 5---A
+
+,               * det(                  B---30---sin
+                                                 |
+                                                 div
+                                                 |
+                                                 5---A
+
+(               * det(                  B---30---sin
+                                                 |
+                                                 div
+                                                 |
+                                                 5---A
+
+A               * det(                  B---30---sin---A
+                                                 |
+                                                 div
+                                                 |
+                                                 5---A
+
+*               * det( *                B---30---sin---A
+                                                 |
+                                                 div
+                                                 |
+                                                 5---A
+
+2               * det( *                B---30---sin---A---2
+                                                 |
+                                                 div
+                                                 |
+                                                 5---A
+
+-               * det( -                B---30---sin---mlt
+                                                 |     |
+                                                 div   A---2
+                                                 |
+                                                 5---A
+
+6               * det( -                B---30---sin---mlt---6
+                                                 |     |
+                                                 div   A---2
+                                                 |
+                                                 5---A
+
+)               * det(                  B---30---sin-----sub
+                                                 |       |
+                                                 div     mlt---6
+                                                 |       |
+                                                 5---A   A---2
+
+/				* det( /                B---30---sin-----sub
+                                                 |       |
+                                                 div     mlt---6
+                                                 |       |
+                                                 5---A   A---2
+
+C				* det( /                B---30---sin-----sub---C
+                                                 |       |
+                                                 div     mlt---6
+                                                 |       |
+                                                 5---A   A---2
+
+,				* det(                  B---30---sin-----div
+                                                 |       |
+                                                 div     sub---C
+                                                 |       |
+                                                 5---A   mlt---6
+														 |
+														 A---2
+
+3				* det(                  B---30---sin-----div---3
+                                                 |       |
+                                                 div     sub---C
+                                                 |       |
+                                                 5---A   mlt---6
+														 |
+														 A---2
+
+4				* det(                  B---30---sin-----div---3---4
+                                                 |       |
+                                                 div     sub---C
+                                                 |       |
+                                                 5---A   mlt---6
+														 |
+														 A---2
+
+)				*						B---det
+											|
+											30---sin-----div---3---4
+                                                 |       |
+                                                 div     sub---C
+                                                 |       |
+                                                 5---A   mlt---6
+														 |
+														 A---2
+
+-				-						mlt
+										|
+										B---det
+											|
+											30---sin-----div---3---4
+                                                 |       |
+                                                 div     sub---C
+                                                 |       |
+                                                 5---A   mlt---6
+														 |
+														 A---2
+
+3				-						mlt---3
+										|
+										B---det
+											|
+											30---sin-----div---3---4
+                                                 |       |
+                                                 div     sub---C
+                                                 |       |
+                                                 5---A   mlt---6
+														 |
+														 A---2
+
+EOL										sub
+										|
+										mlt---3
+										|
+										B---det
+											|
+											30---sin-----div---3---4
+                                                 |       |
+                                                 div     sub---C
+                                                 |       |
+                                                 5---A   mlt---6
+														 |
+														 A---2

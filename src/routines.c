@@ -2,6 +2,7 @@
 #include "main.h"
 #include "routines.h"
 
+#include "ast.h"
 #include "functions.h"
 #include "errors.h"
 #include "stack.h"

@@ -3,6 +3,7 @@
 
 #ifndef CALCULATOR
 
+#include "ast.h"
 #include "functions.h"
 #include "errors.h"
 #include "stack.h"

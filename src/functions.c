@@ -1,6 +1,7 @@
 #include "defines.h"
 #include "functions.h"
 
+#include "ast.h"
 #include "errors.h"
 #include "stack.h"
 #include "parse.h"
@@ -9,6 +10,7 @@
 #include "operator.h"
 #include "routines.h"
 #include "prescan.h"
+#include "ast.h"
 
 #ifndef CALCULATOR
 extern const uint8_t SqrtData[];
