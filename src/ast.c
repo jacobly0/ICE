@@ -11,7 +11,7 @@
 #include "prescan.h"
 
 NODE *push2(NODE *top, element_t data) {
-    NODE *tempNode = (NODE*)malloc(sizeof(NODE));
+    NODE *tempNode = (NODE*)calloc(1, sizeof(NODE));
     
     tempNode->data = data;
     tempNode->prev = top;
@@ -21,7 +21,7 @@ NODE *push2(NODE *top, element_t data) {
 }
 
 NODE *insertData(NODE *top, element_t data, uint8_t index) {
-    NODE *tempNode = (NODE*)malloc(sizeof(NODE));
+    NODE *tempNode = (NODE*)calloc(1, sizeof(NODE));
     uint8_t temp;
     
     tempNode->data = data;
@@ -41,6 +41,22 @@ NODE *insertData(NODE *top, element_t data, uint8_t index) {
     return tempNode;
 }
 
-NODE *parseAST(NODE *top) {
+NODE *parseNode(NODE *top) {
     return NULL;
+}
+
+NODE *reverseNode(NODE *top) {
+    NODE *next = NULL;
+    NODE *curr = top;
+    NODE *prev = NULL;
+    
+    while (curr != NULL) {
+        next = curr->sibling;
+        curr->sibling = prev;
+        curr->prev = next;
+        prev = curr;
+        curr = next;
+    }
+    
+    return prev;
 }

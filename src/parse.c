@@ -134,6 +134,8 @@ uint8_t parseProgramUntilEnd(void) {
 }
 
 uint8_t parseExpression(int token) {
+    NODE *outputNode = NULL;
+    NODE *stackNode = NULL;
     uint24_t stackElements = 0, outputElements = 0;
     uint24_t loopIndex, temp;
     uint8_t amountOfArgumentsStack[20];

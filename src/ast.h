@@ -32,4 +32,9 @@ typedef struct node {
     struct node *sibling;
 } NODE;
 
+NODE *push2(NODE*, element_t);
+NODE *insertData(NODE*, element_t, uint8_t);
+NODE *parseNode(NODE*);
+NODE *reverseNode(NODE*);
+
 #endif
