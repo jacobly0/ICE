@@ -105,14 +105,20 @@ displayMainScreen:
     didCompile = false;
     ti_CloseAll();
     
-    while ((temp_name = ti_DetectAny(&search_pos, ICEheader, &type)) && (type == TI_PRGM_TYPE || type == TI_PPRGM_TYPE) && selectedProgram < NUMBEROFPROGRAM) {
-        if ((uint8_t)(*temp_name) < 64) {
+    while ((temp_name = ti_DetectAny(&search_pos, ICEheader, &type)) != NULL) {
+        if (type == TI_PRGM_TYPE || type == TI_PPRGM_TYPE) {
+            if ((uint8_t)(*temp_name) < 64) {
                 *temp_name += 64;
             }
 
             // Save the program name
             inputPrograms[selectedProgram] = malloc(9);
             strcpy(inputPrograms[selectedProgram++], temp_name);
+        }
+        
+        if (selectedProgram >= NUMBEROFPROGRAM) {
+            break;
+        }
     }
 
     amountOfPrograms = selectedProgram;
