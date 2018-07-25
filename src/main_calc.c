@@ -28,19 +28,23 @@ static int myCompare(const void * a, const void * b) {
 }
 
 void displayProgramList(int beginList, int amountOfProgramsToDisplay) {
-    int i;
-    for (i = 0; i < amountOfProgramsToDisplay; i++)
+    uint24_t i;
+    
+    for (i = 0; i < amountOfProgramsToDisplay; i++) {
         gfx_PrintStringXY(inputPrograms[beginList + i], 10, i * 10 + 13);
+    }
 }
 
 void clearProgramList() {
-    int i;
-    for (i = 0; i < PROGRAMPERSCREEN; i++)
+    uint24_t i;
+    
+    for (i = 0; i < PROGRAMPERSCREEN; i++) {
         gfx_FillRectangle_NoClip(10, i * 10 + 13, 200, 10);
+    }
 }
 
 void main(void) {
-    uint8_t selectedProgram, amountOfPrograms, res = VALID, temp;
+    uint8_t selectedProgram, amountOfPrograms, res = VALID, type;
     uint24_t programDataSize, offset, totalSize;
     uint8_t beginList, amountOfProgramsToDisplay;
     uint8_t relativeSelectedProgram;
@@ -48,7 +52,7 @@ void main(void) {
     ti_var_t tempProg;
     char buf[30], *temp_name = "", var_name[9];
     sk_key_t key;
-    void *search_pos;
+    void *search_pos = NULL;
     bool didCompile;
 
     // Install hooks
@@ -100,18 +104,15 @@ displayMainScreen:
     selectedProgram = 0;
     didCompile = false;
     ti_CloseAll();
-
-    for (temp = TI_PRGM_TYPE; temp <= TI_PPRGM_TYPE; temp++) {
-        search_pos = NULL;
-        while((temp_name = ti_DetectVar(&search_pos, ICEheader, temp)) && selectedProgram < NUMBEROFPROGRAM) {
-            if ((uint8_t)(*temp_name) < 64) {
+    
+    while ((temp_name = ti_DetectAny(&search_pos, ICEheader, &type)) && (type == TI_PRGM_TYPE || type == TI_PPRGM_TYPE) && selectedProgram < NUMBEROFPROGRAM) {
+        if ((uint8_t)(*temp_name) < 64) {
                 *temp_name += 64;
             }
 
             // Save the program name
             inputPrograms[selectedProgram] = malloc(9);
             strcpy(inputPrograms[selectedProgram++], temp_name);
-        }
     }
 
     amountOfPrograms = selectedProgram;
@@ -127,9 +128,6 @@ displayMainScreen:
     // Display all the sorted programs
     qsort(inputPrograms, amountOfPrograms, sizeof(char *), myCompare);
     displayProgramList(beginList, amountOfProgramsToDisplay);
-    /*for (temp = 0; temp < amountOfPrograms; temp++) {
-        gfx_PrintStringXY(inputPrograms[temp], 10, temp * 10 + 13);
-    }*/
     
     // Display buttons
     gfx_PrintStringXY("Build", 4, 232);
@@ -208,6 +206,9 @@ displayMainScreen:
     strcpy(var_name, inputPrograms[selectedProgram - 1]);
     didCompile = true;
     memset(&ice, 0, sizeof ice);
+    for (selectedProgram = 0; selectedProgram < amountOfPrograms; selectedProgram++) {
+        free(inputPrograms[selectedProgram]);
+    }
     
     // Output debug appvar
     if (key == sk_Window) {
