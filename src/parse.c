@@ -376,14 +376,6 @@ stackToOutputReturn1:
                 }
             }
 
-            stackPrev = &stackPtr[stackElements - 1];
-            tempTok = stackPrev->operand.num;
-
-            // Closing tag should match it's open tag
-            if ((tok == tRBrace && (tempTok != token - 1)) || (tok == tRParen && tempTok != 0x0F && tempTok == tLBrace)) {
-                return E_SYNTAX;
-            }
-
             // No matching left parenthesis
             if (!stackElements) {
                 if (expr.inFunction) {
@@ -395,6 +387,14 @@ stackToOutputReturn1:
                 return E_EXTRA_RPAREN;
             }
             
+            stackPrev = &stackPtr[stackElements - 1];
+            tempTok = stackPrev->operand.num;
+
+            // Closing tag should match it's open tag
+            if ((tok == tRBrace && (tempTok != token - 1)) || (tok == tRParen && tempTok != 0x0F && tempTok == tLBrace)) {
+                return E_SYNTAX;
+            }
+
             index = GetIndexOfFunction(tempTok, stackPrev->operand.func.function2);
 
             // If it's a det, add an argument delimiter as well
