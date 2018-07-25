@@ -88,23 +88,24 @@ void preScanProgram(void) {
                 } else if (tok == t2ByteTok) {
                     // AsmComp(
                     if (tok2 == tAsmComp) {
-                        ti_var_t tempProg = ice.inPrgm;
                         prog_t *newProg = GetProgramName();
-
+                        if (newProg->errorCode == VALID) {
+                            ti_var_t tempProg = ice.inPrgm;
 #ifdef CALCULATOR
-                        if ((ice.inPrgm = _open(newProg->prog))) {
+                            if ((ice.inPrgm = _open(newProg->prog))) {
 #else
-                        char *inName = str_dupcat(newProg->prog, ".8xp");
-                        if ((ice.inPrgm = _open(inName))) {
+                            char *inName = str_dupcat(newProg->prog, ".8xp");
+			    if ((ice.inPrgm = _open(inName))) {
 #endif
-                            preScanProgram();
-                            _close(ice.inPrgm);
-                        }
+                                preScanProgram();
+                                _close(ice.inPrgm);
+                            }
 #ifndef CALCULATOR
-                        free(inName);
+                            free(inName);
 #endif
+                            ice.inPrgm = tempProg;
+                        }
                         free(newProg);
-                        ice.inPrgm = tempProg;
                         afterNewLine = true;
                     } else if (tok2 == tRandInt) {
                         prescan.amountOfRandRoutines++;
