@@ -1765,6 +1765,7 @@ static uint8_t functionBB(int token) {
         
         outputPrgm = GetProgramName();
         if (outputPrgm->errorCode != VALID) {
+            free(outputPrgm);
             return outputPrgm->errorCode;
         }
 
@@ -1781,6 +1782,7 @@ static uint8_t functionBB(int token) {
             // Compile it, and close
             ice.currentLine = 0;
             if ((res = parseProgramUntilEnd()) != VALID) {
+                free(outputPrgm);
                 return res;
             }
             fprintf(stdout, "Return from subprogram...\n");
@@ -1802,6 +1804,7 @@ static uint8_t functionBB(int token) {
             // Compile it, and close
             ice.currentLine = 0;
             if ((res = parseProgramUntilEnd()) != VALID) {
+                free(outputPrgm);
                 return res;
             }
             ti_Close(ice.inPrgm);
@@ -1815,6 +1818,7 @@ static uint8_t functionBB(int token) {
 #endif
         ice.inPrgm = tempProg;
 
+        free(outputPrgm);
         return res;
     } else {
         SeekMinus1();

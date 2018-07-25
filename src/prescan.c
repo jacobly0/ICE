@@ -99,6 +99,7 @@ void preScanProgram(void) {
                             preScanProgram();
                             _close(ice.inPrgm);
                         }
+                        free(newProg);
                         ice.inPrgm = tempProg;
                         afterNewLine = true;
                     } else if (tok2 == tRandInt) {
@@ -167,9 +168,11 @@ uint8_t getNameIconDescription(void) {
     
     outputPrgm = GetProgramName();
     if (outputPrgm->errorCode != VALID) {
+        free(outputPrgm);
         return outputPrgm->errorCode;
     }
     strcpy(ice.outName, outputPrgm->prog);
+    free(outputPrgm);
     
     // Has icon
     if ((uint8_t)_getc() == tii && (uint8_t)_getc() == tString) {
