@@ -683,7 +683,7 @@ stackToOutputReturn2:
 
                 // And remove everything
                 outputPtr[loopIndex - index].operand.num = temp;
-                memcpy(&outputPtr[loopIndex - index + 1], &outputPtr[loopIndex + 1], (outputElements - 1) * sizeof(element_t));
+                memmove(&outputPtr[loopIndex - index + 1], &outputPtr[loopIndex + 1], (outputElements - 1) * sizeof(element_t));
                 outputElements -= index;
                 loopIndex -= index - 1;
             }
