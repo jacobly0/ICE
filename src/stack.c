@@ -21,7 +21,7 @@ uint24_t getNextIndex(void) {
     return *(p2++);
 }
 
-uint24_t getIndexOffset(uint24_t offset) {
+uint24_t getIndexOffset(int24_t offset) {
     return *(p2 + offset);
 }
 

@@ -6,7 +6,7 @@ uint24_t pop(void);
 uint24_t getStackSize(void);
 uint24_t getNextIndex(void);
 uint24_t getCurrentIndex(void);
-uint24_t getIndexOffset(uint24_t);
+uint24_t getIndexOffset(int24_t);
 void removeIndexFromStack(uint24_t);
 void getNextFreeStack(void);
 void removeStack(void);
