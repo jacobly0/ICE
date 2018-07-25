@@ -1100,7 +1100,7 @@ bool JumpForward(uint8_t *startAddr, uint8_t *endAddr, uint24_t tempDataOffsetEl
         }
 
         if (ice.programPtr != startAddr) {
-            memcpy(startAddr, startAddr + 2, ice.programPtr - startAddr);
+            memmove(startAddr, startAddr + 2, ice.programPtr - startAddr);
         }
         ice.programPtr -= 2;
         
