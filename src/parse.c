@@ -489,7 +489,7 @@ stackToOutputReturn1:
             stackPrev = &stackPtr[stackElements - 1];
 
             token = grabString(&ice.programPtr, true);
-            if ((uint8_t)stackPrev->operand.num == tVarOut && stackPrev->operand.func.function2 == tDefineSprite) {
+            if (stackElements && (uint8_t)stackPrev->operand.num == tVarOut && stackPrev->operand.func.function2 == tDefineSprite) {
                 needWarning = false;
             }
             
