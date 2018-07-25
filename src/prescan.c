@@ -94,11 +94,15 @@ void preScanProgram(void) {
 #ifdef CALCULATOR
                         if ((ice.inPrgm = _open(newProg->prog))) {
 #else
-                        if ((ice.inPrgm = _open(str_dupcat(newProg->prog, ".8xp")))) {
+                        char *inName = str_dupcat(newProg->prog, ".8xp");
+                        if ((ice.inPrgm = _open(inName))) {
 #endif
                             preScanProgram();
                             _close(ice.inPrgm);
                         }
+#ifndef CALCULATOR
+                        free(inName);
+#endif
                         free(newProg);
                         ice.inPrgm = tempProg;
                         afterNewLine = true;

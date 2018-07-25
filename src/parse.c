@@ -1771,19 +1771,21 @@ static uint8_t functionBB(int token) {
         }
 
 #ifndef CALCULATOR
-        if ((ice.inPrgm = _open(str_dupcat(outputPrgm->prog, ".8xp")))) {
+        char *inName = str_dupcat(outputPrgm->prog, ".8xp");
+        free(outputPrgm);
+        if ((ice.inPrgm = _open(inName))) {
             int tempProgSize = ice.programLength;
             
             fseek(ice.inPrgm, 0, SEEK_END);
             ice.programLength = ftell(ice.inPrgm);
             _rewind(ice.inPrgm);
-            fprintf(stdout, "Compiling subprogram %s\n", str_dupcat(outputPrgm->prog, ".8xp"));
+            fprintf(stdout, "Compiling subprogram %s\n", inName);
+            free(inName);
             fprintf(stdout, "Program size: %u\n", ice.programLength);
 
             // Compile it, and close
             ice.currentLine = 0;
             if ((res = parseProgramUntilEnd()) != VALID) {
-                free(outputPrgm);
                 return res;
             }
             fprintf(stdout, "Return from subprogram...\n");
@@ -1791,6 +1793,7 @@ static uint8_t functionBB(int token) {
             ice.currentLine = currentLine;
             ice.programLength = tempProgSize;
         } else {
+            free(inName);
             res = E_PROG_NOT_FOUND;
         }
 #else
@@ -1801,11 +1804,11 @@ static uint8_t functionBB(int token) {
             sprintf(buf, "Compiling subprogram %s...", outputPrgm->prog);
             displayMessageLineScroll(buf);
             strcpy(ice.currProgName[ice.inPrgm], outputPrgm->prog);
+            free(outputPrgm);
 
             // Compile it, and close
             ice.currentLine = 0;
             if ((res = parseProgramUntilEnd()) != VALID) {
-                free(outputPrgm);
                 return res;
             }
             ti_Close(ice.inPrgm);
@@ -1814,12 +1817,12 @@ static uint8_t functionBB(int token) {
             displayMessageLineScroll("Return from subprogram...");
             ice.currentLine = currentLine;
         } else {
+            free(outputPrgm);
             res = E_PROG_NOT_FOUND;
         }
 #endif
         ice.inPrgm = tempProg;
 
-        free(outputPrgm);
         return res;
     } else {
         SeekMinus1();
