@@ -27,7 +27,7 @@ element_t outputStack[400];
 element_t stack[50];
 
 uint8_t parseProgram(void) {
-    uint8_t currentGoto, currentLbl, ret;
+    uint8_t currentGoto, currentLbl, ret, *randAddr;
     
     LD_IX_IMM(IX_VARIABLES);
     
@@ -40,16 +40,17 @@ uint8_t parseProgram(void) {
     // Eventually seed the rand
     if (prescan.amountOfRandRoutines) {
         ice.programDataPtr -= SIZEOF_RAND_DATA;
-        ice.randAddr = (uint24_t)ice.programDataPtr;
+        randAddr = ice.programDataPtr;
+        ice.randAddr = (uint24_t)randAddr;
         memcpy(ice.programDataPtr, RandData, SIZEOF_RAND_DATA);
         
         // Write internal pointers
-        ice.dataOffsetStack[ice.dataOffsetElements++] = (uint24_t*)(ice.randAddr + 2);
-        w24((uint8_t*)(ice.randAddr + 2), ice.randAddr + 102);
-        ice.dataOffsetStack[ice.dataOffsetElements++] = (uint24_t*)(ice.randAddr + 6);
-        w24((uint8_t*)(ice.randAddr + 6), ice.randAddr + 105);
-        ice.dataOffsetStack[ice.dataOffsetElements++] = (uint24_t*)(ice.randAddr + 19);
-        w24((uint8_t*)(ice.randAddr + 19), ice.randAddr + 102);
+        ice.dataOffsetStack[ice.dataOffsetElements++] = (uint24_t*)(randAddr + 2);
+        w24(randAddr + 2, ice.randAddr + 102);
+        ice.dataOffsetStack[ice.dataOffsetElements++] = (uint24_t*)(randAddr + 6);
+        w24(randAddr + 6, ice.randAddr + 105);
+        ice.dataOffsetStack[ice.dataOffsetElements++] = (uint24_t*)(randAddr + 19);
+        w24(randAddr + 19, ice.randAddr + 102);
 
         // Call seed rand
         LD_HL_IND(0xF30044);
