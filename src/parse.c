@@ -1765,9 +1765,9 @@ static uint8_t functionBB(int token) {
         prog_t *outputPrgm;
         
         outputPrgm = GetProgramName();
-        if (outputPrgm->errorCode != VALID) {
+        if ((res = outputPrgm->errorCode) != VALID) {
             free(outputPrgm);
-            return outputPrgm->errorCode;
+            return res;
         }
 
 #ifndef CALCULATOR

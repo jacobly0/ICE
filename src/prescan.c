@@ -160,6 +160,7 @@ void preScanProgram(void) {
 }
 
 uint8_t getNameIconDescription(void) {
+    uint8_t res;
     prog_t *outputPrgm;
     
     if (_getc() != 0x2C) {
@@ -167,9 +168,9 @@ uint8_t getNameIconDescription(void) {
     }
     
     outputPrgm = GetProgramName();
-    if (outputPrgm->errorCode != VALID) {
+    if ((res = outputPrgm->errorCode) != VALID) {
         free(outputPrgm);
-        return outputPrgm->errorCode;
+        return res;
     }
     strcpy(ice.outName, outputPrgm->prog);
     free(outputPrgm);
