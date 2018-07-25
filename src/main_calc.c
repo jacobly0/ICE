@@ -28,22 +28,22 @@ static int myCompare(const void * a, const void * b) {
 }
 
 void displayProgramList(int beginList, int amountOfProgramsToDisplay) {
-	int i;
-	for (i = 0; i < amountOfProgramsToDisplay; i++)
-		gfx_PrintStringXY(inputPrograms[beginList + i], 10, i * 10 + 13);
+    int i;
+    for (i = 0; i < amountOfProgramsToDisplay; i++)
+        gfx_PrintStringXY(inputPrograms[beginList + i], 10, i * 10 + 13);
 }
 
 void clearProgramList() {
-	int i;
-	for (i = 0; i < PROGRAMPERSCREEN; i++)
-		gfx_FillRectangle_NoClip(10, i * 10 + 13, 200, 10);
+    int i;
+    for (i = 0; i < PROGRAMPERSCREEN; i++)
+        gfx_FillRectangle_NoClip(10, i * 10 + 13, 200, 10);
 }
 
 void main(void) {
     uint8_t selectedProgram, amountOfPrograms, res = VALID, temp;
     uint24_t programDataSize, offset, totalSize;
-	uint8_t beginList, amountOfProgramsToDisplay;
-	uint8_t relativeSelectedProgram;
+    uint8_t beginList, amountOfProgramsToDisplay;
+    uint8_t relativeSelectedProgram;
     const char ICEheader[] = {tii, 0};
     ti_var_t tempProg;
     char buf[30], *temp_name = "", var_name[9];
@@ -115,8 +115,8 @@ displayMainScreen:
     }
 
     amountOfPrograms = selectedProgram;
-	beginList = 0;
-	amountOfProgramsToDisplay = (amountOfPrograms > PROGRAMPERSCREEN ? PROGRAMPERSCREEN : amountOfPrograms);
+    beginList = 0;
+    amountOfProgramsToDisplay = (amountOfPrograms > PROGRAMPERSCREEN ? PROGRAMPERSCREEN : amountOfPrograms);
 
     // Check if there are ICE programs
     if (!amountOfPrograms) {
@@ -126,7 +126,7 @@ displayMainScreen:
 
     // Display all the sorted programs
     qsort(inputPrograms, amountOfPrograms, sizeof(char *), myCompare);
-	displayProgramList(beginList, amountOfProgramsToDisplay);
+    displayProgramList(beginList, amountOfProgramsToDisplay);
     /*for (temp = 0; temp < amountOfPrograms; temp++) {
         gfx_PrintStringXY(inputPrograms[temp], 10, temp * 10 + 13);
     }*/
@@ -142,7 +142,7 @@ displayMainScreen:
 
     // Select a program
     selectedProgram = 1;
-	relativeSelectedProgram = 1;
+    relativeSelectedProgram = 1;
     while ((key = os_GetCSC()) != sk_Enter && key != sk_2nd && key != sk_Yequ && key != sk_Window) {
         uint8_t selectionOffset = relativeSelectedProgram * 10 + 3;
 
@@ -161,19 +161,19 @@ displayMainScreen:
             if (key == sk_Down) {
                 if (selectedProgram != amountOfPrograms) {
                     selectedProgram++;
-					relativeSelectedProgram++;
-					if (relativeSelectedProgram > PROGRAMPERSCREEN) {
-						clearProgramList();
-						relativeSelectedProgram--;
-						beginList++;
-						displayProgramList(beginList, amountOfProgramsToDisplay);
-					}
+                    relativeSelectedProgram++;
+                    if (relativeSelectedProgram > PROGRAMPERSCREEN) {
+                        clearProgramList();
+                        relativeSelectedProgram--;
+                        beginList++;
+                        displayProgramList(beginList, amountOfProgramsToDisplay);
+                    }
                 } else {
-					clearProgramList();
+                    clearProgramList();
                     selectedProgram = 1;
-					relativeSelectedProgram = 1;
-					beginList = 0;
-					displayProgramList(beginList, amountOfProgramsToDisplay);
+                    relativeSelectedProgram = 1;
+                    beginList = 0;
+                    displayProgramList(beginList, amountOfProgramsToDisplay);
                 }
             }
 
@@ -181,19 +181,19 @@ displayMainScreen:
             if (key == sk_Up) {
                 if (selectedProgram != 1) {
                     selectedProgram--;
-					relativeSelectedProgram--;
-					if(relativeSelectedProgram == 0) {
-						clearProgramList();
-						relativeSelectedProgram++;
-						beginList--;
-						displayProgramList(beginList, amountOfProgramsToDisplay);
-					}
+                    relativeSelectedProgram--;
+                    if(relativeSelectedProgram == 0) {
+                        clearProgramList();
+                        relativeSelectedProgram++;
+                        beginList--;
+                        displayProgramList(beginList, amountOfProgramsToDisplay);
+                    }
                 } else {
-					clearProgramList();
+                    clearProgramList();
                     selectedProgram = amountOfPrograms;
-					relativeSelectedProgram = (amountOfPrograms > PROGRAMPERSCREEN ? PROGRAMPERSCREEN : amountOfPrograms);
-					beginList = (selectedProgram >= PROGRAMPERSCREEN ? selectedProgram - PROGRAMPERSCREEN : 0);
-					displayProgramList(beginList, amountOfProgramsToDisplay);
+                    relativeSelectedProgram = (amountOfPrograms > PROGRAMPERSCREEN ? PROGRAMPERSCREEN : amountOfPrograms);
+                    beginList = (selectedProgram >= PROGRAMPERSCREEN ? selectedProgram - PROGRAMPERSCREEN : 0);
+                    displayProgramList(beginList, amountOfProgramsToDisplay);
                 }
             }
         }
